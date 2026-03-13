@@ -179,10 +179,9 @@ function setupEventListeners() {
 // ============ UI 更新 ============
 function updateUI() {
     // 等级
-    elements.level.textContent = gameState.level;
-    if (elements.topLevel) {
-        elements.topLevel.textContent = gameState.level;
-    }
+    const levelText = gameState.level.toString();
+    if (elements.level) elements.level.textContent = levelText;
+    if (elements.topLevel) elements.topLevel.textContent = levelText;
     
     // 仓库资源
     elements.storageGold.textContent = formatNumber(Math.floor(gameState.resources.gold));
