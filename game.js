@@ -105,15 +105,24 @@ function init() {
 
 // ============ 侧边栏 ============
 function setupSidebar() {
+    // 切换按钮
+    const toggleBtn = document.getElementById('sidebar-toggle');
+    toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        elements.sidebar.classList.toggle('expanded');
+    });
+    
     // 点击图标按钮展开/切换页面
     elements.iconBtns.forEach(btn => {
+        if (btn.classList.contains('toggle-btn')) return; // 跳过切换按钮
+        
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const page = btn.dataset.page;
             
             // 如果已经展开且点击的是当前页面，则收起
             if (elements.sidebar.classList.contains('expanded') && 
-                elements.sidebar.querySelector(`.icon-btn.active`) === btn) {
+                elements.sidebar.querySelector(`.icon-btn.active:not(.toggle-btn)`) === btn) {
                 elements.sidebar.classList.remove('expanded');
             } else {
                 // 否则展开并切换页面
@@ -148,6 +157,10 @@ function setupSidebar() {
     // 点击主内容区域收起侧边栏
     document.querySelector('.game-container').addEventListener('click', () => {
         elements.sidebar.classList.remove('expanded');
+        // 更新图标按钮状态
+        elements.iconBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.page === gameState.currentPage);
+        });
     });
 }
 
@@ -159,8 +172,11 @@ function setupNavigation() {
 function switchPage(pageId) {
     gameState.currentPage = pageId;
     
+    // 更新图标按钮（跳过 toggle 按钮）
     elements.iconBtns.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.page === pageId);
+        if (!btn.classList.contains('toggle-btn')) {
+            btn.classList.toggle('active', btn.dataset.page === pageId);
+        }
     });
     
     elements.navItems.forEach(item => {
