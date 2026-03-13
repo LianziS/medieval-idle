@@ -1,4 +1,4 @@
-/* 中世纪雇佣兵 - 最终版本 */
+/* 中世纪雇佣兵 - 复古色调版本 */
 
 * {
     margin: 0;
@@ -8,15 +8,15 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #1a1a2e;
-    color: #e0e0e0;
+    background: #1B2A3A;
+    color: #A0B2C0;
     min-height: 100vh;
     padding: 0;
     font-size: 14px;
     overflow-x: hidden;
 }
 
-/* ============ 背景 ============ */
+/* ============ 背景 + 噪点纹理 ============ */
 body::before {
     content: '';
     position: fixed;
@@ -24,8 +24,27 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    background: 
+        linear-gradient(135deg, #1B2A3A 0%, #2d3f52 100%),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
     z-index: -1;
+}
+
+/* 细微划痕纹理 */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 100px 100px;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.3;
 }
 
 /* ============ 顶部固定区域 ============ */
@@ -34,13 +53,14 @@ body::before {
     top: 0;
     left: 0;
     width: 100%;
-    height: 50px;
-    background: linear-gradient(135deg, rgba(15, 52, 96, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
+    height: 150px;
+    background: linear-gradient(180deg, rgba(107, 79, 60, 0.95) 0%, rgba(45, 35, 30, 0.9) 100%);
     backdrop-filter: blur(10px);
-    border-bottom: 2px solid #e94560;
+    border-bottom: 3px solid #8B2C2D;
     z-index: 1100;
     display: flex;
     align-items: center;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
 }
 
 .top-fixed-content {
@@ -54,8 +74,10 @@ body::before {
 }
 
 .top-fixed h1 {
-    font-size: 1.2rem;
-    color: #e94560;
+    font-size: 1.8rem;
+    color: #A0B2C0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    letter-spacing: 2px;
 }
 
 .top-fixed-info {
@@ -68,27 +90,30 @@ body::before {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(233, 69, 96, 0.2);
-    padding: 6px 12px;
-    border-radius: 15px;
-    font-size: 0.9rem;
+    background: rgba(139, 44, 45, 0.3);
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: 1px solid rgba(139, 44, 45, 0.5);
+    font-size: 1rem;
+    color: #A0B2C0;
 }
 
 /* ============ 侧边栏 ============ */
 .sidebar {
     position: fixed;
-    top: 50px;
+    top: 150px;
     left: 0;
     width: 55px;
-    height: calc(100% - 50px);
-    background: linear-gradient(180deg, rgba(15, 52, 96, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
+    height: calc(100% - 150px);
+    background: linear-gradient(180deg, rgba(27, 42, 58, 0.95) 0%, rgba(45, 63, 82, 0.9) 100%);
     backdrop-filter: blur(10px);
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.4);
     transition: width 0.3s ease;
     overflow: hidden;
+    border-right: 1px solid rgba(107, 79, 60, 0.3);
 }
 
 .sidebar.expanded {
@@ -125,18 +150,18 @@ body::before {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    color: #e0e0e0;
+    color: #A0B2C0;
 }
 
 .toggle-btn:hover {
-    background: rgba(233, 69, 96, 0.2);
-    color: #e94560;
+    background: rgba(107, 79, 60, 0.3);
+    color: #6b4f3c;
 }
 
 .icon-separator {
     width: 25px;
     height: 2px;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(160, 178, 192, 0.3);
     margin: 5px 0;
     border-radius: 2px;
     flex-shrink: 0;
@@ -164,12 +189,12 @@ body::before {
 }
 
 .nav-item:hover {
-    background: rgba(233, 69, 96, 0.15);
+    background: rgba(107, 79, 60, 0.25);
 }
 
 .nav-item.active {
-    background: rgba(233, 69, 96, 0.25);
-    border-left: 3px solid #e94560;
+    background: linear-gradient(90deg, rgba(139, 44, 45, 0.4) 0%, rgba(107, 79, 60, 0.3) 100%);
+    border-left: 4px solid #8B2C2D;
 }
 
 .nav-icon {
@@ -184,7 +209,7 @@ body::before {
 
 .nav-text {
     font-size: 0.9rem;
-    color: #e0e0e0;
+    color: #A0B2C0;
     white-space: nowrap;
     opacity: 0;
     width: 0;
@@ -203,19 +228,21 @@ body::before {
     max-width: 1400px;
     margin: 0 auto;
     margin-left: 65px;
-    margin-top: 50px;
-    background: rgba(22, 33, 62, 0.8);
+    margin-top: 150px;
+    background: rgba(27, 42, 58, 0.7);
     backdrop-filter: blur(10px);
-    border-radius: 10px;
+    border-radius: 12px;
     overflow-x: hidden;
     transition: margin-left 0.3s ease;
-    min-height: calc(100vh - 50px);
+    min-height: calc(100vh - 150px);
+    border: 1px solid rgba(107, 79, 60, 0.2);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
 /* ============ 页面 ============ */
 .page {
     display: none;
-    padding: 15px;
+    padding: 20px;
 }
 
 .page.active {
@@ -224,27 +251,30 @@ body::before {
 
 /* 面板 */
 .panel {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
+    background: rgba(107, 79, 60, 0.15);
+    border: 1px solid rgba(107, 79, 60, 0.3);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 18px;
 }
 
 .panel-title {
-    font-size: 1.1rem;
-    margin-bottom: 12px;
-    color: #e94560;
-    border-bottom: 2px solid #0f3460;
-    padding-bottom: 8px;
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    color: #6b4f3c;
+    border-bottom: 2px solid rgba(107, 79, 60, 0.4);
+    padding-bottom: 10px;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.1);
 }
 
 /* ============ 战斗区域 ============ */
 .combat-section {
-    background: linear-gradient(135deg, rgba(44, 24, 16, 0.8) 0%, rgba(26, 26, 46, 0.8) 100%);
+    background: linear-gradient(135deg, rgba(139, 44, 45, 0.2) 0%, rgba(27, 42, 58, 0.6) 100%);
     backdrop-filter: blur(10px);
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 15px;
+    padding: 18px;
+    border-radius: 12px;
+    margin-bottom: 18px;
+    border: 1px solid rgba(139, 44, 45, 0.3);
 }
 
 .combat-status {
@@ -255,7 +285,7 @@ body::before {
 }
 
 .combat-icon {
-    font-size: 2.2rem;
+    font-size: 2.5rem;
 }
 
 .combat-info {
@@ -264,131 +294,141 @@ body::before {
 }
 
 .combat-location {
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: bold;
-    color: #e94560;
+    color: #8B2C2D;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .combat-timer {
-    color: #888;
-    font-size: 0.85rem;
+    color: #A0B2C0;
+    font-size: 0.9rem;
     margin-top: 3px;
 }
 
 .combat-btn {
-    background: linear-gradient(135deg, #e94560 0%, #c0392b 100%);
+    background: linear-gradient(135deg, #8B2C2D 0%, #6b2324 100%);
     border: none;
-    color: white;
-    padding: 12px 25px;
-    border-radius: 6px;
-    font-size: 0.95rem;
+    color: #A0B2C0;
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-size: 1rem;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s;
     white-space: nowrap;
+    border: 1px solid rgba(139, 44, 45, 0.5);
 }
 
 .combat-btn:hover {
     transform: scale(1.05);
-    box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+    box-shadow: 0 5px 20px rgba(139, 44, 45, 0.5);
+    background: linear-gradient(135deg, #a33435 0%, #8B2C2D 100%);
 }
 
 .combat-btn:disabled {
-    background: #555;
+    background: #3a4a5a;
     cursor: not-allowed;
+    border-color: #2d3f52;
 }
 
 .combat-rewards {
     margin-top: 15px;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.05);
+    padding: 12px;
+    background: rgba(107, 79, 60, 0.2);
     border-radius: 8px;
     min-height: 40px;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    border: 1px solid rgba(107, 79, 60, 0.3);
 }
 
 /* ============ 建筑 ============ */
 .buildings-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
 }
 
 .building-card {
-    background: rgba(15, 52, 96, 0.8);
+    background: linear-gradient(180deg, rgba(107, 79, 60, 0.25) 0%, rgba(27, 42, 58, 0.5) 100%);
     backdrop-filter: blur(10px);
-    border: 2px solid #1a1a2e;
-    border-radius: 8px;
-    padding: 12px;
+    border: 2px solid rgba(107, 79, 60, 0.4);
+    border-radius: 10px;
+    padding: 14px;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s;
 }
 
 .building-card:hover {
-    border-color: #e94560;
-    transform: translateY(-2px);
+    border-color: #8B2C2D;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(139, 44, 45, 0.3);
 }
 
 .building-card.locked {
     opacity: 0.5;
     cursor: not-allowed;
-    filter: grayscale(0.8);
+    filter: grayscale(0.6);
 }
 
 .building-card.locked:hover {
-    border-color: #1a1a2e;
+    border-color: rgba(107, 79, 60, 0.4);
     transform: none;
 }
 
 .building-icon {
-    font-size: 2rem;
-    margin-bottom: 6px;
+    font-size: 2.2rem;
+    margin-bottom: 8px;
 }
 
 .building-name {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     font-weight: bold;
-    margin-bottom: 4px;
+    margin-bottom: 5px;
+    color: #A0B2C0;
 }
 
 .building-level {
-    font-size: 0.75rem;
-    color: #888;
+    font-size: 0.8rem;
+    color: #6b7f90;
 }
 
 .building-cost {
-    font-size: 0.75rem;
-    color: #f1c40f;
-    margin-top: 6px;
+    font-size: 0.8rem;
+    color: #6b4f3c;
+    margin-top: 8px;
+    font-weight: bold;
 }
 
 /* ============ 行动列表 ============ */
 .actions-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
 .action-item {
-    background: rgba(15, 52, 96, 0.8);
+    background: linear-gradient(90deg, rgba(107, 79, 60, 0.2) 0%, rgba(27, 42, 58, 0.5) 100%);
     backdrop-filter: blur(10px);
-    border-radius: 6px;
-    padding: 12px;
+    border-radius: 8px;
+    padding: 14px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     cursor: pointer;
     transition: all 0.3s;
+    border: 1px solid rgba(107, 79, 60, 0.3);
 }
 
 .action-item:hover {
-    background: rgba(26, 74, 122, 0.8);
+    background: linear-gradient(90deg, rgba(107, 79, 60, 0.35) 0%, rgba(45, 63, 82, 0.6) 100%);
+    border-color: rgba(107, 79, 60, 0.5);
 }
 
 .action-item.active {
-    border: 2px solid #e94560;
-    background: rgba(26, 26, 46, 0.8);
+    border: 2px solid #8B2C2D;
+    background: linear-gradient(90deg, rgba(139, 44, 45, 0.25) 0%, rgba(27, 42, 58, 0.6) 100%);
 }
 
 .action-item.locked {
@@ -397,7 +437,7 @@ body::before {
 }
 
 .action-icon {
-    font-size: 1.8rem;
+    font-size: 2rem;
 }
 
 .action-info {
@@ -406,40 +446,42 @@ body::before {
 
 .action-name {
     font-weight: bold;
-    font-size: 0.9rem;
-    margin-bottom: 3px;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+    color: #A0B2C0;
 }
 
 .action-desc {
-    font-size: 0.8rem;
-    color: #888;
+    font-size: 0.85rem;
+    color: #6b7f90;
 }
 
 .action-timer {
-    font-size: 0.8rem;
-    color: #e94560;
+    font-size: 0.85rem;
+    color: #8B2C2D;
     font-weight: bold;
 }
 
 /* ============ 仓库 ============ */
 .storage-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
 }
 
 .storage-item {
-    background: rgba(15, 52, 96, 0.8);
+    background: linear-gradient(180deg, rgba(107, 79, 60, 0.25) 0%, rgba(27, 42, 58, 0.5) 100%);
     backdrop-filter: blur(10px);
-    border-radius: 8px;
-    padding: 15px;
+    border-radius: 10px;
+    padding: 16px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
+    border: 1px solid rgba(107, 79, 60, 0.3);
 }
 
 .storage-icon {
-    font-size: 2.5rem;
+    font-size: 2.8rem;
 }
 
 .storage-info {
@@ -449,43 +491,45 @@ body::before {
 }
 
 .storage-name {
-    font-size: 0.9rem;
-    color: #888;
+    font-size: 0.95rem;
+    color: #6b7f90;
 }
 
 .storage-value {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     font-weight: bold;
-    color: #f1c40f;
+    color: #6b4f3c;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.1);
 }
 
 /* ============ 战斗区域选择 ============ */
 .combat-zones {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
 .zone-item {
-    background: rgba(15, 52, 96, 0.8);
+    background: linear-gradient(90deg, rgba(107, 79, 60, 0.2) 0%, rgba(27, 42, 58, 0.5) 100%);
     backdrop-filter: blur(10px);
-    border: 2px solid #1a1a2e;
-    border-radius: 8px;
-    padding: 12px;
+    border: 2px solid rgba(107, 79, 60, 0.3);
+    border-radius: 10px;
+    padding: 14px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     cursor: pointer;
     transition: all 0.3s;
 }
 
 .zone-item:hover {
-    border-color: #e94560;
+    border-color: #8B2C2D;
+    background: linear-gradient(90deg, rgba(107, 79, 60, 0.35) 0%, rgba(45, 63, 82, 0.6) 100%);
 }
 
 .zone-item.active {
-    border-color: #e94560;
-    background: rgba(233, 69, 96, 0.1);
+    border-color: #8B2C2D;
+    background: linear-gradient(90deg, rgba(139, 44, 45, 0.25) 0%, rgba(27, 42, 58, 0.6) 100%);
 }
 
 .zone-item.locked {
@@ -494,7 +538,7 @@ body::before {
 }
 
 .zone-icon {
-    font-size: 2.2rem;
+    font-size: 2.5rem;
 }
 
 .zone-info {
@@ -503,47 +547,51 @@ body::before {
 
 .zone-name {
     font-weight: bold;
-    font-size: 0.95rem;
-    margin-bottom: 4px;
+    font-size: 1rem;
+    margin-bottom: 5px;
+    color: #A0B2C0;
 }
 
 .zone-req {
-    font-size: 0.8rem;
-    color: #888;
+    font-size: 0.85rem;
+    color: #6b7f90;
 }
 
 .zone-rewards {
-    font-size: 0.8rem;
-    color: #2ecc71;
+    font-size: 0.85rem;
+    color: #6b4f3c;
+    font-weight: bold;
 }
 
 /* ============ 底部 ============ */
 .footer {
-    background: rgba(26, 26, 46, 0.8);
+    background: rgba(27, 42, 58, 0.8);
     backdrop-filter: blur(10px);
-    padding: 12px 15px;
+    padding: 14px 18px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.85rem;
-    color: #888;
+    font-size: 0.9rem;
+    color: #6b7f90;
     flex-wrap: wrap;
-    gap: 8px;
-    border-radius: 0 0 10px 10px;
+    gap: 10px;
+    border-radius: 0 0 12px 12px;
+    border-top: 1px solid rgba(107, 79, 60, 0.2);
 }
 
 .reset-btn {
-    background: #c0392b;
+    background: linear-gradient(135deg, #8B2C2D 0%, #6b2324 100%);
     border: none;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 5px;
+    color: #A0B2C0;
+    padding: 8px 16px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    border: 1px solid rgba(139, 44, 45, 0.5);
 }
 
 .reset-btn:hover {
-    background: #e74c3c;
+    background: linear-gradient(135deg, #a33435 0%, #8B2C2D 100%);
 }
 
 /* ============ 模态框 ============ */
@@ -554,7 +602,7 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.85);
     z-index: 2000;
     justify-content: center;
     align-items: center;
@@ -565,8 +613,8 @@ body::before {
 }
 
 .modal-content {
-    background: #16213e;
-    border: 2px solid #e94560;
+    background: linear-gradient(180deg, #1B2A3A 0%, #2d3f52 100%);
+    border: 2px solid #8B2C2D;
     border-radius: 12px;
     padding: 30px;
     max-width: 500px;
@@ -582,25 +630,29 @@ body::before {
     right: 20px;
     font-size: 2rem;
     cursor: pointer;
-    color: #888;
+    color: #6b7f90;
 }
 
 .modal-close:hover {
-    color: #e94560;
+    color: #8B2C2D;
 }
 
 /* ============ 滚动条 ============ */
 ::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #1a1a2e;
+    background: #1B2A3A;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #e94560;
-    border-radius: 3px;
+    background: linear-gradient(180deg, #6b4f3c 0%, #8B2C2D 100%);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #8B2C2D;
 }
 
 /* ============ 移动端适配 ============ */
@@ -610,45 +662,45 @@ body::before {
     }
     
     .top-fixed {
-        height: 45px;
+        height: 120px;
     }
     
     .top-fixed h1 {
-        font-size: 1rem;
+        font-size: 1.4rem;
     }
     
     .player-badge {
-        padding: 4px 10px;
-        font-size: 0.8rem;
+        padding: 8px 14px;
+        font-size: 0.9rem;
     }
     
     .sidebar {
-        top: 45px;
-        height: calc(100% - 45px);
-        width: 45px;
+        top: 120px;
+        height: calc(100% - 120px);
+        width: 50px;
     }
     
     .sidebar.expanded {
-        width: 160px;
+        width: 170px;
     }
     
     .sidebar-icon-bar {
-        width: 45px;
+        width: 50px;
     }
     
     .sidebar.expanded .sidebar-icon-bar {
-        width: 160px;
+        width: 170px;
     }
     
     .toggle-btn {
-        width: 35px;
-        height: 35px;
+        width: 38px;
+        height: 38px;
         font-size: 1.2rem;
     }
     
     .nav-icon {
-        width: 45px;
-        height: 40px;
+        width: 50px;
+        height: 42px;
         font-size: 1.2rem;
     }
     
@@ -657,42 +709,46 @@ body::before {
     }
     
     .game-container {
-        margin-left: 50px;
-        margin-top: 45px;
+        margin-left: 55px;
+        margin-top: 120px;
+    }
+    
+    .panel {
+        padding: 14px;
     }
     
     .panel-title {
-        font-size: 1rem;
+        font-size: 1.1rem;
     }
     
     .combat-section {
-        padding: 10px;
+        padding: 12px;
     }
     
     .combat-icon {
-        font-size: 1.6rem;
+        font-size: 2rem;
     }
     
     .combat-location {
-        font-size: 0.9rem;
+        font-size: 1rem;
     }
     
     .combat-btn {
-        padding: 8px 15px;
-        font-size: 0.8rem;
+        padding: 10px 18px;
+        font-size: 0.9rem;
     }
     
     .buildings-grid {
-        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-        gap: 6px;
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 8px;
     }
     
     .building-icon {
-        font-size: 1.5rem;
+        font-size: 1.8rem;
     }
     
     .building-name {
-        font-size: 0.75rem;
+        font-size: 0.8rem;
     }
     
     .storage-grid {
@@ -700,30 +756,30 @@ body::before {
     }
     
     .storage-icon {
-        font-size: 2rem;
+        font-size: 2.2rem;
     }
     
     .storage-value {
-        font-size: 1.2rem;
+        font-size: 1.3rem;
     }
     
     .action-icon {
-        font-size: 1.4rem;
+        font-size: 1.6rem;
     }
     
     .action-name {
-        font-size: 0.8rem;
+        font-size: 0.85rem;
     }
     
     .action-desc {
-        font-size: 0.7rem;
+        font-size: 0.75rem;
     }
     
     .zone-icon {
-        font-size: 1.8rem;
+        font-size: 2rem;
     }
     
     .zone-name {
-        font-size: 0.85rem;
+        font-size: 0.9rem;
     }
 }
