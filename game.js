@@ -461,5 +461,9 @@ function startGameLoop() {
     setInterval(saveGame, 5000);
 }
 
-window.addEventListener('DOMContentLoaded', init);
+window.addEventListener('DOMContentLoaded', () => {
+    const loading = document.getElementById('loading');
+    if (loading) loading.style.display = 'none';
+    init();
+});
 window.addEventListener('beforeunload', saveGame);
