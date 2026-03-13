@@ -7,27 +7,49 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- 侧边栏遮罩 -->
-    <div class="sidebar-overlay" id="sidebar-overlay"></div>
-
     <!-- 侧边栏 -->
     <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <h2>⚔️ 雇佣兵</h2>
-            <button class="sidebar-close" id="sidebar-close">&times;</button>
+        <!-- 图标栏（固定显示） -->
+        <div class="sidebar-icon-bar">
+            <button class="icon-btn active" data-page="home" title="主页">🏠</button>
+            <button class="icon-btn" data-page="storage" title="仓库">📦</button>
+            <button class="icon-btn" data-page="gather" title="采集">⚒️</button>
+            <button class="icon-btn" data-page="craft" title="制作">🔨</button>
+            <button class="icon-btn" data-page="combat" title="战斗">⚔️</button>
         </div>
         
-        <div class="sidebar-nav">
-            <button class="nav-btn active" data-page="home">🏠 主页</button>
-            <button class="nav-btn" data-page="storage">📦 仓库</button>
-            <button class="nav-btn" data-page="gather">⚒️ 采集</button>
-            <button class="nav-btn" data-page="craft">🔨 制作</button>
-            <button class="nav-btn" data-page="combat">⚔️ 战斗</button>
-        </div>
+        <!-- 展开内容栏 -->
+        <div class="sidebar-content">
+            <div class="sidebar-header">
+                <h2>⚔️ 雇佣兵</h2>
+                <button class="sidebar-close" id="sidebar-close">&times;</button>
+            </div>
+            
+            <div class="sidebar-nav">
+                <div class="nav-item active" data-page="home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">主页</span>
+                </div>
+                <div class="nav-item" data-page="storage">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-text">仓库</span>
+                </div>
+                <div class="nav-item" data-page="gather">
+                    <span class="nav-icon">⚒️</span>
+                    <span class="nav-text">采集</span>
+                </div>
+                <div class="nav-item" data-page="craft">
+                    <span class="nav-icon">🔨</span>
+                    <span class="nav-text">制作</span>
+                </div>
+                <div class="nav-item" data-page="combat">
+                    <span class="nav-icon">⚔️</span>
+                    <span class="nav-text">战斗</span>
+                </div>
+            </div>
 
-        <div class="sidebar-footer">
-            <div class="mini-stats">
-                <span>💾 自动保存中</span>
+            <div class="sidebar-footer">
+                <div class="mini-stats">💾 自动保存中</div>
             </div>
         </div>
     </nav>
@@ -36,7 +58,6 @@
         <!-- 顶部状态栏 -->
         <header class="status-bar">
             <div class="player-info">
-                <button class="menu-btn" id="menu-btn">☰</button>
                 <span class="player-icon">⚔️</span>
                 <span class="player-level">LV.<span id="level">1</span></span>
             </div>
