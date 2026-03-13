@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idle Game - 放置类游戏</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <h1>🎮 Idle Game</h1>
+            <div class="resources">
+                <div class="resource">
+                    <span class="icon">💰</span>
+                    <span id="gold">0</span> 金币
+                </div>
+                <div class="resource">
+                    <span class="icon">💎</span>
+                    <span id="gems">0</span> 宝石
+                </div>
+            </div>
+        </header>
+
+        <main class="game-main">
+            <section class="clicker-section">
+                <h2>💪 手动挖矿</h2>
+                <button id="click-btn" class="click-btn">点击挖矿 +1 金币</button>
+                <p class="click-info">每次点击获得 1 金币</p>
+            </section>
+
+            <section class="buildings-section">
+                <h2>🏗️ 建筑</h2>
+                <div class="buildings-grid">
+                    <div class="building-card" data-type="mine">
+                        <h3>⛏️ 矿场</h3>
+                        <p>等级：<span id="mine-level">0</span></p>
+                        <p>产出：<span id="mine-production">0</span> 金币/秒</p>
+                        <button class="upgrade-btn" data-cost="100" data-type="mine">
+                            升级 (100 金币)
+                        </button>
+                    </div>
+
+                    <div class="building-card" data-type="farm">
+                        <h3>🌾 农场</h3>
+                        <p>等级：<span id="farm-level">0</span></p>
+                        <p>产出：<span id="farm-production">0</span> 金币/秒</p>
+                        <button class="upgrade-btn" data-cost="50" data-type="farm">
+                            升级 (50 金币)
+                        </button>
+                    </div>
+
+                    <div class="building-card" data-type="factory">
+                        <h3>🏭 工厂</h3>
+                        <p>等级：<span id="factory-level">0</span></p>
+                        <p>产出：<span id="factory-production">0</span> 金币/秒</p>
+                        <button class="upgrade-btn" data-cost="200" data-type="factory">
+                            升级 (200 金币)
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="stats-section">
+                <h2>📊 统计</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span>总金币获得:</span>
+                        <span id="total-gold">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>总点击次数:</span>
+                        <span id="total-clicks">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>游戏时间:</span>
+                        <span id="play-time">00:00</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="game-footer">
+            <p>🦐 Idle Game v0.1.0 | 自动保存中...</p>
+        </footer>
+    </div>
+
+    <script src="assets/js/game.js"></script>
+</body>
+</html>

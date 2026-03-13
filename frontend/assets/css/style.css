@@ -1,0 +1,219 @@
+/* Idle Game 样式表 */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #ffffff;
+    min-height: 100vh;
+}
+
+.game-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+.game-header {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 30px;
+    backdrop-filter: blur(10px);
+}
+
+.game-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.resources {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+}
+
+.resource {
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.resource .icon {
+    font-size: 2rem;
+}
+
+/* Main Content */
+.game-main {
+    display: grid;
+    gap: 30px;
+}
+
+section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 25px;
+    backdrop-filter: blur(5px);
+}
+
+section h2 {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 10px;
+}
+
+/* Clicker Section */
+.clicker-section {
+    text-align: center;
+}
+
+.click-btn {
+    background: linear-gradient(135deg, #f39c12 0%, #e74c3c 100%);
+    border: none;
+    border-radius: 50%;
+    width: 200px;
+    height: 200px;
+    font-size: 1.3rem;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(243, 156, 18, 0.4);
+}
+
+.click-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 15px 40px rgba(243, 156, 18, 0.6);
+}
+
+.click-btn:active {
+    transform: scale(0.95);
+}
+
+.click-info {
+    margin-top: 20px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Buildings */
+.buildings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.building-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.building-card:hover {
+    transform: translateY(-5px);
+}
+
+.building-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+}
+
+.building-card p {
+    margin: 10px 0;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.upgrade-btn {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 12px 25px;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 15px;
+}
+
+.upgrade-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+}
+
+.upgrade-btn:disabled {
+    background: #555;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.stat-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-item span:first-child {
+    display: block;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 5px;
+}
+
+.stat-item span:last-child {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #f39c12;
+}
+
+/* Footer */
+.game-footer {
+    text-align: center;
+    margin-top: 30px;
+    padding: 20px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Animations */
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.click-btn {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .game-header h1 {
+        font-size: 2rem;
+    }
+
+    .resources {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .click-btn {
+        width: 150px;
+        height: 150px;
+        font-size: 1rem;
+    }
+}
