@@ -1,4 +1,4 @@
-/* 中世纪雇佣兵 - 简约风格 */
+/* 中世纪雇佣兵 - 侧边栏版本 */
 
 * {
     margin: 0;
@@ -11,36 +11,162 @@ body {
     background: #1a1a2e;
     color: #e0e0e0;
     min-height: 100vh;
-    padding: 10px;
+    padding: 8px;
+    font-size: 13px;
+    overflow-x: hidden;
 }
 
+/* ============ 侧边栏 ============ */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+}
+
+.sidebar-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 280px;
+    height: 100%;
+    background: linear-gradient(180deg, #0f3460 0%, #16213e 100%);
+    z-index: 1000;
+    transition: left 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 5px 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.sidebar.show {
+    left: 0;
+}
+
+.sidebar-header {
+    padding: 20px;
+    border-bottom: 2px solid #e94560;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar-header h2 {
+    font-size: 1.2rem;
+    color: #e94560;
+}
+
+.sidebar-close {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.sidebar-close:hover {
+    color: #e94560;
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 15px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.nav-btn {
+    background: transparent;
+    border: none;
+    color: #e0e0e0;
+    padding: 15px 20px;
+    text-align: left;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-left: 3px solid transparent;
+}
+
+.nav-btn:hover {
+    background: rgba(233, 69, 96, 0.1);
+}
+
+.nav-btn.active {
+    background: rgba(233, 69, 96, 0.2);
+    border-left-color: #e94560;
+    color: #e94560;
+}
+
+.sidebar-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #333;
+}
+
+.mini-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 0.85rem;
+}
+
+.mini-stats span {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 5px 10px;
+    border-radius: 15px;
+}
+
+/* ============ 主容器 ============ */
 .game-container {
-    max-width: 900px;
+    max-width: 100%;
     margin: 0 auto;
     background: #16213e;
-    border-radius: 12px;
-    overflow: hidden;
+    border-radius: 10px;
+    overflow-x: hidden;
+}
+
+/* 菜单按钮 */
+.menu-btn {
+    background: none;
+    border: none;
+    color: #e94560;
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin-right: 8px;
 }
 
 /* 状态栏 */
 .status-bar {
     background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
-    padding: 15px 20px;
+    padding: 10px 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 2px solid #e94560;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .player-info {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 1.2rem;
+    gap: 8px;
+    font-size: 0.9rem;
 }
 
 .player-icon {
-    font-size: 1.5rem;
+    font-size: 1.1rem;
 }
 
 .player-level {
@@ -50,17 +176,18 @@ body {
 
 .resources-mini {
     display: flex;
-    gap: 15px;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .res {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     background: rgba(255, 255, 255, 0.1);
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 0.9rem;
+    padding: 4px 8px;
+    border-radius: 15px;
+    font-size: 0.8rem;
 }
 
 .res.gold { color: #f1c40f; }
@@ -68,48 +195,79 @@ body {
 .res.stone { color: #95a5a6; }
 .res.herb { color: #2ecc71; }
 
-/* 战斗区域 */
+/* ============ 页面 ============ */
+.page {
+    display: none;
+    padding: 15px;
+}
+
+.page.active {
+    display: block;
+}
+
+/* 面板 */
+.panel {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.panel-title {
+    font-size: 1rem;
+    margin-bottom: 12px;
+    color: #e94560;
+    border-bottom: 2px solid #0f3460;
+    padding-bottom: 8px;
+}
+
+/* ============ 战斗区域 ============ */
 .combat-section {
     background: linear-gradient(135deg, #2c1810 0%, #1a1a2e 100%);
-    padding: 20px;
-    border-bottom: 1px solid #333;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 15px;
 }
 
 .combat-status {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .combat-icon {
-    font-size: 3rem;
+    font-size: 2rem;
 }
 
 .combat-info {
     flex: 1;
+    min-width: 120px;
 }
 
 .combat-location {
-    font-size: 1.2rem;
+    font-size: 0.95rem;
     font-weight: bold;
     color: #e94560;
 }
 
 .combat-timer {
     color: #888;
-    margin-top: 5px;
+    font-size: 0.8rem;
+    margin-top: 3px;
 }
 
 .combat-btn {
     background: linear-gradient(135deg, #e94560 0%, #c0392b 100%);
     border: none;
     color: white;
-    padding: 15px 30px;
-    border-radius: 8px;
-    font-size: 1rem;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 0.9rem;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s;
+    white-space: nowrap;
 }
 
 .combat-btn:hover {
@@ -128,56 +286,29 @@ body {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
     min-height: 40px;
+    font-size: 0.85rem;
 }
 
-/* 主内容区 */
-.main-content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1px;
-    background: #333;
-}
-
-@media (max-width: 768px) {
-    .main-content {
-        grid-template-columns: 1fr;
-    }
-}
-
-.buildings-panel, .actions-panel {
-    background: #16213e;
-    padding: 20px;
-}
-
-.panel-title {
-    font-size: 1.3rem;
-    margin-bottom: 15px;
-    color: #e94560;
-    border-bottom: 2px solid #0f3460;
-    padding-bottom: 10px;
-}
-
-/* 建筑卡片 */
+/* ============ 建筑 ============ */
 .buildings-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
 }
 
 .building-card {
     background: #0f3460;
     border: 2px solid #1a1a2e;
-    border-radius: 10px;
-    padding: 15px;
+    border-radius: 8px;
+    padding: 10px;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s;
-    position: relative;
 }
 
 .building-card:hover {
     border-color: #e94560;
-    transform: translateY(-3px);
+    transform: translateY(-2px);
 }
 
 .building-card.locked {
@@ -192,53 +323,41 @@ body {
 }
 
 .building-icon {
-    font-size: 2.5rem;
-    margin-bottom: 8px;
-}
-
-.building-name {
-    font-size: 0.9rem;
-    font-weight: bold;
+    font-size: 1.8rem;
     margin-bottom: 5px;
 }
 
-.building-level {
+.building-name {
     font-size: 0.75rem;
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+
+.building-level {
+    font-size: 0.65rem;
     color: #888;
 }
 
 .building-cost {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: #f1c40f;
-    margin-top: 8px;
+    margin-top: 5px;
 }
 
-/* 行动列表 */
-.action-group {
-    margin-bottom: 25px;
-}
-
-.action-group-title {
-    font-size: 1rem;
-    color: #888;
-    margin-bottom: 12px;
-    padding-left: 10px;
-    border-left: 3px solid #e94560;
-}
-
+/* ============ 行动列表 ============ */
 .actions-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .action-item {
     background: #0f3460;
-    border-radius: 8px;
-    padding: 12px 15px;
+    border-radius: 6px;
+    padding: 10px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     cursor: pointer;
     transition: all 0.3s;
 }
@@ -252,8 +371,13 @@ body {
     background: #1a1a2e;
 }
 
+.action-item.locked {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .action-icon {
-    font-size: 2rem;
+    font-size: 1.5rem;
 }
 
 .action-info {
@@ -262,75 +386,144 @@ body {
 
 .action-name {
     font-weight: bold;
-    margin-bottom: 3px;
+    font-size: 0.85rem;
+    margin-bottom: 2px;
 }
 
 .action-desc {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     color: #888;
 }
 
 .action-timer {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: #e94560;
     font-weight: bold;
 }
 
-/* NPC 区域 */
-.npc-section {
+/* ============ 仓库 ============ */
+.storage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.storage-item {
     background: #0f3460;
-    padding: 20px;
-    border-top: 1px solid #333;
-}
-
-.npc-list {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-
-.npc-btn {
-    background: #16213e;
-    border: 2px solid #e94560;
-    color: #e0e0e0;
-    padding: 12px 25px;
     border-radius: 8px;
-    font-size: 1rem;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.storage-icon {
+    font-size: 2.5rem;
+}
+
+.storage-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.storage-name {
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.storage-value {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #f1c40f;
+}
+
+/* ============ 战斗区域选择 ============ */
+.combat-zones {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.zone-item {
+    background: #0f3460;
+    border: 2px solid #1a1a2e;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
     cursor: pointer;
     transition: all 0.3s;
 }
 
-.npc-btn:hover {
-    background: #e94560;
-    color: white;
+.zone-item:hover {
+    border-color: #e94560;
 }
 
-/* 底部 */
+.zone-item.active {
+    border-color: #e94560;
+    background: rgba(233, 69, 96, 0.1);
+}
+
+.zone-item.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.zone-icon {
+    font-size: 2rem;
+}
+
+.zone-info {
+    flex: 1;
+}
+
+.zone-name {
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 3px;
+}
+
+.zone-req {
+    font-size: 0.75rem;
+    color: #888;
+}
+
+.zone-rewards {
+    font-size: 0.75rem;
+    color: #2ecc71;
+}
+
+/* ============ 底部 ============ */
 .footer {
     background: #1a1a2e;
-    padding: 15px 20px;
+    padding: 10px 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: #888;
+    flex-wrap: wrap;
+    gap: 8px;
+    border-radius: 0 0 10px 10px;
 }
 
 .reset-btn {
     background: #c0392b;
     border: none;
     color: white;
-    padding: 8px 16px;
-    border-radius: 6px;
+    padding: 6px 12px;
+    border-radius: 5px;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
 }
 
 .reset-btn:hover {
     background: #e74c3c;
 }
 
-/* 模态框 */
+/* ============ 模态框 ============ */
 .modal {
     display: none;
     position: fixed;
@@ -339,7 +532,7 @@ body {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.8);
-    z-index: 1000;
+    z-index: 2000;
     justify-content: center;
     align-items: center;
 }
@@ -373,9 +566,9 @@ body {
     color: #e94560;
 }
 
-/* 滚动条 */
+/* ============ 滚动条 ============ */
 ::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -384,5 +577,65 @@ body {
 
 ::-webkit-scrollbar-thumb {
     background: #e94560;
-    border-radius: 4px;
+    border-radius: 3px;
+}
+
+/* ============ 移动端适配 ============ */
+@media (max-width: 480px) {
+    body {
+        padding: 5px;
+        font-size: 12px;
+    }
+    
+    .status-bar {
+        padding: 8px 10px;
+    }
+    
+    .player-info {
+        font-size: 0.85rem;
+    }
+    
+    .res {
+        font-size: 0.75rem;
+        padding: 3px 6px;
+    }
+    
+    .sidebar {
+        width: 260px;
+        left: -260px;
+    }
+    
+    .combat-section {
+        padding: 10px;
+    }
+    
+    .combat-icon {
+        font-size: 1.5rem;
+    }
+    
+    .combat-btn {
+        padding: 8px 15px;
+        font-size: 0.85rem;
+    }
+    
+    .buildings-grid {
+        grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+        gap: 6px;
+    }
+    
+    .building-icon {
+        font-size: 1.5rem;
+    }
+    
+    .building-name {
+        font-size: 0.7rem;
+    }
+    
+    .storage-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-icon {
+        font-size: 1.3rem;
+    }
 }
