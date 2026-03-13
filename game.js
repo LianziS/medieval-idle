@@ -62,6 +62,7 @@ const elements = {
     pages: document.querySelectorAll('.page'),
     
     level: document.getElementById('level'),
+    topLevel: document.getElementById('top-level'),
 
     
     storageGold: document.getElementById('storage-gold'),
@@ -179,6 +180,9 @@ function setupEventListeners() {
 function updateUI() {
     // 等级
     elements.level.textContent = gameState.level;
+    if (elements.topLevel) {
+        elements.topLevel.textContent = gameState.level;
+    }
     
     // 仓库资源
     elements.storageGold.textContent = formatNumber(Math.floor(gameState.resources.gold));
