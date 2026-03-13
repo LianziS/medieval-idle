@@ -58,9 +58,7 @@ CONFIG.buildings.forEach(b => { gameState.buildings[b.id] = { level: 0 }; });
 // ============ DOM 元素 ============
 const elements = {
     sidebar: document.getElementById('sidebar'),
-    sidebarClose: document.getElementById('sidebar-close'),
     iconBtns: document.querySelectorAll('.icon-btn'),
-    navItems: document.querySelectorAll('.nav-item'),
     pages: document.querySelectorAll('.page'),
     
     level: document.getElementById('level'),
@@ -149,11 +147,6 @@ function setupSidebar() {
         });
     });
     
-    // 关闭按钮
-    elements.sidebarClose.addEventListener('click', () => {
-        elements.sidebar.classList.remove('expanded');
-    });
-    
     // 点击主内容区域收起侧边栏
     document.querySelector('.game-container').addEventListener('click', () => {
         elements.sidebar.classList.remove('expanded');
@@ -177,10 +170,6 @@ function switchPage(pageId) {
         if (!btn.classList.contains('toggle-btn')) {
             btn.classList.toggle('active', btn.dataset.page === pageId);
         }
-    });
-    
-    elements.navItems.forEach(item => {
-        item.classList.toggle('active', item.dataset.page === pageId);
     });
     
     elements.pages.forEach(page => {
