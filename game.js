@@ -1,295 +1,709 @@
 /**
- * 放置矿工 - 游戏逻辑
+ * 中世纪雇佣兵 - 放置游戏
  */
 
-// 游戏配置
+// ============ 游戏配置 ============
 const CONFIG = {
-    goldPerClick: 1,
-    autoSaveInterval: 5000, // 5 秒自动保存
+    // 资源类型
+    resources: ['gold', 'wood', 'stone', 'herb'],
+    
+    // 建筑列表
     buildings: [
         {
-            id: 'cursor',
-            name: '👆 光标',
-            icon: '👆',
-            baseCost: 15,
-            baseProduction: 0.1
+            id: 'tent',
+            name: '简陋帐篷',
+            icon: '⛺',
+            baseCost: { wood: 10 },
+            production: {},
+            unlockReq: null
+        },
+        {
+            id: 'lumber',
+            name: '伐木场',
+            icon: '🪓',
+            baseCost: { wood: 50, stone: 20 },
+            production: { wood: 1 },
+            unlockReq: null
         },
         {
             id: 'mine',
-            name: '⛏️ 矿场',
+            name: '矿洞',
             icon: '⛏️',
-            baseCost: 100,
-            baseProduction: 1
+            baseCost: { wood: 100, stone: 50 },
+            production: { stone: 1 },
+            unlockReq: { buildings: { tent: 1 } }
+        },
+        {
+            id: 'smithy',
+            name: '锻造屋',
+            icon: '🔨',
+            baseCost: { wood: 200, stone: 150 },
+            production: {},
+            unlockReq: { buildings: { mine: 1 } }
+        },
+        {
+            id: 'workshop',
+            name: '木工坊',
+            icon: '🪵',
+            baseCost: { wood: 300, stone: 100 },
+            production: {},
+            unlockReq: { buildings: { lumber: 2 } }
+        },
+        {
+            id: 'tailor',
+            name: '裁缝铺',
+            icon: '🧵',
+            baseCost: { wood: 250, stone: 100, gold: 500 },
+            production: {},
+            unlockReq: { buildings: { workshop: 1 } }
+        },
+        {
+            id: 'alchemy',
+            name: '炼金小屋',
+            icon: '⚗️',
+            baseCost: { wood: 300, stone: 200, herb: 100 },
+            production: {},
+            unlockReq: { buildings: { smithy: 1 } }
         },
         {
             id: 'farm',
-            name: '🌾 农场',
-            icon: '🌾',
-            baseCost: 500,
-            baseProduction: 4
+            name: '草药园',
+            icon: '🌿',
+            baseCost: { wood: 150, stone: 50 },
+            production: { herb: 1 },
+            unlockReq: { buildings: { tent: 1 } }
+        }
+    ],
+    
+    // 采集行动
+    gatherActions: [
+        {
+            id: 'chop',
+            name: '伐木',
+            icon: '🪓',
+            desc: '+5 木材',
+            duration: 3000,
+            reward: { wood: 5 },
+            exp: 2
         },
         {
-            id: 'factory',
-            name: '🏭 工厂',
-            icon: '🏭',
-            baseCost: 2000,
-            baseProduction: 10
+            id: 'mine_action',
+            name: '挖矿',
+            icon: '⛏️',
+            desc: '+3 石头',
+            duration: 4000,
+            reward: { stone: 3 },
+            exp: 3
         },
         {
-            id: 'bank',
-            name: '🏦 银行',
-            icon: '🏦',
-            baseCost: 10000,
-            baseProduction: 40
+            id: 'herb',
+            name: '采药',
+            icon: '🌿',
+            desc: '+4 草药',
+            duration: 3500,
+            reward: { herb: 4 },
+            exp: 2
         },
         {
-            id: 'temple',
-            name: '⛩️ 神庙',
-            icon: '⛩️',
-            baseCost: 50000,
-            baseProduction: 100
+            id: 'quest',
+            name: '小任务',
+            icon: '📜',
+            desc: '+10 金币',
+            duration: 5000,
+            reward: { gold: 10 },
+            exp: 5
+        }
+    ],
+    
+    // 制作配方
+    craftRecipes: [
+        {
+            id: 'iron_sword',
+            name: '铁剑',
+            icon: '🗡️',
+            desc: '攻击 +5',
+            cost: { wood: 20, stone: 30 },
+            reqBuilding: 'smithy',
+            exp: 10
+        },
+        {
+            id: 'wood_bow',
+            name: '木弓',
+            icon: '🏹',
+            desc: '攻击 +3',
+            cost: { wood: 40 },
+            reqBuilding: 'workshop',
+            exp: 8
+        },
+        {
+            id: 'health_potion',
+            name: '生命药水',
+            icon: '🧪',
+            desc: '战斗恢复',
+            cost: { herb: 15 },
+            reqBuilding: 'alchemy',
+            exp: 5
+        }
+    ],
+    
+    // 战斗区域
+    combatZones: [
+        {
+            id: 'forest',
+            name: '迷雾森林',
+            icon: '🌲',
+            difficulty: 1,
+            duration: 10000,
+            rewards: [
+                { item: 'gold', min: 15, max: 30 },
+                { item: 'wood', min: 5, max: 15 }
+            ],
+            reqLevel: 1
+        },
+        {
+            id: 'cave',
+            name: '哥布林洞穴',
+            icon: '🕳️',
+            difficulty: 2,
+            duration: 15000,
+            rewards: [
+                { item: 'gold', min: 30, max: 60 },
+                { item: 'stone', min: 10, max: 20 }
+            ],
+            reqLevel: 3
+        },
+        {
+            id: 'ruins',
+            name: '古代废墟',
+            icon: '🏛️',
+            difficulty: 3,
+            duration: 20000,
+            rewards: [
+                { item: 'gold', min: 60, max: 120 },
+                { item: 'herb', min: 10, max: 25 }
+            ],
+            reqLevel: 5
+        },
+        {
+            id: 'dragon_lair',
+            name: '龙之巢穴',
+            icon: '🐉',
+            difficulty: 5,
+            duration: 30000,
+            rewards: [
+                { item: 'gold', min: 150, max: 300 },
+                { item: 'stone', min: 50, max: 100 }
+            ],
+            reqLevel: 10
         }
     ]
 };
 
-// 游戏状态
+// ============ 游戏状态 ============
 let gameState = {
-    gold: 0,
-    totalGold: 0,
-    totalClicks: 0,
+    resources: {
+        gold: 0,
+        wood: 0,
+        stone: 0,
+        herb: 0
+    },
+    buildings: {},
+    level: 1,
+    exp: 0,
+    expToNext: 100,
     startTime: Date.now(),
-    buildings: {}
+    activeActions: {},
+    combat: {
+        active: false,
+        zoneId: null,
+        endTime: 0
+    },
+    lastSave: Date.now()
 };
 
 // 初始化建筑数据
 CONFIG.buildings.forEach(b => {
-    gameState.buildings[b.id] = {
-        level: 0,
-        cost: b.baseCost
-    };
+    gameState.buildings[b.id] = { level: 0 };
 });
 
-// DOM 元素
+// ============ DOM 元素 ============
 const elements = {
+    level: document.getElementById('level'),
     gold: document.getElementById('gold'),
-    income: document.getElementById('income'),
-    totalGold: document.getElementById('total-gold'),
-    totalClicks: document.getElementById('total-clicks'),
-    playTime: document.getElementById('play-time'),
-    clickBtn: document.getElementById('click-btn'),
-    clickFeedback: document.getElementById('click-feedback'),
+    wood: document.getElementById('wood'),
+    stone: document.getElementById('stone'),
+    herb: document.getElementById('herb'),
+    combatLocation: document.getElementById('combat-location'),
+    combatTimer: document.getElementById('combat-timer'),
+    combatBtn: document.getElementById('combat-btn'),
+    combatRewards: document.getElementById('combat-rewards'),
     buildingsList: document.getElementById('buildings-list'),
+    gatherActions: document.getElementById('gather-actions'),
+    craftActions: document.getElementById('craft-actions'),
+    playTime: document.getElementById('play-time'),
+    modal: document.getElementById('modal'),
+    modalBody: document.getElementById('modal-body'),
+    modalClose: document.querySelector('.modal-close'),
     resetBtn: document.getElementById('reset-btn')
 };
+
+// ============ 核心函数 ============
 
 // 初始化游戏
 function init() {
     loadGame();
     renderBuildings();
+    renderGatherActions();
+    renderCraftActions();
     setupEventListeners();
     startGameLoop();
     updateUI();
-    console.log('🎮 放置矿工 已启动!');
+    console.log('⚔️ 中世纪雇佣兵 已启动!');
 }
 
 // 设置事件监听
 function setupEventListeners() {
-    elements.clickBtn.addEventListener('click', handleClick);
-    elements.resetBtn.addEventListener('click', handleReset);
-}
-
-// 点击事件
-function handleClick(e) {
-    // 添加金币
-    addGold(CONFIG.goldPerClick);
-    gameState.totalClicks++;
-    
-    // 显示反馈动画
-    showClickFeedback(e);
-    
-    // 按钮动画
-    elements.clickBtn.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-        elements.clickBtn.style.transform = 'scale(1)';
-    }, 50);
-    
-    updateUI();
-}
-
-// 显示点击反馈
-function showClickFeedback(e) {
-    const rect = elements.clickBtn.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    elements.clickFeedback.textContent = `+${CONFIG.goldPerClick}`;
-    elements.clickFeedback.style.left = `${x}px`;
-    elements.clickFeedback.style.top = `${y}px`;
-    elements.clickFeedback.classList.add('show');
-    
-    setTimeout(() => {
-        elements.clickFeedback.classList.remove('show');
-    }, 800);
-}
-
-// 添加金币
-function addGold(amount) {
-    gameState.gold += amount;
-    gameState.totalGold += amount;
-}
-
-// 计算每秒收入
-function calculateIncome() {
-    let income = 0;
-    CONFIG.buildings.forEach(b => {
-        const building = gameState.buildings[b.id];
-        income += building.level * b.baseProduction;
+    elements.combatBtn.addEventListener('click', toggleCombat);
+    elements.resetBtn.addEventListener('click', resetGame);
+    elements.modalClose.addEventListener('click', () => {
+        elements.modal.classList.remove('show');
     });
-    return income;
-}
-
-// 计算建筑成本
-function calculateCost(baseCost, level) {
-    return Math.floor(baseCost * Math.pow(1.15, level));
-}
-
-// 购买建筑
-function buyBuilding(buildingId) {
-    const building = CONFIG.buildings.find(b => b.id === buildingId);
-    const playerBuilding = gameState.buildings[buildingId];
-    
-    if (gameState.gold >= playerBuilding.cost) {
-        gameState.gold -= playerBuilding.cost;
-        playerBuilding.level++;
-        playerBuilding.cost = calculateCost(building.baseCost, playerBuilding.level);
-        
-        updateUI();
-        renderBuildings();
-        saveGame();
-    }
-}
-
-// 渲染建筑列表
-function renderBuildings() {
-    elements.buildingsList.innerHTML = CONFIG.buildings.map(b => {
-        const playerBuilding = gameState.buildings[b.id];
-        const canAfford = gameState.gold >= playerBuilding.cost;
-        
-        return `
-            <div class="building-card">
-                <div class="building-icon">${b.icon}</div>
-                <div class="building-info">
-                    <div class="building-name">${b.name}</div>
-                    <div class="building-level">等级：${playerBuilding.level}</div>
-                    <div class="building-production">+${b.baseProduction} 金币/秒</div>
-                </div>
-                <button 
-                    class="building-btn" 
-                    data-id="${b.id}"
-                    ${!canAfford ? 'disabled' : ''}
-                >
-                    购买 (${formatNumber(playerBuilding.cost)})
-                </button>
-            </div>
-        `;
-    }).join('');
-    
-    // 绑定购买事件
-    elements.buildingsList.querySelectorAll('.building-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            buyBuilding(btn.dataset.id);
-        });
+    elements.modal.addEventListener('click', (e) => {
+        if (e.target === elements.modal) {
+            elements.modal.classList.remove('show');
+        }
     });
 }
 
 // 更新 UI
 function updateUI() {
-    const income = calculateIncome();
-    
-    elements.gold.textContent = formatNumber(Math.floor(gameState.gold));
-    elements.income.textContent = formatNumber(income);
-    elements.totalGold.textContent = formatNumber(Math.floor(gameState.totalGold));
-    elements.totalClicks.textContent = formatNumber(gameState.totalClicks);
+    elements.level.textContent = gameState.level;
+    elements.gold.textContent = formatNumber(Math.floor(gameState.resources.gold));
+    elements.wood.textContent = formatNumber(Math.floor(gameState.resources.wood));
+    elements.stone.textContent = formatNumber(Math.floor(gameState.resources.stone));
+    elements.herb.textContent = formatNumber(Math.floor(gameState.resources.herb));
     
     // 更新游戏时间
     const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
-    const minutes = Math.floor(elapsed / 60);
+    const hours = Math.floor(elapsed / 3600);
+    const minutes = Math.floor((elapsed % 3600) / 60);
     const seconds = elapsed % 60;
     elements.playTime.textContent = 
-        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     
-    // 更新页面标题
-    document.title = `💰 ${formatNumber(Math.floor(gameState.gold))} 金币 - 放置矿工`;
+    // 更新战斗状态
+    updateCombatUI();
     
-    // 重新渲染建筑（更新按钮状态）
+    // 更新建筑状态
     renderBuildings();
-}
-
-// 游戏主循环
-function startGameLoop() {
-    // 每秒增加收入
-    setInterval(() => {
-        const income = calculateIncome();
-        if (income > 0) {
-            addGold(income);
-            updateUI();
-        }
-    }, 1000);
     
-    // 自动保存
-    setInterval(saveGame, CONFIG.autoSaveInterval);
-}
-
-// 保存游戏
-function saveGame() {
-    localStorage.setItem('idleMinerSave', JSON.stringify(gameState));
-}
-
-// 加载游戏
-function loadGame() {
-    const saved = localStorage.getItem('idleMinerSave');
-    if (saved) {
-        try {
-            const loaded = JSON.parse(saved);
-            // 合并保存的数据，确保新字段不会丢失
-            gameState = { ...gameState, ...loaded };
-            
-            // 重新计算建筑成本（防止版本更新后成本错误）
-            CONFIG.buildings.forEach(b => {
-                const playerBuilding = gameState.buildings[b.id];
-                if (playerBuilding) {
-                    playerBuilding.cost = calculateCost(b.baseCost, playerBuilding.level);
-                }
-            });
-            
-            console.log('💾 游戏已加载');
-        } catch (e) {
-            console.error('加载游戏失败:', e);
-        }
-    }
-}
-
-// 重置游戏
-function handleReset() {
-    if (confirm('确定要重置所有进度吗？此操作不可恢复！')) {
-        localStorage.removeItem('idleMinerSave');
-        location.reload();
-    }
+    // 更新行动状态
+    renderGatherActions();
 }
 
 // 格式化数字
 function formatNumber(num) {
-    if (num >= 1000000) {
-        return (num / 1000000).toFixed(2) + 'M';
+    if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return Math.floor(num).toString();
+}
+
+// 检查是否满足解锁条件
+function checkUnlock(req) {
+    if (!req) return true;
+    if (req.buildings) {
+        for (const [id, level] of Object.entries(req.buildings)) {
+            if (!gameState.buildings[id] || gameState.buildings[id].level < level) {
+                return false;
+            }
+        }
     }
-    if (num >= 1000) {
-        return (num / 1000).toFixed(2) + 'K';
+    return true;
+}
+
+// 检查是否有足够资源
+function canAfford(cost) {
+    for (const [res, amount] of Object.entries(cost)) {
+        if (gameState.resources[res] < amount) return false;
     }
-    return num.toString();
+    return true;
+}
+
+// 扣除资源
+function payCost(cost) {
+    for (const [res, amount] of Object.entries(cost)) {
+        gameState.resources[res] -= amount;
+    }
+}
+
+// 添加经验
+function addExp(amount) {
+    gameState.exp += amount;
+    while (gameState.exp >= gameState.expToNext) {
+        gameState.exp -= gameState.expToNext;
+        gameState.level++;
+        gameState.expToNext = Math.floor(gameState.expToNext * 1.5);
+        // 升级奖励
+        gameState.resources.gold += 50;
+        showToast(`🎉 升级了！当前等级：${gameState.level}`);
+    }
+}
+
+// ============ 建筑系统 ============
+
+function renderBuildings() {
+    elements.buildingsList.innerHTML = CONFIG.buildings.map(b => {
+        const building = gameState.buildings[b.id];
+        const unlocked = checkUnlock(b.unlockReq);
+        const canBuild = unlocked && canAfford(b.baseCost);
+        
+        return `
+            <div class="building-card ${unlocked ? '' : 'locked'}" data-id="${b.id}">
+                <div class="building-icon">${b.icon}</div>
+                <div class="building-name">${b.name}</div>
+                <div class="building-level">LV.${building.level}</div>
+                ${!unlocked ? '<div class="building-cost">🔒 未解锁</div>' : 
+                  `<div class="building-cost">${formatCost(b.baseCost)}</div>`}
+            </div>
+        `;
+    }).join('');
+    
+    // 绑定点击事件
+    elements.buildingsList.querySelectorAll('.building-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const buildingId = card.dataset.id;
+            const building = CONFIG.buildings.find(b => b.id === buildingId);
+            
+            if (!checkUnlock(building.unlockReq)) {
+                showToast('🔒 需要先解锁前置建筑');
+                return;
+            }
+            
+            if (canAfford(building.baseCost)) {
+                buildBuilding(buildingId);
+            } else {
+                showToast('❌ 资源不足');
+            }
+        });
+    });
+}
+
+function formatCost(cost) {
+    return Object.entries(cost)
+        .map(([res, amount]) => {
+            const icons = { gold: '💰', wood: '🪵', stone: '🪨', herb: '🌿' };
+            return `${icons[res] || res} ${amount}`;
+        })
+        .join(' ');
+}
+
+function buildBuilding(buildingId) {
+    const building = CONFIG.buildings.find(b => b.id === buildingId);
+    payCost(building.baseCost);
+    gameState.buildings[buildingId].level++;
+    
+    // 升级成本增加 50%
+    for (const res in building.baseCost) {
+        building.baseCost[res] = Math.floor(building.baseCost[res] * 1.5);
+    }
+    
+    addExp(10);
+    updateUI();
+    saveGame();
+    showToast(`✅ 建造了 ${building.name}`);
+}
+
+// ============ 采集系统 ============
+
+function renderGatherActions() {
+    elements.gatherActions.innerHTML = CONFIG.gatherActions.map(action => {
+        const isActive = gameState.activeActions[action.id];
+        
+        return `
+            <div class="action-item ${isActive ? 'active' : ''}" data-id="${action.id}">
+                <div class="action-icon">${action.icon}</div>
+                <div class="action-info">
+                    <div class="action-name">${action.name}</div>
+                    <div class="action-desc">${action.desc} | +${action.exp} EXP</div>
+                </div>
+                ${isActive ? '<div class="action-timer">进行中...</div>' : ''}
+            </div>
+        `;
+    }).join('');
+    
+    // 绑定点击事件
+    elements.gatherActions.querySelectorAll('.action-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const actionId = item.dataset.id;
+            startAction(actionId);
+        });
+    });
+}
+
+function startAction(actionId) {
+    if (gameState.activeActions[actionId]) return;
+    
+    const action = CONFIG.gatherActions.find(a => a.id === actionId);
+    gameState.activeActions[actionId] = Date.now() + action.duration;
+    
+    renderGatherActions();
+    
+    setTimeout(() => {
+        completeAction(actionId);
+    }, action.duration);
+}
+
+function completeAction(actionId) {
+    const action = CONFIG.gatherActions.find(a => a.id === actionId);
+    
+    // 添加奖励
+    for (const [res, amount] of Object.entries(action.reward)) {
+        gameState.resources[res] += amount;
+    }
+    
+    addExp(action.exp);
+    delete gameState.activeActions[actionId];
+    
+    updateUI();
+    saveGame();
+    showToast(`✅ 完成 ${action.name}：${action.desc}`);
+}
+
+// ============ 制作系统 ============
+
+function renderCraftActions() {
+    elements.craftActions.innerHTML = CONFIG.craftRecipes.map(recipe => {
+        const building = gameState.buildings[recipe.reqBuilding];
+        const unlocked = building && building.level > 0;
+        const canCraft = unlocked && canAfford(recipe.cost);
+        
+        return `
+            <div class="action-item ${!unlocked ? 'locked' : ''}" data-id="${recipe.id}">
+                <div class="action-icon">${recipe.icon}</div>
+                <div class="action-info">
+                    <div class="action-name">${recipe.name}</div>
+                    <div class="action-desc">${recipe.desc} | +${recipe.exp} EXP</div>
+                </div>
+                <div class="action-timer">${formatCost(recipe.cost)}</div>
+            </div>
+        `;
+    }).join('');
+    
+    // 绑定点击事件
+    elements.craftActions.querySelectorAll('.action-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const recipeId = item.dataset.id;
+            craftItem(recipeId);
+        });
+    });
+}
+
+function craftItem(recipeId) {
+    const recipe = CONFIG.craftRecipes.find(r => r.id === recipeId);
+    
+    // 检查建筑解锁
+    const building = gameState.buildings[recipe.reqBuilding];
+    if (!building || building.level === 0) {
+        showToast(`🔒 需要 ${CONFIG.buildings.find(b => b.id === recipe.reqBuilding).name}`);
+        return;
+    }
+    
+    if (!canAfford(recipe.cost)) {
+        showToast('❌ 资源不足');
+        return;
+    }
+    
+    payCost(recipe.cost);
+    addExp(recipe.exp);
+    
+    // 制作完成奖励（简化版：直接给金币奖励）
+    gameState.resources.gold += recipe.exp * 2;
+    
+    updateUI();
+    saveGame();
+    showToast(`✅ 制作了 ${recipe.name}`);
+}
+
+// ============ 战斗系统 ============
+
+let currentZoneIndex = 0;
+
+function updateCombatUI() {
+    const now = Date.now();
+    
+    if (gameState.combat.active) {
+        const remaining = Math.max(0, gameState.combat.endTime - now);
+        const seconds = Math.ceil(remaining / 1000);
+        
+        elements.combatLocation.textContent = 
+            CONFIG.combatZones.find(z => z.id === gameState.combat.zoneId)?.name || '战斗中';
+        elements.combatTimer.textContent = `剩余：${seconds}秒`;
+        elements.combatBtn.textContent = '战斗中...';
+        elements.combatBtn.disabled = true;
+    } else {
+        const zone = CONFIG.combatZones[currentZoneIndex];
+        elements.combatLocation.textContent = `${zone.icon} ${zone.name}`;
+        elements.combatTimer.textContent = `预计：${zone.duration/1000}秒 | 等级要求：${zone.reqLevel}`;
+        elements.combatBtn.textContent = '出征';
+        elements.combatBtn.disabled = gameState.level < zone.reqLevel;
+    }
+}
+
+function toggleCombat() {
+    if (gameState.combat.active) return;
+    
+    const zone = CONFIG.combatZones[currentZoneIndex];
+    
+    if (gameState.level < zone.reqLevel) {
+        showToast(`❌ 需要等级 ${zone.reqLevel}`);
+        return;
+    }
+    
+    // 开始战斗
+    gameState.combat.active = true;
+    gameState.combat.zoneId = zone.id;
+    gameState.combat.endTime = Date.now() + zone.duration;
+    
+    updateCombatUI();
+    
+    // 战斗结束
+    setTimeout(() => {
+        completeCombat(zone);
+    }, zone.duration);
+}
+
+function completeCombat(zone) {
+    gameState.combat.active = false;
+    
+    // 计算奖励
+    let rewards = [];
+    zone.rewards.forEach(r => {
+        const amount = Math.floor(Math.random() * (r.max - r.min + 1)) + r.min;
+        gameState.resources[r.item] += amount;
+        rewards.push(`${r.item === 'gold' ? '💰' : r.item === 'wood' ? '🪵' : r.item === 'stone' ? '🪨' : '🌿'} +${amount}`);
+    });
+    
+    const expReward = zone.difficulty * 10;
+    addExp(expReward);
+    
+    elements.combatRewards.innerHTML = `🎉 战斗奖励：${rewards.join(' ')} | +${expReward} EXP`;
+    
+    // 切换到下一个区域（循环）
+    currentZoneIndex = (currentZoneIndex + 1) % CONFIG.combatZones.length;
+    
+    updateUI();
+    saveGame();
+}
+
+// ============ 模态框 ============
+
+function showModal(title, content) {
+    elements.modalBody.innerHTML = `<h2>${title}</h2><br>${content}`;
+    elements.modal.classList.add('show');
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #e94560;
+        color: white;
+        padding: 12px 25px;
+        border-radius: 8px;
+        z-index: 2000;
+        animation: toastFade 2s ease-out;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+}
+
+// 添加 toast 动画
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes toastFade {
+        0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+    }
+`;
+document.head.appendChild(style);
+
+// ============ 存档系统 ============
+
+function saveGame() {
+    gameState.lastSave = Date.now();
+    localStorage.setItem('medievalMercenarySave', JSON.stringify(gameState));
+}
+
+function loadGame() {
+    const saved = localStorage.getItem('medievalMercenarySave');
+    if (saved) {
+        try {
+            const loaded = JSON.parse(saved);
+            gameState = { ...gameState, ...loaded };
+            
+            // 恢复进行中的行动
+            const now = Date.now();
+            for (const [actionId, endTime] of Object.entries(gameState.activeActions)) {
+                if (endTime > now) {
+                    const remaining = endTime - now;
+                    setTimeout(() => completeAction(actionId), remaining);
+                } else {
+                    delete gameState.activeActions[actionId];
+                }
+            }
+            
+            // 恢复战斗状态
+            if (gameState.combat.active && gameState.combat.endTime > now) {
+                const remaining = gameState.combat.endTime - now;
+                setTimeout(() => completeCombat(
+                    CONFIG.combatZones.find(z => z.id === gameState.combat.zoneId)
+                ), remaining);
+            } else {
+                gameState.combat.active = false;
+            }
+            
+            console.log('💾 游戏已加载');
+        } catch (e) {
+            console.error('加载失败:', e);
+        }
+    }
+}
+
+function resetGame() {
+    if (confirm('⚠️ 确定要重置所有进度吗？此操作不可恢复！')) {
+        localStorage.removeItem('medievalMercenarySave');
+        location.reload();
+    }
+}
+
+// ============ 游戏主循环 ============
+
+function startGameLoop() {
+    // 每秒更新
+    setInterval(() => {
+        // 建筑被动产出
+        CONFIG.buildings.forEach(b => {
+            const building = gameState.buildings[b.id];
+            if (building.level > 0 && b.production) {
+                for (const [res, amount] of Object.entries(b.production)) {
+                    gameState.resources[res] += amount * building.level;
+                }
+            }
+        });
+        
+        updateUI();
+    }, 1000);
+    
+    // 自动保存
+    setInterval(saveGame, 5000);
 }
 
 // 启动游戏
 window.addEventListener('DOMContentLoaded', init);
-
-// 页面关闭前保存
 window.addEventListener('beforeunload', saveGame);
