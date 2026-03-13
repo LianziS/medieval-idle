@@ -97,18 +97,36 @@ function setupSidebar() {
         item.addEventListener('click', (e) => {
             e.stopPropagation();
             const page = item.dataset.page;
-            if (elements.sidebar.classList.contains('expanded') && elements.sidebar.querySelector('.nav-item.active') === item) {
+            const isExpanded = elements.sidebar.classList.contains('expanded');
+            
+            // 如果侧边栏是展开的，跳转后自动关闭
+            if (isExpanded) {
                 elements.sidebar.classList.remove('expanded');
-            } else {
-                elements.sidebar.classList.add('expanded');
-                switchPage(page);
             }
+            // 如果侧边栏是关闭的，直接跳转不展开
+            switchPage(page);
         });
     });
     
     document.querySelector('.game-container').addEventListener('click', () => {
         elements.sidebar.classList.remove('expanded');
     });
+    
+    // 根据页面宽度自动展开/收起侧边栏
+    function checkSidebarWidth() {
+        const width = window.innerWidth;
+        const isExpanded = elements.sidebar.classList.contains('expanded');
+        const shouldExpand = width >= 1200; // 足够宽时自动展开
+        
+        if (shouldExpand && !isExpanded) {
+            elements.sidebar.classList.add('expanded');
+        } else if (!shouldExpand && isExpanded) {
+            elements.sidebar.classList.remove('expanded');
+        }
+    }
+    
+    window.addEventListener('resize', checkSidebarWidth);
+    checkSidebarWidth(); // 初始化检查
 }
 
 function setupNavigation() {}
