@@ -9,15 +9,30 @@
 <body>
     <!-- 侧边栏 -->
     <nav class="sidebar" id="sidebar">
-        <!-- 图标栏（固定显示） -->
+        <!-- 图标栏 -->
         <div class="sidebar-icon-bar">
             <button class="icon-btn toggle-btn" id="sidebar-toggle" title="展开/收起">☰</button>
             <div class="icon-separator"></div>
-            <button class="icon-btn active" data-page="home" title="主页">🏠</button>
-            <button class="icon-btn" data-page="storage" title="仓库">📦</button>
-            <button class="icon-btn" data-page="gather" title="采集">⚒️</button>
-            <button class="icon-btn" data-page="craft" title="制作">🔨</button>
-            <button class="icon-btn" data-page="combat" title="战斗">⚔️</button>
+            <div class="nav-item active" data-page="home">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-text">主页</span>
+            </div>
+            <div class="nav-item" data-page="storage">
+                <span class="nav-icon">📦</span>
+                <span class="nav-text">仓库</span>
+            </div>
+            <div class="nav-item" data-page="gather">
+                <span class="nav-icon">⚒️</span>
+                <span class="nav-text">采集</span>
+            </div>
+            <div class="nav-item" data-page="craft">
+                <span class="nav-icon">🔨</span>
+                <span class="nav-text">制作</span>
+            </div>
+            <div class="nav-item" data-page="combat">
+                <span class="nav-icon">⚔️</span>
+                <span class="nav-text">战斗</span>
+            </div>
         </div>
     </nav>
 
