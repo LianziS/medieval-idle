@@ -19,10 +19,10 @@ body {
 /* ============ 侧边栏 ============ */
 .sidebar {
     position: fixed;
-    top: 0;
+    top: 60px;
     left: 0;
     width: 60px;
-    height: 100%;
+    height: calc(100% - 60px);
     background: linear-gradient(180deg, #0f3460 0%, #16213e 100%);
     z-index: 1000;
     display: flex;
@@ -45,6 +45,33 @@ body {
     padding-top: 15px;
     gap: 10px;
     background: rgba(0, 0, 0, 0.2);
+}
+
+.toggle-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 10px;
+    border: none;
+    background: rgba(233, 69, 96, 0.3);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toggle-btn:hover {
+    background: rgba(233, 69, 96, 0.5);
+    transform: scale(1.1);
+}
+
+.icon-separator {
+    width: 30px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 5px 0;
+    border-radius: 2px;
 }
 
 .icon-btn {
@@ -167,36 +194,60 @@ body {
     max-width: 100%;
     margin: 0 auto;
     margin-left: 70px;
+    margin-top: 60px;
     background: #16213e;
     border-radius: 10px;
     overflow-x: hidden;
     transition: margin-left 0.3s ease;
 }
 
-/* 状态栏 */
-.status-bar {
+/* ============ 顶部区域 ============ */
+.top-section {
     background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
-    padding: 10px 15px;
+    padding: 20px;
+    border-radius: 10px 10px 0 0;
+    border-bottom: 2px solid #e94560;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 2px solid #e94560;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
-.player-info {
+.top-title {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 0.95rem;
+}
+
+.top-title h1 {
+    font-size: 1.3rem;
+    color: #e94560;
+}
+
+.top-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.player-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(233, 69, 96, 0.2);
+    padding: 8px 15px;
+    border-radius: 20px;
 }
 
 .player-icon {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
 }
 
 .player-level {
     color: #e94560;
     font-weight: bold;
+    font-size: 0.95rem;
 }
 
 /* ============ 页面 ============ */
@@ -591,6 +642,8 @@ body {
     }
     
     .sidebar {
+        top: 50px;
+        height: calc(100% - 50px);
         width: 50px;
     }
     
@@ -602,7 +655,7 @@ body {
         width: 50px;
     }
     
-    .icon-btn {
+    .icon-btn, .toggle-btn {
         width: 40px;
         height: 40px;
         font-size: 1.3rem;
@@ -610,14 +663,19 @@ body {
     
     .game-container {
         margin-left: 55px;
+        margin-top: 50px;
     }
     
-    .status-bar {
-        padding: 8px 10px;
+    .top-section {
+        padding: 12px;
     }
     
-    .player-info {
-        font-size: 0.85rem;
+    .top-title h1 {
+        font-size: 1.1rem;
+    }
+    
+    .player-badge {
+        padding: 6px 12px;
     }
     
     .combat-section {
