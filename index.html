@@ -3,151 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>中世纪雇佣兵 - 放置游戏</title>
+    <title>Idle Game - 放置类游戏</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- 侧边栏遮罩 -->
-    <div class="sidebar-overlay" id="sidebar-overlay"></div>
-
-    <!-- 侧边栏 -->
-    <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <h2>⚔️ 雇佣兵</h2>
-            <button class="sidebar-close" id="sidebar-close">&times;</button>
-        </div>
-        
-        <div class="sidebar-nav">
-            <button class="nav-btn active" data-page="home">🏠 主页</button>
-            <button class="nav-btn" data-page="storage">📦 仓库</button>
-            <button class="nav-btn" data-page="gather">⚒️ 采集</button>
-            <button class="nav-btn" data-page="craft">🔨 制作</button>
-            <button class="nav-btn" data-page="combat">⚔️ 战斗</button>
-        </div>
-
-        <div class="sidebar-footer">
-            <div class="mini-stats">
-                <span>💰 <span id="sidebar-gold">0</span></span>
-                <span>🪵 <span id="sidebar-wood">0</span></span>
-                <span>🪨 <span id="sidebar-stone">0</span></span>
-                <span>🌿 <span id="sidebar-herb">0</span></span>
-            </div>
-        </div>
-    </nav>
-
     <div class="game-container">
-        <!-- 顶部状态栏 -->
-        <header class="status-bar">
-            <div class="player-info">
-                <button class="menu-btn" id="menu-btn">☰</button>
-                <span class="player-icon">⚔️</span>
-                <span class="player-level">LV.<span id="level">1</span></span>
-            </div>
-            <div class="resources-mini">
-                <span class="res gold">💰 <span id="gold">0</span></span>
-                <span class="res wood">🪵 <span id="wood">0</span></span>
-                <span class="res stone">🪨 <span id="stone">0</span></span>
-                <span class="res herb">🌿 <span id="herb">0</span></span>
+        <!-- 头部：资源显示 -->
+        <header class="header">
+            <h1>🎮 放置矿工</h1>
+            <div class="resources">
+                <div class="resource gold">
+                    <span class="icon">💰</span>
+                    <span id="gold" class="value">0</span>
+                </div>
+                <div class="resource income">
+                    <span class="icon">📈</span>
+                    <span id="income" class="value">0</span> /秒
+                </div>
             </div>
         </header>
 
-        <!-- 主页 -->
-        <main class="page active" id="page-home">
-            <!-- 战斗状态 -->
-            <section class="combat-section">
-                <div class="combat-status">
-                    <div class="combat-icon">⚔️</div>
-                    <div class="combat-info">
-                        <div class="combat-location" id="combat-location">未出征</div>
-                        <div class="combat-timer" id="combat-timer">-</div>
-                    </div>
-                    <button class="combat-btn" id="combat-btn">出征</button>
-                </div>
-                <div class="combat-rewards" id="combat-rewards"></div>
+        <!-- 主游戏区 -->
+        <main class="main">
+            <!-- 点击区 -->
+            <section class="click-section">
+                <button id="click-btn" class="click-btn">
+                    <span class="btn-icon">⛏️</span>
+                    <span class="btn-text">挖矿</span>
+                    <span class="btn-hint">+1 金币</span>
+                </button>
+                <div id="click-feedback" class="click-feedback"></div>
             </section>
 
             <!-- 建筑区 -->
-            <section class="panel">
-                <h2 class="panel-title">🏰 我的地盘</h2>
-                <div class="buildings-grid" id="buildings-list"></div>
-            </section>
-        </main>
-
-        <!-- 仓库页 -->
-        <main class="page" id="page-storage">
-            <section class="panel">
-                <h2 class="panel-title">📦 仓库</h2>
-                <div class="storage-grid">
-                    <div class="storage-item">
-                        <span class="storage-icon">💰</span>
-                        <div class="storage-info">
-                            <span class="storage-name">金币</span>
-                            <span class="storage-value" id="storage-gold">0</span>
-                        </div>
-                    </div>
-                    <div class="storage-item">
-                        <span class="storage-icon">🪵</span>
-                        <div class="storage-info">
-                            <span class="storage-name">木材</span>
-                            <span class="storage-value" id="storage-wood">0</span>
-                        </div>
-                    </div>
-                    <div class="storage-item">
-                        <span class="storage-icon">🪨</span>
-                        <div class="storage-info">
-                            <span class="storage-name">石头</span>
-                            <span class="storage-value" id="storage-stone">0</span>
-                        </div>
-                    </div>
-                    <div class="storage-item">
-                        <span class="storage-icon">🌿</span>
-                        <div class="storage-info">
-                            <span class="storage-name">草药</span>
-                            <span class="storage-value" id="storage-herb">0</span>
-                        </div>
-                    </div>
+            <section class="buildings-section">
+                <h2>🏗️ 建筑</h2>
+                <div class="buildings-list" id="buildings-list">
+                    <!-- 建筑会通过 JS 动态生成 -->
                 </div>
             </section>
-        </main>
 
-        <!-- 采集页 -->
-        <main class="page" id="page-gather">
-            <section class="panel">
-                <h2 class="panel-title">🌲 采集资源</h2>
-                <div class="actions-list" id="gather-actions"></div>
-            </section>
-        </main>
-
-        <!-- 制作页 -->
-        <main class="page" id="page-craft">
-            <section class="panel">
-                <h2 class="panel-title">🔨 制作</h2>
-                <div class="actions-list" id="craft-actions"></div>
-            </section>
-        </main>
-
-        <!-- 战斗页 -->
-        <main class="page" id="page-combat">
-            <section class="panel">
-                <h2 class="panel-title">⚔️ 战斗区域</h2>
-                <div class="combat-zones" id="combat-zones"></div>
+            <!-- 统计区 -->
+            <section class="stats-section">
+                <h2>📊 统计</h2>
+                <div class="stats-grid">
+                    <div class="stat">
+                        <span class="stat-label">总金币</span>
+                        <span id="total-gold" class="stat-value">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">点击次数</span>
+                        <span id="total-clicks" class="stat-value">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">游戏时间</span>
+                        <span id="play-time" class="stat-value">00:00</span>
+                    </div>
+                </div>
             </section>
         </main>
 
         <!-- 底部 -->
         <footer class="footer">
-            <span>💾 自动保存</span>
-            <span id="play-time">00:00:00</span>
-            <button class="reset-btn" id="reset-btn">重置</button>
+            <span>💾 自动保存中</span>
+            <button id="reset-btn" class="reset-btn">重置进度</button>
         </footer>
-    </div>
-
-    <!-- 模态框 -->
-    <div class="modal" id="modal">
-        <div class="modal-content">
-            <span class="modal-close">&times;</span>
-            <div id="modal-body"></div>
-        </div>
     </div>
 
     <script src="game.js"></script>
