@@ -7,61 +7,21 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- 顶部固定区域 -->
-    <header class="top-fixed">
-        <div class="top-fixed-content">
-            <h1>⚔️ 中世纪雇佣兵</h1>
-            <div class="top-fixed-info">
-                <span class="player-badge">
-                    <span>👤</span>
-                    <span>LV.<span id="top-level">1</span></span>
-                </span>
-            </div>
-        </div>
-    </header>
-
-    <!-- 侧边栏 -->
-    <nav class="sidebar" id="sidebar">
-        <!-- 图标栏 -->
-        <div class="sidebar-icon-bar">
-            <button class="icon-btn toggle-btn" id="sidebar-toggle" title="展开/收起">☰</button>
-            <div class="icon-separator"></div>
-            <div class="nav-item active" data-page="home">
-                <span class="nav-icon">🏠</span>
-                <span class="nav-text">主页</span>
-            </div>
-            <div class="nav-item" data-page="storage">
-                <span class="nav-icon">📦</span>
-                <span class="nav-text">仓库</span>
-            </div>
-            <div class="nav-item" data-page="gather">
-                <span class="nav-icon">⚒️</span>
-                <span class="nav-text">采集</span>
-            </div>
-            <div class="nav-item" data-page="craft">
-                <span class="nav-icon">🔨</span>
-                <span class="nav-text">制作</span>
-            </div>
-            <div class="nav-item" data-page="combat">
-                <span class="nav-icon">⚔️</span>
-                <span class="nav-text">战斗</span>
-            </div>
-        </div>
-    </nav>
-
     <div class="game-container">
-        <!-- 顶部区域 -->
-        <section class="top-section">
-            <div class="top-title">
+        <!-- 顶部信息和导航 -->
+        <header class="game-header">
+            <div class="header-left">
                 <h1>⚔️ 中世纪雇佣兵</h1>
+                <span class="player-badge">👤 LV.<span id="level">1</span></span>
             </div>
-            <div class="top-info">
-                <div class="player-badge">
-                    <span class="player-icon">👤</span>
-                    <span class="player-level">LV.<span id="level">1</span></span>
-                </div>
-            </div>
-        </section>
+            <nav class="game-nav">
+                <button class="nav-tab active" data-page="home">🏠 主页</button>
+                <button class="nav-tab" data-page="storage">📦 仓库</button>
+                <button class="nav-tab" data-page="gather">⚒️ 采集</button>
+                <button class="nav-tab" data-page="craft">🔨 制作</button>
+                <button class="nav-tab" data-page="combat">⚔️ 战斗</button>
+            </nav>
+        </header>
 
         <!-- 主页 -->
         <main class="page active" id="page-home">
