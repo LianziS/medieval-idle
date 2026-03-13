@@ -58,10 +58,9 @@ CONFIG.buildings.forEach(b => { gameState.buildings[b.id] = { level: 0 }; });
 // ============ DOM 元素 ============
 const elements = {
     sidebar: document.getElementById('sidebar'),
-    sidebarOverlay: document.getElementById('sidebar-overlay'),
     sidebarClose: document.getElementById('sidebar-close'),
-    menuBtn: document.getElementById('menu-btn'),
-    navBtns: document.querySelectorAll('.nav-btn'),
+    iconBtns: document.querySelectorAll('.icon-btn'),
+    navItems: document.querySelectorAll('.nav-item'),
     pages: document.querySelectorAll('.page'),
     
     level: document.getElementById('level'),
@@ -106,36 +105,66 @@ function init() {
 
 // ============ 侧边栏 ============
 function setupSidebar() {
-    elements.menuBtn.addEventListener('click', () => {
-        elements.sidebar.classList.add('show');
-        elements.sidebarOverlay.classList.add('show');
+    // 点击图标按钮展开/切换页面
+    elements.iconBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const page = btn.dataset.page;
+            
+            // 如果已经展开且点击的是当前页面，则收起
+            if (elements.sidebar.classList.contains('expanded') && 
+                elements.sidebar.querySelector(`.icon-btn.active`) === btn) {
+                elements.sidebar.classList.remove('expanded');
+            } else {
+                // 否则展开并切换页面
+                elements.sidebar.classList.add('expanded');
+                switchPage(page);
+            }
+            
+            // 更新图标按钮激活状态
+            elements.iconBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
     });
     
-    elements.sidebarClose.addEventListener('click', closeSidebar);
-    elements.sidebarOverlay.addEventListener('click', closeSidebar);
-}
-
-function closeSidebar() {
-    elements.sidebar.classList.remove('show');
-    elements.sidebarOverlay.classList.remove('show');
+    // 点击展开内容栏的导航项
+    elements.navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const page = item.dataset.page;
+            switchPage(page);
+            
+            // 更新图标按钮激活状态
+            elements.iconBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.page === page);
+            });
+        });
+    });
+    
+    // 关闭按钮
+    elements.sidebarClose.addEventListener('click', () => {
+        elements.sidebar.classList.remove('expanded');
+    });
+    
+    // 点击主内容区域收起侧边栏
+    document.querySelector('.game-container').addEventListener('click', () => {
+        elements.sidebar.classList.remove('expanded');
+    });
 }
 
 // ============ 页面导航 ============
 function setupNavigation() {
-    elements.navBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const page = btn.dataset.page;
-            switchPage(page);
-            closeSidebar();
-        });
-    });
+    // 已在 setupSidebar 中处理
 }
 
 function switchPage(pageId) {
     gameState.currentPage = pageId;
     
-    elements.navBtns.forEach(btn => {
+    elements.iconBtns.forEach(btn => {
         btn.classList.toggle('active', btn.dataset.page === pageId);
+    });
+    
+    elements.navItems.forEach(item => {
+        item.classList.toggle('active', item.dataset.page === pageId);
     });
     
     elements.pages.forEach(page => {
