@@ -189,9 +189,10 @@ function setupSidebar() {
             e.stopPropagation();
             const page = item.dataset.page;
             const isExpanded = elements.sidebar.classList.contains('expanded');
+            const isWideScreen = window.innerWidth >= 1200;
             
-            // 如果侧边栏是展开的，跳转后自动关闭
-            if (isExpanded) {
+            // 只有在非宽屏且侧边栏展开时才关闭
+            if (isExpanded && !isWideScreen) {
                 elements.sidebar.classList.remove('expanded');
             }
             // 如果侧边栏是关闭的，直接跳转不展开
@@ -200,7 +201,10 @@ function setupSidebar() {
     });
     
     document.querySelector('.game-container').addEventListener('click', () => {
-        elements.sidebar.classList.remove('expanded');
+        const isWideScreen = window.innerWidth >= 1200;
+        if (!isWideScreen) {
+            elements.sidebar.classList.remove('expanded');
+        }
     });
     
     // 根据页面宽度自动展开/收起侧边栏
@@ -282,6 +286,17 @@ function cancelCurrentAction() {
     renderGatherActions();
     renderCombatZones();
     showToast('❌ 已停止行动');
+}
+
+// 阻止点击停止按钮时触发其他事件
+function setupCancelButton() {
+    if (elements.actionCancelBtn) {
+        elements.actionCancelBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            cancelCurrentAction();
+        });
+    }
 }
 
 let animationFrame = null;
@@ -522,6 +537,9 @@ function startAction(actionId) {
 }
 
 function completeAction(actionId) {
+    // 检查行动是否仍然有效（可能已被取消）
+    if (!gameState.activeActions[actionId]) return;
+    
     const action = CONFIG.gatherActions.find(a => a.id === actionId);
     let rewardHTML = '';
     for (const [res, amount] of Object.entries(action.reward)) {
@@ -638,6 +656,9 @@ function addSkillExp(skill, amount) {
 }
 
 function completeWoodcutting(treeId) {
+    // 检查行动是否仍然有效（可能已被取消）
+    if (!gameState.activeWoodcutting || gameState.activeWoodcutting !== treeId) return;
+    
     const tree = CONFIG.trees.find(t => t.id === treeId);
     const dropAmount = 1;
     gameState.resources.wood += dropAmount;
@@ -706,6 +727,9 @@ function startMining(oreId) {
 }
 
 function completeMining(oreId) {
+    // 检查行动是否仍然有效（可能已被取消）
+    if (!gameState.activeMining || gameState.activeMining !== oreId) return;
+    
     const ore = CONFIG.ores.find(o => o.id === oreId);
     const dropAmount = 1;
     gameState.resources.stone += dropAmount;
@@ -796,6 +820,9 @@ function toggleCombat() {
 }
 
 function completeCombat(zone) {
+    // 检查行动是否仍然有效（可能已被取消）
+    if (!gameState.combat.active) return;
+    
     gameState.combat.active = false;
     setActionState(null, 0);
     let rewards = [];

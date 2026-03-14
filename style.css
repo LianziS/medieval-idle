@@ -87,7 +87,7 @@ body::after {
 .action-status-bar {
     background: transparent;
     border-top: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 6px 10px 10px 10px;
+    padding: 6px 20px 10px 20px;
 }
 
 .action-status-content {
@@ -97,7 +97,6 @@ body::after {
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
-    padding-left: 10px;
 }
 
 .action-status-left {
@@ -1087,12 +1086,11 @@ body::after {
     }
     
     .action-status-bar {
-        padding: 4px 5px 8px 5px;
+        padding: 4px 10px 8px 10px;
     }
     
     .action-status-content {
         gap: 4px;
-        padding-left: 5px;
     }
     
     .action-status-left {
