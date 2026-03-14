@@ -113,7 +113,7 @@ body::after {
 
 .action-status-name {
     font-size: 0.8rem;
-    color: #A0B2C0;
+    color: #fff;
     white-space: nowrap;
 }
 
@@ -189,7 +189,7 @@ body::after {
 
 .action-reward-item {
     font-size: 0.75rem;
-    color: #A0B2C0;
+    color: #fff;
     background: rgba(255, 255, 255, 0.1);
     padding: 2px 6px;
     border-radius: 4px;
@@ -1065,6 +1065,11 @@ body::after {
     
     .action-status-name {
         font-size: 0.7rem;
+        color: #fff;
+    }
+    
+    .action-reward-item {
+        color: #fff;
     }
     
     .action-progress-wrapper {

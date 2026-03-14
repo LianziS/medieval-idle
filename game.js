@@ -515,11 +515,11 @@ function startAction(actionId) {
 
 function completeAction(actionId) {
     const action = CONFIG.gatherActions.find(a => a.id === actionId);
+    clearActionRewards();
     for (const [res, amount] of Object.entries(action.reward)) {
         gameState.resources[res] += amount;
         const icons = { gold: '💰', wood: '🪵', stone: '🪨', herb: '🌿' };
         const names = { gold: '金币', wood: '木材', stone: '石头', herb: '草药' };
-        clearActionRewards();
         showActionReward(`+${amount} ${icons[res]} ${names[res]}`);
     }
     addExp(action.exp);
@@ -801,7 +801,7 @@ function completeCombat(zone) {
 function showToast(message) {
     const toast = document.createElement('div');
     toast.textContent = message;
-    toast.style.cssText = `position: fixed; top: 110px; left: 20px; background: rgba(139, 44, 45, 0.95); color: #A0B2C0; padding: 8px 14px; border-radius: 6px; z-index: 3000; animation: toastFade 3s ease-out; border: 1px solid rgba(139, 44, 45, 0.5); font-size: 0.85rem; text-align: left;`;
+    toast.style.cssText = `position: fixed; top: 110px; left: 20px; background: rgba(139, 44, 45, 0.95); color: #fff; padding: 8px 14px; border-radius: 6px; z-index: 3000; animation: toastFade 3s ease-out; border: 1px solid rgba(139, 44, 45, 0.5); font-size: 0.85rem; text-align: left;`;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
 }
