@@ -220,7 +220,7 @@ body::after {
 }
 
 .nav-item-skill {
-    min-height: 35px;
+    min-height: 30px;
     padding: 0;
 }
 
@@ -232,9 +232,22 @@ body::after {
     background: rgba(107, 79, 60, 0.25);
 }
 
+.nav-item {
+    position: relative;
+}
+
 .nav-item.active {
     background: linear-gradient(90deg, rgba(139, 44, 45, 0.4) 0%, rgba(107, 79, 60, 0.3) 100%);
-    border-left: 4px solid #8B2C2D;
+}
+
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #8B2C2D;
 }
 
 .nav-icon {
@@ -306,7 +319,7 @@ body::after {
     right: 0;
     top: -8px;
     font-size: 0.55rem;
-    color: #6b4f3c;
+    color: #A0B2C0;
     font-weight: bold;
     line-height: 1;
 }
@@ -959,7 +972,7 @@ body::after {
     }
     
     .nav-item-skill {
-        min-height: 35px;
+        min-height: 30px;
         padding: 0;
     }
     
@@ -968,8 +981,9 @@ body::after {
     }
     
     .nav-exp-level {
-        font-size: 0.55rem;
-        top: -9px;
+        font-size: 0.5rem;
+        top: -8px;
+        color: #A0B2C0;
     }
     
     .game-container {
