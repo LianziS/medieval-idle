@@ -385,6 +385,8 @@ function startWoodcuttingWithCount(treeId, count) {
 function scheduleWoodcutting(treeId) {
     if (!gameState.activeWoodcutting || gameState.woodcuttingRemaining <= 0) {
         gameState.activeWoodcutting = null;
+        gameState.woodcuttingCount = 0;
+        gameState.woodcuttingRemaining = 0;
         setActionState(null, 0);
         renderWoodcutting();
         return;
@@ -392,6 +394,11 @@ function scheduleWoodcutting(treeId) {
     
     const tree = CONFIG.trees.find(t => t.id === treeId);
     gameState.woodcuttingRemaining--;
+    // 重置行动开始时间，让进度条重新跑
+    setActionState({ name: `采集${tree.name}`, icon: tree.icon }, tree.duration);
+    updateActionStatusBar();
+    renderWoodcutting();
+    
     setTimeout(() => {
         if (gameState.activeWoodcutting === treeId) {
             completeWoodcuttingOnce(treeId);
@@ -407,6 +414,11 @@ function completeWoodcuttingOnce(treeId) {
     addSkillExp('woodcutting', tree.exp);
     updateUI();
     saveGame();
+    // 显示奖励
+    if (elements.actionRewards) {
+        elements.actionRewards.innerHTML = `<span class="action-reward-item">+1 ${tree.dropIcon} ${tree.drop}</span>`;
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
+    }
 }
 
 function startMiningWithCount(oreId, count) {
@@ -422,6 +434,8 @@ function startMiningWithCount(oreId, count) {
 function scheduleMining(oreId) {
     if (!gameState.activeMining || gameState.miningRemaining <= 0) {
         gameState.activeMining = null;
+        gameState.miningCount = 0;
+        gameState.miningRemaining = 0;
         setActionState(null, 0);
         renderMining();
         return;
@@ -429,6 +443,11 @@ function scheduleMining(oreId) {
     
     const ore = CONFIG.ores.find(o => o.id === oreId);
     gameState.miningRemaining--;
+    // 重置行动开始时间，让进度条重新跑
+    setActionState({ name: `挖掘${ore.name}`, icon: ore.icon }, ore.duration);
+    updateActionStatusBar();
+    renderMining();
+    
     setTimeout(() => {
         if (gameState.activeMining === oreId) {
             completeMiningOnce(oreId);
@@ -444,6 +463,11 @@ function completeMiningOnce(oreId) {
     addSkillExp('mining', ore.exp);
     updateUI();
     saveGame();
+    // 显示奖励
+    if (elements.actionRewards) {
+        elements.actionRewards.innerHTML = `<span class="action-reward-item">+1 ${ore.dropIcon} ${ore.drop}</span>`;
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
+    }
 }
 
 function cancelCurrentAction() {
@@ -493,11 +517,16 @@ function setupCancelButton() {
 }
 
 let animationFrame = null;
+let lastActionStartTime = 0;
 
 function updateActionStatusBarSmooth() {
     if (!gameState.currentAction) return;
     
     const now = Date.now();
+    // 检查是否开始了新的行动（进度条需要重置）
+    if (gameState.actionStartTime !== lastActionStartTime) {
+        lastActionStartTime = gameState.actionStartTime;
+    }
     const elapsed = now - gameState.actionStartTime;
     const progress = Math.min(100, (elapsed / gameState.actionDuration) * 100);
     
@@ -527,7 +556,17 @@ function updateActionStatusBar() {
     
     if (gameState.currentAction) {
         elements.actionStatusIcon.textContent = gameState.currentAction.icon;
-        elements.actionStatusName.textContent = gameState.currentAction.name;
+        
+        // 添加次数显示
+        let countText = '';
+        if (gameState.woodcuttingCount > 0 || gameState.miningCount > 0) {
+            const total = gameState.woodcuttingCount || gameState.miningCount || 0;
+            const remaining = gameState.woodcuttingRemaining || gameState.miningRemaining || 0;
+            const countDisplay = total >= 99999 ? '∞' : `${remaining}/${total}`;
+            countText = ` (${countDisplay})`;
+        }
+        elements.actionStatusName.textContent = gameState.currentAction.name + countText;
+        
         elements.actionProgressTime.textContent = formatTime(gameState.actionDuration / 1000);
         elements.actionCancelBtn.disabled = false;
         elements.actionCancelBtn.classList.add('visible');
