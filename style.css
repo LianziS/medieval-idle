@@ -54,11 +54,13 @@ body::after {
     width: 100%;
     background: linear-gradient(180deg, rgba(27, 42, 58, 0.98) 0%, rgba(45, 63, 82, 0.95) 100%);
     backdrop-filter: blur(10px);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: none;
+    border-left: none;
+    border-right: none;
     z-index: 1100;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
 }
 
 .top-fixed-content {
@@ -206,10 +208,10 @@ body::after {
 /* ============ 侧边栏 ============ */
 .sidebar {
     position: fixed;
-    top: 110px;
+    top: 120px;
     left: 0;
     width: 70px;
-    height: calc(100% - 110px);
+    height: calc(100% - 120px);
     background: linear-gradient(180deg, rgba(27, 42, 58, 0.95) 0%, rgba(45, 63, 82, 0.9) 100%);
     backdrop-filter: blur(10px);
     z-index: 1000;
@@ -218,8 +220,8 @@ body::after {
     box-shadow: 2px 0 15px rgba(0, 0, 0, 0.4);
     transition: width 0.3s ease;
     overflow: hidden;
-    border-right: 1px solid rgba(107, 79, 60, 0.3);
-    border-top: 2px solid rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top: none;
 }
 
 .sidebar.expanded {
@@ -449,14 +451,14 @@ body::after {
     max-width: 1400px;
     margin: 0 auto;
     margin-left: 80px;
-    margin-top: 115px;
+    margin-top: 125px;
     background: rgba(27, 42, 58, 0.7);
     backdrop-filter: blur(10px);
     border-radius: 12px;
     overflow-x: hidden;
     transition: margin-left 0.3s ease;
-    min-height: calc(100vh - 115px);
-    border: 1px solid rgba(107, 79, 60, 0.2);
+    min-height: calc(100vh - 125px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
@@ -1136,10 +1138,11 @@ body::after {
     }
     
     .sidebar {
-        top: 95px;
-        height: calc(100% - 95px);
+        top: 105px;
+        height: calc(100% - 105px);
         width: 50px;
-        border-top: 2px solid rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-top: none;
     }
     
     .sidebar.expanded {
@@ -1190,7 +1193,7 @@ body::after {
     
     .game-container {
         margin-left: 55px;
-        margin-top: 100px;
+        margin-top: 110px;
     }
     
     .panel {
