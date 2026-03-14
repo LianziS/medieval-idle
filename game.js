@@ -2,6 +2,31 @@
  * 中世纪雇佣兵 - 放置游戏（侧边栏版本）
  */
 
+// 经验值表 (1-200 级)
+const EXP_TABLE = {
+    1: 0, 2: 33, 3: 76, 4: 132, 5: 202, 6: 286, 7: 386, 8: 503, 9: 637, 10: 791,
+    11: 964, 12: 1159, 13: 1377, 14: 1620, 15: 1891, 16: 2192, 17: 2525, 18: 2893, 19: 3300, 20: 3750,
+    21: 4247, 22: 4795, 23: 5400, 24: 6068, 25: 6805, 26: 7618, 27: 8517, 28: 9508, 29: 10604, 30: 11814,
+    31: 13151, 32: 14629, 33: 16262, 34: 18068, 35: 20064, 36: 22271, 37: 24712, 38: 27411, 39: 30396, 40: 33697,
+    41: 37346, 42: 41381, 43: 45842, 44: 50773, 45: 56222, 46: 62243, 47: 68895, 48: 76242, 49: 84355, 50: 93311,
+    51: 103195, 52: 114100, 53: 126127, 54: 139390, 55: 154009, 56: 170118, 57: 187863, 58: 207403, 59: 228914, 60: 252584,
+    61: 278623, 62: 307256, 63: 338731, 64: 373318, 65: 411311, 66: 453030, 67: 498824, 68: 549074, 69: 604193, 70: 664632,
+    71: 730881, 72: 803472, 73: 882985, 74: 970050, 75: 1065351, 76: 1169633, 77: 1283701, 78: 1408433, 79: 1544780, 80: 1693774,
+    81: 1856536, 82: 2034279, 83: 2228321, 84: 2440088, 85: 2671127, 86: 2923113, 87: 3197861, 88: 3497335, 89: 3823663, 90: 4179145,
+    91: 4566274, 92: 4987741, 93: 5446463, 94: 5945587, 95: 6488521, 96: 7078945, 97: 7720834, 98: 8418485, 99: 9176537, 100: 80000000,
+    101: 9123981, 102: 10323654, 103: 11611520, 104: 12993664, 105: 14476562, 106: 16067109, 107: 17772646, 108: 19600984, 109: 21560432, 110: 23659830,
+    111: 25908577, 112: 28316670, 113: 30894736, 114: 33654067, 115: 36606666, 116: 39765282, 117: 43143462, 118: 46755591, 119: 50616943, 120: 54743736,
+    121: 59153183, 122: 63863552, 123: 68894226, 124: 74265915, 125: 80000000,
+    126: 91504904, 127: 104096315, 128: 117857724, 129: 132918094, 130: 149401942,
+    131: 167438216, 132: 187163614, 133: 208722829, 134: 232269650, 135: 257967222, 136: 285989350, 137: 316521996, 138: 349764842, 139: 385932842, 140: 425257842,
+    141: 467989226, 142: 514395388, 143: 564765226, 144: 619409642, 145: 678663074, 146: 742886059, 147: 812467777, 148: 887827585, 149: 969417578, 150: 1057724278,
+    151: 1153270378, 152: 1256617512, 153: 1368368154, 154: 1489168414, 155: 1619710978, 156: 1760738070, 157: 1913044430, 158: 2077480294, 159: 2254954454, 160: 2446437334,
+    161: 2652964134, 162: 2875638934, 163: 3115638790, 164: 3374218934, 165: 3652716934, 166: 3952556934, 167: 4275254934, 168: 4622423734, 169: 4995777334, 170: 5397137734,
+    171: 5828442934, 172: 6291754134, 173: 6789262934, 174: 7323298934, 175: 7896338934, 176: 8511018934, 177: 9170142934, 178: 9876694934, 179: 10633854934, 180: 11445014934,
+    181: 12313794934, 182: 13244062934, 183: 14239950934, 184: 15305982934, 185: 16447102934, 186: 17668702934, 187: 18976654934, 188: 20377342934, 189: 21877694934, 190: 23485214934,
+    191: 25208014934, 192: 27054862934, 193: 29035214934, 194: 31159262934, 195: 33437982934, 196: 35883182934, 197: 38507582934, 198: 41324894934, 199: 44349894934, 200: 80000000000
+};
+
 const CONFIG = {
     resources: ['gold', 'wood', 'stone', 'herb'],
     buildings: [
@@ -58,7 +83,7 @@ const CONFIG = {
 let gameState = {
     resources: { gold: 0, wood: 0, stone: 0, herb: 0 },
     buildings: {},
-    level: 1, exp: 0, expToNext: 100,
+    level: 1, exp: 0,
     startTime: Date.now(),
     activeActions: {},
     activeWoodcutting: null,
@@ -77,6 +102,8 @@ const elements = {
     pages: document.querySelectorAll('.page'),
     level: document.getElementById('level'),
     topLevel: document.getElementById('top-level'),
+    sidebarLevel: document.getElementById('sidebar-level'),
+    expBarFill: document.getElementById('exp-bar-fill'),
     storageGold: document.getElementById('storage-gold'),
     storageWood: document.getElementById('storage-wood'),
     storageStone: document.getElementById('storage-stone'),
@@ -182,6 +209,7 @@ function updateUI() {
     const levelText = gameState.level.toString();
     if (elements.level) elements.level.textContent = levelText;
     if (elements.topLevel) elements.topLevel.textContent = levelText;
+    if (elements.sidebarLevel) elements.sidebarLevel.textContent = levelText;
     
     if (elements.storageGold) elements.storageGold.textContent = formatNumber(Math.floor(gameState.resources.gold));
     if (elements.storageWood) elements.storageWood.textContent = formatNumber(Math.floor(gameState.resources.wood));
@@ -194,6 +222,7 @@ function updateUI() {
     const seconds = elapsed % 60;
     if (elements.playTime) elements.playTime.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     
+    updateExpBar();
     updateCombatUI();
     renderBuildings();
     renderGatherActions();
@@ -207,6 +236,26 @@ function formatNumber(num) {
     if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
     return Math.floor(num).toString();
+}
+
+function updateExpBar() {
+    if (!elements.expBarFill) return;
+    
+    const currentLevel = gameState.level;
+    const currentExp = gameState.exp;
+    
+    if (currentLevel >= 200) {
+        elements.expBarFill.style.width = '100%';
+        return;
+    }
+    
+    const prevExp = getExpForLevel(currentLevel);
+    const nextExp = getExpForLevel(currentLevel + 1);
+    const expNeeded = nextExp - prevExp;
+    const expProgress = currentExp - prevExp;
+    
+    const percentage = expNeeded > 0 ? (expProgress / expNeeded) * 100 : 0;
+    elements.expBarFill.style.width = `${Math.min(100, Math.max(0, percentage))}%`;
 }
 
 function checkUnlock(req) {
@@ -232,13 +281,26 @@ function payCost(cost) {
     }
 }
 
+function getExpForLevel(level) {
+    if (level >= 200) return EXP_TABLE[200];
+    return EXP_TABLE[level] || 0;
+}
+
+function getExpToNextLevel() {
+    const currentExp = getExpForLevel(gameState.level);
+    const nextExp = getExpForLevel(gameState.level + 1);
+    return nextExp - currentExp;
+}
+
 function addExp(amount) {
     gameState.exp += amount;
-    while (gameState.exp >= gameState.expToNext) {
-        gameState.exp -= gameState.expToNext;
+    let leveledUp = false;
+    while (gameState.level < 200 && gameState.exp >= getExpForLevel(gameState.level + 1)) {
         gameState.level++;
-        gameState.expToNext = Math.floor(gameState.expToNext * 1.5);
+        leveledUp = true;
         gameState.resources.gold += 50;
+    }
+    if (leveledUp) {
         showToast(`🎉 升级了！当前等级：${gameState.level}`);
     }
 }
