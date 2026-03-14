@@ -428,31 +428,32 @@ function scheduleWoodcutting(treeId) {
     if (!isInfinte) {
         gameState.woodcuttingRemaining--;
     }
-    // 重置进度条为 0，准备开始新的行动
-    if (elements.actionProgressFill) {
-        elements.actionProgressFill.style.width = '0%';
-    }
-    renderWoodcutting();
     
-    // 使用 setTimeout 等待 DOM 更新后再开始进度条动画
-    setTimeout(() => {
-        if (gameState.activeWoodcutting === treeId) {
-            // 重置行动开始时间为当前时间
-            setActionState({ name: `采集${tree.name}`, icon: tree.icon }, tree.duration);
-            updateActionStatusBar();
-            // 启动进度条动画
-            if (animationFrame) cancelAnimationFrame(animationFrame);
-            lastActionStartTime = gameState.actionStartTime;
-            animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
-            
-            setTimeout(() => {
-                if (gameState.activeWoodcutting === treeId) {
-                    completeWoodcuttingOnce(treeId);
-                    scheduleWoodcutting(treeId);
-                }
-            }, tree.duration);
+    // 立即开始下一次行动
+    if (gameState.activeWoodcutting === treeId) {
+        // 重置行动开始时间为当前时间
+        setActionState({ name: `采集${tree.name}`, icon: tree.icon }, tree.duration);
+        // 重置进度条为 0
+        if (elements.actionProgressFill) {
+            elements.actionProgressFill.style.width = '0%';
         }
-    }, 50);
+        updateActionStatusBar();
+        renderWoodcutting();
+        
+        // 启动进度条动画
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        lastActionStartTime = gameState.actionStartTime;
+        animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+        
+        // 等待行动完成后继续
+        setTimeout(() => {
+            if (gameState.activeWoodcutting === treeId) {
+                completeWoodcuttingOnce(treeId);
+                // 递归调用继续下一次行动
+                scheduleWoodcutting(treeId);
+            }
+        }, tree.duration);
+    }
 }
 
 function completeWoodcuttingOnce(treeId) {
@@ -502,31 +503,32 @@ function scheduleMining(oreId) {
     if (!isInfinte) {
         gameState.miningRemaining--;
     }
-    // 重置进度条为 0，准备开始新的行动
-    if (elements.actionProgressFill) {
-        elements.actionProgressFill.style.width = '0%';
-    }
-    renderMining();
     
-    // 使用 setTimeout 等待 DOM 更新后再开始进度条动画
-    setTimeout(() => {
-        if (gameState.activeMining === oreId) {
-            // 重置行动开始时间为当前时间
-            setActionState({ name: `挖掘${ore.name}`, icon: ore.icon }, ore.duration);
-            updateActionStatusBar();
-            // 启动进度条动画
-            if (animationFrame) cancelAnimationFrame(animationFrame);
-            lastActionStartTime = gameState.actionStartTime;
-            animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
-            
-            setTimeout(() => {
-                if (gameState.activeMining === oreId) {
-                    completeMiningOnce(oreId);
-                    scheduleMining(oreId);
-                }
-            }, ore.duration);
+    // 立即开始下一次行动
+    if (gameState.activeMining === oreId) {
+        // 重置行动开始时间为当前时间
+        setActionState({ name: `挖掘${ore.name}`, icon: ore.icon }, ore.duration);
+        // 重置进度条为 0
+        if (elements.actionProgressFill) {
+            elements.actionProgressFill.style.width = '0%';
         }
-    }, 50);
+        updateActionStatusBar();
+        renderMining();
+        
+        // 启动进度条动画
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        lastActionStartTime = gameState.actionStartTime;
+        animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+        
+        // 等待行动完成后继续
+        setTimeout(() => {
+            if (gameState.activeMining === oreId) {
+                completeMiningOnce(oreId);
+                // 递归调用继续下一次行动
+                scheduleMining(oreId);
+            }
+        }, ore.duration);
+    }
 }
 
 function completeMiningOnce(oreId) {
