@@ -102,7 +102,11 @@ let gameState = {
     craftingLevel: 1,
     craftingExp: 0,
     combatLevel: 1,
-    combatExp: 0
+    combatExp: 0,
+    // 全局行动状态
+    currentAction: null,
+    actionStartTime: 0,
+    actionDuration: 0
 };
 
 CONFIG.buildings.forEach(b => { gameState.buildings[b.id] = { level: 0 }; });
@@ -146,7 +150,13 @@ const elements = {
     navCraftExp: document.getElementById('nav-craft-exp'),
     navCraftLvl: document.getElementById('nav-craft-lvl'),
     navCombatExp: document.getElementById('nav-combat-exp'),
-    navCombatLvl: document.getElementById('nav-combat-lvl')
+    navCombatLvl: document.getElementById('nav-combat-lvl'),
+    // 顶部行动状态栏
+    actionStatusBar: document.getElementById('action-status-bar'),
+    actionStatusIcon: document.getElementById('action-status-icon'),
+    actionStatusName: document.getElementById('action-status-name'),
+    actionProgressFill: document.getElementById('action-progress-fill'),
+    actionProgressTime: document.getElementById('action-progress-time')
 };
 
 function init() {
@@ -240,6 +250,26 @@ function updateSkillNavExp(skill, expFillElem, levelElem) {
     levelElem.textContent = gameState[skill + 'Level'];
 }
 
+function updateActionStatusBar() {
+    if (!elements.actionStatusBar) return;
+    
+    if (gameState.currentAction) {
+        const now = Date.now();
+        const elapsed = now - gameState.actionStartTime;
+        const progress = Math.min(100, (elapsed / gameState.actionDuration) * 100);
+        
+        elements.actionStatusIcon.textContent = gameState.currentAction.icon;
+        elements.actionStatusName.textContent = gameState.currentAction.name;
+        elements.actionProgressFill.style.width = `${progress}%`;
+        elements.actionProgressTime.textContent = `${(gameState.actionDuration / 1000).toFixed(1)}秒`;
+    } else {
+        elements.actionStatusIcon.textContent = '⏳';
+        elements.actionStatusName.textContent = '未进行行动';
+        elements.actionProgressFill.style.width = '0%';
+        elements.actionProgressTime.textContent = '-';
+    }
+}
+
 function updateUI() {
     const levelText = gameState.level.toString();
     if (elements.level) elements.level.textContent = levelText;
@@ -262,6 +292,9 @@ function updateUI() {
     updateSkillNavExp('gathering', elements.navGatherExp, elements.navGatherLvl);
     updateSkillNavExp('crafting', elements.navCraftExp, elements.navCraftLvl);
     updateSkillNavExp('combat', elements.navCombatExp, elements.navCombatLvl);
+    
+    // 更新顶部行动状态栏
+    updateActionStatusBar();
     
     updateCombatUI();
     renderBuildings();
@@ -388,10 +421,28 @@ function renderGatherActions() {
     });
 }
 
+function hasActiveAction() {
+    return gameState.currentAction !== null;
+}
+
+function setActionState(action, duration) {
+    if (action) {
+        gameState.currentAction = action;
+        gameState.actionStartTime = Date.now();
+        gameState.actionDuration = duration;
+    } else {
+        gameState.currentAction = null;
+        gameState.actionStartTime = 0;
+        gameState.actionDuration = 0;
+    }
+}
+
 function startAction(actionId) {
     if (gameState.activeActions[actionId]) return;
+    if (hasActiveAction()) { showToast('⏳ 已有行动正在进行中'); return; }
     const action = CONFIG.gatherActions.find(a => a.id === actionId);
     gameState.activeActions[actionId] = Date.now() + action.duration;
+    setActionState({ name: action.name, icon: action.icon }, action.duration);
     renderGatherActions();
     setTimeout(() => completeAction(actionId), action.duration);
 }
@@ -402,6 +453,7 @@ function completeAction(actionId) {
     addExp(action.exp);
     addSkillExp('gathering', action.exp);
     delete gameState.activeActions[actionId];
+    setActionState(null, 0);
     updateUI();
     saveGame();
     showToast(`✅ 完成 ${action.name}：${action.desc}`);
@@ -477,8 +529,10 @@ function renderWoodcutting() {
 }
 
 function startWoodcutting(treeId) {
+    if (hasActiveAction()) { showToast('⏳ 已有行动正在进行中'); return; }
     const tree = CONFIG.trees.find(t => t.id === treeId);
     gameState.activeWoodcutting = treeId;
+    setActionState({ name: `采集${tree.name}`, icon: tree.icon }, tree.duration);
     renderWoodcutting();
     setTimeout(() => completeWoodcutting(treeId), tree.duration);
 }
@@ -505,6 +559,7 @@ function completeWoodcutting(treeId) {
     addExp(tree.exp);
     addSkillExp('woodcutting', tree.exp);
     gameState.activeWoodcutting = null;
+    setActionState(null, 0);
     updateUI();
     saveGame();
     showToast(`✅ 采集了 ${tree.drop}`);
@@ -553,8 +608,10 @@ function renderMining() {
 }
 
 function startMining(oreId) {
+    if (hasActiveAction()) { showToast('⏳ 已有行动正在进行中'); return; }
     const ore = CONFIG.ores.find(o => o.id === oreId);
     gameState.activeMining = oreId;
+    setActionState({ name: `挖掘${ore.name}`, icon: ore.icon }, ore.duration);
     renderMining();
     setTimeout(() => completeMining(oreId), ore.duration);
 }
@@ -565,6 +622,7 @@ function completeMining(oreId) {
     addExp(ore.exp);
     addSkillExp('mining', ore.exp);
     gameState.activeMining = null;
+    setActionState(null, 0);
     updateUI();
     saveGame();
     showToast(`✅ 挖掘了 ${ore.drop}`);
@@ -631,11 +689,13 @@ function updateCombatUI() {
 
 function toggleCombat() {
     if (gameState.combat.active) return;
+    if (hasActiveAction()) { showToast('⏳ 已有行动正在进行中'); return; }
     const zone = CONFIG.combatZones[gameState.currentZoneIndex];
     if (gameState.level < zone.reqLevel) { showToast(`❌ 需要等级 ${zone.reqLevel}`); return; }
     gameState.combat.active = true;
     gameState.combat.zoneId = zone.id;
     gameState.combat.endTime = Date.now() + zone.duration;
+    setActionState({ name: `${zone.name}`, icon: zone.icon }, zone.duration);
     updateCombatUI();
     renderCombatZones();
     setTimeout(() => completeCombat(zone), zone.duration);
@@ -643,6 +703,7 @@ function toggleCombat() {
 
 function completeCombat(zone) {
     gameState.combat.active = false;
+    setActionState(null, 0);
     let rewards = [];
     zone.rewards.forEach(r => {
         const amount = Math.floor(Math.random() * (r.max - r.min + 1)) + r.min;

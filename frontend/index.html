@@ -7,7 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
     <title>中世纪雇佣兵 - 放置游戏</title>
-    <link rel="stylesheet" href="style.css?v=2026031409">
+    <link rel="stylesheet" href="style.css?v=2026031410">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#1B2A3A;color:#A0B2C0;min-height:100vh;padding:0;font-size:14px;overflow-x:hidden}
@@ -26,6 +26,17 @@
                     <span>👤</span>
                     <span>LV.<span id="top-level">1</span></span>
                 </span>
+            </div>
+        </div>
+        <!-- 行动状态栏 -->
+        <div class="action-status-bar" id="action-status-bar">
+            <div class="action-status-content">
+                <span class="action-status-icon" id="action-status-icon">⏳</span>
+                <span class="action-status-name" id="action-status-name">未进行行动</span>
+                <div class="action-progress-bg">
+                    <div class="action-progress-fill" id="action-progress-fill"></div>
+                    <span class="action-progress-time" id="action-progress-time">-</span>
+                </div>
             </div>
         </div>
     </header>
@@ -53,12 +64,14 @@
             <div class="nav-item nav-item-skill" data-page="woodcutting">
                 <span class="nav-icon">🪓</span>
                 <div class="nav-skill-wrapper">
-                    <span class="nav-text">伐木</span>
+                    <div class="nav-text-row">
+                        <span class="nav-text">伐木</span>
+                        <span class="nav-exp-level" id="nav-woodcutting-lvl">1</span>
+                    </div>
                     <div class="nav-exp-bar">
                         <div class="nav-exp-bg">
                             <div class="nav-exp-fill" id="nav-woodcutting-exp"></div>
                         </div>
-                        <span class="nav-exp-level" id="nav-woodcutting-lvl">1</span>
                     </div>
                 </div>
             </div>
@@ -67,12 +80,14 @@
             <div class="nav-item nav-item-skill" data-page="mining">
                 <span class="nav-icon">⛏️</span>
                 <div class="nav-skill-wrapper">
-                    <span class="nav-text">挖矿</span>
+                    <div class="nav-text-row">
+                        <span class="nav-text">挖矿</span>
+                        <span class="nav-exp-level" id="nav-mining-lvl">1</span>
+                    </div>
                     <div class="nav-exp-bar">
                         <div class="nav-exp-bg">
                             <div class="nav-exp-fill" id="nav-mining-exp"></div>
                         </div>
-                        <span class="nav-exp-level" id="nav-mining-lvl">1</span>
                     </div>
                 </div>
             </div>
@@ -81,12 +96,14 @@
             <div class="nav-item nav-item-skill" data-page="gather">
                 <span class="nav-icon">⚒️</span>
                 <div class="nav-skill-wrapper">
-                    <span class="nav-text">采集</span>
+                    <div class="nav-text-row">
+                        <span class="nav-text">采集</span>
+                        <span class="nav-exp-level" id="nav-gather-lvl">1</span>
+                    </div>
                     <div class="nav-exp-bar">
                         <div class="nav-exp-bg">
                             <div class="nav-exp-fill" id="nav-gather-exp"></div>
                         </div>
-                        <span class="nav-exp-level" id="nav-gather-lvl">1</span>
                     </div>
                 </div>
             </div>
@@ -95,12 +112,14 @@
             <div class="nav-item nav-item-skill" data-page="craft">
                 <span class="nav-icon">🔨</span>
                 <div class="nav-skill-wrapper">
-                    <span class="nav-text">制作</span>
+                    <div class="nav-text-row">
+                        <span class="nav-text">制作</span>
+                        <span class="nav-exp-level" id="nav-craft-lvl">1</span>
+                    </div>
                     <div class="nav-exp-bar">
                         <div class="nav-exp-bg">
                             <div class="nav-exp-fill" id="nav-craft-exp"></div>
                         </div>
-                        <span class="nav-exp-level" id="nav-craft-lvl">1</span>
                     </div>
                 </div>
             </div>
@@ -109,12 +128,14 @@
             <div class="nav-item nav-item-skill" data-page="combat">
                 <span class="nav-icon">⚔️</span>
                 <div class="nav-skill-wrapper">
-                    <span class="nav-text">战斗</span>
+                    <div class="nav-text-row">
+                        <span class="nav-text">战斗</span>
+                        <span class="nav-exp-level" id="nav-combat-lvl">1</span>
+                    </div>
                     <div class="nav-exp-bar">
                         <div class="nav-exp-bg">
                             <div class="nav-exp-fill" id="nav-combat-exp"></div>
                         </div>
-                        <span class="nav-exp-level" id="nav-combat-lvl">1</span>
                     </div>
                 </div>
             </div>
@@ -250,7 +271,7 @@
         </div>
     </div>
 
-    <script src="game.js?v=2026031409"></script>
+    <script src="game.js?v=2026031410"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
