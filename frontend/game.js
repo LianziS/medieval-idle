@@ -189,6 +189,12 @@ function init() {
     setupEventListeners();
     startGameLoop();
     updateUI();
+    
+    // 修复刷新页面后进度条异常：重置进度条为 0
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    
     console.log('⚔️ 中世纪雇佣兵 已启动!');
 }
 
@@ -385,6 +391,10 @@ function startWoodcuttingWithCount(treeId, count) {
     gameState.activeWoodcutting = treeId;
     gameState.woodcuttingCount = count;
     gameState.woodcuttingRemaining = count;
+    // 重置进度条
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
     setActionState({ name: `采集${tree.name}`, icon: tree.icon }, tree.duration);
     renderWoodcutting();
     scheduleWoodcutting(treeId);
@@ -405,8 +415,14 @@ function scheduleWoodcutting(treeId) {
     if (!isInfinte) {
         gameState.woodcuttingRemaining--;
     }
+    // 保存当前的 actionStartTime，避免进度条重置
+    const currentStartTime = gameState.actionStartTime;
     // 重置行动开始时间，让进度条重新跑
     setActionState({ name: `采集${tree.name}`, icon: tree.icon }, tree.duration);
+    // 如果不是第一次行动，保持原来的开始时间偏移
+    if (currentStartTime > 0) {
+        gameState.actionStartTime = currentStartTime + tree.duration;
+    }
     updateActionStatusBar();
     renderWoodcutting();
     
@@ -437,6 +453,10 @@ function startMiningWithCount(oreId, count) {
     gameState.activeMining = oreId;
     gameState.miningCount = count;
     gameState.miningRemaining = count;
+    // 重置进度条
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
     setActionState({ name: `挖掘${ore.name}`, icon: ore.icon }, ore.duration);
     renderMining();
     scheduleMining(oreId);
@@ -457,8 +477,14 @@ function scheduleMining(oreId) {
     if (!isInfinte) {
         gameState.miningRemaining--;
     }
+    // 保存当前的 actionStartTime，避免进度条重置
+    const currentStartTime = gameState.actionStartTime;
     // 重置行动开始时间，让进度条重新跑
     setActionState({ name: `挖掘${ore.name}`, icon: ore.icon }, ore.duration);
+    // 如果不是第一次行动，保持原来的开始时间偏移
+    if (currentStartTime > 0) {
+        gameState.actionStartTime = currentStartTime + ore.duration;
+    }
     updateActionStatusBar();
     renderMining();
     
