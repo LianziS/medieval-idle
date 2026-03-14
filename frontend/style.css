@@ -216,12 +216,12 @@ body::after {
     overflow: hidden;
     flex-shrink: 0;
     width: 100%;
-    min-height: 36px;
+    min-height: 34px;
 }
 
 .nav-item-skill {
-    min-height: 52px;
-    padding: 2px 0;
+    min-height: 45px;
+    padding: 1px 0;
 }
 
 .nav-item + .nav-item {
@@ -238,9 +238,9 @@ body::after {
 }
 
 .nav-icon {
-    font-size: 1.1rem;
-    width: 42px;
-    height: 36px;
+    font-size: 1.05rem;
+    width: 40px;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -251,7 +251,7 @@ body::after {
     display: flex;
     flex-direction: column;
     flex: 1;
-    padding: 0 4px 0 2px;
+    padding: 0 3px 0 0;
     min-width: 0;
 }
 
@@ -263,6 +263,7 @@ body::after {
     width: 0;
     transition: all 0.3s ease;
     overflow: hidden;
+    line-height: 1.2;
 }
 
 .sidebar.expanded .nav-text {
@@ -273,7 +274,7 @@ body::after {
 /* 侧边栏技能经验条 */
 .nav-exp-bar {
     position: relative;
-    padding: 2px 0 0 0;
+    padding: 1px 0 0 0;
     opacity: 0;
     width: 0;
     transition: all 0.3s ease;
@@ -303,7 +304,7 @@ body::after {
 .nav-exp-level {
     position: absolute;
     right: 0;
-    top: -11px;
+    top: -10px;
     font-size: 0.6rem;
     color: #6b4f3c;
     font-weight: bold;
@@ -958,17 +959,17 @@ body::after {
     }
     
     .nav-item-skill {
-        min-height: 48px;
-        padding: 2px 0;
+        min-height: 45px;
+        padding: 1px 0;
     }
     
     .nav-skill-wrapper {
-        padding: 0 3px 0 1px;
+        padding: 0 2px 0 0;
     }
     
     .nav-exp-level {
         font-size: 0.55rem;
-        top: -10px;
+        top: -9px;
     }
     
     .game-container {
