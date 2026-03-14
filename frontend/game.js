@@ -91,7 +91,18 @@ let gameState = {
     combat: { active: false, zoneId: null, endTime: 0 },
     currentZoneIndex: 0,
     currentPage: 'home',
-    lastSave: Date.now()
+    lastSave: Date.now(),
+    // 各技能独立等级和经验
+    woodcuttingLevel: 1,
+    woodcuttingExp: 0,
+    miningLevel: 1,
+    miningExp: 0,
+    gatheringLevel: 1,
+    gatheringExp: 0,
+    craftingLevel: 1,
+    craftingExp: 0,
+    combatLevel: 1,
+    combatExp: 0
 };
 
 CONFIG.buildings.forEach(b => { gameState.buildings[b.id] = { level: 0 }; });
@@ -102,8 +113,6 @@ const elements = {
     pages: document.querySelectorAll('.page'),
     level: document.getElementById('level'),
     topLevel: document.getElementById('top-level'),
-    sidebarLevel: document.getElementById('sidebar-level'),
-    expBarFill: document.getElementById('exp-bar-fill'),
     storageGold: document.getElementById('storage-gold'),
     storageWood: document.getElementById('storage-wood'),
     storageStone: document.getElementById('storage-stone'),
@@ -117,7 +126,11 @@ const elements = {
     gatherActions: document.getElementById('gather-actions'),
     craftActions: document.getElementById('craft-actions'),
     woodcuttingList: document.getElementById('woodcutting-list'),
+    woodcuttingExpFill: document.getElementById('woodcutting-exp-fill'),
+    woodcuttingLevel: document.getElementById('woodcutting-level'),
     miningList: document.getElementById('mining-list'),
+    miningExpFill: document.getElementById('mining-exp-fill'),
+    miningLevel: document.getElementById('mining-level'),
     playTime: document.getElementById('play-time'),
     modal: document.getElementById('modal'),
     modalBody: document.getElementById('modal-body'),
@@ -209,7 +222,6 @@ function updateUI() {
     const levelText = gameState.level.toString();
     if (elements.level) elements.level.textContent = levelText;
     if (elements.topLevel) elements.topLevel.textContent = levelText;
-    if (elements.sidebarLevel) elements.sidebarLevel.textContent = levelText;
     
     if (elements.storageGold) elements.storageGold.textContent = formatNumber(Math.floor(gameState.resources.gold));
     if (elements.storageWood) elements.storageWood.textContent = formatNumber(Math.floor(gameState.resources.wood));
@@ -222,7 +234,6 @@ function updateUI() {
     const seconds = elapsed % 60;
     if (elements.playTime) elements.playTime.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     
-    updateExpBar();
     updateCombatUI();
     renderBuildings();
     renderGatherActions();
@@ -236,26 +247,6 @@ function formatNumber(num) {
     if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
     return Math.floor(num).toString();
-}
-
-function updateExpBar() {
-    if (!elements.expBarFill) return;
-    
-    const currentLevel = gameState.level;
-    const currentExp = gameState.exp;
-    
-    if (currentLevel >= 200) {
-        elements.expBarFill.style.width = '100%';
-        return;
-    }
-    
-    const prevExp = getExpForLevel(currentLevel);
-    const nextExp = getExpForLevel(currentLevel + 1);
-    const expNeeded = nextExp - prevExp;
-    const expProgress = currentExp - prevExp;
-    
-    const percentage = expNeeded > 0 ? (expProgress / expNeeded) * 100 : 0;
-    elements.expBarFill.style.width = `${Math.min(100, Math.max(0, percentage))}%`;
 }
 
 function checkUnlock(req) {
@@ -408,8 +399,25 @@ function renderCraftActions() {
     });
 }
 
+function getSkillExpForLevel(level) {
+    if (level >= 200) return EXP_TABLE[200];
+    return EXP_TABLE[level] || 0;
+}
+
 function renderWoodcutting() {
     if (!elements.woodcuttingList) return;
+    
+    // 更新伐木经验条
+    if (elements.woodcuttingExpFill && elements.woodcuttingLevel) {
+        const currentExp = getSkillExpForLevel(gameState.woodcuttingLevel);
+        const nextExp = getSkillExpForLevel(gameState.woodcuttingLevel + 1);
+        const expNeeded = nextExp - currentExp;
+        const expProgress = gameState.woodcuttingExp - currentExp;
+        const percentage = expNeeded > 0 ? (expProgress / expNeeded) * 100 : 0;
+        elements.woodcuttingExpFill.style.width = `${Math.min(100, Math.max(0, percentage))}%`;
+        elements.woodcuttingLevel.textContent = gameState.woodcuttingLevel;
+    }
+    
     elements.woodcuttingList.innerHTML = CONFIG.trees.map(tree => {
         const isActive = gameState.activeWoodcutting === tree.id;
         const isUnlocked = gameState.level >= tree.reqLevel;
@@ -445,10 +453,27 @@ function startWoodcutting(treeId) {
     setTimeout(() => completeWoodcutting(treeId), tree.duration);
 }
 
+function addSkillExp(skill, amount) {
+    const skillKey = skill + 'Exp';
+    const levelKey = skill + 'Level';
+    gameState[skillKey] += amount;
+    
+    let leveledUp = false;
+    while (gameState[levelKey] < 200 && gameState[skillKey] >= getSkillExpForLevel(gameState[levelKey] + 1)) {
+        gameState[levelKey]++;
+        leveledUp = true;
+    }
+    
+    if (leveledUp) {
+        showToast(`🎉 ${skill === 'woodcutting' ? '伐木' : skill === 'mining' ? '挖矿' : '技能'}升级了！当前等级：${gameState[levelKey]}`);
+    }
+}
+
 function completeWoodcutting(treeId) {
     const tree = CONFIG.trees.find(t => t.id === treeId);
     gameState.resources.wood += 1;
     addExp(tree.exp);
+    addSkillExp('woodcutting', tree.exp);
     gameState.activeWoodcutting = null;
     updateUI();
     saveGame();
@@ -457,6 +482,18 @@ function completeWoodcutting(treeId) {
 
 function renderMining() {
     if (!elements.miningList) return;
+    
+    // 更新挖矿经验条
+    if (elements.miningExpFill && elements.miningLevel) {
+        const currentExp = getSkillExpForLevel(gameState.miningLevel);
+        const nextExp = getSkillExpForLevel(gameState.miningLevel + 1);
+        const expNeeded = nextExp - currentExp;
+        const expProgress = gameState.miningExp - currentExp;
+        const percentage = expNeeded > 0 ? (expProgress / expNeeded) * 100 : 0;
+        elements.miningExpFill.style.width = `${Math.min(100, Math.max(0, percentage))}%`;
+        elements.miningLevel.textContent = gameState.miningLevel;
+    }
+    
     elements.miningList.innerHTML = CONFIG.ores.map(ore => {
         const isActive = gameState.activeMining === ore.id;
         const isUnlocked = gameState.level >= ore.reqLevel;
@@ -496,6 +533,7 @@ function completeMining(oreId) {
     const ore = CONFIG.ores.find(o => o.id === oreId);
     gameState.resources.stone += 1;
     addExp(ore.exp);
+    addSkillExp('mining', ore.exp);
     gameState.activeMining = null;
     updateUI();
     saveGame();

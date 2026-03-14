@@ -36,16 +36,6 @@
         <div class="sidebar-icon-bar">
             <button class="icon-btn toggle-btn" id="sidebar-toggle" title="展开/收起">☰</button>
             <div class="icon-separator"></div>
-            <!-- 经验条区域 -->
-            <div class="exp-bar-container">
-                <div class="exp-bar-bg">
-                    <div class="exp-bar-fill" id="exp-bar-fill"></div>
-                </div>
-                <div class="exp-bar-text">
-                    <span class="exp-level" id="sidebar-level">1</span>
-                </div>
-            </div>
-            <div class="icon-separator"></div>
             <div class="nav-item active" data-page="home">
                 <span class="nav-icon">🏠</span>
                 <span class="nav-text">主页</span>
@@ -141,6 +131,12 @@
         <main class="page" id="page-woodcutting">
             <section class="panel">
                 <h2 class="panel-title">🪓 伐木场</h2>
+                <div class="skill-exp-bar">
+                    <div class="skill-exp-bg">
+                        <div class="skill-exp-fill" id="woodcutting-exp-fill"></div>
+                    </div>
+                    <span class="skill-exp-level" id="woodcutting-level">1</span>
+                </div>
                 <div class="woodcutting-list" id="woodcutting-list"></div>
             </section>
         </main>
@@ -149,6 +145,12 @@
         <main class="page" id="page-mining">
             <section class="panel">
                 <h2 class="panel-title">⛏️ 矿洞</h2>
+                <div class="skill-exp-bar">
+                    <div class="skill-exp-bg">
+                        <div class="skill-exp-fill" id="mining-exp-fill"></div>
+                    </div>
+                    <span class="skill-exp-level" id="mining-level">1</span>
+                </div>
                 <div class="mining-list" id="mining-list"></div>
             </section>
         </main>
