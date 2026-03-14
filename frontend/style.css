@@ -112,12 +112,16 @@ body::after {
     font-size: 1.1rem;
     flex-shrink: 0;
     color: #fff;
+    display: flex;
+    align-items: center;
 }
 
 .action-status-name {
     font-size: 0.8rem;
     color: #fff;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
 }
 
 .action-progress-wrapper {
@@ -129,10 +133,10 @@ body::after {
 .action-progress-bg {
     flex: 1;
     max-width: 200px;
-    height: 16px;
+    height: 24px;
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
+    border-radius: 4px;
     position: relative;
     overflow: hidden;
 }
@@ -145,6 +149,7 @@ body::after {
     width: 0%;
     background: linear-gradient(90deg, #8B2C2D 0%, #a33435 50%, #8B2C2D 100%);
     transition: width 0.05s linear;
+    border-radius: 3px;
 }
 
 .action-progress-time {
@@ -1225,16 +1230,16 @@ body::after {
     
     .action-progress-bg {
         max-width: 140px;
-        height: 14px;
+        height: 22px;
     }
     
     .action-progress-time {
-        font-size: 0.65rem;
+        font-size: 0.7rem;
     }
     
     .action-cancel-btn {
-        padding: 2px 6px;
-        font-size: 0.65rem;
+        padding: 4px 8px;
+        font-size: 0.7rem;
     }
     
     .action-reward-item {

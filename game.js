@@ -557,12 +557,13 @@ function updateActionStatusBar() {
     if (gameState.currentAction) {
         elements.actionStatusIcon.textContent = gameState.currentAction.icon;
         
-        // 添加次数显示
+        // 添加次数显示（从零往上增加）
         let countText = '';
         if (gameState.woodcuttingCount > 0 || gameState.miningCount > 0) {
             const total = gameState.woodcuttingCount || gameState.miningCount || 0;
             const remaining = gameState.woodcuttingRemaining || gameState.miningRemaining || 0;
-            const countDisplay = total >= 99999 ? '∞' : `${remaining}/${total}`;
+            const completed = total - remaining;
+            const countDisplay = total >= 99999 ? '∞' : `${completed}/${total}`;
             countText = ` (${countDisplay})`;
         }
         elements.actionStatusName.textContent = gameState.currentAction.name + countText;
