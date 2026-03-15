@@ -1525,6 +1525,12 @@ body::after {
     box-shadow: -3px 0 15px rgba(0, 0, 0, 0.3);
 }
 
+@media (max-width: 768px) {
+    .merchant-modal-panel {
+        height: 100vh;
+    }
+}
+
 @media (min-width: 501px) {
     .merchant-modal-panel {
         width: 500px;
@@ -1653,12 +1659,17 @@ body::after {
 .merchant-tab-content {
     display: none;
     padding: 16px;
-    flex: 1;
     overflow-y: auto;
 }
 
 .merchant-tab-content.active {
     display: block;
+}
+
+@media (max-width: 768px) {
+    .merchant-tab-content {
+        padding: 10px;
+    }
 }
 
 /* 商品列表 */
@@ -1799,12 +1810,16 @@ body::after {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding: 12px;
     background: rgba(0, 0, 0, 0.2);
-    flex-shrink: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 @media (max-width: 768px) {
     .merchant-warehouse {
         padding: 8px;
+        flex: 1 1 66.67%;  /* 占弹窗 4/6 高度 */
     }
 }
 
@@ -1844,32 +1859,33 @@ body::after {
 
 .merchant-warehouse-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(4, 1fr);
     gap: 6px;
-    max-height: 160px;
+    flex: 1;
     overflow-y: auto;
+    align-content: start;
 }
 
 @media (max-width: 768px) {
     .merchant-warehouse-grid {
-        max-height: 120px;
         gap: 4px;
     }
 }
 
 .merchant-warehouse-item {
-    padding: 8px;
+    padding: 6px 4px;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 6px;
+    border-radius: 4px;
     border: 1px solid rgba(255, 255, 255, 0.15);
     cursor: pointer;
     transition: all 0.2s;
     position: relative;
-    min-height: 70px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    aspect-ratio: 1;
 }
 
 .merchant-warehouse-item:hover {
@@ -1877,14 +1893,9 @@ body::after {
     border-color: rgba(255, 255, 255, 0.3);
 }
 
-.merchant-warehouse-item.empty {
-    opacity: 0.4;
+.merchant-warehouse-item.empty-slot {
     cursor: default;
-}
-
-.merchant-warehouse-item.empty:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
+    pointer-events: none;
 }
 
 .merchant-warehouse-item.selected {

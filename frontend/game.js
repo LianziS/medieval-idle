@@ -586,28 +586,38 @@ function renderMerchantWarehouse() {
     if (!elements.merchantWarehouseGrid) return;
     
     const resources = CONFIG.resources.filter(r => r !== 'gold');
-    const html = resources.map(res => {
-        const count = gameState.resources[res];
-        const isSelected = gameState.warehouseSelection.includes(res);
-        const icons = { wood: '🪵', stone: '🪨', herb: '🌿' };
-        const names = { wood: '木材', stone: '石头', herb: '草药' };
-        const isEmpty = count === 0;
-        
-        return `
-            <div class="merchant-warehouse-item ${isSelected ? 'selected' : ''} ${isEmpty ? 'empty' : ''}" 
-                data-resource="${res}"
-                ${!gameState.isSelectMode && !isEmpty ? 'style="pointer-events: none;"' : ''}>
-                <div class="merchant-warehouse-item-icon">${isEmpty ? '' : icons[res]}</div>
-                <div class="merchant-warehouse-item-name">${names[res]}</div>
-                <div class="merchant-warehouse-item-count">${isEmpty ? '-' : count}</div>
-            </div>
-        `;
+    const totalSlots = 24; // 4 排 x 6 列 = 24 格
+    
+    // 生成 24 个格子
+    const html = Array.from({ length: totalSlots }, (_, index) => {
+        if (index < resources.length) {
+            const res = resources[index];
+            const count = gameState.resources[res];
+            const isSelected = gameState.warehouseSelection.includes(res);
+            const icons = { wood: '🪵', stone: '🪨', herb: '🌿' };
+            const names = { wood: '木材', stone: '石头', herb: '草药' };
+            
+            return `
+                <div class="merchant-warehouse-item ${isSelected ? 'selected' : ''}" 
+                    data-resource="${res}"
+                    ${!gameState.isSelectMode ? 'style="pointer-events: none;"' : ''}>
+                    <div class="merchant-warehouse-item-icon">${icons[res]}</div>
+                    <div class="merchant-warehouse-item-name">${names[res]}</div>
+                    <div class="merchant-warehouse-item-count">${count}</div>
+                </div>
+            `;
+        } else {
+            // 空格子（不显示内容）
+            return `
+                <div class="merchant-warehouse-item empty-slot"></div>
+            `;
+        }
     }).join('');
     
     elements.merchantWarehouseGrid.innerHTML = html;
     
     // 绑定选择事件
-    elements.merchantWarehouseGrid.querySelectorAll('.merchant-warehouse-item:not(.empty)').forEach(item => {
+    elements.merchantWarehouseGrid.querySelectorAll('.merchant-warehouse-item:not(.empty-slot)').forEach(item => {
         item.addEventListener('click', function() {
             const res = this.dataset.resource;
             toggleWarehouseSelection(res);
