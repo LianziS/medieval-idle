@@ -326,6 +326,7 @@ function setupSidebar() {
     
     // 根据页面宽度自动展开/收起侧边栏
     function checkSidebarWidth() {
+        if (!elements.sidebar) return;
         const width = window.innerWidth;
         const isExpanded = elements.sidebar.classList.contains('expanded');
         const shouldExpand = width >= 1200; // 足够宽时自动展开
