@@ -231,6 +231,8 @@ const elements = {
     merchantModal: document.getElementById('merchant-modal'),
     merchantModalOverlay: document.getElementById('merchant-modal-overlay'),
     merchantModalClose: document.getElementById('merchant-modal-close'),
+    merchantSidebar: document.getElementById('merchant-sidebar'),
+    merchantBackBtn: document.getElementById('merchant-back-btn'),
     merchantModalAvatar: document.getElementById('merchant-modal-avatar'),
     merchantModalName: document.getElementById('merchant-modal-name'),
     merchantModalFavorability: document.getElementById('merchant-modal-favorability'),
@@ -662,6 +664,11 @@ function switchMerchantTab(tab) {
 }
 
 function setupMerchantListeners() {
+    // 返回按钮
+    if (elements.merchantBackBtn) {
+        elements.merchantBackBtn.addEventListener('click', closeMerchantModal);
+    }
+    
     // 关闭弹窗
     if (elements.merchantModalClose) {
         elements.merchantModalClose.addEventListener('click', closeMerchantModal);
@@ -669,6 +676,62 @@ function setupMerchantListeners() {
     if (elements.merchantModalOverlay) {
         elements.merchantModalOverlay.addEventListener('click', closeMerchantModal);
     }
+    
+    // 滑动关闭（向右滑动）
+    setupMerchantSwipeClose();
+}
+
+let touchStartX = 0;
+let touchCurrentX = 0;
+
+function setupMerchantSwipeClose() {
+    if (!elements.merchantSidebar) return;
+    
+    elements.merchantSidebar.addEventListener('touchstart', function(e) {
+        touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+    
+    elements.merchantSidebar.addEventListener('touchmove', function(e) {
+        touchCurrentX = e.touches[0].clientX;
+    }, { passive: true });
+    
+    elements.merchantSidebar.addEventListener('touchend', function() {
+        const diff = touchCurrentX - touchStartX;
+        // 向右滑动超过 50px 触发关闭
+        if (diff > 50) {
+            closeMerchantModal();
+        }
+    });
+    
+    // 鼠标支持（桌面端测试）
+    let mouseStartX = 0;
+    let mouseCurrentX = 0;
+    let isMouseDown = false;
+    
+    elements.merchantSidebar.addEventListener('mousedown', function(e) {
+        isMouseDown = true;
+        mouseStartX = e.clientX;
+    });
+    
+    elements.merchantSidebar.addEventListener('mousemove', function(e) {
+        if (isMouseDown) {
+            mouseCurrentX = e.clientX;
+        }
+    });
+    
+    elements.merchantSidebar.addEventListener('mouseup', function() {
+        if (isMouseDown) {
+            isMouseDown = false;
+            const diff = mouseCurrentX - mouseStartX;
+            if (diff > 50) {
+                closeMerchantModal();
+            }
+        }
+    });
+    
+    elements.merchantSidebar.addEventListener('mouseleave', function() {
+        isMouseDown = false;
+    });
     
     // 切换标签
     elements.merchantTabs.forEach(tab => {
