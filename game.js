@@ -200,8 +200,8 @@ const CONFIG = {
         { id: 'cyan_ingot', name: '青闪铁锭', icon: '🔩', reqLevel: 1, duration: 6000, exp: 3, materials: { cyan_ore: 2 } },
         { id: 'red_copper_ingot', name: '赤铜锭', icon: '🥉', reqLevel: 10, duration: 8000, exp: 4, materials: { red_iron: 2 } },
         { id: 'feather_ingot', name: '轻羽锭', icon: '🪶', reqLevel: 20, duration: 10000, exp: 5, materials: { feather_ore: 2 } },
-        { id: 'white_silver_ingot', name: '白银锭', icon: '🪙', reqLevel: 35, duration: 12000, exp: 6, materials: { white_ore: 2 } },
-        { id: 'hell_steel_ingot', name: '狱炎钢', icon: '🔥', reqLevel: 50, duration: 14000, exp: 7, materials: { hell_ore: 2 } },
+        { id: 'white_silver_ingot', name: '白银锭', icon: '🪙', reqLevel: 35, duration: 12000, exp: 6, materials: { hell_ore: 2 } },
+        { id: 'hell_steel_ingot', name: '狱炎钢', icon: '🔥', reqLevel: 50, duration: 14000, exp: 7, materials: { white_ore: 2 } },
         { id: 'thunder_steel_ingot', name: '雷鸣钢', icon: '⚡', reqLevel: 65, duration: 16000, exp: 8, materials: { thunder_ore: 2 } },
         { id: 'brilliant_crystal', name: '璀璨水晶', icon: '💎', reqLevel: 80, duration: 18000, exp: 9, materials: { brilliant: 2 } },
         { id: 'star_crystal', name: '星辉水晶', icon: '✨', reqLevel: 95, duration: 30000, exp: 12, materials: { star_ore: 2 } }
