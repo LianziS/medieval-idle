@@ -277,7 +277,11 @@ let gameState = {
     activeQuests: {},
     warehouseSelection: [],
     isSelectMode: false,
-    sellConfirming: false
+    sellConfirming: false,
+    // 物品存储
+    woodcuttingInventory: {},
+    miningInventory: {},
+    gatheringInventory: {}
 };
 
 CONFIG.buildings.forEach(b => { gameState.buildings[b.id] = { level: 0 }; });
@@ -395,6 +399,8 @@ function init() {
     setupMerchantListeners();
     startGameLoop();
     updateUI();
+    renderWoodcuttingInventory();
+    renderMiningInventory();
     renderGatheringInventory();
     
     // 修复刷新页面后进度条异常：如果有进行中的行动，重置进度条和开始时间
@@ -1116,7 +1122,13 @@ function scheduleWoodcutting(treeId) {
 
 function completeWoodcuttingOnce(treeId) {
     const tree = CONFIG.trees.find(t => t.id === treeId);
-    gameState.resources.wood += 1;
+    
+    // 添加对应的木材到物品存储
+    if (!gameState.woodcuttingInventory[treeId]) {
+        gameState.woodcuttingInventory[treeId] = 0;
+    }
+    gameState.woodcuttingInventory[treeId]++;
+    
     addExp(tree.exp);
     addSkillExp('woodcutting', tree.exp);
     updateUI();
@@ -1191,7 +1203,13 @@ function scheduleMining(oreId) {
 
 function completeMiningOnce(oreId) {
     const ore = CONFIG.ores.find(o => o.id === oreId);
-    gameState.resources.stone += 1;
+    
+    // 添加对应的矿石到物品存储
+    if (!gameState.miningInventory[oreId]) {
+        gameState.miningInventory[oreId] = 0;
+    }
+    gameState.miningInventory[oreId]++;
+    
     addExp(ore.exp);
     addSkillExp('mining', ore.exp);
     updateUI();
@@ -1528,7 +1546,9 @@ function updateUI() {
     renderGathering();
     renderCombatZones();
     
-    // 渲染仓库采集物品
+    // 渲染仓库物品
+    renderWoodcuttingInventory();
+    renderMiningInventory();
     renderGatheringInventory();
 }
 
@@ -2139,6 +2159,62 @@ function completeGathering(type, locationId, itemId = null) {
 }
 
 // 渲染仓库中的采集物品
+function renderWoodcuttingInventory() {
+    const container = document.getElementById('storage-woodcutting-items');
+    if (!container) return;
+    
+    if (!gameState.woodcuttingInventory || Object.keys(gameState.woodcuttingInventory).length === 0) {
+        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">暂无伐木物品</div>';
+        return;
+    }
+    
+    const html = Object.entries(gameState.woodcuttingInventory)
+        .filter(([id, count]) => count > 0)
+        .map(([id, count]) => {
+            const tree = CONFIG.trees.find(t => t.id === id);
+            const name = tree ? tree.drop : id;
+            const icon = tree ? tree.dropIcon : '🪵';
+            return `
+                <div class="storage-item-small">
+                    <div class="storage-item-small-icon">${icon}</div>
+                    <div class="storage-item-small-name">${name}</div>
+                    <div class="storage-item-small-count">×${count}</div>
+                </div>
+            `;
+        })
+        .join('');
+    
+    container.innerHTML = html || '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">暂无伐木物品</div>';
+}
+
+function renderMiningInventory() {
+    const container = document.getElementById('storage-mining-items');
+    if (!container) return;
+    
+    if (!gameState.miningInventory || Object.keys(gameState.miningInventory).length === 0) {
+        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">暂无挖矿物品</div>';
+        return;
+    }
+    
+    const html = Object.entries(gameState.miningInventory)
+        .filter(([id, count]) => count > 0)
+        .map(([id, count]) => {
+            const ore = CONFIG.ores.find(o => o.id === id);
+            const name = ore ? ore.drop : id;
+            const icon = ore ? ore.dropIcon : '🪨';
+            return `
+                <div class="storage-item-small">
+                    <div class="storage-item-small-icon">${icon}</div>
+                    <div class="storage-item-small-name">${name}</div>
+                    <div class="storage-item-small-count">×${count}</div>
+                </div>
+            `;
+        })
+        .join('');
+    
+    container.innerHTML = html || '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">暂无挖矿物品</div>';
+}
+
 function renderGatheringInventory() {
     const container = document.getElementById('storage-gathering-items');
     if (!container) return;
