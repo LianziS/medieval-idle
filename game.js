@@ -2373,63 +2373,113 @@ function loadGame() {
                 setTimeout(() => completeCombat(CONFIG.combatZones.find(z => z.id === gameState.combat.zoneId)), gameState.combat.endTime - now);
             } else { gameState.combat.active = false; }
             
-            // 恢复进行中的伐木行动
+            // 离线计算 - 伐木
             if (gameState.activeWoodcutting && gameState.woodcuttingRemaining > 0) {
                 const tree = CONFIG.trees.find(t => t.id === gameState.activeWoodcutting);
                 if (tree) {
-                    // 计算剩余时间
-                    const elapsed = now - gameState.actionStartTime;
-                    const remaining = Math.max(0, gameState.actionDuration - elapsed);
+                    const offlineTime = now - gameState.actionStartTime;
+                    const actionDuration = tree.duration;
+                    const completedCount = Math.floor(offlineTime / actionDuration);
+                    const remainingTime = offlineTime % actionDuration;
                     
-                    setActionState({ name: `采集${tree.name}`, icon: tree.icon }, tree.duration);
+                    // 给予离线完成的奖励
+                    const actualCompleted = Math.min(completedCount, gameState.woodcuttingRemaining);
+                    for (let i = 0; i < actualCompleted; i++) {
+                        // 添加木材
+                        if (!gameState.woodcuttingInventory[tree.id]) {
+                            gameState.woodcuttingInventory[tree.id] = 0;
+                        }
+                        gameState.woodcuttingInventory[tree.id]++;
+                        addExp(tree.exp);
+                        addSkillExp('woodcutting', tree.exp);
+                    }
+                    gameState.woodcuttingRemaining -= actualCompleted;
                     
-                    if (remaining > 0) {
-                        // 还有剩余时间，继续当前行动
-                        setTimeout(() => {
-                            if (gameState.activeWoodcutting === tree.id) {
-                                completeWoodcuttingOnce(tree.id);
-                                scheduleWoodcutting(tree.id);
-                            }
-                        }, remaining);
-                    } else {
-                        // 时间已到，立即完成并继续下一次
-                        completeWoodcuttingOnce(tree.id);
-                        scheduleWoodcutting(tree.id);
+                    // 更新行动开始时间
+                    gameState.actionStartTime = now - remainingTime;
+                    
+                    // 显示离线奖励
+                    if (actualCompleted > 0) {
+                        showToast(`⏰ 离线完成 ${actualCompleted} 次伐木！`);
                     }
                     
-                    // 启动进度条动画
-                    if (animationFrame) cancelAnimationFrame(animationFrame);
-                    lastActionStartTime = gameState.actionStartTime;
-                    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
-                    renderWoodcutting();
+                    // 如果还有剩余次数，继续执行
+                    if (gameState.woodcuttingRemaining > 0 || gameState.woodcuttingCount >= 99999) {
+                        setActionState({ name: `采集${tree.name}`, icon: tree.icon }, actionDuration);
+                        
+                        if (remainingTime > 0) {
+                            setTimeout(() => {
+                                if (gameState.activeWoodcutting === tree.id) {
+                                    completeWoodcuttingOnce(tree.id);
+                                    scheduleWoodcutting(tree.id);
+                                }
+                            }, actionDuration - remainingTime);
+                        } else {
+                            scheduleWoodcutting(tree.id);
+                        }
+                        
+                        if (animationFrame) cancelAnimationFrame(animationFrame);
+                        lastActionStartTime = gameState.actionStartTime;
+                        animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+                        renderWoodcutting();
+                    } else {
+                        // 全部完成，重置状态
+                        gameState.activeWoodcutting = null;
+                        gameState.woodcuttingCount = 0;
+                        setActionState(null, 0);
+                    }
                 }
             }
             
-            // 恢复进行中的挖矿行动
+            // 离线计算 - 挖矿
             if (gameState.activeMining && gameState.miningRemaining > 0) {
                 const ore = CONFIG.ores.find(o => o.id === gameState.activeMining);
                 if (ore) {
-                    const elapsed = now - gameState.actionStartTime;
-                    const remaining = Math.max(0, gameState.actionDuration - elapsed);
+                    const offlineTime = now - gameState.actionStartTime;
+                    const actionDuration = ore.duration;
+                    const completedCount = Math.floor(offlineTime / actionDuration);
+                    const remainingTime = offlineTime % actionDuration;
                     
-                    setActionState({ name: `挖掘${ore.name}`, icon: ore.icon }, ore.duration);
+                    const actualCompleted = Math.min(completedCount, gameState.miningRemaining);
+                    for (let i = 0; i < actualCompleted; i++) {
+                        if (!gameState.miningInventory[ore.id]) {
+                            gameState.miningInventory[ore.id] = 0;
+                        }
+                        gameState.miningInventory[ore.id]++;
+                        addExp(ore.exp);
+                        addSkillExp('mining', ore.exp);
+                    }
+                    gameState.miningRemaining -= actualCompleted;
                     
-                    if (remaining > 0) {
-                        setTimeout(() => {
-                            if (gameState.activeMining === ore.id) {
-                                completeMiningOnce(ore.id);
-                                scheduleMining(ore.id);
-                            }
-                        }, remaining);
-                    } else {
-                        completeMiningOnce(ore.id);
-                        scheduleMining(ore.id);
+                    gameState.actionStartTime = now - remainingTime;
+                    
+                    if (actualCompleted > 0) {
+                        showToast(`⏰ 离线完成 ${actualCompleted} 次挖矿！`);
                     }
                     
-                    if (animationFrame) cancelAnimationFrame(animationFrame);
-                    lastActionStartTime = gameState.actionStartTime;
-                    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
-                    renderMining();
+                    if (gameState.miningRemaining > 0 || gameState.miningCount >= 99999) {
+                        setActionState({ name: `挖掘${ore.name}`, icon: ore.icon }, actionDuration);
+                        
+                        if (remainingTime > 0) {
+                            setTimeout(() => {
+                                if (gameState.activeMining === ore.id) {
+                                    completeMiningOnce(ore.id);
+                                    scheduleMining(ore.id);
+                                }
+                            }, actionDuration - remainingTime);
+                        } else {
+                            scheduleMining(ore.id);
+                        }
+                        
+                        if (animationFrame) cancelAnimationFrame(animationFrame);
+                        lastActionStartTime = gameState.actionStartTime;
+                        animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+                        renderMining();
+                    } else {
+                        gameState.activeMining = null;
+                        gameState.miningCount = 0;
+                        setActionState(null, 0);
+                    }
                 }
             }
             

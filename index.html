@@ -7,7 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
     <title>中世纪雇佣兵 - 放置游戏</title>
-    <link rel="stylesheet" href="style.css?v=202603202330">
+    <link rel="stylesheet" href="style.css?v=202603202335">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#1B2A3A;color:#A0B2C0;min-height:100vh;padding:0;font-size:14px;overflow-x:hidden}
@@ -19,7 +19,7 @@
     <!-- 顶部固定区域 -->
     <header class="top-fixed">
         <div class="top-fixed-content">
-            <span class="update-time-badge">代码更新: 2026-03-20 23:30</span>
+            <span class="update-time-badge">代码更新: 2026-03-20 23:35</span>
             <span class="player-badge">
                 <span>LV.<span id="top-level">1</span></span>
             </span>
@@ -133,6 +133,18 @@
         <main class="page" id="page-storage">
             <section class="panel">
                 <h2 class="panel-title">📦 仓库</h2>
+                
+                <!-- 基础资源 -->
+                <h3 class="storage-section-title">基础资源</h3>
+                <div class="storage-grid">
+                    <div class="storage-item">
+                        <span class="storage-icon">💰</span>
+                        <div class="storage-info">
+                            <span class="storage-name">金币</span>
+                            <span class="storage-value" id="storage-gold">0</span>
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- 伐木物品 -->
                 <h3 class="storage-section-title">伐木物品</h3>
@@ -314,6 +326,6 @@
         </div>
     </div>
 
-    <script src="game.js?v=202603202330"></script>
+    <script src="game.js?v=202603202335"></script>
 </body>
 </html>
