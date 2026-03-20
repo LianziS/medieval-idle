@@ -1912,7 +1912,8 @@ function renderGatheringTabs() {
     
     // 绑定点击事件
     elements.gatheringTabs.querySelectorAll('.gathering-tab').forEach(tab => {
-        tab.addEventListener('click', function() {
+        tab.addEventListener('click', function(e) {
+            e.stopPropagation();
             const index = parseInt(this.dataset.index);
             const loc = CONFIG.gatheringLocations[index];
             if (gameState.level < loc.reqLevel) {
@@ -1937,7 +1938,7 @@ function renderGatheringItems() {
         <div class="gathering-item-card all-gather ${!isLocationUnlocked ? 'locked' : ''}" data-type="all">
             <div class="gathering-item-icon">🧺</div>
             <div class="gathering-item-info">
-                <div class="gathering-item-name">${location.name}·全采集</div>
+                <div class="gathering-item-name">${location.name}</div>
                 <div class="gathering-item-desc">每次行动 100% 成功，每种物品 30% 概率获得</div>
                 <div class="gathering-item-meta">${location.duration/1000}秒 | +${location.exp} EXP</div>
             </div>
@@ -1976,19 +1977,30 @@ function renderGatheringItems() {
     
     // 绑定点击事件
     elements.gatheringItemsList.querySelectorAll('.gathering-item-card').forEach(card => {
-        card.addEventListener('click', function() {
-            if (!isLocationUnlocked) {
+        card.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            const type = this.dataset.type;
+            const locationId = this.dataset.locationId || location.id;
+            
+            // 检查是否锁定
+            if (this.classList.contains('locked')) {
                 showToast(`❌ 需要等级 ${location.reqLevel}`);
                 return;
             }
             
-            const type = this.dataset.type;
+            // 检查是否正在进行中
+            if (this.classList.contains('active')) {
+                showToast('⏳ 正在采集中');
+                return;
+            }
+            
             if (type === 'all') {
-                openActionModal('gathering_all', location.id, `${location.name}·全采集`);
+                openActionModal('gathering_all', locationId, location.name);
             } else {
                 const itemId = this.dataset.itemId;
                 const item = location.items.find(i => i.id === itemId);
-                openActionModal('gathering_item', location.id, item.name, itemId);
+                openActionModal('gathering_item', locationId, item.name, itemId);
             }
         });
     });
