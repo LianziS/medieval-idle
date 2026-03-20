@@ -435,6 +435,7 @@ let pendingAction = null;
 
 function init() {
     loadGame();
+    updateTotalLevel(); // 确保总等级正确计算
     setupSidebar();
     setupNavigation();
     renderBuildings();
@@ -1657,16 +1658,19 @@ function getExpToNextLevel() {
 }
 
 function addExp(amount) {
-    gameState.exp += amount;
-    let leveledUp = false;
-    while (gameState.level < 200 && gameState.exp >= getExpForLevel(gameState.level + 1)) {
-        gameState.level++;
-        leveledUp = true;
-        gameState.resources.gold += 50;
-    }
-    if (leveledUp) {
-        showToast(`🎉 升级了！当前等级：${gameState.level}`);
-    }
+    // 玩家总等级由所有技能等级相加，不再有独立经验
+    // 此函数保留但不做任何操作
+}
+
+function updateTotalLevel() {
+    // 玩家总等级 = 所有技能等级相加
+    gameState.level = (gameState.woodcuttingLevel || 1) + 
+                      (gameState.miningLevel || 1) + 
+                      (gameState.gatheringLevel || 1) + 
+                      (gameState.craftingLevel || 1) + 
+                      (gameState.forgingLevel || 1) + 
+                      (gameState.combatLevel || 1) - 5; // 减去初始的6个1级
+    if (gameState.level < 1) gameState.level = 1;
 }
 
 function renderBuildings() {
@@ -1887,7 +1891,16 @@ function addSkillExp(skill, amount) {
     }
     
     if (leveledUp) {
-        showToast(`🎉 ${skill === 'woodcutting' ? '伐木' : skill === 'mining' ? '挖矿' : '技能'}升级了！当前等级：${gameState[levelKey]}`);
+        updateTotalLevel();
+        const skillNames = {
+            woodcutting: '伐木',
+            mining: '挖矿',
+            gathering: '采集',
+            crafting: '制作',
+            forging: '锻造',
+            combat: '战斗'
+        };
+        showToast(`🎉 ${skillNames[skill] || '技能'}升级了！当前等级：${gameState[levelKey]}`);
     }
 }
 
@@ -3031,6 +3044,9 @@ function loadGame() {
                     }
                 }
             }
+            
+            // 更新玩家总等级
+            updateTotalLevel();
             
             console.log('💾 游戏已加载');
         } catch (e) { console.error('加载失败:', e); }
