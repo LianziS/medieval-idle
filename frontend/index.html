@@ -110,42 +110,10 @@
                 </div>
             </div>
             
-            <!-- 制作 -->
-            <div class="nav-item nav-item-skill" data-page="craft">
-                <span class="nav-icon">🔨</span>
-                <div class="nav-skill-wrapper">
-                    <div class="nav-text-row">
-                        <span class="nav-text">制作</span>
-                        <span class="nav-exp-level" id="nav-craft-lvl">1</span>
-                    </div>
-                    <div class="nav-exp-bar">
-                        <div class="nav-exp-bg">
-                            <div class="nav-exp-fill" id="nav-craft-exp"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
             <!-- 商人 -->
             <div class="nav-item" data-page="merchant">
                 <span class="nav-icon">🏪</span>
                 <span class="nav-text">商人</span>
-            </div>
-            
-            <!-- 战斗 -->
-            <div class="nav-item nav-item-skill" data-page="combat">
-                <span class="nav-icon">⚔️</span>
-                <div class="nav-skill-wrapper">
-                    <div class="nav-text-row">
-                        <span class="nav-text">战斗</span>
-                        <span class="nav-exp-level" id="nav-combat-lvl">1</span>
-                    </div>
-                    <div class="nav-exp-bar">
-                        <div class="nav-exp-bg">
-                            <div class="nav-exp-fill" id="nav-combat-exp"></div>
-                        </div>
-                    </div>
-                </div>
             </div>
             
         </div>
@@ -154,19 +122,6 @@
     <div class="game-container">
         <!-- 主页 -->
         <main class="page active" id="page-home">
-            <!-- 战斗状态 -->
-            <section class="combat-section">
-                <div class="combat-status">
-                    <div class="combat-icon">⚔️</div>
-                    <div class="combat-info">
-                        <div class="combat-location" id="combat-location">未出征</div>
-                        <div class="combat-timer" id="combat-timer">-</div>
-                    </div>
-                    <button class="combat-btn" id="combat-btn">出征</button>
-                </div>
-                <div class="combat-rewards" id="combat-rewards"></div>
-            </section>
-
             <!-- 建筑区 -->
             <section class="panel">
                 <h2 class="panel-title">🏰 我的地盘</h2>
@@ -262,27 +217,11 @@
             </section>
         </main>
 
-        <!-- 制作页 -->
-        <main class="page" id="page-craft">
-            <section class="panel">
-                <h2 class="panel-title">🔨 制作</h2>
-                <div class="actions-list" id="craft-actions"></div>
-            </section>
-        </main>
-
         <!-- 商人页 -->
         <main class="page" id="page-merchant">
             <section class="panel">
                 <h2 class="panel-title">🏪 商人</h2>
                 <div class="merchant-grid" id="merchant-list"></div>
-            </section>
-        </main>
-
-        <!-- 战斗页 -->
-        <main class="page" id="page-combat">
-            <section class="panel">
-                <h2 class="panel-title">⚔️ 战斗区域</h2>
-                <div class="combat-zones" id="combat-zones"></div>
             </section>
         </main>
 
