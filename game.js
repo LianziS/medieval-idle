@@ -737,7 +737,8 @@ function renderMerchantWarehouse() {
     
     // 绑定选择事件
     elements.merchantWarehouseGrid.querySelectorAll('.merchant-warehouse-item').forEach(item => {
-        item.addEventListener('click', function() {
+        item.addEventListener('click', function(e) {
+            e.stopPropagation();
             const res = this.dataset.resource;
             toggleWarehouseSelection(res);
         });
@@ -783,12 +784,15 @@ function updateSellBar() {
 }
 
 function switchMerchantTab(tab) {
-    elements.merchantTabs.forEach(t => {
+    // 切换标签按钮状态
+    document.querySelectorAll('.merchant-tab').forEach(t => {
         t.classList.toggle('active', t.dataset.tab === tab);
     });
     
-    elements.merchantTabTrade.classList.toggle('active', tab === 'trade');
-    elements.merchantTabQuest.classList.toggle('active', tab === 'quest');
+    // 切换内容区域显示
+    document.querySelectorAll('.merchant-tab-content').forEach(content => {
+        content.classList.toggle('active', content.id === `merchant-tab-${tab}`);
+    });
 }
 
 function setupMerchantListeners() {
@@ -883,7 +887,12 @@ function setupEventListeners() {
     elements.modal.addEventListener('click', (e) => {
         if (e.target === elements.modal) elements.modal.classList.remove('show');
     });
-    elements.actionCancelBtn.addEventListener('click', cancelCurrentAction);
+    if (elements.actionCancelBtn) {
+        elements.actionCancelBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            cancelCurrentAction();
+        });
+    }
     
     // 行动次数选择弹窗事件
     if (elements.actionModalClose) {
@@ -903,12 +912,21 @@ function setupEventListeners() {
     
     // 选择次数选项
     document.querySelectorAll('.count-option').forEach(option => {
-        option.addEventListener('click', function() {
+        option.addEventListener('click', function(e) {
+            e.stopPropagation();
             document.querySelectorAll('.count-option').forEach(o => o.classList.remove('selected'));
             this.classList.add('selected');
-            // 不填充到文本框，让用户手动输入
         });
     });
+    
+    // 自定义次数输入框
+    const countInput = document.getElementById('action-count-input');
+    if (countInput) {
+        countInput.addEventListener('click', function(e) {
+            e.stopPropagation();
+            document.querySelectorAll('.count-option').forEach(o => o.classList.remove('selected'));
+        });
+    }
     
     // 替换行动确认弹窗事件
     if (elements.replaceModalClose) {
