@@ -792,18 +792,31 @@ function switchMerchantTab(tab) {
 }
 
 function setupMerchantListeners() {
-    // 关闭弹窗
+    // 关闭弹窗 - 关闭按钮
     if (elements.merchantModalClose) {
-        elements.merchantModalClose.addEventListener('click', closeMerchantModal);
-    }
-    if (elements.merchantModalOverlay) {
-        elements.merchantModalOverlay.addEventListener('click', closeMerchantModal);
+        elements.merchantModalClose.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeMerchantModal();
+        });
     }
     
-    // 切换标签
-    elements.merchantTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            switchMerchantTab(this.dataset.tab);
+    // 关闭弹窗 - 点击遮罩层
+    if (elements.merchantModalOverlay) {
+        elements.merchantModalOverlay.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeMerchantModal();
+        });
+    }
+    
+    // 切换标签 - 重新获取元素确保存在
+    const tabs = document.querySelectorAll('.merchant-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const tabName = this.dataset.tab;
+            if (tabName) {
+                switchMerchantTab(tabName);
+            }
         });
     });
     
@@ -1903,7 +1916,6 @@ function renderGatheringTabs() {
         return `
             <button class="gathering-tab ${isActive ? 'active' : ''} ${!isUnlocked ? 'locked' : ''}" data-index="${index}">
                 ${loc.name}
-                ${!isUnlocked ? `<span class="tab-lock">🔒${loc.reqLevel}级</span>` : ''}
             </button>
         `;
     }).join('');
