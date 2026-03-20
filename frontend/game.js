@@ -1853,10 +1853,9 @@ function craftItem(recipeId) {
 
 // ============ 采集功能 ============
 
-let currentGatheringLocationIndex = 0;
-
 function renderGathering() {
-    if (!elements.gatheringTabs || !elements.gatheringItemsList) return;
+    const container = document.getElementById('gathering-locations-list');
+    if (!container) return;
     
     // 更新采集经验条
     if (elements.gatheringExpFill && elements.gatheringLevel) {
@@ -1880,96 +1879,73 @@ function renderGathering() {
         elements.navGatheringLvl.textContent = gameState.gatheringLevel;
     }
     
-    // 渲染地点标签
-    renderGatheringTabs();
-    
-    // 渲染当前地点的采集物
-    renderGatheringItems();
-}
-
-function renderGatheringTabs() {
-    const html = CONFIG.gatheringLocations.map((loc, index) => {
-        const isUnlocked = gameState.level >= loc.reqLevel;
-        const isActive = index === currentGatheringLocationIndex;
-        return `
-            <button class="gathering-tab ${isActive ? 'active' : ''} ${!isUnlocked ? 'locked' : ''}" data-index="${index}">
-                ${loc.name}
-                ${!isUnlocked ? `<span class="tab-lock">🔒${loc.reqLevel}级</span>` : ''}
-            </button>
-        `;
-    }).join('');
-    
-    elements.gatheringTabs.innerHTML = html;
-    
-    // 绑定点击事件
-    elements.gatheringTabs.querySelectorAll('.gathering-tab').forEach(tab => {
-        tab.addEventListener('click', function() {
-            const index = parseInt(this.dataset.index);
-            const loc = CONFIG.gatheringLocations[index];
-            if (gameState.level < loc.reqLevel) {
-                showToast(`❌ 需要等级 ${loc.reqLevel}`);
-                return;
+    // 渲染所有地点
+    const html = CONFIG.gatheringLocations.map(location => {
+        const isUnlocked = gameState.level >= location.reqLevel;
+        
+        // 渲染该地点的所有采集物
+        const itemsHtml = location.items.map(item => {
+            const isActive = gameState.activeGathering === 'item' && 
+                             gameState.gatheringLocationId === location.id && 
+                             gameState.gatheringItemId === item.id;
+            
+            let actionStatus = '';
+            if (isActive) {
+                const remaining = gameState.gatheringRemaining || 0;
+                const total = gameState.gatheringCount || 1;
+                const countText = total >= 99999 ? '∞' : `${remaining}/${total}`;
+                actionStatus = `<div class="action-timer">采集中... ${countText}</div>`;
             }
-            currentGatheringLocationIndex = index;
-            renderGatheringTabs();
-            renderGatheringItems();
-        });
-    });
-}
-
-function renderGatheringItems() {
-    const location = CONFIG.gatheringLocations[currentGatheringLocationIndex];
-    if (!location) return;
-    
-    const isLocationUnlocked = gameState.level >= location.reqLevel;
-    
-    // 添加"全采集"卡片
-    const allGatherCard = `
-        <div class="gathering-item-card all-gather ${!isLocationUnlocked ? 'locked' : ''}" data-type="all">
-            <div class="gathering-item-icon">🧺</div>
-            <div class="gathering-item-info">
-                <div class="gathering-item-name">${location.name}·全采集</div>
-                <div class="gathering-item-desc">每次采集有 30% 概率获得每种物品</div>
-                <div class="gathering-item-meta">${location.duration/1000}秒 | +${location.exp} EXP</div>
-            </div>
-            ${!isLocationUnlocked ? '<div class="gathering-item-locked">🔒 等级不足</div>' : ''}
-        </div>
-    `;
-    
-    // 渲染各个采集物
-    const itemsHtml = location.items.map(item => {
-        const isActive = gameState.activeGathering === 'item' && 
-                         gameState.gatheringLocationId === location.id && 
-                         gameState.gatheringItemId === item.id;
+            
+            return `
+                <div class="gathering-item-card ${!isUnlocked ? 'locked' : ''} ${isActive ? 'active' : ''}" data-type="item" data-location-id="${location.id}" data-item-id="${item.id}">
+                    <div class="gathering-item-icon">${item.icon}</div>
+                    <div class="gathering-item-info">
+                        <div class="gathering-item-name">${item.name}</div>
+                        <div class="gathering-item-meta">${location.duration/1000}秒 | +${location.exp} EXP</div>
+                    </div>
+                    ${actionStatus}
+                    ${!isUnlocked ? '<div class="gathering-item-locked">🔒 等级不足</div>' : ''}
+                </div>
+            `;
+        }).join('');
         
-        let actionStatus = '';
-        if (isActive) {
-            const remaining = gameState.gatheringRemaining || 0;
-            const total = gameState.gatheringCount || 1;
-            const countText = total >= 99999 ? '∞' : `${remaining}/${total}`;
-            actionStatus = `<div class="action-timer">采集中... ${countText}</div>`;
-        }
-        
-        return `
-            <div class="gathering-item-card ${!isLocationUnlocked ? 'locked' : ''} ${isActive ? 'active' : ''}" data-type="item" data-item-id="${item.id}">
-                <div class="gathering-item-icon">${item.icon}</div>
+        // 添加"全采集"卡片
+        const allGatherCard = `
+            <div class="gathering-item-card all-gather ${!isUnlocked ? 'locked' : ''}" data-type="all" data-location-id="${location.id}">
+                <div class="gathering-item-icon">🧺</div>
                 <div class="gathering-item-info">
-                    <div class="gathering-item-name">${item.name}</div>
+                    <div class="gathering-item-name">${location.name}·全采集</div>
+                    <div class="gathering-item-desc">每次有 30% 概率获得每种物品</div>
                     <div class="gathering-item-meta">${location.duration/1000}秒 | +${location.exp} EXP</div>
                 </div>
-                ${actionStatus}
-                ${!isLocationUnlocked ? '<div class="gathering-item-locked">🔒 等级不足</div>' : ''}
+                ${!isUnlocked ? '<div class="gathering-item-locked">🔒 等级不足</div>' : ''}
+            </div>
+        `;
+        
+        return `
+            <div class="gathering-location-section ${!isUnlocked ? 'locked' : ''}">
+                <div class="gathering-location-header">
+                    <div class="gathering-location-name">${location.name}</div>
+                    <div class="gathering-location-meta">${isUnlocked ? `${location.duration/1000}秒/次 | +${location.exp} EXP` : `🔒 ${location.reqLevel}级解锁`}</div>
+                </div>
+                <div class="gathering-location-items">
+                    ${itemsHtml + allGatherCard}
+                </div>
             </div>
         `;
     }).join('');
     
-    elements.gatheringItemsList.innerHTML = allGatherCard + itemsHtml;
+    container.innerHTML = html;
     
     // 绑定点击事件
-    elements.gatheringItemsList.querySelectorAll('.gathering-item-card').forEach(card => {
+    container.querySelectorAll('.gathering-item-card').forEach(card => {
         card.addEventListener('click', function() {
-            if (!isLocationUnlocked) {
-                showToast(`❌ 需要等级 ${location.reqLevel}`);
+            const locationId = this.dataset.locationId;
+            const location = CONFIG.gatheringLocations.find(l => l.id === locationId);
+            
+            if (!location || gameState.level < location.reqLevel) {
+                showToast(`❌ 需要等级 ${location?.reqLevel || '?'}`);
                 return;
             }
             
