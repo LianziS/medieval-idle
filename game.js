@@ -2202,6 +2202,9 @@ function renderCombatZones() {
 }
 
 function updateCombatUI() {
+    // 如果战斗相关元素不存在，直接返回
+    if (!elements.combatLocation || !elements.combatTimer || !elements.combatBtn) return;
+    
     const now = Date.now();
     const zone = CONFIG.combatZones[gameState.currentZoneIndex];
     if (gameState.combat.active) {
