@@ -184,6 +184,17 @@ const CONFIG = {
         { id: 'ruins', name: '古代废墟', icon: '🏛️', difficulty: 3, duration: 20000, rewards: [{ item: 'gold', min: 60, max: 120 }, { item: 'herb', min: 10, max: 25 }], reqLevel: 5 },
         { id: 'dragon_lair', name: '龙之巢穴', icon: '🐉', difficulty: 5, duration: 30000, rewards: [{ item: 'gold', min: 150, max: 300 }, { item: 'stone', min: 50, max: 100 }], reqLevel: 10 }
     ],
+    // 木板制作配置
+    woodPlanks: [
+        { id: 'pine_plank', name: '青杉木板', icon: '🪵', reqLevel: 1, duration: 6000, exp: 3, materials: { pine: 2 } },
+        { id: 'iron_birch_plank', name: '铁桦木板', icon: '🪵', reqLevel: 10, duration: 8000, exp: 4, materials: { iron_birch: 2 } },
+        { id: 'wind_tree_plank', name: '风啸木板', icon: '🪵', reqLevel: 20, duration: 10000, exp: 5, materials: { wind_tree: 2 } },
+        { id: 'flame_tree_plank', name: '焰心木板', icon: '🪵', reqLevel: 35, duration: 12000, exp: 6, materials: { flame_tree: 2 } },
+        { id: 'frost_maple_plank', name: '霜叶木板', icon: '🪵', reqLevel: 50, duration: 14000, exp: 7, materials: { frost_maple: 2 } },
+        { id: 'thunder_tree_plank', name: '雷鸣木板', icon: '🪵', reqLevel: 65, duration: 16000, exp: 8, materials: { thunder_tree: 2 } },
+        { id: 'ancient_oak_plank', name: '古橡木板', icon: '🪵', reqLevel: 80, duration: 18000, exp: 9, materials: { ancient_oak: 2 } },
+        { id: 'world_tree_plank', name: '世界木板', icon: '🪵', reqLevel: 95, duration: 30000, exp: 12, materials: { world_tree: 2 } }
+    ],
     // 商人配置
     merchants: [
         { 
@@ -281,7 +292,15 @@ let gameState = {
     // 物品存储
     woodcuttingInventory: {},
     miningInventory: {},
-    gatheringInventory: {}
+    gatheringInventory: {},
+    // 制作状态
+    craftingLevel: 1,
+    craftingExp: 0,
+    activeCrafting: null,
+    craftingCount: 0,
+    craftingRemaining: 0,
+    // 木板存储
+    planksInventory: {}
 };
 
 CONFIG.buildings.forEach(b => { gameState.buildings[b.id] = { level: 0 }; });
@@ -322,8 +341,14 @@ const elements = {
     gatheringItemsList: document.getElementById('gathering-items-list'),
     gatheringExpFill: document.getElementById('gathering-exp-fill'),
     gatheringLevel: document.getElementById('gathering-level'),
+    // 制作
+    craftingExpFill: document.getElementById('crafting-exp-fill'),
+    craftingLevel: document.getElementById('crafting-level'),
+    craftingPlanksList: document.getElementById('crafting-planks-list'),
     navGatheringExp: document.getElementById('nav-gathering-exp'),
     navGatheringLvl: document.getElementById('nav-gathering-lvl'),
+    navCraftingExp: document.getElementById('nav-crafting-exp'),
+    navCraftingLvl: document.getElementById('nav-crafting-lvl'),
     playTime: document.getElementById('play-time'),
     modal: document.getElementById('modal'),
     modalBody: document.getElementById('modal-body'),
@@ -393,6 +418,7 @@ function init() {
     renderWoodcutting();
     renderMining();
     renderGathering();
+    renderCrafting();
     renderCombatZones();
     renderMerchants();
     setupEventListeners();
@@ -402,6 +428,7 @@ function init() {
     renderWoodcuttingInventory();
     renderMiningInventory();
     renderGatheringInventory();
+    renderPlanksInventory();
     
     // 修复刷新页面后进度条异常：如果有进行中的行动，重置进度条和开始时间
     if (gameState.currentAction) {
@@ -1006,7 +1033,8 @@ function openActionModal(type, id, name, itemId = null) {
         woodcutting: '伐木', 
         mining: '挖矿',
         gathering_item: '采集',
-        gathering_all: '全采集'
+        gathering_all: '全采集',
+        crafting: '制作'
     };
     elements.actionModalTitle.textContent = `选择${typeNames[type] || '行动'}次数 - ${name}`;
     elements.actionCountInput.value = '';
@@ -1054,6 +1082,8 @@ function executePendingAction() {
         startMiningWithCount(id, count);
     } else if (type === 'gathering_item' || type === 'gathering_all') {
         startGatheringWithCount(type, id, itemId, count);
+    } else if (type === 'crafting') {
+        startCraftingWithCount(id, count);
     }
     
     pendingAction = null;
@@ -1544,12 +1574,14 @@ function updateUI() {
     renderWoodcutting();
     renderMining();
     renderGathering();
+    renderCrafting();
     renderCombatZones();
     
     // 渲染仓库物品
     renderWoodcuttingInventory();
     renderMiningInventory();
     renderGatheringInventory();
+    renderPlanksInventory();
 }
 
 function formatNumber(num) {
@@ -1974,6 +2006,248 @@ function renderGathering() {
     
     // 渲染当前地点的采集物
     renderGatheringItems();
+}
+
+// ============ 制作系统 ============
+
+function renderCrafting() {
+    // 更新制作经验条
+    if (elements.craftingExpFill && elements.craftingLevel) {
+        const currentExp = getSkillExpForLevel(gameState.craftingLevel);
+        const nextExp = getSkillExpForLevel(gameState.craftingLevel + 1);
+        const expNeeded = nextExp - currentExp;
+        const expProgress = gameState.craftingExp - currentExp;
+        const percentage = expNeeded > 0 ? (expProgress / expNeeded) * 100 : 0;
+        elements.craftingExpFill.style.width = `${Math.min(100, Math.max(0, percentage))}%`;
+        elements.craftingLevel.textContent = gameState.craftingLevel;
+    }
+    
+    // 更新侧边栏制作经验条
+    if (elements.navCraftingExp && elements.navCraftingLvl) {
+        const currentExp = getSkillExpForLevel(gameState.craftingLevel);
+        const nextExp = getSkillExpForLevel(gameState.craftingLevel + 1);
+        const expNeeded = nextExp - currentExp;
+        const expProgress = gameState.craftingExp - currentExp;
+        const percentage = expNeeded > 0 ? (expProgress / expNeeded) * 100 : 0;
+        elements.navCraftingExp.style.width = `${Math.min(100, Math.max(0, percentage))}%`;
+        elements.navCraftingLvl.textContent = gameState.craftingLevel;
+    }
+    
+    // 渲染木板列表
+    renderPlanksList();
+}
+
+function renderPlanksList() {
+    if (!elements.craftingPlanksList) return;
+    
+    const html = CONFIG.woodPlanks.map(plank => {
+        const isUnlocked = gameState.craftingLevel >= plank.reqLevel;
+        const isActive = gameState.activeCrafting === plank.id;
+        const canCraft = canCraftPlank(plank);
+        
+        // 获取材料名称
+        const materialNames = Object.entries(plank.materials).map(([woodId, count]) => {
+            const tree = CONFIG.trees.find(t => t.id === woodId);
+            const owned = gameState.woodcuttingInventory[woodId] || 0;
+            return `${tree ? tree.drop : woodId}×${count} (${owned}/${count})`;
+        }).join(', ');
+        
+        let actionStatus = '';
+        if (isActive) {
+            const remaining = gameState.craftingRemaining || 0;
+            const total = gameState.craftingCount || 1;
+            const countText = total >= 99999 ? '∞' : `${remaining}/${total}`;
+            actionStatus = `<div class="action-timer">制作中... ${countText}</div>`;
+        }
+        
+        return `
+            <div class="gathering-item-card ${!isUnlocked ? 'locked' : ''} ${isActive ? 'active' : ''}" data-plank-id="${plank.id}">
+                <div class="gathering-item-icon">${plank.icon}</div>
+                <div class="gathering-item-info">
+                    <div class="gathering-item-name">${plank.name}</div>
+                    <div class="gathering-item-desc">${materialNames}</div>
+                    <div class="gathering-item-meta">${plank.duration/1000}秒 | +${plank.exp} EXP | Lv.${plank.reqLevel}</div>
+                </div>
+                ${actionStatus}
+                ${!isUnlocked ? '<div class="gathering-item-locked">🔒 等级不足</div>' : ''}
+                ${isUnlocked && !canCraft ? '<div class="gathering-item-locked">📦 材料不足</div>' : ''}
+            </div>
+        `;
+    }).join('');
+    
+    elements.craftingPlanksList.innerHTML = html;
+    
+    // 绑定点击事件
+    elements.craftingPlanksList.querySelectorAll('.gathering-item-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            const plankId = this.dataset.plankId;
+            const plank = CONFIG.woodPlanks.find(p => p.id === plankId);
+            
+            // 检查等级
+            if (gameState.craftingLevel < plank.reqLevel) {
+                showToast(`❌ 需要制作等级 ${plank.reqLevel}`);
+                return;
+            }
+            
+            // 检查材料
+            if (!canCraftPlank(plank)) {
+                showToast('❌ 材料不足');
+                return;
+            }
+            
+            // 检查是否正在进行中
+            if (this.classList.contains('active')) {
+                showToast('⏳ 正在制作中');
+                return;
+            }
+            
+            openActionModal('crafting', plankId, plank.name);
+        });
+    });
+}
+
+function canCraftPlank(plank) {
+    for (const [woodId, count] of Object.entries(plank.materials)) {
+        const owned = gameState.woodcuttingInventory[woodId] || 0;
+        if (owned < count) return false;
+    }
+    return true;
+}
+
+function startCraftingWithCount(plankId, count) {
+    const plank = CONFIG.woodPlanks.find(p => p.id === plankId);
+    if (!plank) return;
+    
+    // 检查材料是否足够
+    if (!canCraftPlank(plank)) {
+        showToast('❌ 材料不足');
+        return;
+    }
+    
+    gameState.activeCrafting = plankId;
+    gameState.craftingCount = count;
+    gameState.craftingRemaining = count;
+    
+    // 重置进度条
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    setActionState({ name: `制作${plank.name}`, icon: plank.icon }, plank.duration);
+    renderCrafting();
+    
+    // 启动进度条动画
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    
+    scheduleCrafting(plankId);
+}
+
+function scheduleCrafting(plankId) {
+    const isInfinite = gameState.craftingCount >= 99999;
+    if (!gameState.activeCrafting || (!isInfinite && gameState.craftingRemaining <= 0)) {
+        gameState.activeCrafting = null;
+        gameState.craftingCount = 0;
+        gameState.craftingRemaining = 0;
+        setActionState(null, 0);
+        renderCrafting();
+        return;
+    }
+    
+    const plank = CONFIG.woodPlanks.find(p => p.id === plankId);
+    if (!plank) return;
+    
+    // 检查材料
+    if (!canCraftPlank(plank)) {
+        showToast('❌ 材料不足，制作停止');
+        gameState.activeCrafting = null;
+        gameState.craftingCount = 0;
+        gameState.craftingRemaining = 0;
+        setActionState(null, 0);
+        renderCrafting();
+        return;
+    }
+    
+    if (!isInfinite) {
+        gameState.craftingRemaining--;
+    }
+    
+    if (gameState.activeCrafting === plankId) {
+        setActionState({ name: `制作${plank.name}`, icon: plank.icon }, plank.duration);
+        if (elements.actionProgressFill) {
+            elements.actionProgressFill.style.width = '0%';
+        }
+        updateActionStatusBar();
+        renderCrafting();
+        
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        lastActionStartTime = gameState.actionStartTime;
+        animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+        
+        setTimeout(() => {
+            if (gameState.activeCrafting === plankId) {
+                completeCraftingOnce(plankId);
+                scheduleCrafting(plankId);
+            }
+        }, plank.duration);
+    }
+}
+
+function completeCraftingOnce(plankId) {
+    const plank = CONFIG.woodPlanks.find(p => p.id === plankId);
+    if (!plank) return;
+    
+    // 消耗材料
+    for (const [woodId, count] of Object.entries(plank.materials)) {
+        gameState.woodcuttingInventory[woodId] -= count;
+    }
+    
+    // 添加木板到存储
+    if (!gameState.planksInventory[plankId]) {
+        gameState.planksInventory[plankId] = 0;
+    }
+    gameState.planksInventory[plankId]++;
+    
+    addExp(plank.exp);
+    addSkillExp('crafting', plank.exp);
+    updateUI();
+    saveGame();
+    
+    // 显示奖励
+    if (elements.actionRewards) {
+        elements.actionRewards.innerHTML = `<span class="action-reward-item">+1 ${plank.icon} ${plank.name}</span>`;
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
+    }
+}
+
+function renderPlanksInventory() {
+    const container = document.getElementById('storage-planks-items');
+    if (!container) return;
+    
+    if (!gameState.planksInventory || Object.keys(gameState.planksInventory).length === 0) {
+        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">暂无木板</div>';
+        return;
+    }
+    
+    const html = Object.entries(gameState.planksInventory)
+        .filter(([id, count]) => count > 0)
+        .map(([id, count]) => {
+            const plank = CONFIG.woodPlanks.find(p => p.id === id);
+            const name = plank ? plank.name : id;
+            const icon = plank ? plank.icon : '🪵';
+            return `
+                <div class="storage-item-small">
+                    <div class="storage-item-small-icon">${icon}</div>
+                    <div class="storage-item-small-name">${name}</div>
+                    <div class="storage-item-small-count">×${count}</div>
+                </div>
+            `;
+        })
+        .join('');
+    
+    container.innerHTML = html || '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">暂无木板</div>';
 }
 
 function renderGatheringTabs() {

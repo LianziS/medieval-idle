@@ -7,7 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
     <title>中世纪雇佣兵 - 放置游戏</title>
-    <link rel="stylesheet" href="style.css?v=202603202350">
+    <link rel="stylesheet" href="style.css?v=202603202355">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#1B2A3A;color:#A0B2C0;min-height:100vh;padding:0;font-size:14px;overflow-x:hidden}
@@ -19,7 +19,7 @@
     <!-- 顶部固定区域 -->
     <header class="top-fixed">
         <div class="top-fixed-content">
-            <span class="update-time-badge">代码更新: 2026-03-20 23:50</span>
+            <span class="update-time-badge">代码更新: 2026-03-20 23:55</span>
             <span class="player-badge">
                 <span>LV.<span id="top-level">1</span></span>
             </span>
@@ -110,6 +110,22 @@
                 </div>
             </div>
             
+            <!-- 制作 -->
+            <div class="nav-item nav-item-skill" data-page="crafting">
+                <span class="nav-icon">🔨</span>
+                <div class="nav-skill-wrapper">
+                    <div class="nav-text-row">
+                        <span class="nav-text">制作</span>
+                        <span class="nav-exp-level" id="nav-crafting-lvl">1</span>
+                    </div>
+                    <div class="nav-exp-bar">
+                        <div class="nav-exp-bg">
+                            <div class="nav-exp-fill" id="nav-crafting-exp"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- 商人 -->
             <div class="nav-item" data-page="merchant">
                 <span class="nav-icon">🏪</span>
@@ -157,6 +173,10 @@
                 <!-- 采集物品 -->
                 <h3 class="storage-section-title">采集物品</h3>
                 <div class="storage-items-grid" id="storage-gathering-items"></div>
+                
+                <!-- 木板 -->
+                <h3 class="storage-section-title">木板</h3>
+                <div class="storage-items-grid" id="storage-planks-items"></div>
             </section>
         </main>
 
@@ -202,6 +222,26 @@
                 <div class="gathering-tabs" id="gathering-tabs"></div>
                 <!-- 采集物列表 -->
                 <div class="gathering-items-list" id="gathering-items-list"></div>
+            </section>
+        </main>
+
+        <!-- 制作页 -->
+        <main class="page" id="page-crafting">
+            <section class="panel">
+                <h2 class="panel-title">🔨 制作</h2>
+                <div class="skill-exp-bar">
+                    <div class="skill-exp-bg">
+                        <div class="skill-exp-fill" id="crafting-exp-fill"></div>
+                    </div>
+                    <span class="skill-exp-level" id="crafting-level">1</span>
+                </div>
+                <!-- 制作标签页 -->
+                <div class="gathering-tabs" id="crafting-tabs">
+                    <button class="gathering-tab active" data-tab="planks">木板</button>
+                    <button class="gathering-tab" data-tab="other">其他</button>
+                </div>
+                <!-- 木板列表 -->
+                <div class="gathering-items-list" id="crafting-planks-list"></div>
             </section>
         </main>
 
@@ -326,6 +366,6 @@
         </div>
     </div>
 
-    <script src="game.js?v=202603202350"></script>
+    <script src="game.js?v=202603202355"></script>
 </body>
 </html>
