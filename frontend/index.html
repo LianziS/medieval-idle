@@ -94,6 +94,22 @@
                 </div>
             </div>
             
+            <!-- 采集 -->
+            <div class="nav-item nav-item-skill" data-page="gathering">
+                <span class="nav-icon">🌾</span>
+                <div class="nav-skill-wrapper">
+                    <div class="nav-text-row">
+                        <span class="nav-text">采集</span>
+                        <span class="nav-exp-level" id="nav-gathering-lvl">1</span>
+                    </div>
+                    <div class="nav-exp-bar">
+                        <div class="nav-exp-bg">
+                            <div class="nav-exp-fill" id="nav-gathering-exp"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- 制作 -->
             <div class="nav-item nav-item-skill" data-page="craft">
                 <span class="nav-icon">🔨</span>
@@ -156,6 +172,8 @@
         <main class="page" id="page-storage">
             <section class="panel">
                 <h2 class="panel-title">📦 仓库</h2>
+                <!-- 基础资源 -->
+                <h3 class="storage-section-title">基础资源</h3>
                 <div class="storage-grid">
                     <div class="storage-item">
                         <span class="storage-icon">💰</span>
@@ -186,6 +204,10 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- 采集物品 -->
+                <h3 class="storage-section-title">采集物品</h3>
+                <div class="storage-items-grid" id="storage-gathering-items"></div>
             </section>
         </main>
 
@@ -214,6 +236,23 @@
                     <span class="skill-exp-level" id="mining-level">1</span>
                 </div>
                 <div class="mining-list" id="mining-list"></div>
+            </section>
+        </main>
+
+        <!-- 采集页 -->
+        <main class="page" id="page-gathering">
+            <section class="panel">
+                <h2 class="panel-title">🌾 采集</h2>
+                <div class="skill-exp-bar">
+                    <div class="skill-exp-bg">
+                        <div class="skill-exp-fill" id="gathering-exp-fill"></div>
+                    </div>
+                    <span class="skill-exp-level" id="gathering-level">1</span>
+                </div>
+                <!-- 采集地点标签页 -->
+                <div class="gathering-tabs" id="gathering-tabs"></div>
+                <!-- 采集物列表 -->
+                <div class="gathering-items-list" id="gathering-items-list"></div>
             </section>
         </main>
 

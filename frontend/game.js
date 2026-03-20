@@ -61,6 +61,112 @@ const CONFIG = {
         { id: 'brilliant', name: '璀璨原石', icon: '✨', reqLevel: 80, duration: 18000, drop: '璀璨水晶', dropIcon: '💎', exp: 8 },
         { id: 'star_ore', name: '星辉原石', icon: '⭐', reqLevel: 95, duration: 30000, drop: '星辉水晶', dropIcon: '💎', exp: 10 }
     ],
+    // 采集地点配置
+    gatheringLocations: [
+        {
+            id: 'char_border',
+            name: '夏尔边境',
+            reqLevel: 1,
+            duration: 6000,
+            exp: 2,
+            items: [
+                { id: 'sweet_berry', name: '甜浆果', icon: '🫐', futureUse: ['酿酒'] },
+                { id: 'honey', name: '蜂蜜', icon: '🍯', futureUse: ['制药', '酿酒'] },
+                { id: 'blood_rose', name: '血蔷薇', icon: '🌹', futureUse: ['制药'] },
+                { id: 'jute', name: '黄麻', icon: '🌾', futureUse: ['裁缝', '锻造'] }
+            ]
+        },
+        {
+            id: 'wolf_forest',
+            name: '狼林边缘',
+            reqLevel: 10,
+            duration: 8000,
+            exp: 3,
+            items: [
+                { id: 'wheat', name: '小麦', icon: '🌾', futureUse: ['酿酒'] },
+                { id: 'star_dew_herb', name: '星露草', icon: '🌿', futureUse: ['制药'] },
+                { id: 'flax', name: '亚麻', icon: '🧶', futureUse: ['裁缝', '锻造'] },
+                { id: 'feather', name: '羽毛', icon: '🪶', futureUse: ['裁缝', '笔'] }
+            ]
+        },
+        {
+            id: 'riverland',
+            name: '河间地带',
+            reqLevel: 20,
+            duration: 10000,
+            exp: 4,
+            items: [
+                { id: 'hops', name: '啤酒花', icon: '🌿', futureUse: ['酿酒'] },
+                { id: 'blossom_honey', name: '百花蜜', icon: '🍯', futureUse: ['制药', '酿酒'] },
+                { id: 'red_serpent_fruit', name: '赤炼蛇果', icon: '🍎', futureUse: ['制药'] },
+                { id: 'jade_feather', name: '翡翠羽', icon: '🦜', futureUse: ['裁缝', '笔'] }
+            ]
+        },
+        {
+            id: 'arin_valley',
+            name: '艾林谷地',
+            reqLevel: 35,
+            duration: 12000,
+            exp: 5,
+            items: [
+                { id: 'apple', name: '苹果', icon: '🍎', futureUse: ['酿酒'] },
+                { id: 'moonlight_mushroom', name: '月光菇', icon: '🍄', futureUse: ['制药'] },
+                { id: 'wool', name: '羊毛', icon: '🧶', futureUse: ['裁缝', '锻造'] },
+                { id: 'falcon_tail_feather', name: '猎隼的尾羽', icon: '🦅', futureUse: ['裁缝', '笔'] }
+            ]
+        },
+        {
+            id: 'lorhan_plain',
+            name: '洛汗平原',
+            reqLevel: 50,
+            duration: 15000,
+            exp: 6,
+            items: [
+                { id: 'grape', name: '葡萄', icon: '🍇', futureUse: ['酿酒'] },
+                { id: 'moonlight_honey', name: '月光蜜', icon: '🍯', futureUse: ['制药', '酿酒'] },
+                { id: 'silk', name: '蚕丝', icon: '🧵', futureUse: ['锻造', '裁缝'] },
+                { id: 'soul_herb', name: '灵魂草', icon: '🌿', futureUse: ['制药'] }
+            ]
+        },
+        {
+            id: 'dorn_border',
+            name: '多恩边疆',
+            reqLevel: 65,
+            duration: 18000,
+            exp: 7,
+            items: [
+                { id: 'rye', name: '黑麦', icon: '🌾', futureUse: ['酿酒'] },
+                { id: 'wild_heart', name: '原野之心', icon: '💚', futureUse: ['制药'] },
+                { id: 'wind_velvet', name: '风语绒', icon: '🧶', futureUse: ['锻造', '裁缝'] },
+                { id: 'rainbow_feather', name: '虹羽', icon: '🌈', futureUse: ['裁缝', '笔'] }
+            ]
+        },
+        {
+            id: 'sigh_canyon',
+            name: '叹息峡谷',
+            reqLevel: 80,
+            duration: 22000,
+            exp: 8,
+            items: [
+                { id: 'mist_fruit', name: '雾果', icon: '🍑', futureUse: ['酿酒'] },
+                { id: 'rock_rose_honey', name: '岩玫瑰蜜', icon: '🍯', futureUse: ['制药', '酿酒'] },
+                { id: 'bewitch_berry', name: '迷心浆果', icon: '🫐', futureUse: ['制药'] },
+                { id: 'harpy_feather', name: '鹰身人的羽毛', icon: '🦅', futureUse: ['裁缝', '笔'] }
+            ]
+        },
+        {
+            id: 'dragon_ridge',
+            name: '龙脊山脉',
+            reqLevel: 95,
+            duration: 30000,
+            exp: 10,
+            items: [
+                { id: 'dragon_blood_fruit', name: '龙血果', icon: '🐉', futureUse: ['酿酒'] },
+                { id: 'life_fiber', name: '生命纤维', icon: '🧵', futureUse: ['锻造', '裁缝'] },
+                { id: 'star_blossom', name: '星辰花', icon: '⭐', futureUse: ['制药'] }
+            ]
+        }
+    ],
     gatherActions: [
         { id: 'chop', name: '伐木', icon: '🪓', desc: '+5 木材', duration: 3000, reward: { wood: 5 }, exp: 2 },
         { id: 'mine_action', name: '挖矿', icon: '⛏️', desc: '+3 石头', duration: 4000, reward: { stone: 3 }, exp: 3 },
@@ -156,6 +262,12 @@ let gameState = {
     craftingExp: 0,
     combatLevel: 1,
     combatExp: 0,
+    // 采集状态
+    activeGathering: null,
+    gatheringLocationId: null,
+    gatheringItemId: null,
+    gatheringRemaining: 0,
+    gatheringCount: 0,
     // 全局行动状态
     currentAction: null,
     actionStartTime: 0,
@@ -202,6 +314,12 @@ const elements = {
     miningList: document.getElementById('mining-list'),
     miningExpFill: document.getElementById('mining-exp-fill'),
     miningLevel: document.getElementById('mining-level'),
+    gatheringTabs: document.getElementById('gathering-tabs'),
+    gatheringItemsList: document.getElementById('gathering-items-list'),
+    gatheringExpFill: document.getElementById('gathering-exp-fill'),
+    gatheringLevel: document.getElementById('gathering-level'),
+    navGatheringExp: document.getElementById('nav-gathering-exp'),
+    navGatheringLvl: document.getElementById('nav-gathering-lvl'),
     playTime: document.getElementById('play-time'),
     modal: document.getElementById('modal'),
     modalBody: document.getElementById('modal-body'),
@@ -270,12 +388,14 @@ function init() {
     renderCraftActions();
     renderWoodcutting();
     renderMining();
+    renderGathering();
     renderCombatZones();
     renderMerchants();
     setupEventListeners();
     setupMerchantListeners();
     startGameLoop();
     updateUI();
+    renderGatheringInventory();
     
     // 修复刷新页面后进度条异常：如果有进行中的行动，重置进度条和开始时间
     if (gameState.currentAction) {
@@ -820,13 +940,18 @@ function updateSkillNavExp(skill, expFillElem, levelElem) {
     levelElem.textContent = gameState[skill + 'Level'];
 }
 
-function openActionModal(type, id, name) {
+function openActionModal(type, id, name, itemId = null) {
     if (!elements.actionModal) return;
-    const typeNames = { woodcutting: '伐木', mining: '挖矿' };
-    elements.actionModalTitle.textContent = `选择${typeNames[type]}次数 - ${name}`;
+    const typeNames = { 
+        woodcutting: '伐木', 
+        mining: '挖矿',
+        gathering_item: '采集',
+        gathering_all: '全采集'
+    };
+    elements.actionModalTitle.textContent = `选择${typeNames[type] || '行动'}次数 - ${name}`;
     elements.actionCountInput.value = '';
     document.querySelectorAll('.count-option').forEach(o => o.classList.remove('selected'));
-    pendingAction = { type, id, name };
+    pendingAction = { type, id, name, itemId };
     elements.actionModal.classList.add('show');
 }
 
@@ -861,12 +986,14 @@ function confirmActionCount() {
 
 function executePendingAction() {
     if (!pendingAction) return;
-    const { type, id, count } = pendingAction;
+    const { type, id, count, itemId } = pendingAction;
     
     if (type === 'woodcutting') {
         startWoodcuttingWithCount(id, count);
     } else if (type === 'mining') {
         startMiningWithCount(id, count);
+    } else if (type === 'gathering_item' || type === 'gathering_all') {
+        startGatheringWithCount(type, id, itemId, count);
     }
     
     pendingAction = null;
@@ -1022,6 +1149,146 @@ function completeMiningOnce(oreId) {
     }
 }
 
+// ============ 采集行动循环 ============
+
+function startGatheringWithCount(type, locationId, itemId, count) {
+    const location = CONFIG.gatheringLocations.find(l => l.id === locationId);
+    gameState.activeGathering = type;
+    gameState.gatheringLocationId = locationId;
+    gameState.gatheringItemId = itemId;
+    gameState.gatheringCount = count;
+    gameState.gatheringRemaining = count;
+    
+    // 重置进度条
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    
+    let actionName = '';
+    let actionIcon = '🌾';
+    
+    if (type === 'gathering_item' && itemId) {
+        const item = location.items.find(i => i.id === itemId);
+        actionName = `采集${item.name}`;
+        actionIcon = item.icon;
+    } else {
+        actionName = `${location.name}·全采集`;
+    }
+    
+    setActionState({ name: actionName, icon: actionIcon }, location.duration);
+    renderGathering();
+    
+    // 启动进度条动画
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    
+    scheduleGathering(type, locationId, itemId);
+}
+
+function scheduleGathering(type, locationId, itemId) {
+    const isInfinte = gameState.gatheringCount >= 99999;
+    if (!gameState.activeGathering || (!isInfinte && gameState.gatheringRemaining <= 0)) {
+        gameState.activeGathering = null;
+        gameState.gatheringLocationId = null;
+        gameState.gatheringItemId = null;
+        gameState.gatheringCount = 0;
+        gameState.gatheringRemaining = 0;
+        setActionState(null, 0);
+        renderGathering();
+        return;
+    }
+    
+    const location = CONFIG.gatheringLocations.find(l => l.id === locationId);
+    if (!isInfinte) {
+        gameState.gatheringRemaining--;
+    }
+    
+    // 立即开始下一次行动
+    if (gameState.activeGathering) {
+        let actionName = '';
+        let actionIcon = '🌾';
+        
+        if (type === 'gathering_item' && itemId) {
+            const item = location.items.find(i => i.id === itemId);
+            actionName = `采集${item.name}`;
+            actionIcon = item.icon;
+        } else {
+            actionName = `${location.name}·全采集`;
+        }
+        
+        // 重置行动开始时间为当前时间
+        setActionState({ name: actionName, icon: actionIcon }, location.duration);
+        // 重置进度条为 0
+        if (elements.actionProgressFill) {
+            elements.actionProgressFill.style.width = '0%';
+        }
+        updateActionStatusBar();
+        renderGathering();
+        
+        // 启动进度条动画
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        lastActionStartTime = gameState.actionStartTime;
+        animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+        
+        // 等待行动完成后继续
+        setTimeout(() => {
+            if (gameState.activeGathering) {
+                completeGatheringOnce(type, locationId, itemId);
+                // 递归调用继续下一次行动
+                scheduleGathering(type, locationId, itemId);
+            }
+        }, location.duration);
+    }
+}
+
+function completeGatheringOnce(type, locationId, itemId) {
+    const location = CONFIG.gatheringLocations.find(l => l.id === locationId);
+    
+    // 初始化物品仓库（如果不存在）
+    if (!gameState.gatheringInventory) {
+        gameState.gatheringInventory = {};
+    }
+    
+    let rewards = [];
+    
+    if (type === 'gathering_item' && itemId) {
+        // 单个物品采集
+        const item = location.items.find(i => i.id === itemId);
+        if (!gameState.gatheringInventory[item.id]) {
+            gameState.gatheringInventory[item.id] = 0;
+        }
+        gameState.gatheringInventory[item.id]++;
+        rewards.push({ icon: item.icon, name: item.name, amount: 1 });
+    } else {
+        // 全采集 - 30% 概率获得每种物品
+        location.items.forEach(item => {
+            if (Math.random() < 0.3) {
+                if (!gameState.gatheringInventory[item.id]) {
+                    gameState.gatheringInventory[item.id] = 0;
+                }
+                gameState.gatheringInventory[item.id]++;
+                rewards.push({ icon: item.icon, name: item.name, amount: 1 });
+            }
+        });
+    }
+    
+    // 增加经验
+    addExp(location.exp);
+    addSkillExp('gathering', location.exp);
+    
+    updateUI();
+    saveGame();
+    
+    // 显示奖励
+    if (elements.actionRewards && rewards.length > 0) {
+        elements.actionRewards.innerHTML = rewards.map(r => 
+            `<span class="action-reward-item">+${r.amount} ${r.icon} ${r.name}</span>`
+        ).join('');
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
+    }
+}
+
 function cancelCurrentAction() {
     if (!gameState.currentAction) return;
     
@@ -1035,6 +1302,13 @@ function cancelCurrentAction() {
         gameState.activeMining = null;
         gameState.miningCount = 0;
         gameState.miningRemaining = 0;
+    }
+    if (gameState.activeGathering) {
+        gameState.activeGathering = null;
+        gameState.gatheringLocationId = null;
+        gameState.gatheringItemId = null;
+        gameState.gatheringCount = 0;
+        gameState.gatheringRemaining = 0;
     }
     for (const actionId in gameState.activeActions) {
         delete gameState.activeActions[actionId];
@@ -1052,6 +1326,7 @@ function cancelCurrentAction() {
     updateUI();
     renderWoodcutting();
     renderMining();
+    renderGathering();
     renderGatherActions();
     renderCombatZones();
     showToast('❌ 已停止行动');
@@ -1174,7 +1449,7 @@ function updateUI() {
     // 更新侧边栏技能经验条
     updateSkillNavExp('woodcutting', elements.navWoodcuttingExp, elements.navWoodcuttingLvl);
     updateSkillNavExp('mining', elements.navMiningExp, elements.navMiningLvl);
-    updateSkillNavExp('gathering', elements.navGatherExp, elements.navGatherLvl);
+    updateSkillNavExp('gathering', elements.navGatheringExp, elements.navGatheringLvl);
     updateSkillNavExp('crafting', elements.navCraftExp, elements.navCraftLvl);
     updateSkillNavExp('combat', elements.navCombatExp, elements.navCombatLvl);
     
@@ -1187,7 +1462,11 @@ function updateUI() {
     renderCraftActions();
     renderWoodcutting();
     renderMining();
+    renderGathering();
     renderCombatZones();
+    
+    // 渲染仓库采集物品
+    renderGatheringInventory();
 }
 
 function formatNumber(num) {
@@ -1570,6 +1849,254 @@ function craftItem(recipeId) {
     updateUI();
     saveGame();
     showToast(`✅ 制作了 ${recipe.name}`);
+}
+
+// ============ 采集功能 ============
+
+let currentGatheringLocationIndex = 0;
+
+function renderGathering() {
+    if (!elements.gatheringTabs || !elements.gatheringItemsList) return;
+    
+    // 更新采集经验条
+    if (elements.gatheringExpFill && elements.gatheringLevel) {
+        const currentExp = getSkillExpForLevel(gameState.gatheringLevel);
+        const nextExp = getSkillExpForLevel(gameState.gatheringLevel + 1);
+        const expNeeded = nextExp - currentExp;
+        const expProgress = gameState.gatheringExp - currentExp;
+        const percentage = expNeeded > 0 ? (expProgress / expNeeded) * 100 : 0;
+        elements.gatheringExpFill.style.width = `${Math.min(100, Math.max(0, percentage))}%`;
+        elements.gatheringLevel.textContent = gameState.gatheringLevel;
+    }
+    
+    // 更新侧边栏采集经验条
+    if (elements.navGatheringExp && elements.navGatheringLvl) {
+        const currentExp = getSkillExpForLevel(gameState.gatheringLevel);
+        const nextExp = getSkillExpForLevel(gameState.gatheringLevel + 1);
+        const expNeeded = nextExp - currentExp;
+        const expProgress = gameState.gatheringExp - currentExp;
+        const percentage = expNeeded > 0 ? (expProgress / expNeeded) * 100 : 0;
+        elements.navGatheringExp.style.width = `${Math.min(100, Math.max(0, percentage))}%`;
+        elements.navGatheringLvl.textContent = gameState.gatheringLevel;
+    }
+    
+    // 渲染地点标签
+    renderGatheringTabs();
+    
+    // 渲染当前地点的采集物
+    renderGatheringItems();
+}
+
+function renderGatheringTabs() {
+    const html = CONFIG.gatheringLocations.map((loc, index) => {
+        const isUnlocked = gameState.level >= loc.reqLevel;
+        const isActive = index === currentGatheringLocationIndex;
+        return `
+            <button class="gathering-tab ${isActive ? 'active' : ''} ${!isUnlocked ? 'locked' : ''}" data-index="${index}">
+                ${loc.name}
+                ${!isUnlocked ? `<span class="tab-lock">🔒${loc.reqLevel}级</span>` : ''}
+            </button>
+        `;
+    }).join('');
+    
+    elements.gatheringTabs.innerHTML = html;
+    
+    // 绑定点击事件
+    elements.gatheringTabs.querySelectorAll('.gathering-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            const index = parseInt(this.dataset.index);
+            const loc = CONFIG.gatheringLocations[index];
+            if (gameState.level < loc.reqLevel) {
+                showToast(`❌ 需要等级 ${loc.reqLevel}`);
+                return;
+            }
+            currentGatheringLocationIndex = index;
+            renderGatheringTabs();
+            renderGatheringItems();
+        });
+    });
+}
+
+function renderGatheringItems() {
+    const location = CONFIG.gatheringLocations[currentGatheringLocationIndex];
+    if (!location) return;
+    
+    const isLocationUnlocked = gameState.level >= location.reqLevel;
+    
+    // 添加"全采集"卡片
+    const allGatherCard = `
+        <div class="gathering-item-card all-gather ${!isLocationUnlocked ? 'locked' : ''}" data-type="all">
+            <div class="gathering-item-icon">🧺</div>
+            <div class="gathering-item-info">
+                <div class="gathering-item-name">${location.name}·全采集</div>
+                <div class="gathering-item-desc">每次采集有 30% 概率获得每种物品</div>
+                <div class="gathering-item-meta">${location.duration/1000}秒 | +${location.exp} EXP</div>
+            </div>
+            ${!isLocationUnlocked ? '<div class="gathering-item-locked">🔒 等级不足</div>' : ''}
+        </div>
+    `;
+    
+    // 渲染各个采集物
+    const itemsHtml = location.items.map(item => {
+        const isActive = gameState.activeGathering === 'item' && 
+                         gameState.gatheringLocationId === location.id && 
+                         gameState.gatheringItemId === item.id;
+        
+        let actionStatus = '';
+        if (isActive) {
+            const remaining = gameState.gatheringRemaining || 0;
+            const total = gameState.gatheringCount || 1;
+            const countText = total >= 99999 ? '∞' : `${remaining}/${total}`;
+            actionStatus = `<div class="action-timer">采集中... ${countText}</div>`;
+        }
+        
+        return `
+            <div class="gathering-item-card ${!isLocationUnlocked ? 'locked' : ''} ${isActive ? 'active' : ''}" data-type="item" data-item-id="${item.id}">
+                <div class="gathering-item-icon">${item.icon}</div>
+                <div class="gathering-item-info">
+                    <div class="gathering-item-name">${item.name}</div>
+                    <div class="gathering-item-meta">${location.duration/1000}秒 | +${location.exp} EXP</div>
+                </div>
+                ${actionStatus}
+                ${!isLocationUnlocked ? '<div class="gathering-item-locked">🔒 等级不足</div>' : ''}
+            </div>
+        `;
+    }).join('');
+    
+    elements.gatheringItemsList.innerHTML = allGatherCard + itemsHtml;
+    
+    // 绑定点击事件
+    elements.gatheringItemsList.querySelectorAll('.gathering-item-card').forEach(card => {
+        card.addEventListener('click', function() {
+            if (!isLocationUnlocked) {
+                showToast(`❌ 需要等级 ${location.reqLevel}`);
+                return;
+            }
+            
+            const type = this.dataset.type;
+            if (type === 'all') {
+                openActionModal('gathering_all', location.id, `${location.name}·全采集`);
+            } else {
+                const itemId = this.dataset.itemId;
+                const item = location.items.find(i => i.id === itemId);
+                openActionModal('gathering_item', location.id, item.name, itemId);
+            }
+        });
+    });
+}
+
+function startGathering(type, locationId, itemId = null) {
+    if (hasActiveAction()) { showToast('⏳ 已有行动正在进行中'); return; }
+    
+    const location = CONFIG.gatheringLocations.find(l => l.id === locationId);
+    gameState.activeGathering = type;
+    gameState.gatheringLocationId = locationId;
+    gameState.gatheringItemId = itemId;
+    
+    let actionName = '';
+    let actionIcon = '🌾';
+    
+    if (type === 'item' && itemId) {
+        const item = location.items.find(i => i.id === itemId);
+        actionName = `采集${item.name}`;
+        actionIcon = item.icon;
+    } else {
+        actionName = `${location.name}·全采集`;
+    }
+    
+    setActionState({ name: actionName, icon: actionIcon }, location.duration);
+    renderGathering();
+    setTimeout(() => completeGathering(type, locationId, itemId), location.duration);
+}
+
+function completeGathering(type, locationId, itemId = null) {
+    if (!gameState.activeGathering) return;
+    
+    const location = CONFIG.gatheringLocations.find(l => l.id === locationId);
+    
+    // 初始化物品仓库（如果不存在）
+    if (!gameState.gatheringInventory) {
+        gameState.gatheringInventory = {};
+    }
+    
+    let rewards = [];
+    
+    if (type === 'item' && itemId) {
+        // 单个物品采集
+        const item = location.items.find(i => i.id === itemId);
+        if (!gameState.gatheringInventory[item.id]) {
+            gameState.gatheringInventory[item.id] = 0;
+        }
+        gameState.gatheringInventory[item.id]++;
+        rewards.push({ icon: item.icon, name: item.name, amount: 1 });
+    } else {
+        // 全采集 - 30% 概率获得每种物品
+        location.items.forEach(item => {
+            if (Math.random() < 0.3) {
+                if (!gameState.gatheringInventory[item.id]) {
+                    gameState.gatheringInventory[item.id] = 0;
+                }
+                gameState.gatheringInventory[item.id]++;
+                rewards.push({ icon: item.icon, name: item.name, amount: 1 });
+            }
+        });
+    }
+    
+    // 增加经验
+    addExp(location.exp);
+    addSkillExp('gathering', location.exp);
+    
+    // 清除行动状态
+    gameState.activeGathering = null;
+    gameState.gatheringLocationId = null;
+    gameState.gatheringItemId = null;
+    setActionState(null, 0);
+    
+    updateUI();
+    saveGame();
+    
+    // 显示奖励
+    if (elements.actionRewards && rewards.length > 0) {
+        elements.actionRewards.innerHTML = rewards.map(r => 
+            `<span class="action-reward-item">+${r.amount} ${r.icon} ${r.name}</span>`
+        ).join('');
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
+    }
+}
+
+// 渲染仓库中的采集物品
+function renderGatheringInventory() {
+    const container = document.getElementById('storage-gathering-items');
+    if (!container) return;
+    
+    if (!gameState.gatheringInventory || Object.keys(gameState.gatheringInventory).length === 0) {
+        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">暂无采集物品</div>';
+        return;
+    }
+    
+    // 构建所有采集物的映射表（用于查找图标和名称）
+    const itemMap = {};
+    CONFIG.gatheringLocations.forEach(loc => {
+        loc.items.forEach(item => {
+            itemMap[item.id] = { name: item.name, icon: item.icon };
+        });
+    });
+    
+    const html = Object.entries(gameState.gatheringInventory)
+        .filter(([id, count]) => count > 0)
+        .map(([id, count]) => {
+            const item = itemMap[id] || { name: id, icon: '📦' };
+            return `
+                <div class="storage-item-small">
+                    <div class="storage-item-small-icon">${item.icon}</div>
+                    <div class="storage-item-small-name">${item.name}</div>
+                    <div class="storage-item-small-count">×${count}</div>
+                </div>
+            `;
+        })
+        .join('');
+    
+    container.innerHTML = html || '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">暂无采集物品</div>';
 }
 
 function renderCombatZones() {

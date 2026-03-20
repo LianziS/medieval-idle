@@ -1188,6 +1188,197 @@ body::after {
     font-weight: bold;
 }
 
+/* ============ 采集页面 ============ */
+.gathering-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+    padding: 0 4px;
+}
+
+.gathering-tab {
+    background: linear-gradient(180deg, rgba(107, 79, 60, 0.25) 0%, rgba(27, 42, 58, 0.5) 100%);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(107, 79, 60, 0.4);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    color: #A0B2C0;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.gathering-tab:hover {
+    border-color: #8B2C2D;
+    background: linear-gradient(180deg, rgba(139, 44, 45, 0.2) 0%, rgba(27, 42, 58, 0.6) 100%);
+}
+
+.gathering-tab.active {
+    border-color: #8B2C2D;
+    background: linear-gradient(180deg, rgba(139, 44, 45, 0.3) 0%, rgba(27, 42, 58, 0.7) 100%);
+    color: #fff;
+}
+
+.gathering-tab.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.6);
+}
+
+.gathering-tab .tab-lock {
+    font-size: 0.75rem;
+    color: #8B2C2D;
+    font-weight: bold;
+}
+
+.gathering-items-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+}
+
+.gathering-item-card {
+    background: linear-gradient(180deg, rgba(107, 79, 60, 0.25) 0%, rgba(27, 42, 58, 0.5) 100%);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(107, 79, 60, 0.4);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.gathering-item-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: linear-gradient(180deg, #4a7c2d 0%, #2d5a1a 100%);
+    border-radius: 10px 0 0 10px;
+    transition: width 0.3s;
+}
+
+.gathering-item-card:hover {
+    border-color: #4a7c2d;
+}
+
+.gathering-item-card.active {
+    border-color: rgba(107, 79, 60, 0.4);
+    background: linear-gradient(180deg, rgba(74, 124, 45, 0.3) 0%, rgba(27, 42, 58, 0.6) 100%);
+}
+
+.gathering-item-card.active::before {
+    width: 4px;
+}
+
+.gathering-item-card.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.6);
+}
+
+.gathering-item-card.locked:hover {
+    border-color: rgba(107, 79, 60, 0.4);
+    transform: none;
+}
+
+.gathering-item-card.all-gather::before {
+    background: linear-gradient(180deg, #8B2C2D 0%, #5a1a1a 100%);
+}
+
+.gathering-item-card.all-gather .gathering-item-name {
+    color: #E8C57F;
+}
+
+.gathering-item-icon {
+    font-size: 2.5rem;
+}
+
+.gathering-item-info {
+    flex: 1;
+}
+
+.gathering-item-name {
+    font-weight: bold;
+    font-size: 1rem;
+    margin-bottom: 5px;
+    color: #A0B2C0;
+}
+
+.gathering-item-desc {
+    font-size: 0.8rem;
+    color: #6b7f90;
+    margin-bottom: 3px;
+}
+
+.gathering-item-meta {
+    font-size: 0.85rem;
+    color: #6b4f3c;
+    font-weight: bold;
+}
+
+.gathering-item-locked {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    font-size: 0.8rem;
+    color: #8B2C2D;
+    font-weight: bold;
+}
+
+/* ============ 仓库页面 ============ */
+.storage-section-title {
+    font-size: 0.95rem;
+    color: #A0B2C0;
+    margin: 20px 0 12px 0;
+    padding-left: 8px;
+    border-left: 3px solid #8B2C2D;
+}
+
+.storage-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+.storage-item-small {
+    background: linear-gradient(180deg, rgba(107, 79, 60, 0.25) 0%, rgba(27, 42, 58, 0.5) 100%);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(107, 79, 60, 0.4);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+}
+
+.storage-item-small-icon {
+    font-size: 2rem;
+}
+
+.storage-item-small-name {
+    font-size: 0.8rem;
+    color: #A0B2C0;
+}
+
+.storage-item-small-count {
+    font-size: 0.9rem;
+    color: #E8C57F;
+    font-weight: bold;
+}
+
 /* ============ 移动端适配 ============ */
 @media (max-width: 480px) {
     body {
