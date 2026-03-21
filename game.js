@@ -4512,11 +4512,11 @@ function renderQueueList() {
                     <div class="queue-item-count">${countText}</div>
                 </div>
                 <div class="queue-item-actions">
-                    <button class="queue-action-btn" onclick="moveQueueItem(${index}, 'top')" title="置顶">⏫</button>
-                    <button class="queue-action-btn" onclick="moveQueueItem(${index}, 'up')" title="上移">▲</button>
-                    <button class="queue-action-btn" onclick="moveQueueItem(${index}, 'down')" title="下移">▼</button>
-                    <button class="queue-action-btn" onclick="moveQueueItem(${index}, 'bottom')" title="置底">⏬</button>
-                    <button class="queue-action-btn delete" onclick="removeQueueItem(${index})" title="删除">✕</button>
+                    <button class="queue-action-btn" onclick="event.stopPropagation(); moveQueueItem(${index}, 'top')" title="置顶">⏫</button>
+                    <button class="queue-action-btn" onclick="event.stopPropagation(); moveQueueItem(${index}, 'up')" title="上移">▲</button>
+                    <button class="queue-action-btn" onclick="event.stopPropagation(); moveQueueItem(${index}, 'down')" title="下移">▼</button>
+                    <button class="queue-action-btn" onclick="event.stopPropagation(); moveQueueItem(${index}, 'bottom')" title="置底">⏬</button>
+                    <button class="queue-action-btn delete" onclick="event.stopPropagation(); removeQueueItem(${index})" title="删除">✕</button>
                 </div>
             </div>
         `;
