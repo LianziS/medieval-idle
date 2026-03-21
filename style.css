@@ -1206,6 +1206,22 @@ body::after {
         font-size: 13px;
     }
     
+    /* 移动端侧边栏、顶部栏统一字体 9.8px */
+    .sidebar,
+    .sidebar *,
+    .top-fixed,
+    .top-fixed * {
+        font-size: 9.8px !important;
+    }
+    
+    /* 主页栏统一字体 9.1px */
+    .game-container,
+    .game-container *,
+    .page,
+    .page * {
+        font-size: 9.1px !important;
+    }
+    
     .top-fixed {
         min-height: 85px;
     }
@@ -1997,6 +2013,22 @@ body::after {
 @media (max-width: 768px) {
     body {
         font-size: 11px;
+    }
+    
+    /* 移动端侧边栏、顶部栏统一字体 9.8px */
+    .sidebar,
+    .sidebar *,
+    .top-fixed,
+    .top-fixed * {
+        font-size: 9.8px !important;
+    }
+    
+    /* 主页栏统一字体 9.1px */
+    .game-container,
+    .game-container *,
+    .page,
+    .page * {
+        font-size: 9.1px !important;
     }
     
     .panel-title {
