@@ -19,7 +19,7 @@
     <!-- 顶部固定区域 -->
     <header class="top-fixed">
         <div class="top-fixed-content">
-            <span class="update-time-badge">代码更新: 2026-03-21 15:51</span>
+            <span class="update-time-badge">代码更新: 2026-03-21 16:22</span>
             <span class="player-badge">
                 <span>LV.<span id="top-level">1</span></span>
             </span>
@@ -56,10 +56,10 @@
                 <span class="nav-text">主页</span>
             </div>
             
-            <!-- 仓库 -->
+            <!-- 我的物品 -->
             <div class="nav-item" data-page="storage">
                 <span class="nav-icon">📦</span>
-                <span class="nav-text">仓库</span>
+                <span class="nav-text">我的物品</span>
             </div>
             
             <!-- 商人 -->
@@ -180,43 +180,100 @@
         <!-- 仓库页 -->
         <main class="page" id="page-storage">
             <section class="panel">
-                <h2 class="panel-title">📦 仓库</h2>
+                <!-- 二级菜单 -->
+                <div class="storage-tabs">
+                    <button class="storage-tab active" data-tab="items">我的物品</button>
+                    <span class="storage-tab-divider">|</span>
+                    <button class="storage-tab" data-tab="equipment">装备栏</button>
+                </div>
                 
-                <!-- 基础资源 -->
-                <h3 class="storage-section-title">基础资源</h3>
-                <div class="storage-grid">
-                    <div class="storage-item">
-                        <span class="storage-icon">💰</span>
-                        <div class="storage-info">
-                            <span class="storage-name">金币</span>
-                            <span class="storage-value" id="storage-gold">0</span>
+                <!-- 我的物品内容 -->
+                <div class="storage-tab-content active" id="storage-tab-items">
+                    <h2 class="panel-title">📦 我的物品</h2>
+                    
+                    <!-- 基础资源 -->
+                    <h3 class="storage-section-title">基础资源</h3>
+                    <div class="storage-grid">
+                        <div class="storage-item">
+                            <span class="storage-icon">💰</span>
+                            <div class="storage-info">
+                                <span class="storage-name">金币</span>
+                                <span class="storage-value" id="storage-gold">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 伐木物品 -->
+                    <h3 class="storage-section-title">伐木物品</h3>
+                    <div class="storage-items-grid" id="storage-woodcutting-items"></div>
+                    
+                    <!-- 挖矿物品 -->
+                    <h3 class="storage-section-title">挖矿物品</h3>
+                    <div class="storage-items-grid" id="storage-mining-items"></div>
+                    
+                    <!-- 采集物品 -->
+                    <h3 class="storage-section-title">采集物品</h3>
+                    <div class="storage-items-grid" id="storage-gathering-items"></div>
+                    
+                    <!-- 木板 -->
+                    <h3 class="storage-section-title">木板</h3>
+                    <div class="storage-items-grid" id="storage-planks-items"></div>
+                    
+                    <!-- 矿锭 -->
+                    <h3 class="storage-section-title">矿锭</h3>
+                    <div class="storage-items-grid" id="storage-ingots-items"></div>
+                    
+                    <!-- 布料 -->
+                    <h3 class="storage-section-title">布料</h3>
+                    <div class="storage-items-grid" id="storage-fabrics-items"></div>
+                </div>
+                
+                <!-- 装备栏内容 -->
+                <div class="storage-tab-content" id="storage-tab-equipment">
+                    <h2 class="panel-title">⚔️ 装备栏</h2>
+                    <div class="equipment-grid">
+                        <div class="equipment-slot" data-slot="axe" data-label="斧头">
+                            <div class="equipment-slot-label">斧头</div>
+                            <div class="equipment-slot-icon" id="equipment-slot-axe">🔧</div>
+                            <div class="equipment-slot-name" id="equipment-slot-axe-name">空</div>
+                        </div>
+                        <div class="equipment-slot" data-slot="pickaxe" data-label="镐子">
+                            <div class="equipment-slot-label">镐子</div>
+                            <div class="equipment-slot-icon" id="equipment-slot-pickaxe">⛏️</div>
+                            <div class="equipment-slot-name" id="equipment-slot-pickaxe-name">空</div>
+                        </div>
+                        <div class="equipment-slot locked" data-slot="slot3" data-label="未解锁">
+                            <div class="equipment-slot-label">未解锁</div>
+                            <div class="equipment-slot-icon">🔒</div>
+                            <div class="equipment-slot-name">-</div>
+                        </div>
+                        <div class="equipment-slot locked" data-slot="slot4" data-label="未解锁">
+                            <div class="equipment-slot-label">未解锁</div>
+                            <div class="equipment-slot-icon">🔒</div>
+                            <div class="equipment-slot-name">-</div>
+                        </div>
+                        <div class="equipment-slot locked" data-slot="slot5" data-label="未解锁">
+                            <div class="equipment-slot-label">未解锁</div>
+                            <div class="equipment-slot-icon">🔒</div>
+                            <div class="equipment-slot-name">-</div>
+                        </div>
+                        <div class="equipment-slot locked" data-slot="slot6" data-label="未解锁">
+                            <div class="equipment-slot-label">未解锁</div>
+                            <div class="equipment-slot-icon">🔒</div>
+                            <div class="equipment-slot-name">-</div>
+                        </div>
+                        <div class="equipment-slot locked" data-slot="slot7" data-label="未解锁">
+                            <div class="equipment-slot-label">未解锁</div>
+                            <div class="equipment-slot-icon">🔒</div>
+                            <div class="equipment-slot-name">-</div>
+                        </div>
+                        <div class="equipment-slot locked" data-slot="slot8" data-label="未解锁">
+                            <div class="equipment-slot-label">未解锁</div>
+                            <div class="equipment-slot-icon">🔒</div>
+                            <div class="equipment-slot-name">-</div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- 伐木物品 -->
-                <h3 class="storage-section-title">伐木物品</h3>
-                <div class="storage-items-grid" id="storage-woodcutting-items"></div>
-                
-                <!-- 挖矿物品 -->
-                <h3 class="storage-section-title">挖矿物品</h3>
-                <div class="storage-items-grid" id="storage-mining-items"></div>
-                
-                <!-- 采集物品 -->
-                <h3 class="storage-section-title">采集物品</h3>
-                <div class="storage-items-grid" id="storage-gathering-items"></div>
-                
-                <!-- 木板 -->
-                <h3 class="storage-section-title">木板</h3>
-                <div class="storage-items-grid" id="storage-planks-items"></div>
-                
-                <!-- 矿锭 -->
-                <h3 class="storage-section-title">矿锭</h3>
-                <div class="storage-items-grid" id="storage-ingots-items"></div>
-                
-                <!-- 布料 -->
-                <h3 class="storage-section-title">布料</h3>
-                <div class="storage-items-grid" id="storage-fabrics-items"></div>
             </section>
         </main>
 
@@ -445,6 +502,22 @@
             <div class="modal-footer">
                 <button class="modal-btn secondary" id="replace-modal-cancel">取消</button>
                 <button class="modal-btn primary" id="replace-modal-confirm">替换</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 工具选择弹窗 -->
+    <div class="modal" id="tool-select-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="tool-select-title">选择工具</h2>
+                <span class="modal-close" id="tool-select-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="tool-select-list" id="tool-select-list"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" id="tool-select-cancel">关闭</button>
             </div>
         </div>
     </div>

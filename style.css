@@ -2275,3 +2275,206 @@ body::after {
     color: #E8C57F;
     font-weight: bold;
 }
+
+/* ============ 仓库二级菜单 ============ */
+.storage-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(107, 79, 60, 0.3);
+}
+
+.storage-tab {
+    background: transparent;
+    border: none;
+    color: #A0B2C0;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.3s;
+}
+
+.storage-tab:hover {
+    color: #fff;
+    background: rgba(107, 79, 60, 0.2);
+}
+
+.storage-tab.active {
+    color: #E8C57F;
+    background: rgba(107, 79, 60, 0.3);
+}
+
+.storage-tab-divider {
+    color: rgba(160, 178, 192, 0.4);
+}
+
+.storage-tab-content {
+    display: none;
+}
+
+.storage-tab-content.active {
+    display: block;
+}
+
+/* ============ 装备栏 ============ */
+.equipment-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+}
+
+@media (max-width: 480px) {
+    .equipment-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.equipment-slot {
+    background: linear-gradient(180deg, rgba(45, 63, 82, 0.8) 0%, rgba(27, 42, 58, 0.9) 100%);
+    border: 2px solid rgba(107, 79, 60, 0.4);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    min-height: 120px;
+}
+
+.equipment-slot:hover {
+    border-color: #8B2C2D;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.equipment-slot.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.6);
+}
+
+.equipment-slot.locked:hover {
+    border-color: rgba(107, 79, 60, 0.4);
+    transform: none;
+    box-shadow: none;
+}
+
+.equipment-slot.equipped {
+    border-color: #6b4f3c;
+    background: linear-gradient(180deg, rgba(107, 79, 60, 0.3) 0%, rgba(27, 42, 58, 0.9) 100%);
+}
+
+.equipment-slot-label {
+    font-size: 0.75rem;
+    color: #6b7f90;
+    margin-bottom: 8px;
+}
+
+.equipment-slot-icon {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+}
+
+.equipment-slot-name {
+    font-size: 0.85rem;
+    color: #A0B2C0;
+    font-weight: bold;
+}
+
+.equipment-slot.equipped .equipment-slot-name {
+    color: #E8C57F;
+}
+
+/* ============ 工具选择列表 ============ */
+.tool-select-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.tool-select-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(107, 79, 60, 0.2);
+    border: 2px solid rgba(107, 79, 60, 0.3);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.tool-select-item:hover {
+    border-color: #8B2C2D;
+    background: rgba(107, 79, 60, 0.35);
+}
+
+.tool-select-item.equipped {
+    border-color: #6b4f3c;
+    background: rgba(107, 79, 60, 0.4);
+}
+
+.tool-select-item.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.6);
+}
+
+.tool-select-item.locked:hover {
+    border-color: rgba(107, 79, 60, 0.3);
+    background: rgba(107, 79, 60, 0.2);
+}
+
+.tool-select-icon {
+    font-size: 2rem;
+    width: 50px;
+    text-align: center;
+}
+
+.tool-select-info {
+    flex: 1;
+}
+
+.tool-select-name {
+    font-size: 1rem;
+    color: #fff;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.tool-select-desc {
+    font-size: 0.85rem;
+    color: #6b7f90;
+}
+
+.tool-select-item.equipped .tool-select-name {
+    color: #E8C57F;
+}
+
+.tool-select-badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(107, 79, 60, 0.3);
+    color: #A0B2C0;
+}
+
+.tool-select-item.equipped .tool-select-badge {
+    background: rgba(107, 79, 60, 0.5);
+    color: #E8C57F;
+}
+
+.tool-empty-message {
+    text-align: center;
+    padding: 40px;
+    color: #6b7f90;
+    font-size: 1rem;
+}

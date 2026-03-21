@@ -267,6 +267,23 @@ const CONFIG = {
         wood: 2,
         stone: 3,
         herb: 5
+    },
+    // 工具配置
+    tools: {
+        axes: [
+            { id: 'stone_axe', name: '石斧', icon: '🪓', desc: '伐木速度 +10%', effect: { woodcuttingSpeed: 0.1 }, reqLevel: 1 },
+            { id: 'iron_axe', name: '铁斧', icon: '🪓', desc: '伐木速度 +20%', effect: { woodcuttingSpeed: 0.2 }, reqLevel: 10 },
+            { id: 'steel_axe', name: '钢斧', icon: '🪓', desc: '伐木速度 +30%', effect: { woodcuttingSpeed: 0.3 }, reqLevel: 25 },
+            { id: 'runed_axe', name: '符文斧', icon: '🪓', desc: '伐木速度 +50%', effect: { woodcuttingSpeed: 0.5 }, reqLevel: 50 },
+            { id: 'dragon_axe', name: '龙骨斧', icon: '🪓', desc: '伐木速度 +80%', effect: { woodcuttingSpeed: 0.8 }, reqLevel: 80 }
+        ],
+        pickaxes: [
+            { id: 'stone_pickaxe', name: '石镐', icon: '⛏️', desc: '挖矿速度 +10%', effect: { miningSpeed: 0.1 }, reqLevel: 1 },
+            { id: 'iron_pickaxe', name: '铁镐', icon: '⛏️', desc: '挖矿速度 +20%', effect: { miningSpeed: 0.2 }, reqLevel: 10 },
+            { id: 'steel_pickaxe', name: '钢镐', icon: '⛏️', desc: '挖矿速度 +30%', effect: { miningSpeed: 0.3 }, reqLevel: 25 },
+            { id: 'runed_pickaxe', name: '符文镐', icon: '⛏️', desc: '挖矿速度 +50%', effect: { miningSpeed: 0.5 }, reqLevel: 50 },
+            { id: 'dragon_pickaxe', name: '龙骨镐', icon: '⛏️', desc: '挖矿速度 +80%', effect: { miningSpeed: 0.8 }, reqLevel: 80 }
+        ]
     }
 };
 
@@ -336,7 +353,16 @@ let gameState = {
     tailoringCount: 0,
     tailoringRemaining: 0,
     // 布料存储
-    fabricsInventory: {}
+    fabricsInventory: {},
+    // 装备系统
+    equipment: {
+        axe: null,       // 当前装备的斧头
+        pickaxe: null    // 当前装备的镐子
+    },
+    toolsInventory: {
+        axes: [],        // 拥有的斧头列表
+        pickaxes: []     // 拥有的镐子列表
+    }
 };
 
 CONFIG.buildings.forEach(b => { gameState.buildings[b.id] = { level: 0 }; });
@@ -482,6 +508,14 @@ function init() {
     renderPlanksInventory();
     renderIngotsInventory();
     renderFabricsInventory();
+    
+    // 初始化仓库二级菜单
+    setupStorageTabs();
+    
+    // 初始化装备栏
+    renderEquipmentSlots();
+    setupEquipmentListeners();
+    setupToolSelectModal();
     
     // 修复刷新页面后进度条异常：如果有进行中的行动，重置进度条和开始时间
     if (gameState.currentAction) {
@@ -1157,7 +1191,10 @@ function startWoodcuttingWithCount(treeId, count) {
     if (elements.actionProgressFill) {
         elements.actionProgressFill.style.width = '0%';
     }
-    setActionState({ name: `采集${tree.name}`, icon: tree.icon }, tree.duration);
+    // 应用装备加成
+    const bonus = getEquipmentBonus('woodcutting');
+    const actualDuration = Math.floor(tree.duration / (1 + bonus));
+    setActionState({ name: `采集${tree.name}`, icon: tree.icon }, actualDuration);
     renderWoodcutting();
     // 启动进度条动画
     if (animationFrame) cancelAnimationFrame(animationFrame);
@@ -1184,8 +1221,11 @@ function scheduleWoodcutting(treeId) {
     
     // 立即开始下一次行动
     if (gameState.activeWoodcutting === treeId) {
+        // 应用装备加成
+        const bonus = getEquipmentBonus('woodcutting');
+        const actualDuration = Math.floor(tree.duration / (1 + bonus));
         // 重置行动开始时间为当前时间
-        setActionState({ name: `采集${tree.name}`, icon: tree.icon }, tree.duration);
+        setActionState({ name: `采集${tree.name}`, icon: tree.icon }, actualDuration);
         // 重置进度条为 0
         if (elements.actionProgressFill) {
             elements.actionProgressFill.style.width = '0%';
@@ -1205,7 +1245,7 @@ function scheduleWoodcutting(treeId) {
                 // 递归调用继续下一次行动
                 scheduleWoodcutting(treeId);
             }
-        }, tree.duration);
+        }, actualDuration);
     }
 }
 
@@ -1238,7 +1278,10 @@ function startMiningWithCount(oreId, count) {
     if (elements.actionProgressFill) {
         elements.actionProgressFill.style.width = '0%';
     }
-    setActionState({ name: `挖掘${ore.name}`, icon: ore.icon }, ore.duration);
+    // 应用装备加成
+    const bonus = getEquipmentBonus('mining');
+    const actualDuration = Math.floor(ore.duration / (1 + bonus));
+    setActionState({ name: `挖掘${ore.name}`, icon: ore.icon }, actualDuration);
     renderMining();
     // 启动进度条动画
     if (animationFrame) cancelAnimationFrame(animationFrame);
@@ -1265,8 +1308,11 @@ function scheduleMining(oreId) {
     
     // 立即开始下一次行动
     if (gameState.activeMining === oreId) {
+        // 应用装备加成
+        const bonus = getEquipmentBonus('mining');
+        const actualDuration = Math.floor(ore.duration / (1 + bonus));
         // 重置行动开始时间为当前时间
-        setActionState({ name: `挖掘${ore.name}`, icon: ore.icon }, ore.duration);
+        setActionState({ name: `挖掘${ore.name}`, icon: ore.icon }, actualDuration);
         // 重置进度条为 0
         if (elements.actionProgressFill) {
             elements.actionProgressFill.style.width = '0%';
@@ -1286,7 +1332,7 @@ function scheduleMining(oreId) {
                 // 递归调用继续下一次行动
                 scheduleMining(oreId);
             }
-        }, ore.duration);
+        }, actualDuration);
     }
 }
 
@@ -3362,3 +3408,209 @@ window.addEventListener('DOMContentLoaded', () => {
     init();
 });
 window.addEventListener('beforeunload', saveGame);
+
+// ============ 装备系统 ============
+
+let currentSelectSlot = null;
+
+function setupStorageTabs() {
+    const tabs = document.querySelectorAll('.storage-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabName = this.dataset.tab;
+            if (!tabName) return;
+            
+            // 更新标签状态
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            // 切换内容
+            document.querySelectorAll('.storage-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            const targetContent = document.getElementById(`storage-tab-${tabName}`);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+        });
+    });
+}
+
+function renderEquipmentSlots() {
+    // 渲染斧头槽位
+    const axeSlot = document.getElementById('equipment-slot-axe');
+    const axeName = document.getElementById('equipment-slot-axe-name');
+    if (gameState.equipment.axe) {
+        const tool = CONFIG.tools.axes.find(t => t.id === gameState.equipment.axe);
+        if (tool) {
+            axeSlot.textContent = tool.icon;
+            axeName.textContent = tool.name;
+        }
+    } else {
+        axeSlot.textContent = '🔧';
+        axeName.textContent = '空';
+    }
+    
+    // 渲染镐子槽位
+    const pickaxeSlot = document.getElementById('equipment-slot-pickaxe');
+    const pickaxeName = document.getElementById('equipment-slot-pickaxe-name');
+    if (gameState.equipment.pickaxe) {
+        const tool = CONFIG.tools.pickaxes.find(t => t.id === gameState.equipment.pickaxe);
+        if (tool) {
+            pickaxeSlot.textContent = tool.icon;
+            pickaxeName.textContent = tool.name;
+        }
+    } else {
+        pickaxeSlot.textContent = '⛏️';
+        pickaxeName.textContent = '空';
+    }
+    
+    // 更新槽位状态
+    document.querySelectorAll('.equipment-slot').forEach(slot => {
+        const slotType = slot.dataset.slot;
+        if (slotType === 'axe' && gameState.equipment.axe) {
+            slot.classList.add('equipped');
+        } else if (slotType === 'pickaxe' && gameState.equipment.pickaxe) {
+            slot.classList.add('equipped');
+        } else {
+            slot.classList.remove('equipped');
+        }
+    });
+}
+
+function setupEquipmentListeners() {
+    document.querySelectorAll('.equipment-slot').forEach(slot => {
+        slot.addEventListener('click', function() {
+            if (this.classList.contains('locked')) return;
+            
+            const slotType = this.dataset.slot;
+            if (slotType === 'axe' || slotType === 'pickaxe') {
+                openToolSelectModal(slotType);
+            }
+        });
+    });
+}
+
+function setupToolSelectModal() {
+    const modal = document.getElementById('tool-select-modal');
+    const closeBtn = document.getElementById('tool-select-close');
+    const cancelBtn = document.getElementById('tool-select-cancel');
+    
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.classList.remove('show');
+        });
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            modal.classList.remove('show');
+        });
+    }
+    
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('show');
+            }
+        });
+    }
+}
+
+function openToolSelectModal(slotType) {
+    currentSelectSlot = slotType;
+    const modal = document.getElementById('tool-select-modal');
+    const title = document.getElementById('tool-select-title');
+    const list = document.getElementById('tool-select-list');
+    
+    const slotNames = { axe: '斧头', pickaxe: '镐子' };
+    title.textContent = `选择${slotNames[slotType] || '工具'}`;
+    
+    const tools = slotType === 'axe' ? CONFIG.tools.axes : CONFIG.tools.pickaxes;
+    const inventory = slotType === 'axe' ? gameState.toolsInventory.axes : gameState.toolsInventory.pickaxes;
+    const currentEquipped = gameState.equipment[slotType];
+    
+    if (inventory.length === 0) {
+        list.innerHTML = '<div class="tool-empty-message">没有可用工具</div>';
+    } else {
+        const html = tools.filter(t => inventory.includes(t.id)).map(tool => {
+            const isEquipped = currentEquipped === tool.id;
+            const canEquip = gameState[slotType === 'axe' ? 'woodcuttingLevel' : 'miningLevel'] >= tool.reqLevel;
+            
+            return `
+                <div class="tool-select-item ${isEquipped ? 'equipped' : ''} ${!canEquip ? 'locked' : ''}" 
+                    data-tool-id="${tool.id}" 
+                    data-slot-type="${slotType}">
+                    <div class="tool-select-icon">${tool.icon}</div>
+                    <div class="tool-select-info">
+                        <div class="tool-select-name">${tool.name}</div>
+                        <div class="tool-select-desc">${tool.desc} | 需求等级: ${tool.reqLevel}</div>
+                    </div>
+                    ${isEquipped ? '<span class="tool-select-badge">已装备</span>' : ''}
+                    ${!canEquip ? '<span class="tool-select-badge" style="background: rgba(139, 44, 45, 0.3); color: #8B2C2D;">等级不足</span>' : ''}
+                </div>
+            `;
+        }).join('');
+        
+        list.innerHTML = html;
+        
+        // 绑定点击事件
+        list.querySelectorAll('.tool-select-item').forEach(item => {
+            item.addEventListener('click', function() {
+                if (this.classList.contains('locked')) return;
+                
+                const toolId = this.dataset.toolId;
+                const slotType = this.dataset.slotType;
+                
+                // 如果已装备，则卸下
+                if (gameState.equipment[slotType] === toolId) {
+                    gameState.equipment[slotType] = null;
+                    showToast(`已卸下 ${this.querySelector('.tool-select-name').textContent}`);
+                } else {
+                    // 装备新工具
+                    gameState.equipment[slotType] = toolId;
+                    showToast(`已装备 ${this.querySelector('.tool-select-name').textContent}`);
+                }
+                
+                saveGame();
+                renderEquipmentSlots();
+                modal.classList.remove('show');
+            });
+        });
+    }
+    
+    modal.classList.add('show');
+}
+
+// 给玩家添加一个测试工具（用于测试）
+function addTestTool(type) {
+    if (type === 'axe') {
+        if (!gameState.toolsInventory.axes.includes('stone_axe')) {
+            gameState.toolsInventory.axes.push('stone_axe');
+        }
+    } else if (type === 'pickaxe') {
+        if (!gameState.toolsInventory.pickaxes.includes('stone_pickaxe')) {
+            gameState.toolsInventory.pickaxes.push('stone_pickaxe');
+        }
+    }
+    saveGame();
+}
+
+// 获取装备效果加成
+function getEquipmentBonus(type) {
+    let bonus = 0;
+    
+    if (type === 'woodcutting' && gameState.equipment.axe) {
+        const tool = CONFIG.tools.axes.find(t => t.id === gameState.equipment.axe);
+        if (tool) {
+            bonus = tool.effect.woodcuttingSpeed || 0;
+        }
+    } else if (type === 'mining' && gameState.equipment.pickaxe) {
+        const tool = CONFIG.tools.pickaxes.find(t => t.id === gameState.equipment.pickaxe);
+        if (tool) {
+            bonus = tool.effect.miningSpeed || 0;
+        }
+    }
+    
+    return bonus;
+}
