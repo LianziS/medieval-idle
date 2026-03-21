@@ -1680,6 +1680,13 @@ function cancelCurrentAction() {
     renderGatherActions();
     renderCombatZones();
     showToast('❌ 已停止行动');
+    
+    // 停止后检查队列，如果有等待的行动则执行第一个
+    if (gameState.actionQueue.length > 0) {
+        setTimeout(() => {
+            startNextQueueAction();
+        }, 300);
+    }
 }
 
 // 阻止点击停止按钮时触发其他事件
@@ -4539,7 +4546,7 @@ function addToQueue() {
     
     // 检查队列是否已满
     if (queueLength >= gameState.maxQueueSize) {
-        showToast('❌ 队列已满（最多5个）');
+        showToast('❌ 队列已满（最多4个）');
         return;
     }
     
@@ -4549,7 +4556,7 @@ function addToQueue() {
         return;
     }
     
-    // 添加到队列
+    // 添加到队列（允许添加相同的行动）
     const action = {
         ...pendingAction,
         icon: getActionIcon(pendingAction.type, pendingAction.id)
@@ -4561,6 +4568,7 @@ function addToQueue() {
     // 更新UI
     updateQueueButton();
     updateQueueButtonInModal();
+    renderQueueList();
     
     // 关闭弹窗
     elements.actionModal.classList.remove('show');
