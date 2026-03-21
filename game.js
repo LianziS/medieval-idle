@@ -1616,7 +1616,7 @@ function completeGatheringOnce(type, locationId, itemId) {
     }
 }
 
-function cancelCurrentAction() {
+function cancelCurrentAction(skipQueue = false) {
     if (!gameState.currentAction) return;
     
     // 清除所有进行中的行动，不给予奖励
@@ -1681,8 +1681,8 @@ function cancelCurrentAction() {
     renderCombatZones();
     showToast('❌ 已停止行动');
     
-    // 停止后检查队列，如果有等待的行动则执行第一个
-    if (gameState.actionQueue.length > 0) {
+    // 停止后检查队列，如果有等待的行动则执行第一个（除非是置顶操作）
+    if (!skipQueue && gameState.actionQueue.length > 0) {
         setTimeout(() => {
             startNextQueueAction();
         }, 300);
@@ -4601,8 +4601,8 @@ function moveQueueItem(index, direction) {
         // 将当前行动保存到队列第一个
         const currentAction = getCurrentActionInfo();
         if (currentAction) {
-            // 取消当前行动
-            cancelCurrentAction();
+            // 取消当前行动（跳过队列检查，因为我们会手动执行）
+            cancelCurrentAction(true);
             
             // 将当前行动添加到队列第一个
             queue.unshift(currentAction);
@@ -4617,6 +4617,7 @@ function moveQueueItem(index, direction) {
         
         saveGame();
         updateQueueButton();
+        renderQueueList();
         showToast('✅ 已替换当前行动');
         return;
     }
