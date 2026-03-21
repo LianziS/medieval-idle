@@ -1597,6 +1597,26 @@ function cancelCurrentAction() {
         gameState.gatheringCount = 0;
         gameState.gatheringRemaining = 0;
     }
+    if (gameState.activeCrafting) {
+        gameState.activeCrafting = null;
+        gameState.craftingCount = 0;
+        gameState.craftingRemaining = 0;
+    }
+    if (gameState.activeForging) {
+        gameState.activeForging = null;
+        gameState.forgingCount = 0;
+        gameState.forgingRemaining = 0;
+    }
+    if (gameState.activeForgingTool) {
+        gameState.activeForgingTool = null;
+        gameState.forgingToolCount = 0;
+        gameState.forgingToolRemaining = 0;
+    }
+    if (gameState.activeTailoring) {
+        gameState.activeTailoring = null;
+        gameState.tailoringCount = 0;
+        gameState.tailoringRemaining = 0;
+    }
     for (const actionId in gameState.activeActions) {
         delete gameState.activeActions[actionId];
     }
@@ -1614,6 +1634,9 @@ function cancelCurrentAction() {
     renderWoodcutting();
     renderMining();
     renderGathering();
+    renderCrafting();
+    renderForging();
+    renderTailoring();
     renderGatherActions();
     renderCombatZones();
     showToast('❌ 已停止行动');
@@ -3966,6 +3989,76 @@ function loadGame() {
                     } else {
                         gameState.activeTailoring = null;
                         gameState.tailoringCount = 0;
+                        setActionState(null, 0);
+                    }
+                }
+            }
+            
+            // 离线计算 - 工具锻造
+            if (gameState.activeForgingTool && gameState.forgingToolRemaining > 0) {
+                const toolType = gameState.forgingToolType;
+                const toolIndex = gameState.forgingToolIndex;
+                const tools = CONFIG.tools[toolType === 'axe' ? 'axes' : 'pickaxes'];
+                const tool = tools[toolIndex];
+                
+                if (tool && canForgeTool(toolType, toolIndex)) {
+                    const offlineTime = now - gameState.actionStartTime;
+                    const actionDuration = tool.duration;
+                    const completedCount = Math.floor(offlineTime / actionDuration);
+                    const remainingTime = offlineTime % actionDuration;
+                    
+                    const actualCompleted = Math.min(completedCount, gameState.forgingToolRemaining);
+                    for (let i = 0; i < actualCompleted; i++) {
+                        if (canForgeTool(toolType, toolIndex)) {
+                            // 消耗材料并添加工具
+                            const materials = CONFIG.toolCraftingMaterials[toolType === 'axe' ? 'axes' : 'pickaxes'][toolIndex];
+                            const ingotId = CONFIG.ingotIdMapping[toolIndex];
+                            const plankId = CONFIG.plankIdMapping[toolIndex];
+                            
+                            gameState.ingotsInventory[ingotId] -= materials.ore;
+                            gameState.planksInventory[plankId] -= materials.plank;
+                            
+                            if (materials.prevTool) {
+                                const inventory = toolType === 'axe' ? gameState.toolsInventory.axes : gameState.toolsInventory.pickaxes;
+                                const idx = inventory.indexOf(materials.prevTool);
+                                if (idx > -1) inventory.splice(idx, 1);
+                            }
+                            
+                            const inventory = toolType === 'axe' ? gameState.toolsInventory.axes : gameState.toolsInventory.pickaxes;
+                            if (!inventory.includes(tool.id)) inventory.push(tool.id);
+                            
+                            addExp(tool.exp);
+                            addSkillExp('forging', tool.exp);
+                        }
+                    }
+                    gameState.forgingToolRemaining -= actualCompleted;
+                    gameState.actionStartTime = now - remainingTime;
+                    
+                    if (actualCompleted > 0) {
+                        showToast(`⏰ 离线完成 ${actualCompleted} 次工具锻造！`);
+                    }
+                    
+                    if (canForgeTool(toolType, toolIndex) && (gameState.forgingToolRemaining > 0 || gameState.forgingToolCount >= 99999)) {
+                        setActionState({ name: `锻造${tool.name}`, icon: tool.icon }, actionDuration);
+                        
+                        if (remainingTime > 0) {
+                            setTimeout(() => {
+                                if (gameState.activeForgingTool === tool.id) {
+                                    completeForgingToolOnce(tool.id, toolType, toolIndex);
+                                    scheduleForgingTool(tool.id, toolType, toolIndex);
+                                }
+                            }, actionDuration - remainingTime);
+                        } else {
+                            scheduleForgingTool(tool.id, toolType, toolIndex);
+                        }
+                        
+                        if (animationFrame) cancelAnimationFrame(animationFrame);
+                        lastActionStartTime = gameState.actionStartTime;
+                        animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+                        renderToolsList();
+                    } else {
+                        gameState.activeForgingTool = null;
+                        gameState.forgingToolCount = 0;
                         setActionState(null, 0);
                     }
                 }

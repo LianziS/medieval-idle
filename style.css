@@ -2173,9 +2173,13 @@ body::after {
 }
 
 .gathering-items-list {
-    display: grid;
+    display: none;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 14px;
+}
+
+.gathering-items-list.active {
+    display: grid;
 }
 
 .gathering-item-card {
