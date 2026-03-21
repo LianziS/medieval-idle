@@ -2527,6 +2527,9 @@ body::after {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     z-index: 1200;
     display: none;
+}
+
+.queue-popover * {
     /* 弹窗字体和侧边栏一致：最大14px，最小9.8px */
     font-size: clamp(9.8px, 0.9vw + 8px, 14px) !important;
 }

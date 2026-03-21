@@ -4549,9 +4549,24 @@ function addToQueue() {
         return;
     }
     
+    // 获取选择的次数
+    const selectedOption = document.querySelector('.count-option.selected');
+    let count = 1;
+    
+    if (selectedOption) {
+        count = parseInt(selectedOption.dataset.count);
+    } else if (elements.actionCountInput && elements.actionCountInput.value) {
+        count = parseInt(elements.actionCountInput.value);
+    }
+    
+    if (isNaN(count) || count < 1) {
+        count = 1;
+    }
+    
     // 添加到队列（允许添加相同的行动）
     const action = {
         ...pendingAction,
+        count: count,
         icon: getActionIcon(pendingAction.type, pendingAction.id)
     };
     
