@@ -429,7 +429,7 @@ let gameState = {
     },
     // 行动队列系统
     actionQueue: [],     // 行动队列（最多5个）
-    maxQueueSize: 5
+    maxQueueSize: 4
 };
 
 CONFIG.buildings.forEach(b => { gameState.buildings[b.id] = { level: 0 }; });
@@ -4601,18 +4601,18 @@ function moveQueueItem(index, direction) {
     
     // 特殊处理：第一个行动上移/置顶时，需要替换当前行动
     if ((direction === 'up' || direction === 'top') && index === 0) {
-        // 将当前行动保存到队列末尾
+        // 将当前行动保存到队列第一个
         const currentAction = getCurrentActionInfo();
         if (currentAction) {
             // 取消当前行动
             cancelCurrentAction();
             
-            // 将当前行动添加到队列末尾
-            queue.push(currentAction);
+            // 将当前行动添加到队列第一个
+            queue.unshift(currentAction);
         }
         
-        // 取出队列第一个行动
-        const newAction = queue.shift();
+        // 取出队列第二个行动（原来的第一个）
+        const newAction = queue.splice(1, 1)[0];
         
         // 执行新行动
         pendingAction = newAction;
