@@ -331,8 +331,6 @@ let gameState = {
     miningInventory: {},
     gatheringInventory: {},
     // 制作状态
-    craftingLevel: 1,
-    craftingExp: 0,
     activeCrafting: null,
     craftingCount: 0,
     craftingRemaining: 0,
@@ -1204,8 +1202,8 @@ function startWoodcuttingWithCount(treeId, count) {
 }
 
 function scheduleWoodcutting(treeId) {
-    const isInfinte = gameState.woodcuttingCount >= 99999;
-    if (!gameState.activeWoodcutting || (!isInfinte && gameState.woodcuttingRemaining <= 0)) {
+    const isInfinite = gameState.woodcuttingCount >= 99999;
+    if (!gameState.activeWoodcutting || (!isInfinite && gameState.woodcuttingRemaining <= 0)) {
         gameState.activeWoodcutting = null;
         gameState.woodcuttingCount = 0;
         gameState.woodcuttingRemaining = 0;
@@ -1215,7 +1213,7 @@ function scheduleWoodcutting(treeId) {
     }
     
     const tree = CONFIG.trees.find(t => t.id === treeId);
-    if (!isInfinte) {
+    if (!isInfinite) {
         gameState.woodcuttingRemaining--;
     }
     
@@ -1291,8 +1289,8 @@ function startMiningWithCount(oreId, count) {
 }
 
 function scheduleMining(oreId) {
-    const isInfinte = gameState.miningCount >= 99999;
-    if (!gameState.activeMining || (!isInfinte && gameState.miningRemaining <= 0)) {
+    const isInfinite = gameState.miningCount >= 99999;
+    if (!gameState.activeMining || (!isInfinite && gameState.miningRemaining <= 0)) {
         gameState.activeMining = null;
         gameState.miningCount = 0;
         gameState.miningRemaining = 0;
@@ -1302,7 +1300,7 @@ function scheduleMining(oreId) {
     }
     
     const ore = CONFIG.ores.find(o => o.id === oreId);
-    if (!isInfinte) {
+    if (!isInfinite) {
         gameState.miningRemaining--;
     }
     
@@ -1394,8 +1392,8 @@ function startGatheringWithCount(type, locationId, itemId, count) {
 }
 
 function scheduleGathering(type, locationId, itemId) {
-    const isInfinte = gameState.gatheringCount >= 99999;
-    if (!gameState.activeGathering || (!isInfinte && gameState.gatheringRemaining <= 0)) {
+    const isInfinite = gameState.gatheringCount >= 99999;
+    if (!gameState.activeGathering || (!isInfinite && gameState.gatheringRemaining <= 0)) {
         gameState.activeGathering = null;
         gameState.gatheringLocationId = null;
         gameState.gatheringItemId = null;
@@ -1407,7 +1405,7 @@ function scheduleGathering(type, locationId, itemId) {
     }
     
     const location = CONFIG.gatheringLocations.find(l => l.id === locationId);
-    if (!isInfinte) {
+    if (!isInfinite) {
         gameState.gatheringRemaining--;
     }
     
@@ -2825,6 +2823,7 @@ function completeTailoringOnce(fabricId) {
     }
     gameState.fabricsInventory[fabricId]++;
     
+    addExp(fabric.exp);
     addSkillExp('tailoring', fabric.exp);
     updateUI();
     saveGame();
