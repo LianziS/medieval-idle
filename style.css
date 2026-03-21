@@ -2173,12 +2173,19 @@ body::after {
 }
 
 .gathering-items-list {
-    display: none;
+    display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 14px;
 }
 
-.gathering-items-list.active {
+/* 锻造页面需要标签切换，所以默认隐藏 */
+#forging-ingots-list,
+#forging-tools-list {
+    display: none;
+}
+
+#forging-ingots-list.active,
+#forging-tools-list.active {
     display: grid;
 }
 
