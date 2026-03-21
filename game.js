@@ -2742,6 +2742,8 @@ function renderToolsList() {
             const prevToolName = prevToolNames[materials.prevTool] || '上一级镐子';
             materialDesc += `, ${prevToolName}(${hasPrevTool ? '✓' : '✗'})`;
         }
+        
+        let actionStatus = '';
         if (isActive) {
             const remaining = gameState.forgingToolRemaining || 0;
             const total = gameState.forgingToolCount || 1;
