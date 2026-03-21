@@ -2516,8 +2516,6 @@ body::after {
 /* ============ 行动队列弹出卡片 ============ */
 .queue-popover {
     position: fixed;
-    top: 60px;
-    right: 20px;
     width: 380px;
     max-height: 500px;
     background: linear-gradient(180deg, rgba(27, 42, 58, 0.98) 0%, rgba(45, 63, 82, 0.98) 100%);
@@ -2527,6 +2525,9 @@ body::after {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     z-index: 1200;
     display: none;
+    /* 默认位置会在JS中动态计算 */
+    top: 50px;
+    right: 80px;
 }
 
 .queue-popover * {

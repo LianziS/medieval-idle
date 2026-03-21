@@ -2629,6 +2629,46 @@ function canForgeIngot(ingot) {
 function renderToolsList() {
     if (!elements.forgingToolsList) return;
     
+    // 材料名称映射
+    const ingotNames = {
+        'cyan_ingot': '青闪锭',
+        'red_copper_ingot': '赤铜锭',
+        'feather_ingot': '羽锭',
+        'white_silver_ingot': '白银锭',
+        'hell_steel_ingot': '狱钢锭',
+        'thunder_steel_ingot': '雷鸣锭',
+        'brilliant_crystal': '璀璨晶',
+        'star_crystal': '星辉晶'
+    };
+    
+    const plankNames = {
+        'pine_plank': '青杉木板',
+        'iron_birch_plank': '铁桦木板',
+        'wind_tree_plank': '风啸木板',
+        'frost_maple_plank': '霜叶木板',
+        'flame_tree_plank': '焰心木板',
+        'thunder_tree_plank': '雷鸣木板',
+        'ancient_oak_plank': '古橡木板',
+        'world_tree_plank': '世界木板'
+    };
+    
+    const prevToolNames = {
+        'cyan_axe': '青闪斧',
+        'red_axe': '赤铁斧',
+        'feather_axe': '羽斧',
+        'white_axe': '白鸠斧',
+        'hell_axe': '狱岩斧',
+        'thunder_axe': '雷鸣斧',
+        'brilliant_axe': '璀璨斧',
+        'cyan_pickaxe': '青闪镐',
+        'red_pickaxe': '赤铁镐',
+        'feather_pickaxe': '羽镐',
+        'white_pickaxe': '白鸠镐',
+        'hell_pickaxe': '狱岩镐',
+        'thunder_pickaxe': '雷鸣镐',
+        'brilliant_pickaxe': '璀璨镐'
+    };
+    
     // 渲染斧头部分
     const axesHtml = CONFIG.tools.axes.map((axe, index) => {
         const materials = CONFIG.toolCraftingMaterials.axes[index];
@@ -2642,11 +2682,14 @@ function renderToolsList() {
         const plankId = CONFIG.plankIdMapping[index];
         const ownedIngot = gameState.ingotsInventory[ingotId] || 0;
         const ownedPlank = gameState.planksInventory[plankId] || 0;
+        const ingotName = ingotNames[ingotId] || '矿锭';
+        const plankName = plankNames[plankId] || '木板';
         
-        let materialDesc = `${materials.ore}矿锭(${ownedIngot}/${materials.ore}), ${materials.plank}木板(${ownedPlank}/${materials.plank})`;
+        let materialDesc = `${ingotName}×${materials.ore}(${ownedIngot}), ${plankName}×${materials.plank}(${ownedPlank})`;
         if (materials.prevTool) {
             const hasPrevTool = gameState.toolsInventory.axes.includes(materials.prevTool);
-            materialDesc += `, 上一级斧头(${hasPrevTool ? '✓' : '✗'})`;
+            const prevToolName = prevToolNames[materials.prevTool] || '上一级斧头';
+            materialDesc += `, ${prevToolName}(${hasPrevTool ? '✓' : '✗'})`;
         }
         
         let actionStatus = '';
@@ -2690,14 +2733,15 @@ function renderToolsList() {
         const plankId = CONFIG.plankIdMapping[index];
         const ownedIngot = gameState.ingotsInventory[ingotId] || 0;
         const ownedPlank = gameState.planksInventory[plankId] || 0;
+        const ingotName = ingotNames[ingotId] || '矿锭';
+        const plankName = plankNames[plankId] || '木板';
         
-        let materialDesc = `${materials.ore}矿锭(${ownedIngot}/${materials.ore}), ${materials.plank}木板(${ownedPlank}/${materials.plank})`;
+        let materialDesc = `${ingotName}×${materials.ore}(${ownedIngot}), ${plankName}×${materials.plank}(${ownedPlank})`;
         if (materials.prevTool) {
             const hasPrevTool = gameState.toolsInventory.pickaxes.includes(materials.prevTool);
-            materialDesc += `, 上一级镐子(${hasPrevTool ? '✓' : '✗'})`;
+            const prevToolName = prevToolNames[materials.prevTool] || '上一级镐子';
+            materialDesc += `, ${prevToolName}(${hasPrevTool ? '✓' : '✗'})`;
         }
-        
-        let actionStatus = '';
         if (isActive) {
             const remaining = gameState.forgingToolRemaining || 0;
             const total = gameState.forgingToolCount || 1;
@@ -4490,13 +4534,21 @@ function updateQueueButtonInModal() {
 }
 
 function toggleQueuePopover() {
-    if (!elements.queuePopover) return;
+    if (!elements.queuePopover || !elements.actionQueueBtn) return;
     
     if (elements.queuePopover.classList.contains('show')) {
         elements.queuePopover.classList.remove('show');
     } else {
+        // 计算弹出卡片位置：在按钮下方居中
+        const btnRect = elements.actionQueueBtn.getBoundingClientRect();
+        const popover = elements.queuePopover;
+        
+        // 设置位置：按钮下方，居中对齐
+        popover.style.top = `${btnRect.bottom + 10}px`;
+        popover.style.left = `${btnRect.left + btnRect.width / 2 - 190}px`; // 190是卡片宽度的一半
+        
         renderQueueList();
-        elements.queuePopover.classList.add('show');
+        popover.classList.add('show');
     }
 }
 
@@ -4689,76 +4741,86 @@ function moveQueueItem(index, direction) {
 
 function getCurrentActionInfo() {
     // 获取当前正在进行的行动信息
+    // 注意：remaining 是"剩余待执行的次数"，不包括当前正在执行的那一次
+    // 但如果当前正在执行，我们应该把当前这次也算进去
     if (gameState.activeWoodcutting) {
         const tree = CONFIG.trees.find(t => t.id === gameState.activeWoodcutting);
+        // count 应该是总次数（包括当前正在执行的）
+        const totalCount = gameState.woodcuttingRemaining + 1;
         return {
             type: 'woodcutting',
             id: gameState.activeWoodcutting,
             name: tree ? tree.name : '伐木',
-            count: gameState.woodcuttingRemaining,
+            count: totalCount,
             icon: tree ? tree.icon : '🪓'
         };
     }
     if (gameState.activeMining) {
         const ore = CONFIG.ores.find(o => o.id === gameState.activeMining);
+        const totalCount = gameState.miningRemaining + 1;
         return {
             type: 'mining',
             id: gameState.activeMining,
             name: ore ? ore.name : '挖矿',
-            count: gameState.miningRemaining,
+            count: totalCount,
             icon: ore ? ore.icon : '⛏️'
         };
     }
     if (gameState.activeGathering) {
         const location = CONFIG.gatheringLocations.find(l => l.id === gameState.gatheringLocationId);
+        const totalCount = gameState.gatheringRemaining + 1;
         return {
             type: 'gathering_item',
             id: gameState.activeGathering,
             name: location ? location.name : '采集',
-            count: gameState.gatheringRemaining,
+            count: totalCount,
             icon: '🌾',
             itemId: gameState.gatheringItemId
         };
     }
     if (gameState.activeCrafting) {
         const plank = CONFIG.woodPlanks.find(p => p.id === gameState.activeCrafting);
+        const totalCount = gameState.craftingRemaining + 1;
         return {
             type: 'crafting',
             id: gameState.activeCrafting,
             name: plank ? plank.name : '制作',
-            count: gameState.craftingRemaining,
+            count: totalCount,
             icon: plank ? plank.icon : '🔨'
         };
     }
     if (gameState.activeForging) {
         const ingot = CONFIG.ingots.find(i => i.id === gameState.activeForging);
+        const totalCount = gameState.forgingRemaining + 1;
         return {
             type: 'forging',
             id: gameState.activeForging,
             name: ingot ? ingot.name : '锻造',
-            count: gameState.forgingRemaining,
+            count: totalCount,
             icon: ingot ? ingot.icon : '⚒️'
         };
     }
     if (gameState.activeForgingTool) {
         const tools = CONFIG.tools[gameState.forgingToolType === 'axe' ? 'axes' : 'pickaxes'];
         const tool = tools[gameState.forgingToolIndex];
+        const totalCount = gameState.forgingToolRemaining + 1;
         return {
             type: 'forging_tool',
             id: gameState.activeForgingTool,
             name: tool ? tool.name : '锻造工具',
-            count: gameState.forgingToolRemaining,
+            count: totalCount,
             icon: tool ? tool.icon : '⚒️',
             itemId: { toolType: gameState.forgingToolType, toolIndex: gameState.forgingToolIndex }
         };
     }
     if (gameState.activeTailoring) {
         const fabric = CONFIG.fabrics.find(f => f.id === gameState.activeTailoring);
+        const totalCount = gameState.tailoringRemaining + 1;
         return {
             type: 'tailoring',
             id: gameState.activeTailoring,
             name: fabric ? fabric.name : '缝制',
-            count: gameState.tailoringRemaining,
+            count: totalCount,
             icon: fabric ? fabric.icon : '🧵'
         };
     }
