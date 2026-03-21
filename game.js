@@ -1221,7 +1221,14 @@ function openActionModal(type, id, name, itemId = null) {
     };
     elements.actionModalTitle.textContent = `选择${typeNames[type] || '行动'}次数 - ${name}`;
     elements.actionCountInput.value = '';
-    document.querySelectorAll('.count-option').forEach(o => o.classList.remove('selected'));
+    
+    // 清除所有选中状态，然后默认选中第一个（1次）
+    const countOptions = document.querySelectorAll('.count-option');
+    countOptions.forEach(o => o.classList.remove('selected'));
+    if (countOptions.length > 0) {
+        countOptions[0].classList.add('selected');
+    }
+    
     pendingAction = { type, id, name, itemId };
     
     // 更新队列按钮状态
