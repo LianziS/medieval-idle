@@ -4745,8 +4745,8 @@ function getCurrentActionInfo() {
     // 但如果当前正在执行，我们应该把当前这次也算进去
     if (gameState.activeWoodcutting) {
         const tree = CONFIG.trees.find(t => t.id === gameState.activeWoodcutting);
-        // count 应该是总次数（包括当前正在执行的）
-        const totalCount = gameState.woodcuttingRemaining + 1;
+        // 如果是无限次，保持无限次
+        const totalCount = gameState.woodcuttingCount >= 99999 ? 99999 : gameState.woodcuttingRemaining + 1;
         return {
             type: 'woodcutting',
             id: gameState.activeWoodcutting,
@@ -4757,7 +4757,7 @@ function getCurrentActionInfo() {
     }
     if (gameState.activeMining) {
         const ore = CONFIG.ores.find(o => o.id === gameState.activeMining);
-        const totalCount = gameState.miningRemaining + 1;
+        const totalCount = gameState.miningCount >= 99999 ? 99999 : gameState.miningRemaining + 1;
         return {
             type: 'mining',
             id: gameState.activeMining,
@@ -4768,7 +4768,7 @@ function getCurrentActionInfo() {
     }
     if (gameState.activeGathering) {
         const location = CONFIG.gatheringLocations.find(l => l.id === gameState.gatheringLocationId);
-        const totalCount = gameState.gatheringRemaining + 1;
+        const totalCount = gameState.gatheringCount >= 99999 ? 99999 : gameState.gatheringRemaining + 1;
         return {
             type: 'gathering_item',
             id: gameState.activeGathering,
@@ -4780,7 +4780,7 @@ function getCurrentActionInfo() {
     }
     if (gameState.activeCrafting) {
         const plank = CONFIG.woodPlanks.find(p => p.id === gameState.activeCrafting);
-        const totalCount = gameState.craftingRemaining + 1;
+        const totalCount = gameState.craftingCount >= 99999 ? 99999 : gameState.craftingRemaining + 1;
         return {
             type: 'crafting',
             id: gameState.activeCrafting,
@@ -4791,7 +4791,7 @@ function getCurrentActionInfo() {
     }
     if (gameState.activeForging) {
         const ingot = CONFIG.ingots.find(i => i.id === gameState.activeForging);
-        const totalCount = gameState.forgingRemaining + 1;
+        const totalCount = gameState.forgingCount >= 99999 ? 99999 : gameState.forgingRemaining + 1;
         return {
             type: 'forging',
             id: gameState.activeForging,
@@ -4803,7 +4803,7 @@ function getCurrentActionInfo() {
     if (gameState.activeForgingTool) {
         const tools = CONFIG.tools[gameState.forgingToolType === 'axe' ? 'axes' : 'pickaxes'];
         const tool = tools[gameState.forgingToolIndex];
-        const totalCount = gameState.forgingToolRemaining + 1;
+        const totalCount = gameState.forgingToolCount >= 99999 ? 99999 : gameState.forgingToolRemaining + 1;
         return {
             type: 'forging_tool',
             id: gameState.activeForgingTool,
@@ -4815,7 +4815,7 @@ function getCurrentActionInfo() {
     }
     if (gameState.activeTailoring) {
         const fabric = CONFIG.fabrics.find(f => f.id === gameState.activeTailoring);
-        const totalCount = gameState.tailoringRemaining + 1;
+        const totalCount = gameState.tailoringCount >= 99999 ? 99999 : gameState.tailoringRemaining + 1;
         return {
             type: 'tailoring',
             id: gameState.activeTailoring,
