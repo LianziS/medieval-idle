@@ -2081,8 +2081,7 @@ function renderWoodcutting() {
             const treeId = card.dataset.id;
             const tree = CONFIG.trees.find(t => t.id === treeId);
             if (gameState.woodcuttingLevel < tree.reqLevel) { showToast(`❌ 需要伐木等级 ${tree.reqLevel}`); return; }
-            if (gameState.activeWoodcutting === treeId) { showToast('⏳ 正在采集中'); return; }
-            // 打开行动次数选择弹窗
+            // 打开行动次数选择弹窗（即使正在进行也允许添加到队列）
             openActionModal('woodcutting', treeId, tree.name);
         });
     });
@@ -2186,8 +2185,7 @@ function renderMining() {
             const oreId = card.dataset.id;
             const ore = CONFIG.ores.find(o => o.id === oreId);
             if (gameState.miningLevel < ore.reqLevel) { showToast(`❌ 需要挖矿等级 ${ore.reqLevel}`); return; }
-            if (gameState.activeMining === oreId) { showToast('⏳ 正在挖掘中'); return; }
-            // 打开行动次数选择弹窗
+            // 打开行动次数选择弹窗（即使正在进行也允许添加到队列）
             openActionModal('mining', oreId, ore.name);
         });
     });
@@ -2358,12 +2356,6 @@ function renderPlanksList() {
             // 检查材料
             if (!canCraftPlank(plank)) {
                 showToast('❌ 材料不足');
-                return;
-            }
-            
-            // 检查是否正在进行中
-            if (this.classList.contains('active')) {
-                showToast('⏳ 正在制作中');
                 return;
             }
             
@@ -3381,12 +3373,6 @@ function renderGatheringItems() {
             // 检查是否锁定
             if (this.classList.contains('locked')) {
                 showToast(`❌ 需要采集等级 ${location.reqLevel}`);
-                return;
-            }
-            
-            // 检查是否正在进行中
-            if (this.classList.contains('active')) {
-                showToast('⏳ 正在采集中');
                 return;
             }
             
