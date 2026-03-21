@@ -899,6 +899,14 @@ body::after {
     font-size: inherit !important;
 }
 
+.modal-content button,
+.modal-content input,
+.modal-content .count-option {
+    /* 确保按钮和输入框可以点击 */
+    pointer-events: auto;
+    cursor: pointer;
+}
+
 .modal-close {
     position: absolute;
     top: 15px;
