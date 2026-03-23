@@ -212,7 +212,7 @@ const CONFIG = {
         { id: 'linen_cloth', name: '亚麻布料', icon: '🧶', reqLevel: 15, duration: 8000, exp: 10, materials: { flax: 2 } },
         { id: 'wool_cloth', name: '羊毛布料', icon: '🧶', reqLevel: 35, duration: 12000, exp: 20, materials: { wool: 2 } },
         { id: 'silk_cloth', name: '丝绸布料', icon: '🎀', reqLevel: 55, duration: 15000, exp: 32.5, materials: { silk: 2 } },
-        { id: 'wind_silk', name: '风语绸', icon: '💨', reqLevel: 75, duration: 18000, exp: 50, materials: { wind_wool: 2 } },
+        { id: 'wind_silk', name: '风语绸', icon: '💨', reqLevel: 75, duration: 18000, exp: 50, materials: { wind_velvet: 2 } },
         { id: 'dream_cloth', name: '梦幻布料', icon: '✨', reqLevel: 95, duration: 25000, exp: 72.5, materials: { life_fiber: 2 } }
     ],
     // 商人配置
