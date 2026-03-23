@@ -495,7 +495,9 @@ let gameState = {
     },
     // 行动队列系统
     actionQueue: [],     // 行动队列（最多5个）
-    maxQueueSize: 4
+    maxQueueSize: 4,
+    // 当前行动的定时器ID（用于取消时清除）
+    actionTimerId: null
 };
 
 CONFIG.buildings.forEach(b => { gameState.buildings[b.id] = { level: 0 }; });
@@ -1422,7 +1424,7 @@ function scheduleWoodcutting(treeId) {
         animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
         
         // 等待行动完成后继续
-        setTimeout(() => {
+        gameState.actionTimerId = setTimeout(() => {
             if (gameState.activeWoodcutting === treeId) {
                 completeWoodcuttingOnce(treeId);
                 // 递归调用继续下一次行动
@@ -1510,7 +1512,7 @@ function scheduleMining(oreId) {
         animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
         
         // 等待行动完成后继续
-        setTimeout(() => {
+        gameState.actionTimerId = setTimeout(() => {
             if (gameState.activeMining === oreId) {
                 completeMiningOnce(oreId);
                 // 递归调用继续下一次行动
@@ -1624,7 +1626,7 @@ function scheduleGathering(type, locationId, itemId) {
         animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
         
         // 等待行动完成后继续
-        setTimeout(() => {
+        gameState.actionTimerId = setTimeout(() => {
             if (gameState.activeGathering) {
                 completeGatheringOnce(type, locationId, itemId);
                 // 递归调用继续下一次行动
@@ -1692,6 +1694,12 @@ function completeGatheringOnce(type, locationId, itemId) {
 
 function cancelCurrentAction(skipQueue = false) {
     if (!gameState.currentAction) return;
+    
+    // 清除当前行动的定时器
+    if (gameState.actionTimerId) {
+        clearTimeout(gameState.actionTimerId);
+        gameState.actionTimerId = null;
+    }
     
     // 清除所有进行中的行动，不给予奖励
     if (gameState.activeWoodcutting) {
@@ -2518,7 +2526,7 @@ function scheduleCrafting(plankId) {
         lastActionStartTime = gameState.actionStartTime;
         animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
         
-        setTimeout(() => {
+        gameState.actionTimerId = setTimeout(() => {
             if (gameState.activeCrafting === plankId) {
                 completeCraftingOnce(plankId);
                 scheduleCrafting(plankId);
@@ -3130,7 +3138,7 @@ function scheduleForgingTool(toolId, toolType, toolIndex) {
         lastActionStartTime = gameState.actionStartTime;
         animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
         
-        setTimeout(() => {
+        gameState.actionTimerId = setTimeout(() => {
             if (gameState.activeForgingTool === toolId) {
                 completeForgingToolOnce(toolId, toolType, toolIndex);
                 scheduleForgingTool(toolId, toolType, toolIndex);
@@ -3277,7 +3285,7 @@ function scheduleForging(ingotId) {
         lastActionStartTime = gameState.actionStartTime;
         animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
         
-        setTimeout(() => {
+        gameState.actionTimerId = setTimeout(() => {
             if (gameState.activeForging === ingotId) {
                 completeForgingOnce(ingotId);
                 scheduleForging(ingotId);
@@ -3528,7 +3536,7 @@ function scheduleTailoring(fabricId) {
         lastActionStartTime = gameState.actionStartTime;
         animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
         
-        setTimeout(() => {
+        gameState.actionTimerId = setTimeout(() => {
             if (gameState.activeTailoring === fabricId) {
                 completeTailoringOnce(fabricId);
                 scheduleTailoring(fabricId);
