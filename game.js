@@ -2753,15 +2753,13 @@ function renderToolsList() {
         const canForge = canForgeTool('axe', index);
         const isOwned = gameState.toolsInventory.axes.includes(axe.id);
         
-        // 构建材料描述
-        const ingotId = CONFIG.ingotIdMapping[index];
+        // 构建材料描述（斧头使用石头）
         const plankId = CONFIG.plankIdMapping[index];
-        const ownedIngot = gameState.ingotsInventory[ingotId] || 0;
+        const ownedStone = gameState.resources.stone || 0;
         const ownedPlank = gameState.planksInventory[plankId] || 0;
-        const ingotName = ingotNames[ingotId] || '矿锭';
         const plankName = plankNames[plankId] || '木板';
         
-        let materialDesc = `${ingotName}×${materials.ore}(${ownedIngot}), ${plankName}×${materials.plank}(${ownedPlank})`;
+        let materialDesc = `石头×${materials.stone}(${ownedStone}), ${plankName}×${materials.plank}(${ownedPlank})`;
         if (materials.prevTool) {
             const hasPrevTool = gameState.toolsInventory.axes.includes(materials.prevTool);
             const prevToolName = prevToolNames[materials.prevTool] || '上一级斧头';
@@ -2804,15 +2802,13 @@ function renderToolsList() {
         const canForge = canForgeTool('pickaxe', index);
         const isOwned = gameState.toolsInventory.pickaxes.includes(pickaxe.id);
         
-        // 构建材料描述
-        const ingotId = CONFIG.ingotIdMapping[index];
+        // 构建材料描述（镐子使用石头）
         const plankId = CONFIG.plankIdMapping[index];
-        const ownedIngot = gameState.ingotsInventory[ingotId] || 0;
+        const ownedStone = gameState.resources.stone || 0;
         const ownedPlank = gameState.planksInventory[plankId] || 0;
-        const ingotName = ingotNames[ingotId] || '矿锭';
         const plankName = plankNames[plankId] || '木板';
         
-        let materialDesc = `${ingotName}×${materials.ore}(${ownedIngot}), ${plankName}×${materials.plank}(${ownedPlank})`;
+        let materialDesc = `石头×${materials.stone}(${ownedStone}), ${plankName}×${materials.plank}(${ownedPlank})`;
         if (materials.prevTool) {
             const hasPrevTool = gameState.toolsInventory.pickaxes.includes(materials.prevTool);
             const prevToolName = prevToolNames[materials.prevTool] || '上一级镐子';
@@ -3031,7 +3027,7 @@ function canForgeTool(toolType, index) {
     const materialsKey = toolType === 'axe' ? 'axes' : toolType === 'pickaxe' ? 'pickaxes' : toolType === 'chisel' ? 'chisels' : toolType === 'needle' ? 'needles' : 'scythes';
     const materials = CONFIG.toolCraftingMaterials[materialsKey][index];
     
-    // 凿子、针、镰刀使用矿石，斧头和镐子使用矿锭
+    // 凿子、针、镰刀使用矿石，斧头和镐子使用石头
     if (toolType === 'chisel' || toolType === 'needle' || toolType === 'scythe') {
         const oreIds = ['cyan_ore', 'red_iron', 'feather_ore', 'hell_ore', 'white_ore', 'thunder_ore', 'brilliant', 'star_ore'];
         const oreId = oreIds[index];
@@ -3049,9 +3045,9 @@ function canForgeTool(toolType, index) {
             if (!inventory.includes(materials.prevTool)) return false;
         }
     } else {
-        const ingotId = CONFIG.ingotIdMapping[index];
-        const ownedIngot = gameState.ingotsInventory[ingotId] || 0;
-        if (ownedIngot < materials.ore) return false;
+        // 斧头和镐子使用石头
+        const ownedStone = gameState.resources.stone || 0;
+        if (ownedStone < materials.stone) return false;
         
         const plankId = CONFIG.plankIdMapping[index];
         const ownedPlank = gameState.planksInventory[plankId] || 0;
@@ -3155,7 +3151,7 @@ function completeForgingToolOnce(toolId, toolType, toolIndex) {
     
     const materials = CONFIG.toolCraftingMaterials[materialsKey][toolIndex];
     
-    // 凿子、针、镰刀使用矿石，斧头和镐子使用矿锭
+    // 凿子、针、镰刀使用矿石，斧头和镐子使用石头
     if (toolType === 'chisel' || toolType === 'needle' || toolType === 'scythe') {
         const oreIds = ['cyan_ore', 'red_iron', 'feather_ore', 'hell_ore', 'white_ore', 'thunder_ore', 'brilliant', 'star_ore'];
         const oreId = oreIds[toolIndex];
@@ -3187,8 +3183,8 @@ function completeForgingToolOnce(toolId, toolType, toolIndex) {
                                 gameState.toolsInventory.scythes;
         if (!targetInventory.includes(toolId)) targetInventory.push(toolId);
     } else {
-        const ingotId = CONFIG.ingotIdMapping[toolIndex];
-        gameState.ingotsInventory[ingotId] -= materials.ore;
+        // 斧头和镐子使用石头
+        gameState.resources.stone -= materials.stone;
         
         const plankId = CONFIG.plankIdMapping[toolIndex];
         gameState.planksInventory[plankId] -= materials.plank;
