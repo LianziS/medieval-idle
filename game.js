@@ -3625,6 +3625,47 @@ function renderFabricsInventory() {
 }
 
 function renderToolsInventory() {
+    const container = document.getElementById('storage-tools-items');
+    if (!container) return;
+    
+    const toolTypes = [
+        { key: 'axes', config: 'axes', name: '斧头' },
+        { key: 'pickaxes', config: 'pickaxes', name: '镐子' },
+        { key: 'chisels', config: 'chisels', name: '凿子' },
+        { key: 'needles', config: 'needles', name: '针' },
+        { key: 'scythes', config: 'scythes', name: '镰刀' }
+    ];
+    
+    let hasTools = false;
+    let html = '';
+    
+    toolTypes.forEach(type => {
+        const inventory = gameState.toolsInventory[type.key] || [];
+        if (inventory.length > 0) {
+            hasTools = true;
+            inventory.forEach(toolId => {
+                const tool = CONFIG.tools[type.config].find(t => t.id === toolId);
+                if (tool) {
+                    const isEquipped = gameState.equipment[type.key.slice(0, -1)] === toolId || 
+                                       (type.key === 'axes' && gameState.equipment.axe === toolId) ||
+                                       (type.key === 'pickaxes' && gameState.equipment.pickaxe === toolId) ||
+                                       (type.key === 'chisels' && gameState.equipment.chisel === toolId) ||
+                                       (type.key === 'needles' && gameState.equipment.needle === toolId) ||
+                                       (type.key === 'scythes' && gameState.equipment.scythe === toolId);
+                    html += `
+                        <div class="storage-item-small ${isEquipped ? 'equipped' : ''}">
+                            <div class="storage-item-small-icon">${tool.icon}</div>
+                            <div class="storage-item-small-name">${tool.name} ${isEquipped ? '✓' : ''}</div>
+                            <div class="storage-item-small-count">${isEquipped ? '已装备' : ''}</div>
+                        </div>
+                    `;
+                }
+            });
+        }
+    });
+    
+    container.innerHTML = html || '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">暂无锻造工具</div>';
+}
 
 // ============ 炼金系统 ============
 
@@ -3666,7 +3707,6 @@ function renderPotionsList() {
         // 获取材料名称
         const materialNames = Object.entries(potion.materials).map(([itemId, count]) => {
             const owned = gameState.gatheringInventory[itemId] || 0;
-            // 查找材料名称
             let materialName = itemId;
             let materialIcon = '🌿';
             for (const loc of CONFIG.gatheringLocations) {
@@ -3687,8 +3727,6 @@ function renderPotionsList() {
             const countText = total >= 99999 ? '∞' : `${remaining}/${total}`;
             actionStatus = `<div class="action-timer">炼制中... ${countText}</div>`;
         }
-        
-        const typeText = potion.type === 'hp' ? '生命药水' : '魔法药水';
         
         return `
             <div class="gathering-item-card ${!isUnlocked ? 'locked' : ''} ${isActive ? 'active' : ''}" data-potion-id="${potion.id}">
@@ -3715,19 +3753,16 @@ function renderPotionsList() {
             const potionId = this.dataset.potionId;
             const potion = CONFIG.potions.find(p => p.id === potionId);
             
-            // 检查等级
             if (gameState.alchemyLevel < potion.reqLevel) {
                 showToast(`❌ 需要炼金等级 ${potion.reqLevel}`);
                 return;
             }
             
-            // 检查材料
             if (!canBrewPotion(potion)) {
                 showToast('❌ 材料不足');
                 return;
             }
             
-            // 检查是否正在进行中
             if (this.classList.contains('active')) {
                 showToast('⏳ 正在炼制中');
                 return;
@@ -3750,7 +3785,6 @@ function startAlchemyWithCount(potionId, count) {
     const potion = CONFIG.potions.find(p => p.id === potionId);
     if (!potion) return;
     
-    // 检查材料是否足够
     if (!canBrewPotion(potion)) {
         showToast('❌ 材料不足');
         return;
@@ -3760,14 +3794,12 @@ function startAlchemyWithCount(potionId, count) {
     gameState.alchemyCount = count;
     gameState.alchemyRemaining = count;
     
-    // 重置进度条
     if (elements.actionProgressFill) {
         elements.actionProgressFill.style.width = '0%';
     }
     setActionState({ name: `炼制${potion.name}`, icon: potion.icon }, potion.duration);
     renderAlchemy();
     
-    // 启动进度条动画
     if (animationFrame) cancelAnimationFrame(animationFrame);
     lastActionStartTime = gameState.actionStartTime;
     animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
@@ -3790,7 +3822,6 @@ function scheduleAlchemy(potionId) {
     const potion = CONFIG.potions.find(p => p.id === potionId);
     if (!potion) return;
     
-    // 检查材料
     if (!canBrewPotion(potion)) {
         showToast('❌ 材料不足，炼制停止');
         gameState.activeAlchemy = null;
@@ -3830,12 +3861,10 @@ function completeAlchemyOnce(potionId) {
     const potion = CONFIG.potions.find(p => p.id === potionId);
     if (!potion) return;
     
-    // 消耗材料
     for (const [itemId, count] of Object.entries(potion.materials)) {
         gameState.gatheringInventory[itemId] -= count;
     }
     
-    // 添加药水到存储
     if (!gameState.potionsInventory[potionId]) {
         gameState.potionsInventory[potionId] = 0;
     }
@@ -3846,7 +3875,6 @@ function completeAlchemyOnce(potionId) {
     updateUI();
     saveGame();
     
-    // 显示奖励
     if (elements.actionRewards) {
         elements.actionRewards.innerHTML = `<span class="action-reward-item">+1 ${potion.icon} ${potion.name}</span>`;
         setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
@@ -3888,59 +3916,15 @@ function setupAlchemyTabs() {
             e.stopPropagation();
             const tabName = this.dataset.tab;
             
-            // 更新标签状态
             tabs.forEach(t => t.classList.remove('active'));
             this.classList.add('active');
             
-            // 切换内容显示
             const potionsList = document.getElementById('alchemy-potions-list');
             if (potionsList) {
                 potionsList.style.display = tabName === 'potions' ? 'block' : 'none';
             }
         });
     });
-}
-
-    const container = document.getElementById('storage-tools-items');
-    if (!container) return;
-    
-    const toolTypes = [
-        { key: 'axes', config: 'axes', name: '斧头' },
-        { key: 'pickaxes', config: 'pickaxes', name: '镐子' },
-        { key: 'chisels', config: 'chisels', name: '凿子' },
-        { key: 'needles', config: 'needles', name: '针' },
-        { key: 'scythes', config: 'scythes', name: '镰刀' }
-    ];
-    
-    let hasTools = false;
-    let html = '';
-    
-    toolTypes.forEach(type => {
-        const inventory = gameState.toolsInventory[type.key] || [];
-        if (inventory.length > 0) {
-            hasTools = true;
-            inventory.forEach(toolId => {
-                const tool = CONFIG.tools[type.config].find(t => t.id === toolId);
-                if (tool) {
-                    const isEquipped = gameState.equipment[type.key.slice(0, -1)] === toolId || 
-                                       (type.key === 'axes' && gameState.equipment.axe === toolId) ||
-                                       (type.key === 'pickaxes' && gameState.equipment.pickaxe === toolId) ||
-                                       (type.key === 'chisels' && gameState.equipment.chisel === toolId) ||
-                                       (type.key === 'needles' && gameState.equipment.needle === toolId) ||
-                                       (type.key === 'scythes' && gameState.equipment.scythe === toolId);
-                    html += `
-                        <div class="storage-item-small ${isEquipped ? 'equipped' : ''}">
-                            <div class="storage-item-small-icon">${tool.icon}</div>
-                            <div class="storage-item-small-name">${tool.name} ${isEquipped ? '✓' : ''}</div>
-                            <div class="storage-item-small-count">${isEquipped ? '已装备' : ''}</div>
-                        </div>
-                    `;
-                }
-            });
-        }
-    });
-    
-    container.innerHTML = html || '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">暂无锻造工具</div>';
 }
 
 function renderGatheringTabs() {
