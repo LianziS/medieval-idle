@@ -407,25 +407,31 @@ const CONFIG = {
         6: 'brilliant_crystal',
         7: 'star_crystal'
     },
-    // 药水配置
+    // 药水配置（按等级交替排列：素级HP→素级MP→良级HP→良级MP...）
     potions: [
-        // HP药水
+        // 素级
         { id: 'hp_potion_1', name: '素级生命药水', icon: '🧪', type: 'hp', reqLevel: 1, duration: 6000, exp: 4, materials: { sweet_berry: 1, blood_rose: 1, honey: 4 } },
-        { id: 'hp_potion_2', name: '良级生命药水', icon: '🧪', type: 'hp', reqLevel: 10, duration: 6750, exp: 8, materials: { wheat: 1, blood_rose: 1, honey: 4 } },
-        { id: 'hp_potion_3', name: '中级生命药水', icon: '🧪', type: 'hp', reqLevel: 20, duration: 7500, exp: 12, materials: { hops: 1, red_serpent_fruit: 1, blossom_honey: 4 } },
-        { id: 'hp_potion_4', name: '优级生命药水', icon: '🧪', type: 'hp', reqLevel: 35, duration: 8250, exp: 18, materials: { apple: 1, red_serpent_fruit: 1, blossom_honey: 4 } },
-        { id: 'hp_potion_5', name: '高级生命药水', icon: '🧪', type: 'hp', reqLevel: 50, duration: 9000, exp: 24, materials: { grape: 1, wild_heart: 1, moonlight_honey: 4 } },
-        { id: 'hp_potion_6', name: '特级生命药水', icon: '🧪', type: 'hp', reqLevel: 65, duration: 10500, exp: 32, materials: { rye: 1, wild_heart: 1, moonlight_honey: 4 } },
-        { id: 'hp_potion_7', name: '珍级生命药水', icon: '🧪', type: 'hp', reqLevel: 80, duration: 12000, exp: 40, materials: { mist_fruit: 1, bewitch_berry: 1, rock_rose_honey: 4 } },
-        { id: 'hp_potion_8', name: '至级生命药水', icon: '🧪', type: 'hp', reqLevel: 95, duration: 13500, exp: 50, materials: { dragon_blood_fruit: 1, bewitch_berry: 1, rock_rose_honey: 4 } },
-        // MP药水
         { id: 'mp_potion_1', name: '素级魔法药水', icon: '💧', type: 'mp', reqLevel: 1, duration: 6000, exp: 4, materials: { sweet_berry: 1, star_dew_herb: 1, honey: 4 } },
+        // 良级
+        { id: 'hp_potion_2', name: '良级生命药水', icon: '🧪', type: 'hp', reqLevel: 10, duration: 6750, exp: 8, materials: { wheat: 1, blood_rose: 1, honey: 4 } },
         { id: 'mp_potion_2', name: '良级魔法药水', icon: '💧', type: 'mp', reqLevel: 10, duration: 6750, exp: 8, materials: { wheat: 1, star_dew_herb: 1, honey: 4 } },
+        // 中级
+        { id: 'hp_potion_3', name: '中级生命药水', icon: '🧪', type: 'hp', reqLevel: 20, duration: 7500, exp: 12, materials: { hops: 1, red_serpent_fruit: 1, blossom_honey: 4 } },
         { id: 'mp_potion_3', name: '中级魔法药水', icon: '💧', type: 'mp', reqLevel: 20, duration: 7500, exp: 12, materials: { hops: 1, moonlight_mushroom: 1, blossom_honey: 4 } },
+        // 优级
+        { id: 'hp_potion_4', name: '优级生命药水', icon: '🧪', type: 'hp', reqLevel: 35, duration: 8250, exp: 18, materials: { apple: 1, red_serpent_fruit: 1, blossom_honey: 4 } },
         { id: 'mp_potion_4', name: '优级魔法药水', icon: '💧', type: 'mp', reqLevel: 35, duration: 8250, exp: 18, materials: { apple: 1, moonlight_mushroom: 1, blossom_honey: 4 } },
+        // 高级
+        { id: 'hp_potion_5', name: '高级生命药水', icon: '🧪', type: 'hp', reqLevel: 50, duration: 9000, exp: 24, materials: { grape: 1, wild_heart: 1, moonlight_honey: 4 } },
         { id: 'mp_potion_5', name: '高级魔法药水', icon: '💧', type: 'mp', reqLevel: 50, duration: 9000, exp: 24, materials: { grape: 1, soul_herb: 1, moonlight_honey: 4 } },
+        // 特级
+        { id: 'hp_potion_6', name: '特级生命药水', icon: '🧪', type: 'hp', reqLevel: 65, duration: 10500, exp: 32, materials: { rye: 1, wild_heart: 1, moonlight_honey: 4 } },
         { id: 'mp_potion_6', name: '特级魔法药水', icon: '💧', type: 'mp', reqLevel: 65, duration: 10500, exp: 32, materials: { rye: 1, soul_herb: 1, moonlight_honey: 4 } },
+        // 珍级
+        { id: 'hp_potion_7', name: '珍级生命药水', icon: '🧪', type: 'hp', reqLevel: 80, duration: 12000, exp: 40, materials: { mist_fruit: 1, bewitch_berry: 1, rock_rose_honey: 4 } },
         { id: 'mp_potion_7', name: '珍级魔法药水', icon: '💧', type: 'mp', reqLevel: 80, duration: 12000, exp: 40, materials: { mist_fruit: 1, bewitch_berry: 1, rock_rose_honey: 4 } },
+        // 至级
+        { id: 'hp_potion_8', name: '至级生命药水', icon: '🧪', type: 'hp', reqLevel: 95, duration: 13500, exp: 50, materials: { dragon_blood_fruit: 1, bewitch_berry: 1, rock_rose_honey: 4 } },
         { id: 'mp_potion_8', name: '至级魔法药水', icon: '💧', type: 'mp', reqLevel: 95, duration: 13500, exp: 50, materials: { dragon_blood_fruit: 1, bewitch_berry: 1, rock_rose_honey: 4 } }
     ]
 };
