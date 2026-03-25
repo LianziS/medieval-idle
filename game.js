@@ -30,14 +30,24 @@ const EXP_TABLE = {
 const CONFIG = {
     resources: ['gold', 'wood', 'stone', 'herb'],
     buildings: [
-        { id: 'tent', name: '简陋帐篷', icon: '⛺', baseCost: { wood: 10 }, production: {}, unlockReq: null },
+        // 帐篷（玩家主基地，0-5级）
+        { 
+            id: 'tent', 
+            name: '简陋帐篷', 
+            icon: '⛺', 
+            baseCost: { pine: 1 }, // 升级消耗青杉木
+            production: {}, 
+            unlockReq: null,
+            maxLevel: 5, // 最高5级
+            levelNames: ['简陋帐篷', '炉火营地', '榫卯工房', '织造小筑', '秘药阁楼', '丰饶山庄']
+        },
         { id: 'lumber', name: '伐木场', icon: '🪓', baseCost: { wood: 50, stone: 20 }, production: { wood: 1 }, unlockReq: null },
-        { id: 'mine', name: '矿洞', icon: '⛏️', baseCost: { wood: 100, stone: 50 }, production: { stone: 1 }, unlockReq: { buildings: { tent: 1 } } },
-        { id: 'smithy', name: '锻造屋', icon: '🔨', baseCost: { wood: 200, stone: 150 }, production: {}, unlockReq: { buildings: { mine: 1 } } },
-        { id: 'workshop', name: '木工坊', icon: '🪵', baseCost: { wood: 300, stone: 100 }, production: {}, unlockReq: { buildings: { lumber: 2 } } },
-        { id: 'tailor', name: '裁缝铺', icon: '🧵', baseCost: { wood: 250, stone: 100, gold: 500 }, production: {}, unlockReq: { buildings: { workshop: 1 } } },
-        { id: 'alchemy', name: '炼金小屋', icon: '⚗️', baseCost: { wood: 300, stone: 200, herb: 100 }, production: {}, unlockReq: { buildings: { smithy: 1 } } },
-        { id: 'farm', name: '草药园', icon: '🌿', baseCost: { wood: 150, stone: 50 }, production: { herb: 1 }, unlockReq: { buildings: { tent: 1 } } }
+        { id: 'mine', name: '矿洞', icon: '⛏️', baseCost: { wood: 100, stone: 50 }, production: { stone: 1 }, unlockReq: { tentLevel: 0 } },
+        { id: 'smithy', name: '锻造屋', icon: '🔨', baseCost: { wood: 200, stone: 150 }, production: {}, unlockReq: { tentLevel: 1 } },
+        { id: 'workshop', name: '木工坊', icon: '🪵', baseCost: { wood: 300, stone: 100 }, production: {}, unlockReq: { tentLevel: 2 } },
+        { id: 'tailor', name: '裁缝铺', icon: '🧵', baseCost: { wood: 250, stone: 100, gold: 500 }, production: {}, unlockReq: { tentLevel: 3 } },
+        { id: 'alchemy', name: '炼金小屋', icon: '⚗️', baseCost: { wood: 300, stone: 200, herb: 100 }, production: {}, unlockReq: { tentLevel: 4 } },
+        { id: 'farm', name: '草药园', icon: '🌿', baseCost: { wood: 150, stone: 50 }, production: { herb: 1 }, unlockReq: { tentLevel: 0 } }
     ],
     // 树木配置
     trees: [
@@ -673,6 +683,12 @@ let pendingAction = null;
 
 function init() {
     loadGame();
+    
+    // 初始化建筑（新玩家拥有0级帐篷）
+    if (!gameState.buildings.tent) {
+        gameState.buildings.tent = { level: 0 };
+    }
+    
     updateTotalLevel(); // 确保总等级正确计算
     setupSidebar();
     setupNavigation();
@@ -1979,6 +1995,12 @@ function formatNumber(num) {
 
 function checkUnlock(req) {
     if (!req) return true;
+    // 检查帐篷等级要求
+    if (req.tentLevel !== undefined) {
+        const tentLevel = gameState.buildings.tent ? gameState.buildings.tent.level : 0;
+        if (tentLevel < req.tentLevel) return false;
+    }
+    // 检查建筑等级要求
     if (req.buildings) {
         for (const [id, level] of Object.entries(req.buildings)) {
             if (!gameState.buildings[id] || gameState.buildings[id].level < level) return false;
@@ -1989,14 +2011,38 @@ function checkUnlock(req) {
 
 function canAfford(cost) {
     for (const [res, amount] of Object.entries(cost)) {
-        if (gameState.resources[res] < amount) return false;
+        // 检查资源（金币、木材、石头、草药）
+        if (['gold', 'wood', 'stone', 'herb'].includes(res)) {
+            if (gameState.resources[res] < amount) return false;
+        }
+        // 检查伐木物品
+        else if (CONFIG.trees.find(t => t.id === res)) {
+            const owned = gameState.woodcuttingInventory[res] || 0;
+            if (owned < amount) return false;
+        }
+        // 检查其他物品（矿石、采集物等）
+        else {
+            const owned = gameState.resources[res] || 0;
+            if (owned < amount) return false;
+        }
     }
     return true;
 }
 
 function payCost(cost) {
     for (const [res, amount] of Object.entries(cost)) {
-        gameState.resources[res] -= amount;
+        // 扣除资源
+        if (['gold', 'wood', 'stone', 'herb'].includes(res)) {
+            gameState.resources[res] -= amount;
+        }
+        // 扣除伐木物品
+        else if (CONFIG.trees.find(t => t.id === res)) {
+            gameState.woodcuttingInventory[res] -= amount;
+        }
+        // 扣除其他物品
+        else {
+            gameState.resources[res] -= amount;
+        }
     }
 }
 
@@ -2040,12 +2086,27 @@ function renderBuildings() {
     elements.buildingsList.innerHTML = displayBuildings.map(b => {
         const building = gameState.buildings[b.id];
         const unlocked = checkUnlock(b.unlockReq);
+        const level = building.level;
+        
+        // 帐篷显示等级名称
+        let displayName = b.name;
+        let levelText = `LV.${level}`;
+        if (b.levelNames && b.levelNames[level]) {
+            displayName = b.levelNames[level];
+            levelText = '';
+        }
+        
+        // 检查是否达到最大等级
+        const isMaxLevel = b.maxLevel && level >= b.maxLevel;
+        
         return `
             <div class="building-card ${unlocked ? '' : 'locked'}" data-id="${b.id}">
                 <div class="building-icon">${b.icon}</div>
-                <div class="building-name">${b.name}</div>
-                <div class="building-level">LV.${building.level}</div>
-                ${!unlocked ? '<div class="building-cost">🔒 未解锁</div>' : `<div class="building-cost">${formatCost(b.baseCost)}</div>`}
+                <div class="building-name">${displayName}</div>
+                ${levelText ? `<div class="building-level">${levelText}</div>` : ''}
+                ${!unlocked ? '<div class="building-cost">🔒 未解锁</div>' : 
+                  isMaxLevel ? '<div class="building-cost">已满级</div>' : 
+                  `<div class="building-cost">${formatCost(b.baseCost)}</div>`}
             </div>
         `;
     }).join('');
@@ -2054,7 +2115,15 @@ function renderBuildings() {
         card.addEventListener('click', () => {
             const buildingId = card.dataset.id;
             const building = CONFIG.buildings.find(b => b.id === buildingId);
-            if (!checkUnlock(building.unlockReq)) { showToast('🔒 需要先解锁前置建筑'); return; }
+            const level = gameState.buildings[buildingId].level;
+            
+            // 检查是否达到最大等级
+            if (building.maxLevel && level >= building.maxLevel) {
+                showToast('⚠️ 已达到最高等级');
+                return;
+            }
+            
+            if (!checkUnlock(building.unlockReq)) { showToast('🔒 需要先升级帐篷'); return; }
             if (canAfford(building.baseCost)) { buildBuilding(buildingId); }
             else { showToast('❌ 资源不足'); }
         });
@@ -2063,18 +2132,44 @@ function renderBuildings() {
 
 function formatCost(cost) {
     const icons = { gold: '💰', wood: '🪵', stone: '🪨', herb: '🌿' };
-    return Object.entries(cost).map(([res, amount]) => `${icons[res] || res} ${amount}`).join(' ');
+    return Object.entries(cost).map(([res, amount]) => {
+        // 检查是否是伐木物品
+        const tree = CONFIG.trees.find(t => t.id === res);
+        if (tree) {
+            return `${tree.dropIcon} ${amount}`;
+        }
+        return `${icons[res] || res} ${amount}`;
+    }).join(' ');
 }
 
 function buildBuilding(buildingId) {
     const building = CONFIG.buildings.find(b => b.id === buildingId);
+    
+    // 检查是否达到最大等级
+    if (building.maxLevel && gameState.buildings[buildingId].level >= building.maxLevel) {
+        showToast('⚠️ 已达到最高等级');
+        return;
+    }
+    
     payCost(building.baseCost);
     gameState.buildings[buildingId].level++;
-    for (const res in building.baseCost) { building.baseCost[res] = Math.floor(building.baseCost[res] * 1.5); }
+    
+    // 非帐篷建筑：升级后增加建造费用（帐篷升级费用固定为1青杉木）
+    if (buildingId !== 'tent') {
+        for (const res in building.baseCost) { building.baseCost[res] = Math.floor(building.baseCost[res] * 1.5); }
+    }
+    
     addExp(10);
     updateUI();
     saveGame();
-    showToast(`✅ 建造了 ${building.name}`);
+    
+    // 显示升级信息
+    if (building.levelNames) {
+        const newName = building.levelNames[gameState.buildings[buildingId].level];
+        showToast(`✅ 升级为 ${newName}`);
+    } else {
+        showToast(`✅ 建造了 ${building.name}`);
+    }
 }
 
 function renderGatherActions() {
