@@ -5163,6 +5163,17 @@ function loadGame() {
             }
             
             console.log('💾 游戏已加载');
+            
+            // 确保新商人数据被初始化
+            CONFIG.merchants.forEach(m => {
+                if (!gameState.merchantData[m.id]) {
+                    gameState.merchantData[m.id] = {
+                        favorability: m.favorability || 0,
+                        completedQuests: []
+                    };
+                    console.log(`✅ 新商人已初始化: ${m.name}`);
+                }
+            });
         } catch (e) { console.error('加载失败:', e); }
     }
 }
