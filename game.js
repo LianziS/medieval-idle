@@ -5175,6 +5175,15 @@ function loadGame() {
                     console.log(`✅ 新商人已初始化: ${m.name}`);
                 }
             });
+            
+            // 确保新建筑数据被初始化
+            CONFIG.buildings.forEach(b => {
+                if (!gameState.buildings[b.id]) {
+                    gameState.buildings[b.id] = { level: 0 };
+                    console.log(`✅ 新建筑已初始化: ${b.name}`);
+                }
+            });
+            
         } catch (e) { console.error('加载失败:', e); }
     }
 }
