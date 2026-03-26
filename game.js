@@ -235,7 +235,7 @@ const CONFIG = {
             favorability: 0,
             goods: [{ id: 'architect_scroll', name: '建筑大师卷轴', icon: '📜', price: 1000, currency: 'gold' }],
             quests: [
-                { id: 'architect_quest_1', name: '初级建筑材料', desc: '提交 50 木材和 30 石头', reward: { gold: 200, favorability: 0.5 }, requirement: { wood: 50, stone: 30 } }
+                { id: 'architect_quest_1', name: '木材收集', desc: '提交 20 木材', reward: { gold: 200, favorability: 0.5 }, requirement: { wood_material: 20 } }
             ]
         },
         { 
@@ -246,7 +246,7 @@ const CONFIG = {
             favorability: 0,
             goods: [{ id: 'carpenter_scroll', name: '木工大师卷轴', icon: '📜', price: 1000, currency: 'gold' }],
             quests: [
-                { id: 'carpenter_quest_1', name: '木板订单', desc: '提交 20 木板', reward: { gold: 150, favorability: 0.5 }, requirement: { plank: 20 } }
+                { id: 'carpenter_quest_1', name: '木板订单', desc: '提交 10 木板', reward: { gold: 150, favorability: 0.5 }, requirement: { plank: 10 } }
             ]
         },
         { 
@@ -257,7 +257,7 @@ const CONFIG = {
             favorability: 0,
             goods: [{ id: 'armorsmith_scroll', name: '锻造大师卷轴', icon: '📜', price: 1000, currency: 'gold' }],
             quests: [
-                { id: 'armorsmith_quest_1', name: '金属收集', desc: '提交 40 石头', reward: { gold: 150, favorability: 0.5 }, requirement: { stone: 40 } }
+                { id: 'armorsmith_quest_1', name: '矿锭订单', desc: '提交 10 矿锭', reward: { gold: 150, favorability: 0.5 }, requirement: { ingot: 10 } }
             ]
         },
         { 
@@ -268,7 +268,7 @@ const CONFIG = {
             favorability: 0,
             goods: [{ id: 'tailor_scroll', name: '裁缝大师卷轴', icon: '📜', price: 1000, currency: 'gold' }],
             quests: [
-                { id: 'tailor_quest_1', name: '布料准备', desc: '提交 30 木材', reward: { gold: 120, favorability: 0.5 }, requirement: { wood: 30 } }
+                { id: 'tailor_quest_1', name: '布料订单', desc: '提交 10 布料', reward: { gold: 120, favorability: 0.5 }, requirement: { fabric: 10 } }
             ]
         },
         { 
@@ -279,7 +279,7 @@ const CONFIG = {
             favorability: 0,
             goods: [{ id: 'alchemist_scroll', name: '药剂大师卷轴', icon: '📜', price: 1000, currency: 'gold' }],
             quests: [
-                { id: 'alchemist_quest_1', name: '草药采集', desc: '提交 25 草药', reward: { gold: 100, favorability: 0.5 }, requirement: { herb: 25 } }
+                { id: 'alchemist_quest_1', name: '甜浆果收集', desc: '提交 10 甜浆果', reward: { gold: 100, favorability: 0.5 }, requirement: { sweet_berry: 10 } }
             ]
         },
         { 
@@ -1054,7 +1054,29 @@ function renderMerchantQuests(merchant, data) {
 
 function canSubmitQuest(quest) {
     for (const [res, amount] of Object.entries(quest.requirement)) {
-        if (gameState.resources[res] < amount) return false;
+        // 检查不同类型的资源
+        if (res === 'wood_material') {
+            // 木材总数
+            const total = Object.values(gameState.woodcuttingInventory || {}).reduce((a, b) => a + b, 0);
+            if (total < amount) return false;
+        } else if (res === 'plank') {
+            // 木板总数
+            const total = Object.values(gameState.planksInventory || {}).reduce((a, b) => a + b, 0);
+            if (total < amount) return false;
+        } else if (res === 'ingot') {
+            // 矿锭总数
+            const total = Object.values(gameState.ingotsInventory || {}).reduce((a, b) => a + b, 0);
+            if (total < amount) return false;
+        } else if (res === 'fabric') {
+            // 布料总数
+            const total = Object.values(gameState.fabricsInventory || {}).reduce((a, b) => a + b, 0);
+            if (total < amount) return false;
+        } else if (res === 'honey' || res === 'sweet_berry') {
+            // 采集物品
+            if ((gameState.gatheringInventory[res] || 0) < amount) return false;
+        } else if ((gameState.resources[res] || 0) < amount) {
+            return false;
+        }
     }
     return true;
 }
@@ -1067,7 +1089,47 @@ function handleQuest(merchant, quest, data) {
         if (canSubmitQuest(quest)) {
             // 扣除资源
             for (const [res, amount] of Object.entries(quest.requirement)) {
-                gameState.resources[res] -= amount;
+                if (res === 'wood_material') {
+                    // 扣除木材（从最低级开始）
+                    let remaining = amount;
+                    for (const [id, count] of Object.entries(gameState.woodcuttingInventory || {})) {
+                        if (remaining <= 0) break;
+                        const deduct = Math.min(count, remaining);
+                        gameState.woodcuttingInventory[id] -= deduct;
+                        remaining -= deduct;
+                    }
+                } else if (res === 'plank') {
+                    // 扣除木板
+                    let remaining = amount;
+                    for (const [id, count] of Object.entries(gameState.planksInventory || {})) {
+                        if (remaining <= 0) break;
+                        const deduct = Math.min(count, remaining);
+                        gameState.planksInventory[id] -= deduct;
+                        remaining -= deduct;
+                    }
+                } else if (res === 'ingot') {
+                    // 扣除矿锭
+                    let remaining = amount;
+                    for (const [id, count] of Object.entries(gameState.ingotsInventory || {})) {
+                        if (remaining <= 0) break;
+                        const deduct = Math.min(count, remaining);
+                        gameState.ingotsInventory[id] -= deduct;
+                        remaining -= deduct;
+                    }
+                } else if (res === 'fabric') {
+                    // 扣除布料
+                    let remaining = amount;
+                    for (const [id, count] of Object.entries(gameState.fabricsInventory || {})) {
+                        if (remaining <= 0) break;
+                        const deduct = Math.min(count, remaining);
+                        gameState.fabricsInventory[id] -= deduct;
+                        remaining -= deduct;
+                    }
+                } else if (res === 'honey' || res === 'sweet_berry') {
+                    gameState.gatheringInventory[res] -= amount;
+                } else {
+                    gameState.resources[res] -= amount;
+                }
             }
             
             // 发放奖励
