@@ -47,6 +47,7 @@ const CONFIG = {
         { id: 'workshop', name: '木工坊', icon: '🪵', baseCost: { wood: 300, stone: 100 }, production: {}, unlockReq: { tentLevel: 2 } },
         { id: 'tailor', name: '裁缝铺', icon: '🧵', baseCost: { wood: 250, stone: 100, gold: 500 }, production: {}, unlockReq: { tentLevel: 3 } },
         { id: 'alchemy', name: '炼金小屋', icon: '⚗️', baseCost: { wood: 300, stone: 200, herb: 100 }, production: {}, unlockReq: { tentLevel: 4 } },
+        { id: 'brewery', name: '酿酒坊', icon: '🍺', baseCost: { wood: 200, stone: 100, gold: 300 }, production: {}, unlockReq: { tentLevel: 3 } },
         { id: 'farm', name: '草药园', icon: '🌿', baseCost: { wood: 150, stone: 50 }, production: { herb: 1 }, unlockReq: { tentLevel: 0 } }
     ],
     // 树木配置
