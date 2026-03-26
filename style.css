@@ -25,11 +25,29 @@ body {
     font-size: clamp(9.8px, 0.9vw + 8px, 14px) !important;
 }
 
-/* 主页栏：最大13px，最小9.1px */
+/* 主页栏、商人页面、弹窗、弹出式卡片：最大13px，最小9.1px */
 .game-container,
 .game-container *,
 .page,
-.page * {
+.page *,
+.merchant-modal,
+.merchant-modal *,
+.merchant-modal-panel,
+.merchant-modal-panel *,
+.merchant-card,
+.merchant-card *,
+.merchant-content,
+.merchant-content *,
+.modal,
+.modal *,
+.modal-content,
+.modal-content *,
+.popover,
+.popover *,
+.popup,
+.popup *,
+.card,
+.card * {
     font-size: clamp(9.1px, 0.85vw + 7px, 13px) !important;
 }
 
