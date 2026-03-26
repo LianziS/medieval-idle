@@ -1083,16 +1083,6 @@ function renderMerchantWarehouse() {
     
     let allItems = [];
     
-    // 基本资源
-    const resourceIcons = { wood: '🪵', stone: '🪨', herb: '🌿' };
-    const resourceNames = { wood: '木材', stone: '石头', herb: '草药' };
-    CONFIG.resources.filter(r => r !== 'gold').forEach(res => {
-        const count = gameState.resources[res] || 0;
-        if (count > 0) {
-            allItems.push({ id: res, type: 'resource', icon: resourceIcons[res], name: resourceNames[res], count });
-        }
-    });
-    
     // 矿锭
     const ingotIcons = { cyan_ingot: '🔩', red_copper_ingot: '🥉', feather_ingot: '🪶', white_silver_ingot: '🪙', hell_steel_ingot: '🔥', thunder_steel_ingot: '⚡', brilliant_crystal: '💎', star_crystal: '✨' };
     const ingotNames = { cyan_ingot: '青闪铁锭', red_copper_ingot: '赤铜锭', feather_ingot: '轻羽锭', white_silver_ingot: '白银锭', hell_steel_ingot: '狱炎钢', thunder_steel_ingot: '雷鸣钢', brilliant_crystal: '璀璨水晶', star_crystal: '星辉水晶' };
@@ -1136,6 +1126,25 @@ function renderMerchantWarehouse() {
             const info = potionInfo[id] || {};
             allItems.push({ id, type: 'potion', icon: info.icon || '🧪', name: info.name || id, count });
         }
+    });
+    
+    // 工具（斧、镐、凿、针、镰、锤）
+    const toolTypes = [
+        { key: 'axes', tools: CONFIG.tools.axes },
+        { key: 'pickaxes', tools: CONFIG.tools.pickaxes },
+        { key: 'chisels', tools: CONFIG.tools.chisels },
+        { key: 'needles', tools: CONFIG.tools.needles },
+        { key: 'scythes', tools: CONFIG.tools.scythes },
+        { key: 'hammers', tools: CONFIG.tools.hammers }
+    ];
+    toolTypes.forEach(({ key, tools }) => {
+        const inventory = gameState.toolsInventory[key] || [];
+        inventory.forEach(toolId => {
+            const tool = tools.find(t => t.id === toolId);
+            if (tool) {
+                allItems.push({ id: toolId, type: 'tool', subtype: key, icon: tool.icon, name: tool.name, count: 1 });
+            }
+        });
     });
     
     if (allItems.length === 0) {
@@ -1213,24 +1222,34 @@ function updateSellBar() {
 }
 
 function getItemCount(item) {
-    if (item.type === 'resource') return gameState.resources[item.id] || 0;
     if (item.type === 'ingot') return gameState.ingotsInventory[item.id] || 0;
     if (item.type === 'plank') return gameState.planksInventory[item.id] || 0;
     if (item.type === 'fabric') return gameState.fabricsInventory[item.id] || 0;
     if (item.type === 'gathering') return gameState.gatheringInventory[item.id] || 0;
     if (item.type === 'potion') return gameState.potionsInventory[item.id] || 0;
+    if (item.type === 'tool') {
+        const inventory = gameState.toolsInventory[item.subtype] || [];
+        return inventory.includes(item.id) ? 1 : 0;
+    }
     return 0;
 }
 
 function getItemSellPrice(item) {
-    // 基本资源使用配置价格
-    if (item.type === 'resource') return CONFIG.resourcePrices[item.id] || 1;
-    // 其他物品根据类型定价
     if (item.type === 'ingot') return 5;
     if (item.type === 'plank') return 3;
     if (item.type === 'fabric') return 4;
     if (item.type === 'gathering') return 2;
     if (item.type === 'potion') return 8;
+    if (item.type === 'tool') {
+        // 工具根据等级定价
+        const allTools = [...CONFIG.tools.axes, ...CONFIG.tools.pickaxes, ...CONFIG.tools.chisels, ...CONFIG.tools.needles, ...CONFIG.tools.scythes, ...CONFIG.tools.hammers];
+        const tool = allTools.find(t => t.id === item.id);
+        if (tool) {
+            const levelIndex = [2, 12, 22, 37, 52, 67, 82, 97].indexOf(tool.reqForgeLevel);
+            return 20 + levelIndex * 15; // 20, 35, 50, 65, 80, 95, 110, 125
+        }
+        return 20;
+    }
     return 1;
 }
 
@@ -1299,12 +1318,21 @@ function setupMerchantListeners() {
                     total += count * price;
                     
                     // 从对应库存中扣除
-                    if (item.type === 'resource') gameState.resources[item.id] = 0;
-                    else if (item.type === 'ingot') gameState.ingotsInventory[item.id] = 0;
+                    if (item.type === 'ingot') gameState.ingotsInventory[item.id] = 0;
                     else if (item.type === 'plank') gameState.planksInventory[item.id] = 0;
                     else if (item.type === 'fabric') gameState.fabricsInventory[item.id] = 0;
                     else if (item.type === 'gathering') gameState.gatheringInventory[item.id] = 0;
                     else if (item.type === 'potion') gameState.potionsInventory[item.id] = 0;
+                    else if (item.type === 'tool') {
+                        const inventory = gameState.toolsInventory[item.subtype] || [];
+                        const idx = inventory.indexOf(item.id);
+                        if (idx > -1) inventory.splice(idx, 1);
+                        // 如果已装备，卸下
+                        const equipKey = item.subtype.slice(0, -1); // axes -> axe
+                        if (gameState.equipment[equipKey] === item.id) {
+                            gameState.equipment[equipKey] = null;
+                        }
+                    }
                 });
                 gameState.resources.gold += total;
                 
