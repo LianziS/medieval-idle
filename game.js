@@ -392,6 +392,28 @@ const CONFIG = {
             { id: 'thunder_hammer', name: '雷鸣钢锤', icon: '🔨', speedBonus: 0.75, reqForgeLevel: 67, reqEquipLevel: 65, duration: 78000, exp: 728 },
             { id: 'brilliant_hammer', name: '璀璨之锤', icon: '🔨', speedBonus: 0.90, reqForgeLevel: 82, reqEquipLevel: 80, duration: 134000, exp: 1386 },
             { id: 'star_hammer', name: '星辉之锤', icon: '🔨', speedBonus: 1.05, reqForgeLevel: 97, reqEquipLevel: 95, duration: 235000, exp: 2605 }
+        ],
+        // 坩埚钳（酿造加速）
+        tongs: [
+            { id: 'cyan_tongs', name: '青闪坩埚钳', icon: '🥢', speedBonus: 0.15, reqForgeLevel: 2, reqEquipLevel: 1, duration: 6000, exp: 14 },
+            { id: 'red_tongs', name: '赤铁坩埚钳', icon: '🥢', speedBonus: 0.225, reqForgeLevel: 12, reqEquipLevel: 10, duration: 10500, exp: 32 },
+            { id: 'feather_tongs', name: '轻羽坩埚钳', icon: '🥢', speedBonus: 0.30, reqForgeLevel: 22, reqEquipLevel: 20, duration: 16000, exp: 70 },
+            { id: 'white_tongs', name: '白银坩埚钳', icon: '🥢', speedBonus: 0.45, reqForgeLevel: 37, reqEquipLevel: 35, duration: 27000, exp: 168 },
+            { id: 'hell_tongs', name: '狱炎坩埚钳', icon: '🥢', speedBonus: 0.60, reqForgeLevel: 52, reqEquipLevel: 50, duration: 45000, exp: 378 },
+            { id: 'thunder_tongs', name: '雷鸣坩埚钳', icon: '🥢', speedBonus: 0.75, reqForgeLevel: 67, reqEquipLevel: 65, duration: 78000, exp: 728 },
+            { id: 'brilliant_tongs', name: '璀璨坩埚钳', icon: '🥢', speedBonus: 0.90, reqForgeLevel: 82, reqEquipLevel: 80, duration: 134000, exp: 1386 },
+            { id: 'star_tongs', name: '星辉坩埚钳', icon: '🥢', speedBonus: 1.05, reqForgeLevel: 97, reqEquipLevel: 95, duration: 235000, exp: 2605 }
+        ],
+        // 搅拌棒（炼金加速）
+        rods: [
+            { id: 'cyan_rod', name: '青闪搅拌棒', icon: '🥄', speedBonus: 0.15, reqForgeLevel: 2, reqEquipLevel: 1, duration: 6000, exp: 14 },
+            { id: 'red_rod', name: '赤铁搅拌棒', icon: '🥄', speedBonus: 0.225, reqForgeLevel: 12, reqEquipLevel: 10, duration: 10500, exp: 32 },
+            { id: 'feather_rod', name: '轻羽搅拌棒', icon: '🥄', speedBonus: 0.30, reqForgeLevel: 22, reqEquipLevel: 20, duration: 16000, exp: 70 },
+            { id: 'white_rod', name: '白银搅拌棒', icon: '🥄', speedBonus: 0.45, reqForgeLevel: 37, reqEquipLevel: 35, duration: 27000, exp: 168 },
+            { id: 'hell_rod', name: '狱炎搅拌棒', icon: '🥄', speedBonus: 0.60, reqForgeLevel: 52, reqEquipLevel: 50, duration: 45000, exp: 378 },
+            { id: 'thunder_rod', name: '雷鸣搅拌棒', icon: '🥄', speedBonus: 0.75, reqForgeLevel: 67, reqEquipLevel: 65, duration: 78000, exp: 728 },
+            { id: 'brilliant_rod', name: '璀璨搅拌棒', icon: '🥄', speedBonus: 0.90, reqForgeLevel: 82, reqEquipLevel: 80, duration: 134000, exp: 1386 },
+            { id: 'star_rod', name: '星辉搅拌棒', icon: '🥄', speedBonus: 1.05, reqForgeLevel: 97, reqEquipLevel: 95, duration: 235000, exp: 2605 }
         ]
     },
     // 工具锻造材料配置
@@ -455,6 +477,28 @@ const CONFIG = {
             { ingot: 77, prevTool: 'hell_hammer' },
             { ingot: 107, prevTool: 'thunder_hammer' },
             { ingot: 143, prevTool: 'brilliant_hammer' }
+        ],
+        // 坩埚钳材料（与斧头一致：矿石+木板）
+        tongs: [
+            { ore: 10, plank: 6, prevTool: null },
+            { ore: 16, plank: 10, prevTool: 'cyan_tongs' },
+            { ore: 22, plank: 14, prevTool: 'red_tongs' },
+            { ore: 34, plank: 22, prevTool: 'feather_tongs' },
+            { ore: 52, plank: 34, prevTool: 'white_tongs' },
+            { ore: 76, plank: 50, prevTool: 'hell_tongs' },
+            { ore: 106, plank: 70, prevTool: 'thunder_tongs' },
+            { ore: 142, plank: 94, prevTool: 'brilliant_tongs' }
+        ],
+        // 搅拌棒材料（与斧头一致：矿石+木板）
+        rods: [
+            { ore: 10, plank: 6, prevTool: null },
+            { ore: 16, plank: 10, prevTool: 'cyan_rod' },
+            { ore: 22, plank: 14, prevTool: 'red_rod' },
+            { ore: 34, plank: 22, prevTool: 'feather_rod' },
+            { ore: 52, plank: 34, prevTool: 'white_rod' },
+            { ore: 76, plank: 50, prevTool: 'hell_rod' },
+            { ore: 106, plank: 70, prevTool: 'thunder_rod' },
+            { ore: 142, plank: 94, prevTool: 'brilliant_rod' }
         ]
     },
     // 矿石与矿锭的映射（用于工具锻造）
@@ -648,7 +692,9 @@ let gameState = {
         chisel: null,
         needle: null,
         scythe: null,
-        hammer: null
+        hammer: null,
+        tongs: null,
+        rod: null
     },
     toolsInventory: {
         axes: [],
@@ -656,7 +702,9 @@ let gameState = {
         chisels: [],
         needles: [],
         scythes: [],
-        hammers: []
+        hammers: [],
+        tongs: [],
+        rods: []
     },
     // 行动队列系统
     actionQueue: [],     // 行动队列（最多5个）
@@ -3837,12 +3885,130 @@ function renderToolsList() {
         `;
     }).join('');
     
+    // 渲染坩埚钳部分
+    const tongsHtml = CONFIG.tools.tongs.map((tongs, index) => {
+        const materials = CONFIG.toolCraftingMaterials.tongs[index];
+        const isUnlocked = gameState.forgingLevel >= tongs.reqForgeLevel;
+        const isActive = gameState.activeForgingTool === tongs.id;
+        const canForge = canForgeTool('tongs', index);
+        const tongsInventory = gameState.toolsInventory.tongs || [];
+        const isOwned = tongsInventory.includes(tongs.id);
+        
+        // 坩埚钳使用矿石+木板（与斧头一致）
+        const oreIds = ['cyan_ore', 'red_iron', 'feather_ore', 'hell_ore', 'white_ore', 'thunder_ore', 'brilliant', 'star_ore'];
+        const oreNames = {
+            'cyan_ore': '青闪石', 'red_iron': '赤铁石', 'feather_ore': '羽石',
+            'hell_ore': '白鸠石', 'white_ore': '狱炎石', 'thunder_ore': '雷鸣石',
+            'brilliant': '璀璨原石', 'star_ore': '星辉原石'
+        };
+        const plankNames = {
+            'pine_plank': '青杉木板', 'iron_birch_plank': '铁桦木板', 'wind_tree_plank': '风啸木板',
+            'frost_maple_plank': '霜叶木板', 'flame_tree_plank': '焰心木板', 'thunder_tree_plank': '雷鸣木板',
+            'ancient_oak_plank': '古橡木板', 'world_tree_plank': '世界木板'
+        };
+        const oreId = oreIds[index];
+        const plankId = CONFIG.plankIdMapping[index];
+        const ownedOre = gameState.miningInventory[oreId] || 0;
+        const ownedPlank = gameState.planksInventory[plankId] || 0;
+        
+        let materialDesc = `${oreNames[oreId]}×${materials.ore}(${ownedOre}), ${plankNames[plankId]}×${materials.plank}(${ownedPlank})`;
+        if (materials.prevTool) {
+            const hasPrev = tongsInventory.includes(materials.prevTool);
+            const prevTool = CONFIG.tools.tongs.find(t => t.id === materials.prevTool);
+            const prevToolName = prevTool ? prevTool.name : '上一级坩埚钳';
+            materialDesc += `, ${prevToolName}(${hasPrev ? '✓' : '✗'})`;
+        }
+        
+        let actionStatus = '';
+        if (isActive) {
+            const remaining = gameState.forgingToolRemaining || 0;
+            const total = gameState.forgingToolCount || 1;
+            actionStatus = `<div class="action-timer">锻造中... ${total >= 99999 ? '∞' : remaining + '/' + total}</div>`;
+        }
+        
+        return `
+            <div class="gathering-item-card ${!isUnlocked ? 'locked' : ''} ${isActive ? 'active' : ''} ${isOwned ? 'owned' : ''}" 
+                data-tool-type="tongs" data-tool-index="${index}" data-tool-id="${tongs.id}">
+                <div class="gathering-item-icon">${tongs.icon}</div>
+                <div class="gathering-item-info">
+                    <div class="gathering-item-name">${tongs.name} ${isOwned ? '✓' : ''}</div>
+                    <div class="gathering-item-desc">${materialDesc}</div>
+                    <div class="gathering-item-meta">${Math.floor(tongs.duration/1000)}秒 | +${tongs.exp} EXP | 锻造Lv.${tongs.reqForgeLevel}</div>
+                    <div class="gathering-item-meta" style="color: #6b4f3c;">酿造速度+${Math.round(tongs.speedBonus * 100)}% | 装备需求: 锻造Lv.${tongs.reqEquipLevel}</div>
+                </div>
+                ${actionStatus}
+                ${!isUnlocked ? '<div class="gathering-item-locked">🔒 等级不足</div>' : ''}
+                ${isUnlocked && !canForge ? '<div class="gathering-item-locked">📦 材料不足</div>' : ''}
+            </div>
+        `;
+    }).join('');
+    
+    // 渲染搅拌棒部分
+    const rodsHtml = CONFIG.tools.rods.map((rod, index) => {
+        const materials = CONFIG.toolCraftingMaterials.rods[index];
+        const isUnlocked = gameState.forgingLevel >= rod.reqForgeLevel;
+        const isActive = gameState.activeForgingTool === rod.id;
+        const canForge = canForgeTool('rod', index);
+        const rodsInventory = gameState.toolsInventory.rods || [];
+        const isOwned = rodsInventory.includes(rod.id);
+        
+        // 搅拌棒使用矿石+木板（与斧头一致）
+        const oreIds = ['cyan_ore', 'red_iron', 'feather_ore', 'hell_ore', 'white_ore', 'thunder_ore', 'brilliant', 'star_ore'];
+        const oreNames = {
+            'cyan_ore': '青闪石', 'red_iron': '赤铁石', 'feather_ore': '羽石',
+            'hell_ore': '白鸠石', 'white_ore': '狱炎石', 'thunder_ore': '雷鸣石',
+            'brilliant': '璀璨原石', 'star_ore': '星辉原石'
+        };
+        const plankNames = {
+            'pine_plank': '青杉木板', 'iron_birch_plank': '铁桦木板', 'wind_tree_plank': '风啸木板',
+            'frost_maple_plank': '霜叶木板', 'flame_tree_plank': '焰心木板', 'thunder_tree_plank': '雷鸣木板',
+            'ancient_oak_plank': '古橡木板', 'world_tree_plank': '世界木板'
+        };
+        const oreId = oreIds[index];
+        const plankId = CONFIG.plankIdMapping[index];
+        const ownedOre = gameState.miningInventory[oreId] || 0;
+        const ownedPlank = gameState.planksInventory[plankId] || 0;
+        
+        let materialDesc = `${oreNames[oreId]}×${materials.ore}(${ownedOre}), ${plankNames[plankId]}×${materials.plank}(${ownedPlank})`;
+        if (materials.prevTool) {
+            const hasPrev = rodsInventory.includes(materials.prevTool);
+            const prevTool = CONFIG.tools.rods.find(t => t.id === materials.prevTool);
+            const prevToolName = prevTool ? prevTool.name : '上一级搅拌棒';
+            materialDesc += `, ${prevToolName}(${hasPrev ? '✓' : '✗'})`;
+        }
+        
+        let actionStatus = '';
+        if (isActive) {
+            const remaining = gameState.forgingToolRemaining || 0;
+            const total = gameState.forgingToolCount || 1;
+            actionStatus = `<div class="action-timer">锻造中... ${total >= 99999 ? '∞' : remaining + '/' + total}</div>`;
+        }
+        
+        return `
+            <div class="gathering-item-card ${!isUnlocked ? 'locked' : ''} ${isActive ? 'active' : ''} ${isOwned ? 'owned' : ''}" 
+                data-tool-type="rod" data-tool-index="${index}" data-tool-id="${rod.id}">
+                <div class="gathering-item-icon">${rod.icon}</div>
+                <div class="gathering-item-info">
+                    <div class="gathering-item-name">${rod.name} ${isOwned ? '✓' : ''}</div>
+                    <div class="gathering-item-desc">${materialDesc}</div>
+                    <div class="gathering-item-meta">${Math.floor(rod.duration/1000)}秒 | +${rod.exp} EXP | 锻造Lv.${rod.reqForgeLevel}</div>
+                    <div class="gathering-item-meta" style="color: #6b4f3c;">炼金速度+${Math.round(rod.speedBonus * 100)}% | 装备需求: 锻造Lv.${rod.reqEquipLevel}</div>
+                </div>
+                ${actionStatus}
+                ${!isUnlocked ? '<div class="gathering-item-locked">🔒 等级不足</div>' : ''}
+                ${isUnlocked && !canForge ? '<div class="gathering-item-locked">📦 材料不足</div>' : ''}
+            </div>
+        `;
+    }).join('');
+    
     elements.forgingToolsList.innerHTML = '<h4 style="margin: 10px 0; color: #E8C57F;">斧头</h4>' + axesHtml + 
                                            '<h4 style="margin: 20px 0 10px; color: #E8C57F;">镐子</h4>' + pickaxesHtml +
                                            '<h4 style="margin: 20px 0 10px; color: #E8C57F;">凿子</h4>' + chiselsHtml +
                                            '<h4 style="margin: 20px 0 10px; color: #E8C57F;">针</h4>' + needlesHtml +
                                            '<h4 style="margin: 20px 0 10px; color: #E8C57F;">镰刀</h4>' + scythesHtml +
-                                           '<h4 style="margin: 20px 0 10px; color: #E8C57F;">锤</h4>' + hammersHtml;
+                                           '<h4 style="margin: 20px 0 10px; color: #E8C57F;">锤</h4>' + hammersHtml +
+                                           '<h4 style="margin: 20px 0 10px; color: #E8C57F;">坩埚钳</h4>' + tongsHtml +
+                                           '<h4 style="margin: 20px 0 10px; color: #E8C57F;">搅拌棒</h4>' + rodsHtml;
     
     // 绑定点击事件
     elements.forgingToolsList.querySelectorAll('.gathering-item-card').forEach(card => {
@@ -3873,7 +4039,7 @@ function renderToolsList() {
 }
 
 function canForgeTool(toolType, index) {
-    const materialsKey = toolType === 'axe' ? 'axes' : toolType === 'pickaxe' ? 'pickaxes' : toolType === 'chisel' ? 'chisels' : toolType === 'needle' ? 'needles' : toolType === 'hammer' ? 'hammers' : 'scythes';
+    const materialsKey = toolType === 'axe' ? 'axes' : toolType === 'pickaxe' ? 'pickaxes' : toolType === 'chisel' ? 'chisels' : toolType === 'needle' ? 'needles' : toolType === 'hammer' ? 'hammers' : toolType === 'tongs' ? 'tongs' : toolType === 'rod' ? 'rods' : 'scythes';
     const materials = CONFIG.toolCraftingMaterials[materialsKey][index];
     
     // 锤子使用矿锭作为材料
@@ -3900,6 +4066,8 @@ function canForgeTool(toolType, index) {
                           toolType === 'chisel' ? (gameState.toolsInventory.chisels || []) : 
                           toolType === 'needle' ? (gameState.toolsInventory.needles || []) : 
                           toolType === 'hammer' ? (gameState.toolsInventory.hammers || []) :
+                          toolType === 'tongs' ? (gameState.toolsInventory.tongs || []) :
+                          toolType === 'rod' ? (gameState.toolsInventory.rods || []) :
                           (gameState.toolsInventory.scythes || []);
         if (!inventory.includes(materials.prevTool)) return false;
     }
@@ -3908,7 +4076,7 @@ function canForgeTool(toolType, index) {
 }
 
 function startForgingToolWithCount(toolId, count, toolType, toolIndex) {
-    const toolsKey = toolType === 'axe' ? 'axes' : toolType === 'pickaxe' ? 'pickaxes' : toolType === 'chisel' ? 'chisels' : toolType === 'needle' ? 'needles' : toolType === 'hammer' ? 'hammers' : 'scythes';
+    const toolsKey = toolType === 'axe' ? 'axes' : toolType === 'pickaxe' ? 'pickaxes' : toolType === 'chisel' ? 'chisels' : toolType === 'needle' ? 'needles' : toolType === 'hammer' ? 'hammers' : toolType === 'tongs' ? 'tongs' : toolType === 'rod' ? 'rods' : 'scythes';
     const tool = CONFIG.tools[toolsKey][toolIndex];
     if (!tool) return;
     
@@ -4018,8 +4186,8 @@ function scheduleForgingTool(toolId, toolType, toolIndex) {
 }
 
 function completeForgingToolOnce(toolId, toolType, toolIndex) {
-    const toolsKey = toolType === 'axe' ? 'axes' : toolType === 'pickaxe' ? 'pickaxes' : toolType === 'chisel' ? 'chisels' : toolType === 'needle' ? 'needles' : toolType === 'hammer' ? 'hammers' : 'scythes';
-    const materialsKey = toolType === 'axe' ? 'axes' : toolType === 'pickaxe' ? 'pickaxes' : toolType === 'chisel' ? 'chisels' : toolType === 'needle' ? 'needles' : toolType === 'hammer' ? 'hammers' : 'scythes';
+    const toolsKey = toolType === 'axe' ? 'axes' : toolType === 'pickaxe' ? 'pickaxes' : toolType === 'chisel' ? 'chisels' : toolType === 'needle' ? 'needles' : toolType === 'hammer' ? 'hammers' : toolType === 'tongs' ? 'tongs' : toolType === 'rod' ? 'rods' : 'scythes';
+    const materialsKey = toolType === 'axe' ? 'axes' : toolType === 'pickaxe' ? 'pickaxes' : toolType === 'chisel' ? 'chisels' : toolType === 'needle' ? 'needles' : toolType === 'hammer' ? 'hammers' : toolType === 'tongs' ? 'tongs' : toolType === 'rod' ? 'rods' : 'scythes';
     const tool = CONFIG.tools[toolsKey][toolIndex];
     if (!tool) return;
     
@@ -4046,6 +4214,8 @@ function completeForgingToolOnce(toolId, toolType, toolIndex) {
                           toolType === 'chisel' ? gameState.toolsInventory.chisels : 
                           toolType === 'needle' ? gameState.toolsInventory.needles : 
                           toolType === 'hammer' ? gameState.toolsInventory.hammers :
+                          toolType === 'tongs' ? gameState.toolsInventory.tongs :
+                          toolType === 'rod' ? gameState.toolsInventory.rods :
                           gameState.toolsInventory.scythes;
         if (inventory) {
             const idx = inventory.indexOf(materials.prevTool);
@@ -4058,12 +4228,16 @@ function completeForgingToolOnce(toolId, toolType, toolIndex) {
                       toolType === 'chisel' ? gameState.toolsInventory.chisels : 
                       toolType === 'needle' ? gameState.toolsInventory.needles : 
                       toolType === 'hammer' ? gameState.toolsInventory.hammers :
+                      toolType === 'tongs' ? gameState.toolsInventory.tongs :
+                      toolType === 'rod' ? gameState.toolsInventory.rods :
                       gameState.toolsInventory.scythes;
     if (!inventory) {
         if (toolType === 'chisel') gameState.toolsInventory.chisels = [];
         else if (toolType === 'needle') gameState.toolsInventory.needles = [];
         else if (toolType === 'scythe') gameState.toolsInventory.scythes = [];
         else if (toolType === 'hammer') gameState.toolsInventory.hammers = [];
+        else if (toolType === 'tongs') gameState.toolsInventory.tongs = [];
+        else if (toolType === 'rod') gameState.toolsInventory.rods = [];
     }
     const targetInventory = toolType === 'axe' ? gameState.toolsInventory.axes : 
                             toolType === 'pickaxe' ? gameState.toolsInventory.pickaxes :
@@ -5001,7 +5175,10 @@ function startBrewingWithCount(brewId, count) {
     if (elements.actionProgressFill) {
         elements.actionProgressFill.style.width = '0%';
     }
-    setActionState({ name: `酿造${brew.name}`, icon: brew.icon }, brew.duration, actualCount, actualCount);
+    // 应用装备加成（坩埚钳加速酿造）
+    const bonus = getEquipmentBonus('brewing');
+    const actualDuration = Math.floor(brew.duration / (1 + bonus));
+    setActionState({ name: `酿造${brew.name}`, icon: brew.icon }, actualDuration, actualCount, actualCount);
     renderBrewsList();
     
     if (animationFrame) cancelAnimationFrame(animationFrame);
@@ -5014,7 +5191,7 @@ function startBrewingWithCount(brewId, count) {
             completeBrewingOnce(brewId);
             scheduleBrewing(brewId);
         }
-    }, brew.duration);
+    }, actualDuration);
 }
 
 function completeBrewingOnce(brewId) {
@@ -5102,7 +5279,10 @@ function scheduleBrewing(brewId) {
         }
     }
     
-    setActionState({ name: `酿造${brew.name}`, icon: brew.icon }, brew.duration, gameState.brewCount, gameState.brewRemaining);
+    // 应用装备加成（坩埚钳加速酿造）
+    const bonus = getEquipmentBonus('brewing');
+    const actualDuration = Math.floor(brew.duration / (1 + bonus));
+    setActionState({ name: `酿造${brew.name}`, icon: brew.icon }, actualDuration, gameState.brewCount, gameState.brewRemaining);
     
     if (elements.actionProgressFill) {
         elements.actionProgressFill.style.width = '0%';
@@ -5119,7 +5299,7 @@ function scheduleBrewing(brewId) {
             completeBrewingOnce(brewId);
             scheduleBrewing(brewId);
         }
-    }, brew.duration);
+    }, actualDuration);
 }
 
 function renderBrewsInventory() {
@@ -5173,7 +5353,10 @@ function startEssenceExtraction(essenceId, count) {
     if (elements.actionProgressFill) {
         elements.actionProgressFill.style.width = '0%';
     }
-    setActionState({ name: `提炼${essence.name}`, icon: essence.icon }, essence.duration, actualCount, actualCount);
+    // 应用装备加成（搅拌棒加速炼金）
+    const bonus = getEquipmentBonus('alchemy');
+    const actualDuration = Math.floor(essence.duration / (1 + bonus));
+    setActionState({ name: `提炼${essence.name}`, icon: essence.icon }, actualDuration, actualCount, actualCount);
     renderEssencesList();
     
     if (animationFrame) cancelAnimationFrame(animationFrame);
@@ -5255,13 +5438,15 @@ function scheduleEssenceExtraction(essenceId) {
     }
     
     // 开始下一次行动
-    // 更新次数显示
-    setActionState({ name: `提炼${essence.name}`, icon: essence.icon }, essence.duration, gameState.essenceCount, gameState.essenceRemaining);
-    
     // 消耗材料
     for (const [itemId, count] of Object.entries(essence.materials)) {
         gameState.gatheringInventory[itemId] -= count;
     }
+    
+    // 应用装备加成（搅拌棒加速炼金）
+    const bonus = getEquipmentBonus('alchemy');
+    const actualDuration = Math.floor(essence.duration / (1 + bonus));
+    setActionState({ name: `提炼${essence.name}`, icon: essence.icon }, actualDuration, gameState.essenceCount, gameState.essenceRemaining);
     
     if (elements.actionProgressFill) {
         elements.actionProgressFill.style.width = '0%';
@@ -5278,7 +5463,7 @@ function scheduleEssenceExtraction(essenceId) {
             completeEssenceOnce(essenceId);
             scheduleEssenceExtraction(essenceId);
         }
-    }, essence.duration);
+    }, actualDuration);
 }
 
 function startAlchemyWithCount(potionId, count) {
@@ -5304,7 +5489,10 @@ function startAlchemyWithCount(potionId, count) {
     if (elements.actionProgressFill) {
         elements.actionProgressFill.style.width = '0%';
     }
-    setActionState({ name: `炼制${potion.name}`, icon: potion.icon }, potion.duration, actualCount, actualCount);
+    // 应用装备加成（搅拌棒加速炼金）
+    const bonus = getEquipmentBonus('alchemy');
+    const actualDuration = Math.floor(potion.duration / (1 + bonus));
+    setActionState({ name: `炼制${potion.name}`, icon: potion.icon }, actualDuration, actualCount, actualCount);
     renderAlchemy();
     
     if (animationFrame) cancelAnimationFrame(animationFrame);
@@ -5317,7 +5505,7 @@ function startAlchemyWithCount(potionId, count) {
             completeAlchemyOnce(potionId);
             scheduleAlchemy(potionId);
         }
-    }, potion.duration);
+    }, actualDuration);
 }
 
 function scheduleAlchemy(potionId) {
@@ -5364,7 +5552,10 @@ function scheduleAlchemy(potionId) {
     
     // 开始下一次行动
     if (gameState.activeAlchemy === potionId) {
-        setActionState({ name: `炼制${potion.name}`, icon: potion.icon }, potion.duration, gameState.alchemyCount, gameState.alchemyRemaining);
+        // 应用装备加成（搅拌棒加速炼金）
+        const bonus = getEquipmentBonus('alchemy');
+        const actualDuration = Math.floor(potion.duration / (1 + bonus));
+        setActionState({ name: `炼制${potion.name}`, icon: potion.icon }, actualDuration, gameState.alchemyCount, gameState.alchemyRemaining);
         if (elements.actionProgressFill) {
             elements.actionProgressFill.style.width = '0%';
         }
@@ -5380,7 +5571,7 @@ function scheduleAlchemy(potionId) {
                 completeAlchemyOnce(potionId);
                 scheduleAlchemy(potionId);
             }
-        }, potion.duration);
+        }, actualDuration);
     }
 }
 
@@ -6723,6 +6914,16 @@ function getEquipmentBonus(type) {
         }
     } else if (type === 'forging' && gameState.equipment.hammer) {
         const tool = CONFIG.tools.hammers.find(t => t.id === gameState.equipment.hammer);
+        if (tool) {
+            bonus = tool.speedBonus || 0;
+        }
+    } else if (type === 'brewing' && gameState.equipment.tongs) {
+        const tool = CONFIG.tools.tongs.find(t => t.id === gameState.equipment.tongs);
+        if (tool) {
+            bonus = tool.speedBonus || 0;
+        }
+    } else if (type === 'alchemy' && gameState.equipment.rod) {
+        const tool = CONFIG.tools.rods.find(t => t.id === gameState.equipment.rod);
         if (tool) {
             bonus = tool.speedBonus || 0;
         }
