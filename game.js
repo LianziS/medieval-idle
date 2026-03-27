@@ -317,7 +317,8 @@ const CONFIG = {
         forging_token: { id: 'forging_token', name: '锻造代币', icon: '🪙' },
         crafting_token: { id: 'crafting_token', name: '制作代币', icon: '🪙' },
         alchemy_token: { id: 'alchemy_token', name: '制药代币', icon: '🪙' },
-        tailoring_token: { id: 'tailoring_token', name: '缝制代币', icon: '🪙' }
+        tailoring_token: { id: 'tailoring_token', name: '缝制代币', icon: '🪙' },
+        brewing_token: { id: 'brewing_token', name: '酿造代币', icon: '🪙' }
     },
     // 代币获取概率配置
     tokenDropRates: {
@@ -326,7 +327,9 @@ const CONFIG = {
         // 锻造工具: 1-8级概率
         tool: [0.017, 0.033, 0.061, 0.110, 0.196, 0.343, 0.590, 0.990],
         // 缝制布料: 1-6级概率
-        tailoring: [0.017, 0.032, 0.053, 0.078, 0.126, 0.195]
+        tailoring: [0.017, 0.032, 0.053, 0.078, 0.126, 0.195],
+        // 酿酒: 1-8级概率
+        brewing: [0.022, 0.023, 0.024, 0.028, 0.029, 0.033, 0.033, 0.033]
     },
     // 工具配置
     tools: {
@@ -523,6 +526,17 @@ const CONFIG = {
         { id: 'chili_essence', name: '辣椒精华', icon: '🌶️', reqLevel: 30, duration: 17000, exp: 24, materials: { chili: 2 } },
         { id: 'mist_essence', name: '雾菱精华', icon: '💠', reqLevel: 40, duration: 20000, exp: 32, materials: { mist_flower: 2 } },
         { id: 'clover_essence', name: '四叶草精华', icon: '🍀', reqLevel: 55, duration: 30000, exp: 40, materials: { four_leaf_clover: 2 } }
+    ],
+    // 酿酒配置
+    brews: [
+        { id: 'woodcutting_wine', name: '伐木甜酒', icon: '🍷', reqLevel: 1, duration: 8000, exp: 6, materials: { sweet_berry: 1, mint_essence: 1, wood_token: 1 } },
+        { id: 'gathering_ale', name: '采集麦酒', icon: '🍺', reqLevel: 4, duration: 8000, exp: 9, materials: { wheat: 1, mint_essence: 1, gathering_token: 1 } },
+        { id: 'mining_wine', name: '挖矿甜酒', icon: '🍷', reqLevel: 7, duration: 9000, exp: 12, materials: { sweet_berry: 1, pine_essence: 1, mining_token: 1 } },
+        { id: 'forging_ale', name: '锻造麦酒', icon: '🍺', reqLevel: 10, duration: 9000, exp: 15, materials: { wheat: 1, pine_essence: 1, forging_token: 1 } },
+        { id: 'crafting_ale', name: '制作麦酒', icon: '🍺', reqLevel: 14, duration: 10000, exp: 18, materials: { wheat: 1, vanilla_essence: 1, crafting_token: 1 } },
+        { id: 'tailoring_beer', name: '缝制啤酒', icon: '🍻', reqLevel: 17, duration: 10000, exp: 21, materials: { hops: 1, vanilla_essence: 1, tailoring_token: 1 } },
+        { id: 'alchemy_beer', name: '炼金啤酒', icon: '🍻', reqLevel: 20, duration: 10000, exp: 24, materials: { hops: 1, sage_essence: 1, alchemy_token: 1 } },
+        { id: 'brewing_wine', name: '酿造果酒', icon: '🍷', reqLevel: 20, duration: 10000, exp: 24, materials: { apple: 1, sage_essence: 1, brewing_token: 1 } }
     ]
 };
 
@@ -605,10 +619,16 @@ let gameState = {
     activeEssence: null,
     essenceCount: 0,
     essenceRemaining: 0,
+    // 酿酒状态
+    activeBrew: null,
+    brewCount: 0,
+    brewRemaining: 0,
     // 药水存储
     potionsInventory: {},
     // 精华存储
     essencesInventory: {},
+    // 酒类存储
+    brewsInventory: {},
     // 代币存储
     tokensInventory: {
         wood_token: 0,        // 伐木代币
@@ -699,6 +719,7 @@ const elements = {
     alchemyLevel: document.getElementById('alchemy-level'),
     alchemyPotionsList: document.getElementById('alchemy-potions-list'),
     alchemyEssencesList: document.getElementById('alchemy-essences-list'),
+    alchemyBrewsList: document.getElementById('alchemy-brews-list'),
     navGatheringExp: document.getElementById('nav-gathering-exp'),
     navGatheringLvl: document.getElementById('nav-gathering-lvl'),
     navCraftingExp: document.getElementById('nav-crafting-exp'),
@@ -817,6 +838,7 @@ function init() {
     renderCombatZones();
     renderAlchemy();
     renderEssencesList();
+    renderBrewsList();
     renderMerchants();
     setupEventListeners();
     setupMerchantListeners();
@@ -829,6 +851,7 @@ function init() {
     renderIngotsInventory();
     renderPotionsInventory();
     renderEssencesInventory();
+    renderBrewsInventory();
     renderFabricsInventory();
     renderToolsInventory();
     renderTokensInventory();
@@ -1306,6 +1329,16 @@ function renderMerchantWarehouse() {
         }
     });
     
+    // 酒类
+    const brewInfo = {};
+    CONFIG.brews.forEach(b => { brewInfo[b.id] = { icon: b.icon, name: b.name }; });
+    Object.entries(gameState.brewsInventory || {}).forEach(([id, count]) => {
+        if (count > 0) {
+            const info = brewInfo[id] || {};
+            allItems.push({ id, type: 'brew', icon: info.icon || '🍷', name: info.name || id, count });
+        }
+    });
+    
     // 工具（斧、镐、凿、针、镰、锤）
     const toolTypes = [
         { key: 'axes', tools: CONFIG.tools.axes },
@@ -1536,6 +1569,7 @@ function getItemCount(item) {
     if (item.type === 'gathering') return gameState.gatheringInventory[item.id] || 0;
     if (item.type === 'potion') return gameState.potionsInventory[item.id] || 0;
     if (item.type === 'essence') return gameState.essencesInventory[item.id] || 0;
+    if (item.type === 'brew') return gameState.brewsInventory[item.id] || 0;
     if (item.type === 'tool') {
         const inventory = gameState.toolsInventory[item.subtype] || [];
         return inventory.includes(item.id) ? 1 : 0;
@@ -1553,6 +1587,7 @@ function getItemSellPrice(item) {
     if (item.type === 'gathering') return 2;
     if (item.type === 'potion') return 8;
     if (item.type === 'essence') return 6; // 精华售价
+    if (item.type === 'brew') return 12; // 酒类售价
     if (item.type === 'token') return 10; // 代币售价
     if (item.type === 'tool') {
         // 工具根据等级定价
@@ -1640,6 +1675,7 @@ function setupMerchantListeners() {
                     else if (item.type === 'gathering') gameState.gatheringInventory[item.id] -= count;
                     else if (item.type === 'potion') gameState.potionsInventory[item.id] -= count;
                     else if (item.type === 'essence') gameState.essencesInventory[item.id] -= count;
+                    else if (item.type === 'brew') gameState.brewsInventory[item.id] -= count;
                     else if (item.type === 'tool') {
                         // 工具每次只能卖1个
                         const inventory = gameState.toolsInventory[item.subtype] || [];
@@ -1807,7 +1843,8 @@ function openActionModal(type, id, name, itemId = null) {
         forging_tool: '锻造工具',
         tailoring: '缝制',
         alchemy: '炼药',
-        essence: '提炼'
+        essence: '提炼',
+        brew: '酿酒'
     };
     elements.actionModalTitle.textContent = `选择${typeNames[type] || '行动'}次数 - ${name}`;
     elements.actionCountInput.value = '';
@@ -1885,6 +1922,8 @@ function executePendingAction() {
         startAlchemyWithCount(id, count);
     } else if (type === 'essence') {
         startEssenceExtraction(id, count);
+    } else if (type === 'brew') {
+        startBrewingWithCount(id, count);
     }
     
     pendingAction = null;
@@ -4740,10 +4779,299 @@ function renderEssencesList() {
 
 function canExtractEssence(essence) {
     for (const [itemId, count] of Object.entries(essence.materials)) {
-        const owned = gameState.gatheringInventory[itemId] || 0;
+        // 检查采集物品
+        let owned = gameState.gatheringInventory[itemId] || 0;
+        // 检查精华
+        if (owned === 0) {
+            owned = gameState.essencesInventory[itemId] || 0;
+        }
+        // 检查代币
+        if (owned === 0) {
+            owned = gameState.tokensInventory[itemId] || 0;
+        }
         if (owned < count) return false;
     }
     return true;
+}
+
+// ============ 酿酒系统 ============
+
+function renderBrewsList() {
+    if (!elements.alchemyBrewsList) return;
+    
+    const html = CONFIG.brews.map((brew, index) => {
+        const isUnlocked = gameState.alchemyLevel >= brew.reqLevel;
+        const isActive = gameState.activeBrew === brew.id;
+        const canBrew = canBrewDrink(brew);
+        
+        // 获取材料名称
+        const materialNames = Object.entries(brew.materials).map(([itemId, count]) => {
+            let owned = gameState.gatheringInventory[itemId] || 0;
+            let materialName = itemId;
+            let materialIcon = '🍺';
+            
+            // 检查采集物品
+            for (const loc of CONFIG.gatheringLocations) {
+                const item = loc.items.find(i => i.id === itemId);
+                if (item) {
+                    materialName = item.name;
+                    materialIcon = item.icon;
+                    break;
+                }
+            }
+            // 检查精华
+            const essence = CONFIG.essences.find(e => e.id === itemId);
+            if (essence) {
+                materialName = essence.name;
+                materialIcon = essence.icon;
+                owned = gameState.essencesInventory[itemId] || 0;
+            }
+            // 检查代币
+            const token = CONFIG.tokens[itemId];
+            if (token) {
+                materialName = token.name;
+                materialIcon = token.icon;
+                owned = gameState.tokensInventory[itemId] || 0;
+            }
+            
+            return `${materialIcon}${materialName}×${count}(${owned})`;
+        }).join(', ');
+        
+        let actionStatus = '';
+        if (isActive) {
+            const remaining = gameState.brewRemaining || 0;
+            const total = gameState.brewCount || 1;
+            const countText = total >= 99999 ? '∞' : `${remaining}/${total}`;
+            actionStatus = `<div class="action-timer">酿酒中... ${countText}</div>`;
+        }
+        
+        return `
+            <div class="gathering-item-card ${!isUnlocked ? 'locked' : ''} ${isActive ? 'active' : ''}" data-brew-id="${brew.id}">
+                <div class="gathering-item-icon">${brew.icon}</div>
+                <div class="gathering-item-info">
+                    <div class="gathering-item-name">${brew.name}</div>
+                    <div class="gathering-item-desc">${materialNames}</div>
+                    <div class="gathering-item-meta">${brew.duration/1000}秒 | +${brew.exp} EXP | Lv.${brew.reqLevel}</div>
+                </div>
+                ${actionStatus}
+                ${!isUnlocked ? '<div class="gathering-item-locked">🔒 等级不足</div>' : ''}
+                ${isUnlocked && !canBrew ? '<div class="gathering-item-locked">📦 材料不足</div>' : ''}
+            </div>
+        `;
+    }).join('');
+    
+    elements.alchemyBrewsList.innerHTML = html;
+    
+    // 绑定点击事件
+    elements.alchemyBrewsList.querySelectorAll('.gathering-item-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            const brewId = this.dataset.brewId;
+            const brew = CONFIG.brews.find(b => b.id === brewId);
+            
+            if (gameState.alchemyLevel < brew.reqLevel) {
+                showToast(`❌ 需要炼金等级 ${brew.reqLevel}`);
+                return;
+            }
+            
+            if (this.classList.contains('active')) {
+                showToast('⏳ 正在酿酒中');
+                return;
+            }
+            
+            // 材料不足时也可以加入队列
+            openActionModal('brew', brewId, brew.name);
+        });
+    });
+}
+
+function canBrewDrink(brew) {
+    for (const [itemId, count] of Object.entries(brew.materials)) {
+        let owned = gameState.gatheringInventory[itemId] || 0;
+        // 检查精华
+        if (owned === 0) {
+            owned = gameState.essencesInventory[itemId] || 0;
+        }
+        // 检查代币
+        if (owned === 0) {
+            owned = gameState.tokensInventory[itemId] || 0;
+        }
+        if (owned < count) return false;
+    }
+    return true;
+}
+
+function startBrewingWithCount(brewId, count) {
+    const brew = CONFIG.brews.find(b => b.id === brewId);
+    if (!brew) return;
+    
+    // 计算实际可执行次数
+    const actualCount = calculateMaxActionCount('brew', brewId, null, count);
+    if (actualCount <= 0) {
+        showToast('❌ 材料不足');
+        return;
+    }
+    
+    // 如果实际次数小于请求次数，显示提示
+    if (actualCount < count && count < 99999) {
+        showToast(`⚠️ 材料仅够酿造 ${actualCount} 次`);
+    }
+    
+    gameState.activeBrew = brewId;
+    gameState.brewCount = actualCount;
+    gameState.brewRemaining = actualCount;
+    
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    setActionState({ name: `酿造${brew.name}`, icon: brew.icon }, brew.duration, actualCount, actualCount);
+    renderBrewsList();
+    
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeBrew === brewId) {
+            completeBrewingOnce(brewId);
+            scheduleBrewing(brewId);
+        }
+    }, brew.duration);
+}
+
+function completeBrewingOnce(brewId) {
+    const brew = CONFIG.brews.find(b => b.id === brewId);
+    if (!brew) return;
+    
+    // 添加酒类
+    if (!gameState.brewsInventory[brewId]) {
+        gameState.brewsInventory[brewId] = 0;
+    }
+    gameState.brewsInventory[brewId]++;
+    
+    // 检查是否获得酿造代币
+    const brewIndex = CONFIG.brews.findIndex(b => b.id === brewId);
+    const token = tryGetToken('brewing_token', brewIndex, 'brewing');
+    
+    // 增加经验
+    gameState.alchemyExp += brew.exp;
+    checkAlchemyLevelUp();
+    
+    showToast(`🍻 获得 ${brew.name}`);
+    renderBrewsList();
+    renderBrewsInventory();
+    renderMerchantWarehouse();
+    saveGame();
+}
+
+function scheduleBrewing(brewId) {
+    const isInfinite = gameState.brewCount >= 99999;
+    if (!gameState.activeBrew || (!isInfinite && gameState.brewRemaining <= 0)) {
+        gameState.activeBrew = null;
+        gameState.brewCount = 0;
+        gameState.brewRemaining = 0;
+        setActionState(null, 0);
+        renderBrewsList();
+        onActionComplete();
+        return;
+    }
+    
+    const brew = CONFIG.brews.find(b => b.id === brewId);
+    if (!brew) return;
+    
+    // 检查材料是否足够
+    if (!canBrewDrink(brew)) {
+        showToast('❌ 材料不足，停止酿酒');
+        gameState.activeBrew = null;
+        gameState.brewCount = 0;
+        gameState.brewRemaining = 0;
+        setActionState(null, 0);
+        renderBrewsList();
+        onActionComplete();
+        return;
+    }
+    
+    // 减少剩余次数
+    if (!isInfinite) {
+        gameState.brewRemaining--;
+    }
+    
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.brewRemaining <= 0) {
+        gameState.activeBrew = null;
+        gameState.brewCount = 0;
+        gameState.brewRemaining = 0;
+        setActionState(null, 0);
+        renderBrewsList();
+        onActionComplete();
+        return;
+    }
+    
+    // 开始下一次行动
+    // 消耗材料
+    for (const [itemId, count] of Object.entries(brew.materials)) {
+        // 从采集库存扣除
+        if (gameState.gatheringInventory[itemId]) {
+            gameState.gatheringInventory[itemId] -= count;
+        }
+        // 从精华库存扣除
+        else if (gameState.essencesInventory[itemId]) {
+            gameState.essencesInventory[itemId] -= count;
+        }
+        // 从代币库存扣除
+        else if (gameState.tokensInventory[itemId]) {
+            gameState.tokensInventory[itemId] -= count;
+        }
+    }
+    
+    setActionState({ name: `酿造${brew.name}`, icon: brew.icon }, brew.duration, gameState.brewCount, gameState.brewRemaining);
+    
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    updateActionStatusBar();
+    renderBrewsList();
+    
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeBrew === brewId) {
+            completeBrewingOnce(brewId);
+            scheduleBrewing(brewId);
+        }
+    }, brew.duration);
+}
+
+function renderBrewsInventory() {
+    const container = document.getElementById('storage-brews-items');
+    if (!container) return;
+    
+    if (!gameState.brewsInventory || Object.keys(gameState.brewsInventory).length === 0) {
+        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">暂无酒类</div>';
+        return;
+    }
+    
+    const html = Object.entries(gameState.brewsInventory)
+        .filter(([id, count]) => count > 0)
+        .map(([id, count]) => {
+            const brew = CONFIG.brews.find(b => b.id === id);
+            const name = brew ? brew.name : id;
+            const icon = brew ? brew.icon : '🍷';
+            return `
+                <div class="storage-item-small">
+                    <div class="storage-item-small-icon">${icon}</div>
+                    <div class="storage-item-small-name">${name}</div>
+                    <div class="storage-item-small-count">×${count}</div>
+                </div>
+            `;
+        })
+        .join('');
+    
+    container.innerHTML = html || '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">暂无酒类</div>';
 }
 
 function startEssenceExtraction(essenceId, count) {
@@ -5111,12 +5439,16 @@ function setupAlchemyTabs() {
             
             const potionsList = document.getElementById('alchemy-potions-list');
             const essencesList = document.getElementById('alchemy-essences-list');
+            const brewsList = document.getElementById('alchemy-brews-list');
             
             if (potionsList) {
                 potionsList.style.display = tabName === 'potions' ? 'block' : 'none';
             }
             if (essencesList) {
                 essencesList.style.display = tabName === 'essences' ? 'block' : 'none';
+            }
+            if (brewsList) {
+                brewsList.style.display = tabName === 'brews' ? 'block' : 'none';
             }
         });
     });
@@ -6788,6 +7120,9 @@ function canExecuteAction(action) {
     } else if (type === 'essence') {
         const essence = CONFIG.essences.find(e => e.id === id);
         return essence ? canExtractEssence(essence) : false;
+    } else if (type === 'brew') {
+        const brew = CONFIG.brews.find(b => b.id === id);
+        return brew ? canBrewDrink(brew) : false;
     }
     
     // 伐木、挖矿、采集不需要材料检查
@@ -6846,6 +7181,24 @@ function calculateMaxActionCount(type, id, itemId, requestedCount) {
         if (essence) {
             for (const [matId, need] of Object.entries(essence.materials)) {
                 const owned = gameState.gatheringInventory[matId] || 0;
+                const possible = Math.floor(owned / need);
+                maxCount = Math.min(maxCount, possible);
+            }
+        }
+    } else if (type === 'brew') {
+        const brew = CONFIG.brews.find(b => b.id === id);
+        if (brew) {
+            for (const [matId, need] of Object.entries(brew.materials)) {
+                // 检查采集物品
+                let owned = gameState.gatheringInventory[matId] || 0;
+                // 检查精华
+                if (owned === 0) {
+                    owned = gameState.essencesInventory[matId] || 0;
+                }
+                // 检查代币
+                if (owned === 0) {
+                    owned = gameState.tokensInventory[matId] || 0;
+                }
                 const possible = Math.floor(owned / need);
                 maxCount = Math.min(maxCount, possible);
             }

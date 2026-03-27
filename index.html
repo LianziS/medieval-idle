@@ -19,7 +19,7 @@
     <!-- 顶部固定区域 -->
     <header class="top-fixed">
         <div class="top-fixed-content">
-            <span class="update-time-badge">代码更新: 2026-03-27 20:33</span>
+            <span class="update-time-badge">代码更新: 2026-03-27 21:15</span>
             <span class="player-badge">
                 <span>LV.<span id="top-level">1</span></span>
             </span>
@@ -257,6 +257,10 @@
                     <h3 class="storage-section-title">精华</h3>
                     <div class="storage-items-grid" id="storage-essences-items"></div>
                     
+                    <!-- 酒类 -->
+                    <h3 class="storage-section-title">酒类</h3>
+                    <div class="storage-items-grid" id="storage-brews-items"></div>
+                    
                     <!-- 代币 -->
                     <h3 class="storage-section-title">代币</h3>
                     <div class="storage-items-grid" id="storage-tokens-items"></div>
@@ -440,12 +444,15 @@
                 <div class="gathering-tabs" id="alchemy-tabs">
                     <button class="gathering-tab active" data-tab="potions">炼药</button>
                     <button class="gathering-tab" data-tab="essences">提炼</button>
+                    <button class="gathering-tab" data-tab="brews">酿酒</button>
                     <button class="gathering-tab" data-tab="other">其他</button>
                 </div>
                 <!-- 药水列表 -->
                 <div class="gathering-items-list active" id="alchemy-potions-list"></div>
                 <!-- 提炼列表 -->
                 <div class="gathering-items-list" id="alchemy-essences-list"></div>
+                <!-- 酿酒列表 -->
+                <div class="gathering-items-list" id="alchemy-brews-list"></div>
             </section>
         </main>
 
