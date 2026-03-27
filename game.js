@@ -3016,6 +3016,7 @@ function scheduleCrafting(plankId) {
         gameState.craftingRemaining = 0;
         setActionState(null, 0);
         renderCrafting();
+        onActionComplete();
         return;
     }
     
@@ -3687,6 +3688,7 @@ function scheduleForgingTool(toolId, toolType, toolIndex) {
         gameState.forgingToolRemaining = 0;
         setActionState(null, 0);
         renderToolsList();
+        onActionComplete();
         return;
     }
     
@@ -3847,6 +3849,7 @@ function scheduleForging(ingotId) {
         gameState.forgingRemaining = 0;
         setActionState(null, 0);
         renderForging();
+        onActionComplete();
         return;
     }
     
@@ -4109,6 +4112,7 @@ function scheduleTailoring(fabricId) {
         gameState.tailoringRemaining = 0;
         setActionState(null, 0);
         renderTailoring();
+        onActionComplete();
         return;
     }
     
@@ -4580,6 +4584,7 @@ function scheduleAlchemy(potionId) {
         gameState.alchemyRemaining = 0;
         setActionState(null, 0);
         renderAlchemy();
+        onActionComplete();
         return;
     }
     
