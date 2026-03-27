@@ -82,6 +82,7 @@ const CONFIG = {
             exp: 2,
             items: [
                 { id: 'sweet_berry', name: '甜浆果', icon: '🫐', futureUse: ['酿酒'] },
+                { id: 'wild_mint', name: '野薄荷', icon: '🌿', futureUse: ['炼金', '酿酒'] },
                 { id: 'honey', name: '蜂蜜', icon: '🍯', futureUse: ['制药', '酿酒'] },
                 { id: 'blood_rose', name: '血蔷薇', icon: '🌹', futureUse: ['制药'] },
                 { id: 'jute', name: '黄麻', icon: '🌾', futureUse: ['裁缝', '锻造'] }
@@ -95,6 +96,7 @@ const CONFIG = {
             exp: 3,
             items: [
                 { id: 'wheat', name: '小麦', icon: '🌾', futureUse: ['酿酒'] },
+                { id: 'pine_needle', name: '松针', icon: '🌲', futureUse: ['炼金', '酿酒'] },
                 { id: 'star_dew_herb', name: '星露草', icon: '🌿', futureUse: ['制药'] },
                 { id: 'flax', name: '亚麻', icon: '🧶', futureUse: ['裁缝', '锻造'] },
                 { id: 'feather', name: '羽毛', icon: '🪶', futureUse: ['裁缝', '笔'] }
@@ -108,6 +110,7 @@ const CONFIG = {
             exp: 4,
             items: [
                 { id: 'hops', name: '啤酒花', icon: '🌿', futureUse: ['酿酒'] },
+                { id: 'vanilla', name: '香草', icon: '🌱', futureUse: ['炼金', '酿酒'] },
                 { id: 'blossom_honey', name: '百花蜜', icon: '🍯', futureUse: ['制药', '酿酒'] },
                 { id: 'red_serpent_fruit', name: '赤炼蛇果', icon: '🍎', futureUse: ['制药'] },
                 { id: 'jade_feather', name: '翡翠羽', icon: '🦜', futureUse: ['裁缝', '笔'] }
@@ -121,6 +124,7 @@ const CONFIG = {
             exp: 5,
             items: [
                 { id: 'apple', name: '苹果', icon: '🍎', futureUse: ['酿酒'] },
+                { id: 'sage', name: '鼠尾草', icon: '🌿', futureUse: ['炼金', '酿酒'] },
                 { id: 'moonlight_mushroom', name: '月光菇', icon: '🍄', futureUse: ['制药'] },
                 { id: 'wool', name: '羊毛', icon: '🧶', futureUse: ['裁缝', '锻造'] },
                 { id: 'falcon_tail_feather', name: '猎隼的尾羽', icon: '🦅', futureUse: ['裁缝', '笔'] }
@@ -134,6 +138,7 @@ const CONFIG = {
             exp: 6,
             items: [
                 { id: 'grape', name: '葡萄', icon: '🍇', futureUse: ['酿酒'] },
+                { id: 'chili', name: '辣椒', icon: '🌶️', futureUse: ['炼金', '酿酒'] },
                 { id: 'moonlight_honey', name: '月光蜜', icon: '🍯', futureUse: ['制药', '酿酒'] },
                 { id: 'silk', name: '蚕丝', icon: '🧵', futureUse: ['锻造', '裁缝'] },
                 { id: 'soul_herb', name: '灵魂草', icon: '🌿', futureUse: ['制药'] }
@@ -147,6 +152,7 @@ const CONFIG = {
             exp: 7,
             items: [
                 { id: 'rye', name: '黑麦', icon: '🌾', futureUse: ['酿酒'] },
+                { id: 'mist_flower', name: '雾菱花', icon: '💠', futureUse: ['炼金', '酿酒'] },
                 { id: 'wild_heart', name: '原野之心', icon: '💚', futureUse: ['制药'] },
                 { id: 'wind_velvet', name: '风语绒', icon: '🧶', futureUse: ['锻造', '裁缝'] },
                 { id: 'rainbow_feather', name: '虹羽', icon: '🌈', futureUse: ['裁缝', '笔'] }
@@ -173,6 +179,7 @@ const CONFIG = {
             exp: 10,
             items: [
                 { id: 'dragon_blood_fruit', name: '龙血果', icon: '🐉', futureUse: ['酿酒'] },
+                { id: 'four_leaf_clover', name: '四叶草', icon: '🍀', futureUse: ['炼金', '酿酒'] },
                 { id: 'life_fiber', name: '生命纤维', icon: '🧵', futureUse: ['锻造', '裁缝'] },
                 { id: 'star_blossom', name: '星辰花', icon: '⭐', futureUse: ['制药'] }
             ]
