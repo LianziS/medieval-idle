@@ -1766,7 +1766,14 @@ function startWoodcuttingWithCount(treeId, count) {
     if (animationFrame) cancelAnimationFrame(animationFrame);
     lastActionStartTime = gameState.actionStartTime;
     animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
-    scheduleWoodcutting(treeId);
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeWoodcutting === treeId) {
+            completeWoodcuttingOnce(treeId);
+            // 行动完成后继续下一次
+            scheduleWoodcutting(treeId);
+        }
+    }, actualDuration);
 }
 
 function scheduleWoodcutting(treeId) {
@@ -1782,17 +1789,31 @@ function scheduleWoodcutting(treeId) {
         return;
     }
     
-    const tree = CONFIG.trees.find(t => t.id === treeId);
+    // 减少剩余次数（上一次已完成）
     if (!isInfinite) {
         gameState.woodcuttingRemaining--;
     }
     
-    // 立即开始下一次行动
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.woodcuttingRemaining <= 0) {
+        gameState.activeWoodcutting = null;
+        gameState.woodcuttingCount = 0;
+        gameState.woodcuttingRemaining = 0;
+        setActionState(null, 0);
+        renderWoodcutting();
+        onActionComplete();
+        return;
+    }
+    
+    const tree = CONFIG.trees.find(t => t.id === treeId);
+    if (!tree) return;
+    
+    // 开始下一次行动
     if (gameState.activeWoodcutting === treeId) {
         // 应用装备加成
         const bonus = getEquipmentBonus('woodcutting');
         const actualDuration = Math.floor(tree.duration / (1 + bonus));
-        // 重置行动开始时间为当前时间
+        // 设置状态（remaining已经减少，显示正确的当前次数）
         setActionState({ name: `采集${tree.name}`, icon: tree.icon }, actualDuration, gameState.woodcuttingCount, gameState.woodcuttingRemaining);
         // 重置进度条为 0
         if (elements.actionProgressFill) {
@@ -1805,6 +1826,11 @@ function scheduleWoodcutting(treeId) {
         if (animationFrame) cancelAnimationFrame(animationFrame);
         lastActionStartTime = gameState.actionStartTime;
         animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+        
+        // 减少剩余次数（在设置状态之后）
+        if (!isInfinite) {
+            gameState.woodcuttingRemaining--;
+        }
         
         // 等待行动完成后继续
         gameState.actionTimerId = setTimeout(() => {
@@ -1863,7 +1889,13 @@ function startMiningWithCount(oreId, count) {
     if (animationFrame) cancelAnimationFrame(animationFrame);
     lastActionStartTime = gameState.actionStartTime;
     animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
-    scheduleMining(oreId);
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeMining === oreId) {
+            completeMiningOnce(oreId);
+            scheduleMining(oreId);
+        }
+    }, actualDuration);
 }
 
 function scheduleMining(oreId) {
@@ -1878,17 +1910,30 @@ function scheduleMining(oreId) {
         return;
     }
     
-    const ore = CONFIG.ores.find(o => o.id === oreId);
+    // 减少剩余次数
     if (!isInfinite) {
         gameState.miningRemaining--;
     }
     
-    // 立即开始下一次行动
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.miningRemaining <= 0) {
+        gameState.activeMining = null;
+        gameState.miningCount = 0;
+        gameState.miningRemaining = 0;
+        setActionState(null, 0);
+        renderMining();
+        onActionComplete();
+        return;
+    }
+    
+    const ore = CONFIG.ores.find(o => o.id === oreId);
+    if (!ore) return;
+    
+    // 开始下一次行动
     if (gameState.activeMining === oreId) {
         // 应用装备加成
         const bonus = getEquipmentBonus('mining');
         const actualDuration = Math.floor(ore.duration / (1 + bonus));
-        // 重置行动开始时间为当前时间
         setActionState({ name: `挖掘${ore.name}`, icon: ore.icon }, actualDuration, gameState.miningCount, gameState.miningRemaining);
         // 重置进度条为 0
         if (elements.actionProgressFill) {
@@ -1975,7 +2020,13 @@ function startGatheringWithCount(type, locationId, itemId, count) {
     lastActionStartTime = gameState.actionStartTime;
     animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
     
-    scheduleGathering(type, locationId, itemId);
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeGathering) {
+            completeGatheringOnce(type, locationId, itemId);
+            scheduleGathering(type, locationId, itemId);
+        }
+    }, location.duration);
 }
 
 function scheduleGathering(type, locationId, itemId) {
@@ -1992,12 +2043,28 @@ function scheduleGathering(type, locationId, itemId) {
         return;
     }
     
-    const location = CONFIG.gatheringLocations.find(l => l.id === locationId);
+    // 减少剩余次数
     if (!isInfinite) {
         gameState.gatheringRemaining--;
     }
     
-    // 立即开始下一次行动
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.gatheringRemaining <= 0) {
+        gameState.activeGathering = null;
+        gameState.gatheringLocationId = null;
+        gameState.gatheringItemId = null;
+        gameState.gatheringCount = 0;
+        gameState.gatheringRemaining = 0;
+        setActionState(null, 0);
+        renderGathering();
+        onActionComplete();
+        return;
+    }
+    
+    const location = CONFIG.gatheringLocations.find(l => l.id === locationId);
+    if (!location) return;
+    
+    // 开始下一次行动
     if (gameState.activeGathering) {
         let actionName = '';
         let actionIcon = '🌾';
@@ -2010,7 +2077,6 @@ function scheduleGathering(type, locationId, itemId) {
             actionName = `${location.name}·全采集`;
         }
         
-        // 重置行动开始时间为当前时间
         setActionState({ name: actionName, icon: actionIcon }, location.duration, gameState.gatheringCount, gameState.gatheringRemaining);
         // 重置进度条为 0
         if (elements.actionProgressFill) {
@@ -2567,9 +2633,9 @@ function setActionState(action, duration, totalCount = 0, remainingCount = 0) {
         if (elements.actionStatusCount) {
             if (totalCount >= 99999) {
                 // 无限次
-                elements.actionStatusCount.textContent = ' ∞';
+                elements.actionStatusCount.textContent = ' [∞]';
             } else if (totalCount > 0) {
-                // 有次数限制
+                // 有次数限制：当前 = 总数 - 剩余 + 1
                 const current = totalCount - remainingCount + 1;
                 elements.actionStatusCount.textContent = ` [${current}/${totalCount}]`;
             } else {
@@ -3011,7 +3077,13 @@ function startCraftingWithCount(plankId, count) {
     lastActionStartTime = gameState.actionStartTime;
     animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
     
-    scheduleCrafting(plankId);
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeCrafting === plankId) {
+            completeCraftingOnce(plankId);
+            scheduleCrafting(plankId);
+        }
+    }, plank.duration);
 }
 
 function scheduleCrafting(plankId) {
@@ -3041,10 +3113,23 @@ function scheduleCrafting(plankId) {
         return;
     }
     
+    // 减少剩余次数
     if (!isInfinite) {
         gameState.craftingRemaining--;
     }
     
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.craftingRemaining <= 0) {
+        gameState.activeCrafting = null;
+        gameState.craftingCount = 0;
+        gameState.craftingRemaining = 0;
+        setActionState(null, 0);
+        renderCrafting();
+        onActionComplete();
+        return;
+    }
+    
+    // 开始下一次行动
     if (gameState.activeCrafting === plankId) {
         setActionState({ name: `制作${plank.name}`, icon: plank.icon }, plank.duration, gameState.craftingCount, gameState.craftingRemaining);
         if (elements.actionProgressFill) {
@@ -3675,7 +3760,13 @@ function startForgingToolWithCount(toolId, count, toolType, toolIndex) {
     lastActionStartTime = gameState.actionStartTime;
     animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
     
-    scheduleForgingTool(toolId, toolType, toolIndex);
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeForgingTool === toolId) {
+            completeForgingToolOnce(toolId, toolType, toolIndex);
+            scheduleForgingTool(toolId, toolType, toolIndex);
+        }
+    }, actualDuration);
 }
 
 function scheduleForgingTool(toolId, toolType, toolIndex) {
@@ -3705,10 +3796,23 @@ function scheduleForgingTool(toolId, toolType, toolIndex) {
         return;
     }
     
+    // 减少剩余次数
     if (!isInfinite) {
         gameState.forgingToolRemaining--;
     }
     
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.forgingToolRemaining <= 0) {
+        gameState.activeForgingTool = null;
+        gameState.forgingToolCount = 0;
+        gameState.forgingToolRemaining = 0;
+        setActionState(null, 0);
+        renderToolsList();
+        onActionComplete();
+        return;
+    }
+    
+    // 开始下一次行动
     if (gameState.activeForgingTool === toolId) {
         // 应用装备加成（锤子加速锻造）
         const bonus = getEquipmentBonus('forging');
@@ -3842,7 +3946,13 @@ function startForgingWithCount(ingotId, count) {
     lastActionStartTime = gameState.actionStartTime;
     animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
     
-    scheduleForging(ingotId);
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeForging === ingotId) {
+            completeForgingOnce(ingotId);
+            scheduleForging(ingotId);
+        }
+    }, actualDuration);
 }
 
 function scheduleForging(ingotId) {
@@ -3872,10 +3982,23 @@ function scheduleForging(ingotId) {
         return;
     }
     
+    // 减少剩余次数
     if (!isInfinite) {
         gameState.forgingRemaining--;
     }
     
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.forgingRemaining <= 0) {
+        gameState.activeForging = null;
+        gameState.forgingCount = 0;
+        gameState.forgingRemaining = 0;
+        setActionState(null, 0);
+        renderForging();
+        onActionComplete();
+        return;
+    }
+    
+    // 开始下一次行动
     if (gameState.activeForging === ingotId) {
         // 应用装备加成（锤子加速锻造）
         const bonus = getEquipmentBonus('forging');
@@ -4111,7 +4234,13 @@ function startTailoringWithCount(fabricId, count) {
     lastActionStartTime = gameState.actionStartTime;
     animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
     
-    scheduleTailoring(fabricId);
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeTailoring === fabricId) {
+            completeTailoringOnce(fabricId);
+            scheduleTailoring(fabricId);
+        }
+    }, fabric.duration);
 }
 
 function scheduleTailoring(fabricId) {
@@ -4141,10 +4270,23 @@ function scheduleTailoring(fabricId) {
         return;
     }
     
+    // 减少剩余次数
     if (!isInfinite) {
         gameState.tailoringRemaining--;
     }
     
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.tailoringRemaining <= 0) {
+        gameState.activeTailoring = null;
+        gameState.tailoringCount = 0;
+        gameState.tailoringRemaining = 0;
+        setActionState(null, 0);
+        renderTailoring();
+        onActionComplete();
+        return;
+    }
+    
+    // 开始下一次行动
     if (gameState.activeTailoring === fabricId) {
         setActionState({ name: `缝制${fabric.name}`, icon: fabric.icon }, fabric.duration, gameState.tailoringCount, gameState.tailoringRemaining);
         if (elements.actionProgressFill) {
@@ -4501,7 +4643,35 @@ function startEssenceExtraction(essenceId, count) {
     lastActionStartTime = gameState.actionStartTime;
     animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
     
-    scheduleEssenceExtraction(essenceId);
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeEssence === essenceId) {
+            completeEssenceOnce(essenceId);
+            scheduleEssenceExtraction(essenceId);
+        }
+    }, essence.duration);
+}
+
+function completeEssenceOnce(essenceId) {
+    const essence = CONFIG.essences.find(e => e.id === essenceId);
+    if (!essence) return;
+    
+    // 添加精华
+    if (!gameState.essencesInventory[essenceId]) {
+        gameState.essencesInventory[essenceId] = 0;
+    }
+    gameState.essencesInventory[essenceId]++;
+    
+    // 增加经验
+    gameState.alchemyExp += essence.exp;
+    checkAlchemyLevelUp();
+    
+    showToast(`✨ 获得 ${essence.name}`);
+    renderEssencesList();
+    renderGatheringInventory();
+    renderEssencesInventory();
+    renderMerchantWarehouse();
+    saveGame();
 }
 
 function scheduleEssenceExtraction(essenceId) {
@@ -4531,7 +4701,24 @@ function scheduleEssenceExtraction(essenceId) {
         return;
     }
     
-    // 更新次数显示（在行动开始时）
+    // 减少剩余次数
+    if (!isInfinite) {
+        gameState.essenceRemaining--;
+    }
+    
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.essenceRemaining <= 0) {
+        gameState.activeEssence = null;
+        gameState.essenceCount = 0;
+        gameState.essenceRemaining = 0;
+        setActionState(null, 0);
+        renderEssencesList();
+        onActionComplete();
+        return;
+    }
+    
+    // 开始下一次行动
+    // 更新次数显示
     setActionState({ name: `提炼${essence.name}`, icon: essence.icon }, essence.duration, gameState.essenceCount, gameState.essenceRemaining);
     
     // 消耗材料
@@ -4539,31 +4726,21 @@ function scheduleEssenceExtraction(essenceId) {
         gameState.gatheringInventory[itemId] -= count;
     }
     
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    updateActionStatusBar();
+    renderEssencesList();
+    
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    
     gameState.actionTimerId = setTimeout(() => {
-        // 添加精华
-        if (!gameState.essencesInventory[essenceId]) {
-            gameState.essencesInventory[essenceId] = 0;
+        if (gameState.activeEssence === essenceId) {
+            completeEssenceOnce(essenceId);
+            scheduleEssenceExtraction(essenceId);
         }
-        gameState.essencesInventory[essenceId]++;
-        
-        // 增加经验
-        gameState.alchemyExp += essence.exp;
-        checkAlchemyLevelUp();
-        
-        // 更新剩余次数
-        if (!isInfinite) {
-            gameState.essenceRemaining--;
-        }
-        
-        showToast(`✨ 获得 ${essence.name}`);
-        renderEssencesList();
-        renderGatheringInventory();
-        renderEssencesInventory();
-        renderMerchantWarehouse();
-        saveGame();
-        
-        // 继续下一次提炼
-        scheduleEssenceExtraction(essenceId);
     }, essence.duration);
 }
 
@@ -4597,7 +4774,13 @@ function startAlchemyWithCount(potionId, count) {
     lastActionStartTime = gameState.actionStartTime;
     animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
     
-    scheduleAlchemy(potionId);
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeAlchemy === potionId) {
+            completeAlchemyOnce(potionId);
+            scheduleAlchemy(potionId);
+        }
+    }, potion.duration);
 }
 
 function scheduleAlchemy(potionId) {
@@ -4626,10 +4809,23 @@ function scheduleAlchemy(potionId) {
         return;
     }
     
+    // 减少剩余次数
     if (!isInfinite) {
         gameState.alchemyRemaining--;
     }
     
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.alchemyRemaining <= 0) {
+        gameState.activeAlchemy = null;
+        gameState.alchemyCount = 0;
+        gameState.alchemyRemaining = 0;
+        setActionState(null, 0);
+        renderAlchemy();
+        onActionComplete();
+        return;
+    }
+    
+    // 开始下一次行动
     if (gameState.activeAlchemy === potionId) {
         setActionState({ name: `炼制${potion.name}`, icon: potion.icon }, potion.duration, gameState.alchemyCount, gameState.alchemyRemaining);
         if (elements.actionProgressFill) {
