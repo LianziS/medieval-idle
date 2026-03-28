@@ -6696,6 +6696,136 @@ function loadGame() {
                 }
             }
             
+            // 离线计算 - 酿造
+            if (gameState.activeBrew && gameState.brewRemaining > 0) {
+                const brew = CONFIG.brews.find(b => b.id === gameState.activeBrew);
+                if (brew && canBrewDrink(brew)) {
+                    const bonus = getEquipmentBonus('brewing');
+                    const actionDuration = Math.floor(brew.duration / (1 + bonus));
+                    const offlineTime = now - gameState.actionStartTime;
+                    const completedCount = Math.floor(offlineTime / actionDuration);
+                    const remainingTime = offlineTime % actionDuration;
+                    
+                    const actualCompleted = Math.min(completedCount, gameState.brewRemaining);
+                    for (let i = 0; i < actualCompleted; i++) {
+                        if (canBrewDrink(brew)) {
+                            // 扣除材料
+                            for (const [itemId, count] of Object.entries(brew.materials)) {
+                                if (gameState.gatheringInventory[itemId]) {
+                                    gameState.gatheringInventory[itemId] -= count;
+                                } else if (gameState.essencesInventory[itemId]) {
+                                    gameState.essencesInventory[itemId] -= count;
+                                } else if (gameState.tokensInventory[itemId]) {
+                                    gameState.tokensInventory[itemId] -= count;
+                                }
+                            }
+                            // 添加产出
+                            if (!gameState.brewsInventory[brew.id]) {
+                                gameState.brewsInventory[brew.id] = 0;
+                            }
+                            gameState.brewsInventory[brew.id]++;
+                            gameState.brewingExp += brew.exp;
+                        }
+                    }
+                    gameState.brewRemaining -= actualCompleted;
+                    checkBrewingLevelUp();
+                    gameState.actionStartTime = now - remainingTime;
+                    
+                    if (actualCompleted > 0) {
+                        showToast(`⏰ 离线完成 ${actualCompleted} 次酿造！`);
+                    }
+                    
+                    if (canBrewDrink(brew) && (gameState.brewRemaining > 0 || gameState.brewCount >= 99999)) {
+                        setActionState({ name: `酿造${brew.name}`, icon: brew.icon }, actionDuration);
+                        
+                        if (remainingTime > 0) {
+                            setTimeout(() => {
+                                if (gameState.activeBrew === brew.id) {
+                                    completeBrewingOnce(brew.id);
+                                    scheduleBrewing(brew.id);
+                                }
+                            }, actionDuration - remainingTime);
+                        } else {
+                            scheduleBrewing(brew.id);
+                        }
+                        
+                        if (animationFrame) cancelAnimationFrame(animationFrame);
+                        lastActionStartTime = gameState.actionStartTime;
+                        animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+                        renderBrewsList();
+                    } else {
+                        gameState.activeBrew = null;
+                        gameState.brewCount = 0;
+                        gameState.brewRemaining = 0;
+                        setActionState(null, 0);
+                        // 自动开始队列下一个行动
+                        setTimeout(() => startNextQueueAction(), 100);
+                    }
+                }
+            }
+            
+            // 离线计算 - 炼金提炼
+            if (gameState.activeEssence && gameState.essenceRemaining > 0) {
+                const essence = CONFIG.essences.find(e => e.id === gameState.activeEssence);
+                if (essence && canExtractEssence(essence)) {
+                    const bonus = getEquipmentBonus('alchemy');
+                    const actionDuration = Math.floor(essence.duration / (1 + bonus));
+                    const offlineTime = now - gameState.actionStartTime;
+                    const completedCount = Math.floor(offlineTime / actionDuration);
+                    const remainingTime = offlineTime % actionDuration;
+                    
+                    const actualCompleted = Math.min(completedCount, gameState.essenceRemaining);
+                    for (let i = 0; i < actualCompleted; i++) {
+                        if (canExtractEssence(essence)) {
+                            // 扣除材料
+                            for (const [itemId, count] of Object.entries(essence.materials)) {
+                                gameState.gatheringInventory[itemId] -= count;
+                            }
+                            // 添加产出
+                            if (!gameState.essencesInventory[essence.id]) {
+                                gameState.essencesInventory[essence.id] = 0;
+                            }
+                            gameState.essencesInventory[essence.id]++;
+                            gameState.alchemyExp += essence.exp;
+                        }
+                    }
+                    gameState.essenceRemaining -= actualCompleted;
+                    checkAlchemyLevelUp();
+                    gameState.actionStartTime = now - remainingTime;
+                    
+                    if (actualCompleted > 0) {
+                        showToast(`⏰ 离线完成 ${actualCompleted} 次提炼！`);
+                    }
+                    
+                    if (canExtractEssence(essence) && (gameState.essenceRemaining > 0 || gameState.essenceCount >= 99999)) {
+                        setActionState({ name: `提炼${essence.name}`, icon: essence.icon }, actionDuration);
+                        
+                        if (remainingTime > 0) {
+                            setTimeout(() => {
+                                if (gameState.activeEssence === essence.id) {
+                                    completeEssenceOnce(essence.id);
+                                    scheduleEssenceExtraction(essence.id);
+                                }
+                            }, actionDuration - remainingTime);
+                        } else {
+                            scheduleEssenceExtraction(essence.id);
+                        }
+                        
+                        if (animationFrame) cancelAnimationFrame(animationFrame);
+                        lastActionStartTime = gameState.actionStartTime;
+                        animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+                        renderEssencesList();
+                    } else {
+                        gameState.activeEssence = null;
+                        gameState.essenceCount = 0;
+                        gameState.essenceRemaining = 0;
+                        setActionState(null, 0);
+                        // 自动开始队列下一个行动
+                        setTimeout(() => startNextQueueAction(), 100);
+                    }
+                }
+            }
+            
             console.log('💾 游戏已加载');
             
             // 确保新商人数据被初始化
