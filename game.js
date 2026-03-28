@@ -1774,6 +1774,19 @@ function setupMerchantListeners() {
 }
 
 function switchPage(pageId) {
+    // 离开商人页面时重置选择状态
+    if (gameState.currentPage === 'merchant' && pageId !== 'merchant') {
+        gameState.warehouseSelection = [];
+        gameState.isSelectMode = false;
+        gameState.sellConfirming = false;
+        // 重置按钮状态
+        const selectBtn = document.getElementById('warehouse-select-btn');
+        if (selectBtn) {
+            selectBtn.classList.remove('active');
+            selectBtn.textContent = '选择';
+        }
+    }
+    
     gameState.currentPage = pageId;
     elements.navItems.forEach(item => {
         item.classList.toggle('active', item.dataset.page === pageId);
