@@ -1713,15 +1713,15 @@ body::after {
 .merchant-modal {
     position: fixed;
     top: 0;
-    right: -100%;
+    left: 0;
     width: 100%;
     height: 100vh;
     z-index: 2000;
-    transition: right 0.3s ease;
+    pointer-events: none;
 }
 
 .merchant-modal.active {
-    right: 0;
+    pointer-events: auto;
 }
 
 .merchant-modal-overlay {
@@ -1732,6 +1732,12 @@ body::after {
     height: 100%;
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.merchant-modal.active .merchant-modal-overlay {
+    opacity: 1;
 }
 
 .merchant-modal-panel {
@@ -1747,6 +1753,12 @@ body::after {
     flex-direction: column;
     overflow: hidden;
     box-shadow: -3px 0 15px rgba(0, 0, 0, 0.3);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+}
+
+.merchant-modal.active .merchant-modal-panel {
+    transform: translateX(0);
 }
 
 @media (max-width: 768px) {
