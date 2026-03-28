@@ -393,16 +393,16 @@ const CONFIG = {
             { id: 'brilliant_hammer', name: '璀璨之锤', icon: '🔨', speedBonus: 0.90, reqForgeLevel: 82, reqEquipLevel: 80, duration: 134000, exp: 1386 },
             { id: 'star_hammer', name: '星辉之锤', icon: '🔨', speedBonus: 1.05, reqForgeLevel: 97, reqEquipLevel: 95, duration: 235000, exp: 2605 }
         ],
-        // 坩埚钳（酿造加速）
+        // 小桶（酿造加速）
         tongs: [
-            { id: 'cyan_tongs', name: '青闪坩埚钳', icon: '🥢', speedBonus: 0.15, reqForgeLevel: 2, reqEquipLevel: 1, duration: 6000, exp: 14 },
-            { id: 'red_tongs', name: '赤铁坩埚钳', icon: '🥢', speedBonus: 0.225, reqForgeLevel: 12, reqEquipLevel: 10, duration: 10500, exp: 32 },
-            { id: 'feather_tongs', name: '轻羽坩埚钳', icon: '🥢', speedBonus: 0.30, reqForgeLevel: 22, reqEquipLevel: 20, duration: 16000, exp: 70 },
-            { id: 'white_tongs', name: '白银坩埚钳', icon: '🥢', speedBonus: 0.45, reqForgeLevel: 37, reqEquipLevel: 35, duration: 27000, exp: 168 },
-            { id: 'hell_tongs', name: '狱炎坩埚钳', icon: '🥢', speedBonus: 0.60, reqForgeLevel: 52, reqEquipLevel: 50, duration: 45000, exp: 378 },
-            { id: 'thunder_tongs', name: '雷鸣坩埚钳', icon: '🥢', speedBonus: 0.75, reqForgeLevel: 67, reqEquipLevel: 65, duration: 78000, exp: 728 },
-            { id: 'brilliant_tongs', name: '璀璨坩埚钳', icon: '🥢', speedBonus: 0.90, reqForgeLevel: 82, reqEquipLevel: 80, duration: 134000, exp: 1386 },
-            { id: 'star_tongs', name: '星辉坩埚钳', icon: '🥢', speedBonus: 1.05, reqForgeLevel: 97, reqEquipLevel: 95, duration: 235000, exp: 2605 }
+            { id: 'cyan_tongs', name: '青闪小桶', icon: '🪣', speedBonus: 0.15, reqForgeLevel: 2, reqEquipLevel: 1, duration: 6000, exp: 14 },
+            { id: 'red_tongs', name: '赤铁小桶', icon: '🪣', speedBonus: 0.225, reqForgeLevel: 12, reqEquipLevel: 10, duration: 10500, exp: 32 },
+            { id: 'feather_tongs', name: '轻羽小桶', icon: '🪣', speedBonus: 0.30, reqForgeLevel: 22, reqEquipLevel: 20, duration: 16000, exp: 70 },
+            { id: 'white_tongs', name: '白银小桶', icon: '🪣', speedBonus: 0.45, reqForgeLevel: 37, reqEquipLevel: 35, duration: 27000, exp: 168 },
+            { id: 'hell_tongs', name: '狱炎小桶', icon: '🪣', speedBonus: 0.60, reqForgeLevel: 52, reqEquipLevel: 50, duration: 45000, exp: 378 },
+            { id: 'thunder_tongs', name: '雷鸣小桶', icon: '🪣', speedBonus: 0.75, reqForgeLevel: 67, reqEquipLevel: 65, duration: 78000, exp: 728 },
+            { id: 'brilliant_tongs', name: '璀璨小桶', icon: '🪣', speedBonus: 0.90, reqForgeLevel: 82, reqEquipLevel: 80, duration: 134000, exp: 1386 },
+            { id: 'star_tongs', name: '星辉小桶', icon: '🪣', speedBonus: 1.05, reqForgeLevel: 97, reqEquipLevel: 95, duration: 235000, exp: 2605 }
         ],
         // 搅拌棒（炼金加速）
         rods: [
@@ -478,7 +478,7 @@ const CONFIG = {
             { ingot: 107, prevTool: 'thunder_hammer' },
             { ingot: 143, prevTool: 'brilliant_hammer' }
         ],
-        // 坩埚钳材料（与斧头一致：矿石+木板）
+        // 小桶材料（与斧头一致：矿石+木板）
         tongs: [
             { ore: 10, plank: 6, prevTool: null },
             { ore: 16, plank: 10, prevTool: 'cyan_tongs' },
@@ -3885,7 +3885,7 @@ function renderToolsList() {
         `;
     }).join('');
     
-    // 渲染坩埚钳部分
+    // 渲染小桶部分
     const tongsHtml = CONFIG.tools.tongs.map((tongs, index) => {
         const materials = CONFIG.toolCraftingMaterials.tongs[index];
         const isUnlocked = gameState.forgingLevel >= tongs.reqForgeLevel;
@@ -3894,7 +3894,7 @@ function renderToolsList() {
         const tongsInventory = gameState.toolsInventory.tongs || [];
         const isOwned = tongsInventory.includes(tongs.id);
         
-        // 坩埚钳使用矿石+木板（与斧头一致）
+        // 小桶使用矿石+木板（与斧头一致）
         const oreIds = ['cyan_ore', 'red_iron', 'feather_ore', 'hell_ore', 'white_ore', 'thunder_ore', 'brilliant', 'star_ore'];
         const oreNames = {
             'cyan_ore': '青闪石', 'red_iron': '赤铁石', 'feather_ore': '羽石',
@@ -3915,7 +3915,7 @@ function renderToolsList() {
         if (materials.prevTool) {
             const hasPrev = tongsInventory.includes(materials.prevTool);
             const prevTool = CONFIG.tools.tongs.find(t => t.id === materials.prevTool);
-            const prevToolName = prevTool ? prevTool.name : '上一级坩埚钳';
+            const prevToolName = prevTool ? prevTool.name : '上一级小桶';
             materialDesc += `, ${prevToolName}(${hasPrev ? '✓' : '✗'})`;
         }
         
@@ -4007,7 +4007,7 @@ function renderToolsList() {
                                            '<h4 style="margin: 20px 0 10px; color: #E8C57F;">针</h4>' + needlesHtml +
                                            '<h4 style="margin: 20px 0 10px; color: #E8C57F;">镰刀</h4>' + scythesHtml +
                                            '<h4 style="margin: 20px 0 10px; color: #E8C57F;">锤</h4>' + hammersHtml +
-                                           '<h4 style="margin: 20px 0 10px; color: #E8C57F;">坩埚钳</h4>' + tongsHtml +
+                                           '<h4 style="margin: 20px 0 10px; color: #E8C57F;">小桶</h4>' + tongsHtml +
                                            '<h4 style="margin: 20px 0 10px; color: #E8C57F;">搅拌棒</h4>' + rodsHtml;
     
     // 绑定点击事件
@@ -5175,7 +5175,7 @@ function startBrewingWithCount(brewId, count) {
     if (elements.actionProgressFill) {
         elements.actionProgressFill.style.width = '0%';
     }
-    // 应用装备加成（坩埚钳加速酿造）
+    // 应用装备加成（小桶加速酿造）
     const bonus = getEquipmentBonus('brewing');
     const actualDuration = Math.floor(brew.duration / (1 + bonus));
     setActionState({ name: `酿造${brew.name}`, icon: brew.icon }, actualDuration, actualCount, actualCount);
@@ -5279,7 +5279,7 @@ function scheduleBrewing(brewId) {
         }
     }
     
-    // 应用装备加成（坩埚钳加速酿造）
+    // 应用装备加成（小桶加速酿造）
     const bonus = getEquipmentBonus('brewing');
     const actualDuration = Math.floor(brew.duration / (1 + bonus));
     setActionState({ name: `酿造${brew.name}`, icon: brew.icon }, actualDuration, gameState.brewCount, gameState.brewRemaining);
