@@ -1504,9 +1504,15 @@ function openSellAmountModal(item, editIndex, clickedElement) {
     if (clickedElement) {
         const rect = clickedElement.getBoundingClientRect();
         const modal = elements.sellAmountModal;
-        const modalWidth = 200;
-        const modalHeight = 200;
         const gap = 10; // 与物品的间距
+        
+        // 先临时显示以获取实际尺寸
+        modal.style.visibility = 'hidden';
+        modal.classList.add('show');
+        const modalWidth = modal.offsetWidth;
+        const modalHeight = modal.offsetHeight;
+        modal.classList.remove('show');
+        modal.style.visibility = '';
         
         // 水平居中
         let left = rect.left + rect.width / 2 - modalWidth / 2;
@@ -1526,9 +1532,6 @@ function openSellAmountModal(item, editIndex, clickedElement) {
         // 如果上方空间不够，则显示在下方
         if (top < 10) {
             top = rect.bottom + gap;
-            modal.classList.remove('show-above');
-        } else {
-            modal.classList.add('show-above');
         }
         
         modal.style.left = `${left}px`;

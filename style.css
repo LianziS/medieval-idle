@@ -980,8 +980,7 @@ body::after {
 }
 
 .sell-popup-card.show-above {
-    transform: translateY(-100%);
-    margin-top: -8px;
+    /* 标记类，JS已计算好位置，无需额外transform */
 }
 
 .sell-popup-header {
