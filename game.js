@@ -7930,7 +7930,8 @@ function getCurrentActionInfo() {
         };
     }
     if (gameState.activeForgingTool) {
-        const tools = CONFIG.tools[gameState.forgingToolType === 'axe' ? 'axes' : 'pickaxes'];
+        const toolsKey = gameState.forgingToolType === 'axe' ? 'axes' : gameState.forgingToolType === 'pickaxe' ? 'pickaxes' : gameState.forgingToolType === 'chisel' ? 'chisels' : gameState.forgingToolType === 'needle' ? 'needles' : gameState.forgingToolType === 'scythe' ? 'scythes' : gameState.forgingToolType === 'hammer' ? 'hammers' : gameState.forgingToolType === 'tongs' ? 'tongs' : 'rods';
+        const tools = CONFIG.tools[toolsKey];
         const tool = tools[gameState.forgingToolIndex];
         const totalCount = gameState.forgingToolCount >= 99999 ? 99999 : gameState.forgingToolRemaining + 1;
         return {
