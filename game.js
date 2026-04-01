@@ -1694,17 +1694,17 @@ function executeSingleSell(type, id, count, icon, name) {
     } else if (type === 'herb') {
         gameState.resources.herb = Math.max(0, (gameState.resources.herb || 0) - count);
     } else if (type === 'ore') {
-        gameState.oreInventory[id] = Math.max(0, (gameState.oreInventory[id] || 0) - count);
+        gameState.miningInventory[id] = Math.max(0, (gameState.miningInventory[id] || 0) - count);
     } else if (type === 'log') {
-        gameState.logInventory[id] = Math.max(0, (gameState.logInventory[id] || 0) - count);
+        gameState.woodcuttingInventory[id] = Math.max(0, (gameState.woodcuttingInventory[id] || 0) - count);
     } else if (type === 'essence') {
-        gameState.essenceInventory[id] = Math.max(0, (gameState.essenceInventory[id] || 0) - count);
+        gameState.essencesInventory[id] = Math.max(0, (gameState.essencesInventory[id] || 0) - count);
     } else if (type === 'brew') {
-        gameState.brewInventory[id] = Math.max(0, (gameState.brewInventory[id] || 0) - count);
+        gameState.brewsInventory[id] = Math.max(0, (gameState.brewsInventory[id] || 0) - count);
     } else if (type === 'gathering') {
         gameState.gatheringInventory[id] = Math.max(0, (gameState.gatheringInventory[id] || 0) - count);
     } else if (type === 'fabric') {
-        gameState.fabricInventory[id] = Math.max(0, (gameState.fabricInventory[id] || 0) - count);
+        gameState.fabricsInventory[id] = Math.max(0, (gameState.fabricsInventory[id] || 0) - count);
     } else if (type === 'token') {
         gameState.tokensInventory[id] = Math.max(0, (gameState.tokensInventory[id] || 0) - count);
     }
