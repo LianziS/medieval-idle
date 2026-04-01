@@ -1443,37 +1443,45 @@ function handleQuest(merchant, quest, data) {
                 if (res === 'wood_material') {
                     // 扣除木材（从最低级开始）
                     let remaining = amount;
-                    for (const [id, count] of Object.entries(gameState.woodcuttingInventory || {})) {
+                    const woodInv = gameState.woodcuttingInventory || {};
+                    for (const id of Object.keys(woodInv)) {
                         if (remaining <= 0) break;
+                        const count = woodInv[id] || 0;
                         const deduct = Math.min(count, remaining);
-                        gameState.woodcuttingInventory[id] -= deduct;
+                        removeItem('WOOD', id, deduct);
                         remaining -= deduct;
                     }
                 } else if (res === 'plank') {
                     // 扣除木板
                     let remaining = amount;
-                    for (const [id, count] of Object.entries(gameState.planksInventory || {})) {
+                    const plankInv = gameState.planksInventory || {};
+                    for (const id of Object.keys(plankInv)) {
                         if (remaining <= 0) break;
+                        const count = plankInv[id] || 0;
                         const deduct = Math.min(count, remaining);
-                        gameState.planksInventory[id] -= deduct;
+                        removeItem('PLANK', id, deduct);
                         remaining -= deduct;
                     }
                 } else if (res === 'ingot') {
                     // 扣除矿锭
                     let remaining = amount;
-                    for (const [id, count] of Object.entries(gameState.ingotsInventory || {})) {
+                    const ingotInv = gameState.ingotsInventory || {};
+                    for (const id of Object.keys(ingotInv)) {
                         if (remaining <= 0) break;
+                        const count = ingotInv[id] || 0;
                         const deduct = Math.min(count, remaining);
-                        gameState.ingotsInventory[id] -= deduct;
+                        removeItem('INGOT', id, deduct);
                         remaining -= deduct;
                     }
                 } else if (res === 'fabric') {
                     // 扣除布料
                     let remaining = amount;
-                    for (const [id, count] of Object.entries(gameState.fabricsInventory || {})) {
+                    const fabricInv = gameState.fabricsInventory || {};
+                    for (const id of Object.keys(fabricInv)) {
                         if (remaining <= 0) break;
+                        const count = fabricInv[id] || 0;
                         const deduct = Math.min(count, remaining);
-                        gameState.fabricsInventory[id] -= deduct;
+                        removeItem('FABRIC', id, deduct);
                         remaining -= deduct;
                     }
                 } else if (res === 'honey' || res === 'sweet_berry') {
@@ -3185,7 +3193,7 @@ function payCost(cost) {
         }
         // 扣除伐木物品
         else if (CONFIG.trees.find(t => t.id === res)) {
-            gameState.woodcuttingInventory[res] -= amount;
+            removeItem('WOOD', res, amount);
         }
         // 扣除其他物品
         else {
@@ -3217,10 +3225,7 @@ function tryGetToken(tokenType, levelIndex, rateType = 'standard') {
     
     if (Math.random() < rate) {
         const token = CONFIG.tokens[tokenType];
-        if (!gameState.tokensInventory[tokenType]) {
-            gameState.tokensInventory[tokenType] = 0;
-        }
-        gameState.tokensInventory[tokenType]++;
+        addItem('TOKEN', tokenType, 1);
         return token; // 返回代币信息
     }
     return null;
@@ -4362,7 +4367,7 @@ function renderToolsList() {
             'brilliant_crystal': '璀璨水晶', 'star_crystal': '星辉水晶'
         };
         const ingotId = ingotIds[index];
-        const ownedIngot = gameState.ingotsInventory[ingotId] || 0;
+        const ownedIngot = getItemCount('INGOT', ingotId);
         
         let materialDesc = `${ingotNames[ingotId]}×${materials.ingot}(${ownedIngot})`;
         if (materials.prevTool) {
@@ -4560,14 +4565,14 @@ function getMaxForgeToolCount(toolType, toolIndex) {
     if (toolType === 'hammer') {
         const ingotIds = ['cyan_ingot', 'red_copper_ingot', 'feather_ingot', 'white_silver_ingot', 'hell_steel_ingot', 'thunder_steel_ingot', 'brilliant_crystal', 'star_crystal'];
         const ingotId = ingotIds[toolIndex];
-        const ownedIngot = gameState.ingotsInventory[ingotId] || 0;
+        const ownedIngot = getItemCount('INGOT', ingotId);
         maxCount = Math.min(maxCount, Math.floor(ownedIngot / materials.ingot));
     } else {
         // 其他工具使用矿石和木板
         const oreIds = ['cyan_ore', 'red_iron', 'feather_ore', 'hell_ore', 'white_ore', 'thunder_ore', 'brilliant', 'star_ore'];
         const oreId = oreIds[toolIndex];
         const ownedOre = getItemCount('ORE', oreId);
-        const ownedPlank = gameState.planksInventory[CONFIG.plankIdMapping[toolIndex]] || 0;
+        const ownedPlank = getItemCount('PLANK', CONFIG.plankIdMapping[toolIndex]);
         maxCount = Math.min(maxCount, Math.floor(ownedOre / materials.ore));
         maxCount = Math.min(maxCount, Math.floor(ownedPlank / materials.plank));
     }
@@ -4594,7 +4599,7 @@ function canForgeTool(toolType, index) {
     if (toolType === 'hammer') {
         const ingotIds = ['cyan_ingot', 'red_copper_ingot', 'feather_ingot', 'white_silver_ingot', 'hell_steel_ingot', 'thunder_steel_ingot', 'brilliant_crystal', 'star_crystal'];
         const ingotId = ingotIds[index];
-        const ownedIngot = gameState.ingotsInventory[ingotId] || 0;
+        const ownedIngot = getItemCount('INGOT', ingotId);
         if (ownedIngot < materials.ingot) return false;
     } else {
         // 其他工具使用矿石和木板
@@ -5922,10 +5927,7 @@ function completeEssenceOnce(essenceId) {
     if (!essence) return;
     
     // 添加精华
-    if (!gameState.essencesInventory[essenceId]) {
-        gameState.essencesInventory[essenceId] = 0;
-    }
-    gameState.essencesInventory[essenceId]++;
+    addItem('ESSENCE', essenceId, 1);
     
     // 增加经验
     gameState.alchemyExp += essence.exp;
@@ -8101,7 +8103,7 @@ function calculateMaxActionCount(type, id, itemId, requestedCount) {
         const plank = CONFIG.woodPlanks.find(p => p.id === id);
         if (plank) {
             for (const [matId, need] of Object.entries(plank.materials)) {
-                const owned = gameState.woodcuttingInventory[matId] || 0;
+                const owned = getItemCount('WOOD', matId);
                 const possible = Math.floor(owned / need);
                 maxCount = Math.min(maxCount, possible);
             }
@@ -8110,7 +8112,7 @@ function calculateMaxActionCount(type, id, itemId, requestedCount) {
         const ingot = CONFIG.ingots.find(i => i.id === id);
         if (ingot) {
             for (const [matId, need] of Object.entries(ingot.materials)) {
-                const owned = gameState.miningInventory[matId] || 0;
+                const owned = getItemCount('ORE', matId);
                 const possible = Math.floor(owned / need);
                 maxCount = Math.min(maxCount, possible);
             }
@@ -8126,7 +8128,7 @@ function calculateMaxActionCount(type, id, itemId, requestedCount) {
         const fabric = CONFIG.fabrics.find(f => f.id === id);
         if (fabric) {
             for (const [matId, need] of Object.entries(fabric.materials)) {
-                const owned = gameState.gatheringInventory[matId] || 0;
+                const owned = getItemCount('GATHERING', matId);
                 const possible = Math.floor(owned / need);
                 maxCount = Math.min(maxCount, possible);
             }
@@ -8135,7 +8137,7 @@ function calculateMaxActionCount(type, id, itemId, requestedCount) {
         const potion = CONFIG.potions.find(p => p.id === id);
         if (potion) {
             for (const [matId, need] of Object.entries(potion.materials)) {
-                const owned = gameState.gatheringInventory[matId] || 0;
+                const owned = getItemCount('GATHERING', matId);
                 const possible = Math.floor(owned / need);
                 maxCount = Math.min(maxCount, possible);
             }
@@ -8144,7 +8146,7 @@ function calculateMaxActionCount(type, id, itemId, requestedCount) {
         const essence = CONFIG.essences.find(e => e.id === id);
         if (essence) {
             for (const [matId, need] of Object.entries(essence.materials)) {
-                const owned = gameState.gatheringInventory[matId] || 0;
+                const owned = getItemCount('GATHERING', matId);
                 const possible = Math.floor(owned / need);
                 maxCount = Math.min(maxCount, possible);
             }
@@ -8154,14 +8156,14 @@ function calculateMaxActionCount(type, id, itemId, requestedCount) {
         if (brew) {
             for (const [matId, need] of Object.entries(brew.materials)) {
                 // 检查采集物品
-                let owned = gameState.gatheringInventory[matId] || 0;
+                let owned = getItemCount('GATHERING', matId);
                 // 检查精华
                 if (owned === 0) {
-                    owned = gameState.essencesInventory[matId] || 0;
+                    owned = getItemCount('ESSENCE', matId);
                 }
                 // 检查代币
                 if (owned === 0) {
-                    owned = gameState.tokensInventory[matId] || 0;
+                    owned = getItemCount('TOKEN', matId);
                 }
                 const possible = Math.floor(owned / need);
                 maxCount = Math.min(maxCount, possible);
