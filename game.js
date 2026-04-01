@@ -728,33 +728,52 @@ function hasEnoughItems(itemType, id, count) {
     return getInventoryCount(itemType, id) >= count;
 }
 
-// 工具相关辅助函数
-function getToolConfigKey(toolType) {
-    const toolTypeMap = {
-        'axe': 'axes', 'pickaxe': 'pickaxes', 'chisel': 'chisels',
-        'needle': 'needles', 'scythe': 'scythes', 'hammer': 'hammers',
-        'tongs': 'tongs', 'rod': 'rods'
-    };
-    return toolTypeMap[toolType] || 'scythes';
+// ============ 物品操作辅助函数（基于 ITEM_TYPES）============
+
+// 获取物品配置
+function getItemConfig(itemTypeKey, id) {
+    const itemType = ITEM_TYPES[itemTypeKey];
+    if (!itemType || !itemType.getConfig) return null;
+    return itemType.getConfig(id);
 }
 
-function getToolEquipKey(subtype) {
-    const equipKeyMap = {
-        'axes': 'axe', 'pickaxes': 'pickaxe', 'chisels': 'chisel',
-        'needles': 'needle', 'scythes': 'scythe', 'hammers': 'hammer',
-        'tongs': 'tongs', 'rods': 'rod'
-    };
-    return equipKeyMap[subtype];
+// 获取物品配置索引
+function getItemConfigIndex(itemTypeKey, id) {
+    const itemType = ITEM_TYPES[itemTypeKey];
+    if (!itemType || !itemType.getConfigIndex) return -1;
+    return itemType.getConfigIndex(id);
 }
 
-function getToolByTypeAndIndex(toolType, toolIndex) {
-    const configKey = getToolConfigKey(toolType);
-    return CONFIG.tools[configKey]?.[toolIndex];
+// 通用物品添加
+function addItem(itemTypeKey, id, count = 1) {
+    const itemType = ITEM_TYPES[itemTypeKey];
+    if (!itemType) return;
+    const inventory = gameState[itemType.inventoryKey];
+    if (!inventory) return;
+    inventory[id] = (inventory[id] || 0) + count;
 }
 
-function getToolInventory(toolType) {
-    const configKey = getToolConfigKey(toolType);
-    return gameState.toolsInventory[configKey] || [];
+// 通用物品移除
+function removeItem(itemTypeKey, id, count = 1) {
+    const itemType = ITEM_TYPES[itemTypeKey];
+    if (!itemType) return;
+    const inventory = gameState[itemType.inventoryKey];
+    if (!inventory) return;
+    inventory[id] = Math.max(0, (inventory[id] || 0) - count);
+}
+
+// 通用物品数量获取
+function getItemCount(itemTypeKey, id) {
+    const itemType = ITEM_TYPES[itemTypeKey];
+    if (!itemType) return 0;
+    const inventory = gameState[itemType.inventoryKey];
+    if (!inventory) return 0;
+    return inventory[id] || 0;
+}
+
+// 检查物品是否足够
+function hasItem(itemTypeKey, id, count = 1) {
+    return getItemCount(itemTypeKey, id) >= count;
 }
 
 // ============ 游戏状态 ============
@@ -2548,11 +2567,8 @@ function completeWoodcuttingOnce(treeId) {
     // 随机掉落1-3个（各33.3%概率）
     const dropCount = Math.floor(Math.random() * 3) + 1;
     
-    // 添加对应的木材到物品存储
-    if (!gameState.woodcuttingInventory[treeId]) {
-        gameState.woodcuttingInventory[treeId] = 0;
-    }
-    gameState.woodcuttingInventory[treeId] += dropCount;
+    // 添加对应的木材到物品存储（使用辅助函数）
+    addItem('WOOD', treeId, dropCount);
     
     // 检查是否获得伐木代币
     const token = tryGetToken('wood_token', treeIndex, 'standard');
@@ -2666,11 +2682,8 @@ function completeMiningOnce(oreId) {
     // 随机掉落1-3个（各33.3%概率）
     const dropCount = Math.floor(Math.random() * 3) + 1;
     
-    // 添加对应的矿石到物品存储
-    if (!gameState.miningInventory[oreId]) {
-        gameState.miningInventory[oreId] = 0;
-    }
-    gameState.miningInventory[oreId] += dropCount;
+    // 添加对应的矿石到物品存储（使用辅助函数）
+    addItem('ORE', oreId, dropCount);
     
     // 检查是否获得挖矿代币
     const token = tryGetToken('mining_token', oreIndex, 'standard');
@@ -2852,21 +2865,13 @@ function completeGatheringOnce(type, locationId, itemId) {
     const location = CONFIG.gatheringLocations.find(l => l.id === locationId);
     const locationIndex = CONFIG.gatheringLocations.findIndex(l => l.id === locationId);
     
-    // 初始化物品仓库（如果不存在）
-    if (!gameState.gatheringInventory) {
-        gameState.gatheringInventory = {};
-    }
-    
     let rewards = [];
     
     if (type === 'gathering_item' && itemId) {
         // 单个物品采集 - 100% 获得
         const item = location.items.find(i => i.id === itemId);
         const dropCount = getGatheringDropCount(itemId);
-        if (!gameState.gatheringInventory[item.id]) {
-            gameState.gatheringInventory[item.id] = 0;
-        }
-        gameState.gatheringInventory[item.id] += dropCount;
+        addItem('GATHERING', item.id, dropCount);
         rewards.push({ icon: item.icon, name: item.name, amount: dropCount });
     } else {
         // 全采集 - 每次行动 100% 成功，但每种物品独立 30% 概率
@@ -2874,10 +2879,7 @@ function completeGatheringOnce(type, locationId, itemId) {
             if (Math.random() < 0.3) {
                 // 先确定获得这个物品，再计算数量
                 const dropCount = getGatheringDropCount(item.id);
-                if (!gameState.gatheringInventory[item.id]) {
-                    gameState.gatheringInventory[item.id] = 0;
-                }
-                gameState.gatheringInventory[item.id] += dropCount;
+                addItem('GATHERING', item.id, dropCount);
                 rewards.push({ icon: item.icon, name: item.name, amount: dropCount });
             }
         });
@@ -3906,16 +3908,13 @@ function completeCraftingOnce(plankId) {
     const plankIndex = CONFIG.woodPlanks.findIndex(p => p.id === plankId);
     if (!plank) return;
     
-    // 消耗材料
+    // 消耗材料（使用辅助函数）
     for (const [woodId, count] of Object.entries(plank.materials)) {
-        gameState.woodcuttingInventory[woodId] -= count;
+        removeItem('WOOD', woodId, count);
     }
     
-    // 添加木板到存储
-    if (!gameState.planksInventory[plankId]) {
-        gameState.planksInventory[plankId] = 0;
-    }
-    gameState.planksInventory[plankId]++;
+    // 添加木板到存储（使用辅助函数）
+    addItem('PLANK', plankId, 1);
     
     // 检查是否获得制作代币
     const token = tryGetToken('crafting_token', plankIndex, 'standard');
@@ -4954,16 +4953,13 @@ function completeForgingOnce(ingotId) {
     const ingotIndex = CONFIG.ingots.findIndex(i => i.id === ingotId);
     if (!ingot) return;
     
-    // 消耗材料
+    // 消耗材料（使用辅助函数）
     for (const [oreId, count] of Object.entries(ingot.materials)) {
-        gameState.miningInventory[oreId] -= count;
+        removeItem('ORE', oreId, count);
     }
     
-    // 添加矿锭到存储
-    if (!gameState.ingotsInventory[ingotId]) {
-        gameState.ingotsInventory[ingotId] = 0;
-    }
-    gameState.ingotsInventory[ingotId]++;
+    // 添加矿锭到存储（使用辅助函数）
+    addItem('INGOT', ingotId, 1);
     
     // 检查是否获得锻造代币
     const token = tryGetToken('forging_token', ingotIndex, 'standard');
@@ -5245,16 +5241,13 @@ function completeTailoringOnce(fabricId) {
     const fabricIndex = CONFIG.fabrics.findIndex(f => f.id === fabricId);
     if (!fabric) return;
     
-    // 消耗材料
+    // 消耗材料（使用辅助函数）
     for (const [itemId, count] of Object.entries(fabric.materials)) {
-        gameState.gatheringInventory[itemId] -= count;
+        removeItem('GATHERING', itemId, count);
     }
     
-    // 添加布料到存储
-    if (!gameState.fabricsInventory[fabricId]) {
-        gameState.fabricsInventory[fabricId] = 0;
-    }
-    gameState.fabricsInventory[fabricId]++;
+    // 添加布料到存储（使用辅助函数）
+    addItem('FABRIC', fabricId, 1);
     
     // 检查是否获得缝制代币
     const token = tryGetToken('tailoring_token', fabricIndex, 'tailoring');
@@ -5796,11 +5789,8 @@ function completeBrewingOnce(brewId) {
     const brew = CONFIG.brews.find(b => b.id === brewId);
     if (!brew) return;
     
-    // 添加酒类
-    if (!gameState.brewsInventory[brewId]) {
-        gameState.brewsInventory[brewId] = 0;
-    }
-    gameState.brewsInventory[brewId]++;
+    // 添加酒类（使用辅助函数）
+    addItem('BREW', brewId, 1);
     
     // 检查是否获得酿造代币
     const brewIndex = CONFIG.brews.findIndex(b => b.id === brewId);
@@ -6178,14 +6168,13 @@ function completeAlchemyOnce(potionId) {
     const potionIndex = CONFIG.potions.findIndex(p => p.id === potionId);
     if (!potion) return;
     
+    // 消耗材料（使用辅助函数）
     for (const [itemId, count] of Object.entries(potion.materials)) {
-        gameState.gatheringInventory[itemId] -= count;
+        removeItem('GATHERING', itemId, count);
     }
     
-    if (!gameState.potionsInventory[potionId]) {
-        gameState.potionsInventory[potionId] = 0;
-    }
-    gameState.potionsInventory[potionId]++;
+    // 添加药水（使用辅助函数）
+    addItem('POTION', potionId, 1);
     
     // 检查是否获得制药代币
     const token = tryGetToken('alchemy_token', potionIndex, 'standard');
