@@ -1403,19 +1403,30 @@ function renderMerchantWarehouse() {
     
     // 工具（斧、镐、凿、针、镰、锤）
     const toolTypes = [
-        { key: 'axes', tools: CONFIG.tools.axes },
-        { key: 'pickaxes', tools: CONFIG.tools.pickaxes },
-        { key: 'chisels', tools: CONFIG.tools.chisels },
-        { key: 'needles', tools: CONFIG.tools.needles },
-        { key: 'scythes', tools: CONFIG.tools.scythes },
-        { key: 'hammers', tools: CONFIG.tools.hammers }
+        { key: 'axes', tools: CONFIG.tools.axes, equipKey: 'axe' },
+        { key: 'pickaxes', tools: CONFIG.tools.pickaxes, equipKey: 'pickaxe' },
+        { key: 'chisels', tools: CONFIG.tools.chisels, equipKey: 'chisel' },
+        { key: 'needles', tools: CONFIG.tools.needles, equipKey: 'needle' },
+        { key: 'scythes', tools: CONFIG.tools.scythes, equipKey: 'scythe' },
+        { key: 'hammers', tools: CONFIG.tools.hammers, equipKey: 'hammer' },
+        { key: 'tongs', tools: CONFIG.tools.tongs, equipKey: 'tongs' },
+        { key: 'rods', tools: CONFIG.tools.rods, equipKey: 'rod' }
     ];
-    toolTypes.forEach(({ key, tools }) => {
+    toolTypes.forEach(({ key, tools, equipKey }) => {
         const inventory = gameState.toolsInventory[key] || [];
-        inventory.forEach(toolId => {
+        // 过滤掉已装备的工具
+        const unequippedTools = inventory.filter(toolId => gameState.equipment[equipKey] !== toolId);
+        
+        // 按工具ID分组统计
+        const toolCounts = {};
+        unequippedTools.forEach(toolId => {
+            toolCounts[toolId] = (toolCounts[toolId] || 0) + 1;
+        });
+        
+        Object.entries(toolCounts).forEach(([toolId, count]) => {
             const tool = tools.find(t => t.id === toolId);
             if (tool) {
-                allItems.push({ id: toolId, type: 'tool', subtype: key, icon: tool.icon, name: tool.name, count: 1 });
+                allItems.push({ id: toolId, type: 'tool', subtype: key, icon: tool.icon, name: tool.name, count });
             }
         });
     });
@@ -1759,7 +1770,16 @@ function getItemCount(item) {
     if (item.type === 'brew') return gameState.brewsInventory[item.id] || 0;
     if (item.type === 'tool') {
         const inventory = gameState.toolsInventory[item.subtype] || [];
-        return inventory.includes(item.id) ? 1 : 0;
+        // 获取装备槽键名
+        const equipKeyMap = {
+            'axes': 'axe', 'pickaxes': 'pickaxe', 'chisels': 'chisel',
+            'needles': 'needle', 'scythes': 'scythe', 'hammers': 'hammer',
+            'tongs': 'tongs', 'rods': 'rod'
+        };
+        const equipKey = equipKeyMap[item.subtype];
+        // 过滤掉已装备的工具，返回未装备数量
+        const equippedId = gameState.equipment[equipKey];
+        return inventory.filter(id => id !== equippedId).length;
     }
     if (item.type === 'token') return gameState.tokensInventory[item.id] || 0;
     return 0;
@@ -1995,14 +2015,23 @@ function setupMerchantListeners() {
                     else if (item.type === 'essence') gameState.essencesInventory[item.id] -= count;
                     else if (item.type === 'brew') gameState.brewsInventory[item.id] -= count;
                     else if (item.type === 'tool') {
-                        // 工具每次只能卖1个
+                        // 批量出售未装备的工具
                         const inventory = gameState.toolsInventory[item.subtype] || [];
-                        const idx = inventory.indexOf(item.id);
-                        if (idx > -1) inventory.splice(idx, 1);
-                        // 如果已装备，卸下
-                        const equipKey = item.subtype.slice(0, -1); // axes -> axe
-                        if (gameState.equipment[equipKey] === item.id) {
-                            gameState.equipment[equipKey] = null;
+                        const equipKeyMap = {
+                            'axes': 'axe', 'pickaxes': 'pickaxe', 'chisels': 'chisel',
+                            'needles': 'needle', 'scythes': 'scythe', 'hammers': 'hammer',
+                            'tongs': 'tongs', 'rods': 'rod'
+                        };
+                        const equipKey = equipKeyMap[item.subtype];
+                        const equippedId = gameState.equipment[equipKey];
+                        
+                        // 移除指定数量的未装备工具
+                        let removed = 0;
+                        for (let i = inventory.length - 1; i >= 0 && removed < count; i--) {
+                            if (inventory[i] === item.id && inventory[i] !== equippedId) {
+                                inventory.splice(i, 1);
+                                removed++;
+                            }
                         }
                     }
                 });
@@ -5070,41 +5099,59 @@ function renderToolsInventory() {
     if (!container) return;
     
     const toolTypes = [
-        { key: 'axes', config: 'axes', name: '斧头' },
-        { key: 'pickaxes', config: 'pickaxes', name: '镐子' },
-        { key: 'chisels', config: 'chisels', name: '凿子' },
-        { key: 'needles', config: 'needles', name: '针' },
-        { key: 'scythes', config: 'scythes', name: '镰刀' },
-        { key: 'hammers', config: 'hammers', name: '锤' }
+        { key: 'axes', config: 'axes', name: '斧头', equipKey: 'axe' },
+        { key: 'pickaxes', config: 'pickaxes', name: '镐子', equipKey: 'pickaxe' },
+        { key: 'chisels', config: 'chisels', name: '凿子', equipKey: 'chisel' },
+        { key: 'needles', config: 'needles', name: '针', equipKey: 'needle' },
+        { key: 'scythes', config: 'scythes', name: '镰刀', equipKey: 'scythe' },
+        { key: 'hammers', config: 'hammers', name: '锤', equipKey: 'hammer' },
+        { key: 'tongs', config: 'tongs', name: '小桶', equipKey: 'tongs' },
+        { key: 'rods', config: 'rods', name: '搅拌棒', equipKey: 'rod' }
     ];
     
-    let hasTools = false;
     let html = '';
     
     toolTypes.forEach(type => {
         const inventory = gameState.toolsInventory[type.key] || [];
-        if (inventory.length > 0) {
-            hasTools = true;
-            inventory.forEach(toolId => {
-                const tool = CONFIG.tools[type.config].find(t => t.id === toolId);
-                if (tool) {
-                    const isEquipped = gameState.equipment[type.key.slice(0, -1)] === toolId || 
-                                       (type.key === 'axes' && gameState.equipment.axe === toolId) ||
-                                       (type.key === 'pickaxes' && gameState.equipment.pickaxe === toolId) ||
-                                       (type.key === 'chisels' && gameState.equipment.chisel === toolId) ||
-                                       (type.key === 'needles' && gameState.equipment.needle === toolId) ||
-                                       (type.key === 'scythes' && gameState.equipment.scythe === toolId) ||
-                                       (type.key === 'hammers' && gameState.equipment.hammer === toolId);
-                    html += `
-                        <div class="storage-item-small ${isEquipped ? 'equipped' : ''}">
-                            <div class="storage-item-small-icon">${tool.icon}</div>
-                            <div class="storage-item-small-name">${tool.name} ${isEquipped ? '✓' : ''}</div>
-                            <div class="storage-item-small-count">${isEquipped ? '已装备' : ''}</div>
-                        </div>
-                    `;
-                }
-            });
-        }
+        if (inventory.length === 0) return;
+        
+        // 按工具ID分组统计数量
+        const toolCounts = {};
+        inventory.forEach(toolId => {
+            toolCounts[toolId] = (toolCounts[toolId] || 0) + 1;
+        });
+        
+        // 遍历每种工具
+        Object.entries(toolCounts).forEach(([toolId, count]) => {
+            const tool = CONFIG.tools[type.config].find(t => t.id === toolId);
+            if (!tool) return;
+            
+            const isEquipped = gameState.equipment[type.equipKey] === toolId;
+            const equippedCount = isEquipped ? 1 : 0;
+            const unequippedCount = count - equippedCount;
+            
+            // 已装备的工具单独一格
+            if (isEquipped) {
+                html += `
+                    <div class="storage-item-small equipped">
+                        <div class="storage-item-small-icon">${tool.icon}</div>
+                        <div class="storage-item-small-name">${tool.name} ✓</div>
+                        <div class="storage-item-small-count">已装备</div>
+                    </div>
+                `;
+            }
+            
+            // 未装备的工具单独一格（显示数量）
+            if (unequippedCount > 0) {
+                html += `
+                    <div class="storage-item-small">
+                        <div class="storage-item-small-icon">${tool.icon}</div>
+                        <div class="storage-item-small-name">${tool.name}</div>
+                        <div class="storage-item-small-count">×${unequippedCount}</div>
+                    </div>
+                `;
+            }
+        });
     });
     
     container.innerHTML = html || '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">暂无锻造工具</div>';
