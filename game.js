@@ -932,12 +932,7 @@ const ACTION_TYPES = {
         checkMaterials: (config) => canTailorFabric(config),
         consumeMaterials: (config) => {
             for (const [itemId, count] of Object.entries(config.materials)) {
-                // 检查是采集物品还是木板
-                if (getItemCount('GATHERING', itemId) >= count) {
-                    removeItem('GATHERING', itemId, count);
-                } else if (getItemCount('PLANK', itemId) >= count) {
-                    removeItem('PLANK', itemId, count);
-                }
+                removeItem('GATHERING', itemId, count);
             }
         },
         getRewards: (config, configIndex) => {
