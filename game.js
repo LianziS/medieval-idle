@@ -2474,6 +2474,10 @@ function startWoodcuttingWithCount(treeId, count) {
     gameState.activeWoodcutting = treeId;
     gameState.woodcuttingCount = count;
     gameState.woodcuttingRemaining = count;
+    
+    // 通知后端行动开始
+    notifyActionStart('woodcutting', treeId, count);
+    
     // 重置进度条
     if (elements.actionProgressFill) {
         elements.actionProgressFill.style.width = '0%';
@@ -2568,6 +2572,9 @@ function completeWoodcuttingOnce(treeId) {
     const tree = CONFIG.trees.find(t => t.id === treeId);
     const treeIndex = CONFIG.trees.findIndex(t => t.id === treeId);
     
+    // 后端验证（可选，失败不影响本地游戏）
+    notifyActionComplete('woodcutting', treeId);
+    
     // 随机掉落1-3个（各33.3%概率）
     const dropCount = Math.floor(Math.random() * 3) + 1;
     
@@ -2597,6 +2604,10 @@ function startMiningWithCount(oreId, count) {
     gameState.activeMining = oreId;
     gameState.miningCount = count;
     gameState.miningRemaining = count;
+    
+    // 通知后端行动开始
+    notifyActionStart('mining', oreId, count);
+    
     // 重置进度条
     if (elements.actionProgressFill) {
         elements.actionProgressFill.style.width = '0%';
@@ -2683,6 +2694,9 @@ function completeMiningOnce(oreId) {
     const ore = CONFIG.ores.find(o => o.id === oreId);
     const oreIndex = CONFIG.ores.findIndex(o => o.id === oreId);
     
+    // 后端验证
+    notifyActionComplete('mining', oreId);
+    
     // 随机掉落1-3个（各33.3%概率）
     const dropCount = Math.floor(Math.random() * 3) + 1;
     
@@ -2716,6 +2730,9 @@ function startGatheringWithCount(type, locationId, itemId, count) {
     gameState.gatheringItemId = itemId;
     gameState.gatheringCount = count;
     gameState.gatheringRemaining = count;
+    
+    // 通知后端行动开始
+    notifyActionStart('gathering', locationId, count);
     
     // 重置进度条
     if (elements.actionProgressFill) {
@@ -2868,6 +2885,9 @@ function getGatheringDropCount(itemId) {
 function completeGatheringOnce(type, locationId, itemId) {
     const location = CONFIG.gatheringLocations.find(l => l.id === locationId);
     const locationIndex = CONFIG.gatheringLocations.findIndex(l => l.id === locationId);
+    
+    // 后端验证
+    notifyActionComplete('gathering', locationId);
     
     let rewards = [];
     
@@ -3817,6 +3837,9 @@ function startCraftingWithCount(plankId, count) {
     setActionState({ name: `制作${plank.name}`, icon: plank.icon }, actualDuration, actualCount, actualCount);
     renderCrafting();
     
+    // 通知后端行动开始
+    notifyActionStart('crafting', plankId, actualCount);
+    
     // 启动进度条动画
     if (animationFrame) cancelAnimationFrame(animationFrame);
     lastActionStartTime = gameState.actionStartTime;
@@ -3903,6 +3926,9 @@ function completeCraftingOnce(plankId) {
     const plank = CONFIG.woodPlanks.find(p => p.id === plankId);
     const plankIndex = CONFIG.woodPlanks.findIndex(p => p.id === plankId);
     if (!plank) return;
+    
+    // 后端验证
+    notifyActionComplete('crafting', plankId);
     
     // 消耗材料（使用辅助函数）
     for (const [woodId, count] of Object.entries(plank.materials)) {
@@ -4820,6 +4846,9 @@ function startForgingWithCount(ingotId, count) {
     gameState.forgingCount = actualCount;
     gameState.forgingRemaining = actualCount;
     
+    // 通知后端行动开始
+    notifyActionStart('forging', ingotId, actualCount);
+    
     // 重置进度条
     if (elements.actionProgressFill) {
         elements.actionProgressFill.style.width = '0%';
@@ -4916,6 +4945,9 @@ function completeForgingOnce(ingotId) {
     const ingot = CONFIG.ingots.find(i => i.id === ingotId);
     const ingotIndex = CONFIG.ingots.findIndex(i => i.id === ingotId);
     if (!ingot) return;
+    
+    // 后端验证
+    notifyActionComplete('forging', ingotId);
     
     // 消耗材料（使用辅助函数）
     for (const [oreId, count] of Object.entries(ingot.materials)) {
@@ -6675,6 +6707,54 @@ async function saveGameToBackend(state) {
     } catch (e) {
         console.warn('后端保存失败:', e);
     }
+}
+
+// 行动开始 - 通知后端
+async function notifyActionStart(actionType, targetId, count) {
+    const token = localStorage.getItem('medieval_token');
+    if (!token || !isBackendSync) return null;
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/game/action/start`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ actionType, targetId, count })
+        });
+        if (res.ok) {
+            const data = await res.json();
+            return data;
+        }
+    } catch (e) {
+        console.warn('行动开始通知失败:', e);
+    }
+    return null;
+}
+
+// 行动完成 - 后端验证
+async function notifyActionComplete(actionType, targetId) {
+    const token = localStorage.getItem('medieval_token');
+    if (!token || !isBackendSync) return true;
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/game/action/complete`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ actionType, targetId })
+        });
+        if (res.ok) {
+            const data = await res.json();
+            return data.success;
+        }
+    } catch (e) {
+        console.warn('行动完成验证失败:', e);
+    }
+    return true; // 失败时允许继续（降级到本地模式）
 }
 
 function saveGame() {

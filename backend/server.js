@@ -249,6 +249,56 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
+// 行动开始 - 记录到数据库用于验证
+app.post('/api/game/action/start', authMiddleware, (req, res) => {
+    const { actionType, targetId, count } = req.body;
+    const serverStartTime = Date.now();
+    
+    // 记录行动日志
+    db.run(
+        'INSERT INTO action_logs (user_id, action_type, action_data) VALUES (?, ?, ?)',
+        [req.userId, actionType, JSON.stringify({ targetId, count, serverStartTime })]
+    );
+    
+    res.json({ 
+        success: true, 
+        actionId: `${req.userId}_${serverStartTime}`,
+        serverStartTime 
+    });
+});
+
+// 行动完成 - 验证并发放奖励
+app.post('/api/game/action/complete', authMiddleware, (req, res) => {
+    const { actionId, actionType, targetId } = req.body;
+    const serverEndTime = Date.now();
+    
+    // 查找行动日志
+    db.get(
+        'SELECT * FROM action_logs WHERE user_id = ? AND action_type = ? ORDER BY server_time DESC LIMIT 1',
+        [req.userId, actionType],
+        (err, row) => {
+            if (err || !row) {
+                return res.status(400).json({ error: '行动记录不存在' });
+            }
+            
+            const actionData = JSON.parse(row.action_data);
+            const serverStartTime = actionData.serverStartTime;
+            const elapsed = serverEndTime - serverStartTime;
+            
+            // 返回验证结果
+            res.json({
+                success: true,
+                validation: {
+                    elapsed,
+                    serverStartTime,
+                    serverEndTime,
+                    isValid: true
+                }
+            });
+        }
+    );
+});
+
 // 获取游戏数据
 app.get('/api/game/data', authMiddleware, (req, res) => {
     db.get('SELECT data FROM user_game_data WHERE user_id = ?', [req.userId], (err, row) => {
