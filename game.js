@@ -4381,7 +4381,7 @@ function renderToolsList() {
             const toolType = this.dataset.toolType;
             const toolIndex = parseInt(this.dataset.toolIndex);
             const toolId = this.dataset.toolId;
-            const toolConfigKey = toolType === 'axe' ? 'axes' : toolType === 'pickaxe' ? 'pickaxes' : toolType === 'chisel' ? 'chisels' : toolType === 'needle' ? 'needles' : toolType === 'hammer' ? 'hammers' : 'scythes';
+            const toolConfigKey = toolType === 'axe' ? 'axes' : toolType === 'pickaxe' ? 'pickaxes' : toolType === 'chisel' ? 'chisels' : toolType === 'needle' ? 'needles' : toolType === 'scythe' ? 'scythes' : toolType === 'hammer' ? 'hammers' : toolType === 'tongs' ? 'tongs' : 'rods';
             const tool = CONFIG.tools[toolConfigKey][toolIndex];
             
             // 检查等级
@@ -4544,7 +4544,7 @@ function scheduleForgingTool(toolId, toolType, toolIndex) {
         return;
     }
     
-    const toolsKey = toolType === 'axe' ? 'axes' : toolType === 'pickaxe' ? 'pickaxes' : toolType === 'chisel' ? 'chisels' : toolType === 'needle' ? 'needles' : toolType === 'hammer' ? 'hammers' : 'scythes';
+    const toolsKey = toolType === 'axe' ? 'axes' : toolType === 'pickaxe' ? 'pickaxes' : toolType === 'chisel' ? 'chisels' : toolType === 'needle' ? 'needles' : toolType === 'scythe' ? 'scythes' : toolType === 'hammer' ? 'hammers' : toolType === 'tongs' ? 'tongs' : 'rods';
     const tool = CONFIG.tools[toolsKey][toolIndex];
     if (!tool) return;
     
@@ -6935,7 +6935,8 @@ function loadGame() {
             if (gameState.activeForgingTool && gameState.forgingToolRemaining > 0) {
                 const toolType = gameState.forgingToolType;
                 const toolIndex = gameState.forgingToolIndex;
-                const tools = CONFIG.tools[toolType === 'axe' ? 'axes' : 'pickaxes'];
+                const toolsKey = toolType === 'axe' ? 'axes' : toolType === 'pickaxe' ? 'pickaxes' : toolType === 'chisel' ? 'chisels' : toolType === 'needle' ? 'needles' : toolType === 'scythe' ? 'scythes' : toolType === 'hammer' ? 'hammers' : toolType === 'tongs' ? 'tongs' : 'rods';
+                const tools = CONFIG.tools[toolsKey];
                 const tool = tools[toolIndex];
                 
                 if (tool && canForgeTool(toolType, toolIndex)) {
@@ -6947,25 +6948,8 @@ function loadGame() {
                     const actualCompleted = Math.min(completedCount, gameState.forgingToolRemaining);
                     for (let i = 0; i < actualCompleted; i++) {
                         if (canForgeTool(toolType, toolIndex)) {
-                            // 消耗材料并添加工具
-                            const materials = CONFIG.toolCraftingMaterials[toolType === 'axe' ? 'axes' : 'pickaxes'][toolIndex];
-                            const ingotId = CONFIG.ingotIdMapping[toolIndex];
-                            const plankId = CONFIG.plankIdMapping[toolIndex];
-                            
-                            gameState.ingotsInventory[ingotId] -= materials.ore;
-                            gameState.planksInventory[plankId] -= materials.plank;
-                            
-                            if (materials.prevTool) {
-                                const inventory = toolType === 'axe' ? gameState.toolsInventory.axes : gameState.toolsInventory.pickaxes;
-                                const idx = inventory.indexOf(materials.prevTool);
-                                if (idx > -1) inventory.splice(idx, 1);
-                            }
-                            
-                            const inventory = toolType === 'axe' ? gameState.toolsInventory.axes : gameState.toolsInventory.pickaxes;
-                            if (!inventory.includes(tool.id)) inventory.push(tool.id);
-                            
-                            addExp(tool.exp);
-                            addSkillExp('forging', tool.exp);
+                            // 消耗材料并添加工具（复用completeForgingToolOnce的逻辑）
+                            completeForgingToolOnce(tool.id, toolType, toolIndex);
                         }
                     }
                     gameState.forgingToolRemaining -= actualCompleted;
@@ -7798,8 +7782,10 @@ function getActionIcon(type, id) {
             const ingot = CONFIG.ingots.find(i => i.id === id);
             return ingot ? ingot.icon : '⚒️';
         case 'forging_tool':
-            const tools = CONFIG.tools[pendingAction.itemId?.toolType === 'axe' ? 'axes' : 'pickaxes'];
-            const tool = tools?.find(t => t.id === id);
+            const toolTypeForKey = pendingAction.itemId?.toolType;
+            const toolsKeyForIcon = toolTypeForKey === 'axe' ? 'axes' : toolTypeForKey === 'pickaxe' ? 'pickaxes' : toolTypeForKey === 'chisel' ? 'chisels' : toolTypeForKey === 'needle' ? 'needles' : toolTypeForKey === 'scythe' ? 'scythes' : toolTypeForKey === 'hammer' ? 'hammers' : toolTypeForKey === 'tongs' ? 'tongs' : 'rods';
+            const toolsForIcon = CONFIG.tools[toolsKeyForIcon];
+            const tool = toolsForIcon?.find(t => t.id === id);
             return tool ? tool.icon : '⚒️';
         case 'tailoring':
             const fabric = CONFIG.fabrics.find(f => f.id === id);
