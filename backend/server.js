@@ -47,6 +47,7 @@ db.serialize(() => {
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
+            email TEXT NOT NULL,
             password_hash TEXT NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             last_login DATETIME
@@ -111,14 +112,17 @@ function authMiddleware(req, res, next) {
 
 // 注册
 app.post('/api/auth/register', async (req, res) => {
-    const { username, password } = req.body;
+    const { username, email, password } = req.body;
     
     // 验证
-    if (!username || !password) {
-        return res.status(400).json({ error: '用户名和密码不能为空' });
+    if (!username || !email || !password) {
+        return res.status(400).json({ error: '用户名、邮箱和密码不能为空' });
     }
     if (!/^[a-zA-Z0-9]{4,16}$/.test(username)) {
         return res.status(400).json({ error: '用户名需要4-16位字母或数字' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ error: '请输入有效的邮箱地址' });
     }
     if (password.length < 6) {
         return res.status(400).json({ error: '密码至少6位' });
@@ -135,8 +139,8 @@ app.post('/api/auth/register', async (req, res) => {
             
             // 创建用户
             db.run(
-                'INSERT INTO users (username, password_hash) VALUES (?, ?)',
-                [username, passwordHash],
+                'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
+                [username, email, passwordHash],
                 function(err) {
                     if (err) return res.status(500).json({ error: '注册失败' });
                     
@@ -285,14 +289,17 @@ app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/login.html'));
 });
 
-// 游戏页
+// 游戏页（兼容 /game 和 /game.html）
 app.get('/game', (req, res) => {
+    res.sendFile(path.join(__dirname, '../index.html'));
+});
+
+app.get('/game.html', (req, res) => {
     res.sendFile(path.join(__dirname, '../index.html'));
 });
 
 // 默认路由
 app.get('/', (req, res) => {
-    // 检查是否有 token
     res.redirect('/login');
 });
 
