@@ -2516,6 +2516,19 @@ body::after {
     font-weight: bold;
 }
 
+.storage-item-small.equipped {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(76, 175, 80, 0.1));
+    border: 1px solid rgba(76, 175, 80, 0.4);
+}
+
+.storage-item-small.equipped .storage-item-small-name {
+    color: #4CAF50;
+}
+
+.storage-item-small.equipped .storage-item-small-count {
+    color: #4CAF50;
+}
+
 /* ============ 仓库二级菜单 ============ */
 .storage-tabs {
     display: flex;

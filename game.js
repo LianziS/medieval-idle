@@ -4401,6 +4401,48 @@ function renderToolsList() {
     });
 }
 
+// 计算工具可锻造的最大次数
+function getMaxForgeToolCount(toolType, toolIndex) {
+    const materialsKey = toolType === 'axe' ? 'axes' : toolType === 'pickaxe' ? 'pickaxes' : toolType === 'chisel' ? 'chisels' : toolType === 'needle' ? 'needles' : toolType === 'hammer' ? 'hammers' : toolType === 'tongs' ? 'tongs' : toolType === 'rod' ? 'rods' : 'scythes';
+    const materials = CONFIG.toolCraftingMaterials[materialsKey][toolIndex];
+    
+    let maxCount = Infinity;
+    
+    // 锤子使用矿锭作为材料
+    if (toolType === 'hammer') {
+        const ingotIds = ['cyan_ingot', 'red_copper_ingot', 'feather_ingot', 'white_silver_ingot', 'hell_steel_ingot', 'thunder_steel_ingot', 'brilliant_crystal', 'star_crystal'];
+        const ingotId = ingotIds[toolIndex];
+        const ownedIngot = gameState.ingotsInventory[ingotId] || 0;
+        maxCount = Math.min(maxCount, Math.floor(ownedIngot / materials.ingot));
+    } else {
+        // 其他工具使用矿石和木板
+        const oreIds = ['cyan_ore', 'red_iron', 'feather_ore', 'hell_ore', 'white_ore', 'thunder_ore', 'brilliant', 'star_ore'];
+        const oreId = oreIds[toolIndex];
+        const ownedOre = gameState.miningInventory[oreId] || 0;
+        const ownedPlank = gameState.planksInventory[CONFIG.plankIdMapping[toolIndex]] || 0;
+        maxCount = Math.min(maxCount, Math.floor(ownedOre / materials.ore));
+        maxCount = Math.min(maxCount, Math.floor(ownedPlank / materials.plank));
+    }
+    
+    // 检查前置工具（每把只能用于锻造一把新工具）
+    if (materials.prevTool) {
+        const inventory = gameState.toolsInventory[materialsKey] || [];
+        const prevToolCount = inventory.filter(id => id === materials.prevTool).length;
+        // 检查是否有未装备的前置工具
+        const equipKeyMap = {
+            'axes': 'axe', 'pickaxes': 'pickaxe', 'chisels': 'chisel',
+            'needles': 'needle', 'scythes': 'scythe', 'hammers': 'hammer',
+            'tongs': 'tongs', 'rods': 'rod'
+        };
+        const equipKey = equipKeyMap[materialsKey];
+        const equippedId = gameState.equipment[equipKey];
+        const unequippedPrevToolCount = equippedId === materials.prevTool ? prevToolCount - 1 : prevToolCount;
+        maxCount = Math.min(maxCount, Math.max(0, unequippedPrevToolCount));
+    }
+    
+    return Math.max(0, maxCount);
+}
+
 function canForgeTool(toolType, index) {
     const materialsKey = toolType === 'axe' ? 'axes' : toolType === 'pickaxe' ? 'pickaxes' : toolType === 'chisel' ? 'chisels' : toolType === 'needle' ? 'needles' : toolType === 'hammer' ? 'hammers' : toolType === 'tongs' ? 'tongs' : toolType === 'rod' ? 'rods' : 'scythes';
     const materials = CONFIG.toolCraftingMaterials[materialsKey][index];
@@ -4448,8 +4490,18 @@ function startForgingToolWithCount(toolId, count, toolType, toolIndex) {
         return;
     }
     
-    // 使用用户选择的次数
-    const actualCount = count;
+    // 使用用户选择的次数，但不超过最大可锻造次数
+    const maxCount = getMaxForgeToolCount(toolType, toolIndex);
+    const actualCount = Math.min(count, maxCount);
+    
+    if (actualCount <= 0) {
+        showToast('❌ 材料不足');
+        return;
+    }
+    
+    if (actualCount < count) {
+        showToast(`⚠️ 材料只够锻造 ${actualCount} 次`);
+    }
     
     gameState.activeForgingTool = toolId;
     gameState.forgingToolCount = actualCount;
