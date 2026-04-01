@@ -5150,6 +5150,8 @@ function renderToolsInventory() {
     const container = document.getElementById('storage-tools-items');
     if (!container) return;
     
+    console.log('🔧 renderToolsInventory v2 - 工具库存刷新');
+    
     const toolTypes = [
         { key: 'axes', config: 'axes', name: '斧头', equipKey: 'axe' },
         { key: 'pickaxes', config: 'pickaxes', name: '镐子', equipKey: 'pickaxe' },
@@ -5179,8 +5181,7 @@ function renderToolsInventory() {
             if (!tool) return;
             
             const isEquipped = gameState.equipment[type.equipKey] === toolId;
-            const equippedCount = isEquipped ? 1 : 0;
-            const unequippedCount = count - equippedCount;
+            const unequippedCount = isEquipped ? count - 1 : count;
             
             // 已装备的工具单独一格
             if (isEquipped) {
