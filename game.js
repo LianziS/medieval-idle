@@ -2188,16 +2188,10 @@ function setupMerchantListeners() {
                     total += count * price;
                     
                     // 从对应库存中扣除指定数量
-                    if (item.type === 'wood') gameState.woodcuttingInventory[item.id] -= count;
-                    else if (item.type === 'ore') gameState.miningInventory[item.id] -= count;
-                    else if (item.type === 'ingot') gameState.ingotsInventory[item.id] -= count;
-                    else if (item.type === 'plank') gameState.planksInventory[item.id] -= count;
-                    else if (item.type === 'fabric') gameState.fabricsInventory[item.id] -= count;
-                    else if (item.type === 'gathering') gameState.gatheringInventory[item.id] -= count;
-                    else if (item.type === 'potion') gameState.potionsInventory[item.id] -= count;
-                    else if (item.type === 'essence') gameState.essencesInventory[item.id] -= count;
-                    else if (item.type === 'brew') gameState.brewsInventory[item.id] -= count;
-                    else if (item.type === 'tool') {
+                    const itemTypeKey = TYPE_TO_ITEM_TYPE[item.type];
+                    if (itemTypeKey) {
+                        removeItem(itemTypeKey, item.id, count);
+                    } else if (item.type === 'tool') {
                         // 批量出售未装备的工具
                         const inventory = gameState.toolsInventory[item.subtype] || [];
                         const equipKey = getToolEquipKey(item.subtype);
@@ -5991,7 +5985,7 @@ function scheduleEssenceExtraction(essenceId) {
     // 开始下一次行动
     // 消耗材料
     for (const [itemId, count] of Object.entries(essence.materials)) {
-        gameState.gatheringInventory[itemId] -= count;
+        removeItem('GATHERING', itemId, count);
     }
     
     // 应用装备加成（搅拌棒加速炼金）
@@ -6979,12 +6973,9 @@ function loadGame() {
                     for (let i = 0; i < actualCompleted; i++) {
                         if (canTailorFabric(fabric)) {
                             for (const [itemId, count] of Object.entries(fabric.materials)) {
-                                gameState.gatheringInventory[itemId] -= count;
+                                removeItem('GATHERING', itemId, count);
                             }
-                            if (!gameState.fabricsInventory[fabric.id]) {
-                                gameState.fabricsInventory[fabric.id] = 0;
-                            }
-                            gameState.fabricsInventory[fabric.id]++;
+                            addItem('FABRIC', fabric.id, 1);
                             addExp(fabric.exp);
                             addSkillExp('tailoring', fabric.exp);
                         }
@@ -7096,19 +7087,16 @@ function loadGame() {
                         if (canBrewDrink(brew)) {
                             // 扣除材料
                             for (const [itemId, count] of Object.entries(brew.materials)) {
-                                if (gameState.gatheringInventory[itemId]) {
-                                    gameState.gatheringInventory[itemId] -= count;
-                                } else if (gameState.essencesInventory[itemId]) {
-                                    gameState.essencesInventory[itemId] -= count;
-                                } else if (gameState.tokensInventory[itemId]) {
-                                    gameState.tokensInventory[itemId] -= count;
+                                if (getItemCount('GATHERING', itemId) > 0) {
+                                    removeItem('GATHERING', itemId, count);
+                                } else if (getItemCount('ESSENCE', itemId) > 0) {
+                                    removeItem('ESSENCE', itemId, count);
+                                } else if (getItemCount('TOKEN', itemId) > 0) {
+                                    removeItem('TOKEN', itemId, count);
                                 }
                             }
                             // 添加产出
-                            if (!gameState.brewsInventory[brew.id]) {
-                                gameState.brewsInventory[brew.id] = 0;
-                            }
-                            gameState.brewsInventory[brew.id]++;
+                            addItem('BREW', brew.id, 1);
                             gameState.brewingExp += brew.exp;
                         }
                     }
@@ -7164,13 +7152,10 @@ function loadGame() {
                         if (canExtractEssence(essence)) {
                             // 扣除材料
                             for (const [itemId, count] of Object.entries(essence.materials)) {
-                                gameState.gatheringInventory[itemId] -= count;
+                                removeItem('GATHERING', itemId, count);
                             }
                             // 添加产出
-                            if (!gameState.essencesInventory[essence.id]) {
-                                gameState.essencesInventory[essence.id] = 0;
-                            }
-                            gameState.essencesInventory[essence.id]++;
+                            addItem('ESSENCE', essence.id, 1);
                             gameState.alchemyExp += essence.exp;
                         }
                     }
