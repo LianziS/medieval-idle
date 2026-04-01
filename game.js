@@ -5150,8 +5150,6 @@ function renderToolsInventory() {
     const container = document.getElementById('storage-tools-items');
     if (!container) return;
     
-    console.log('🔧 renderToolsInventory v2 - 工具库存刷新');
-    
     const toolTypes = [
         { key: 'axes', config: 'axes', name: '斧头', equipKey: 'axe' },
         { key: 'pickaxes', config: 'pickaxes', name: '镐子', equipKey: 'pickaxe' },
@@ -5164,10 +5162,13 @@ function renderToolsInventory() {
     ];
     
     let html = '';
+    let totalItems = 0;
     
     toolTypes.forEach(type => {
         const inventory = gameState.toolsInventory[type.key] || [];
         if (inventory.length === 0) return;
+        
+        console.log(`📦 ${type.name} 库存:`, inventory, `装备: ${type.equipKey}=${gameState.equipment[type.equipKey]}`);
         
         // 按工具ID分组统计数量
         const toolCounts = {};
@@ -5178,10 +5179,16 @@ function renderToolsInventory() {
         // 遍历每种工具
         Object.entries(toolCounts).forEach(([toolId, count]) => {
             const tool = CONFIG.tools[type.config].find(t => t.id === toolId);
-            if (!tool) return;
+            if (!tool) {
+                console.log(`❌ 找不到工具配置: ${toolId}`);
+                return;
+            }
             
             const isEquipped = gameState.equipment[type.equipKey] === toolId;
             const unequippedCount = isEquipped ? count - 1 : count;
+            
+            console.log(`  🔧 ${tool.name}: 总数=${count}, 已装备=${isEquipped}, 未装备=${unequippedCount}`);
+            totalItems++;
             
             // 已装备的工具单独一格
             if (isEquipped) {
@@ -5207,6 +5214,7 @@ function renderToolsInventory() {
         });
     });
     
+    console.log(`📊 总计 ${totalItems} 种工具, HTML长度: ${html.length}`);
     container.innerHTML = html || '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">暂无锻造工具</div>';
 }
 
