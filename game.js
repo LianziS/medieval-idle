@@ -4659,8 +4659,12 @@ function completeForgingToolOnce(toolId, toolType, toolIndex) {
                             toolType === 'chisel' ? gameState.toolsInventory.chisels : 
                             toolType === 'needle' ? gameState.toolsInventory.needles : 
                             toolType === 'hammer' ? gameState.toolsInventory.hammers :
+                            toolType === 'tongs' ? gameState.toolsInventory.tongs :
+                            toolType === 'rod' ? gameState.toolsInventory.rods :
                             gameState.toolsInventory.scythes;
-    if (!targetInventory.includes(toolId)) targetInventory.push(toolId);
+    // 直接添加工具到库存（同一ID可有多把）
+    targetInventory.push(toolId);
+    console.log(`✅ 锻造完成，添加 ${toolId} 到库存，当前库存:`, targetInventory);
     
     // 检查是否获得锻造代币（使用工具概率表）
     const token = tryGetToken('forging_token', toolIndex, 'tool');
