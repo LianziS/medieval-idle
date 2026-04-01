@@ -1659,6 +1659,10 @@ body::after {
         height: 100vh !important;
     }
     
+    .modal.show {
+        display: flex !important;
+    }
+    
     .modal-content {
         width: 95vw !important;
         max-width: 95vw !important;
