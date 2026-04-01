@@ -728,21 +728,51 @@ function hasEnoughItems(itemType, id, count) {
     return getInventoryCount(itemType, id) >= count;
 }
 
-// ============ 物品操作辅助函数（基于 ITEM_TYPES）============
-
-// 获取物品配置
-function getItemConfig(itemTypeKey, id) {
-    const itemType = ITEM_TYPES[itemTypeKey];
-    if (!itemType || !itemType.getConfig) return null;
-    return itemType.getConfig(id);
+// 工具相关辅助函数
+function getToolConfigKey(toolType) {
+    const toolTypeMap = {
+        'axe': 'axes', 'pickaxe': 'pickaxes', 'chisel': 'chisels',
+        'needle': 'needles', 'scythe': 'scythes', 'hammer': 'hammers',
+        'tongs': 'tongs', 'rod': 'rods'
+    };
+    return toolTypeMap[toolType] || 'scythes';
 }
 
-// 获取物品配置索引
-function getItemConfigIndex(itemTypeKey, id) {
-    const itemType = ITEM_TYPES[itemTypeKey];
-    if (!itemType || !itemType.getConfigIndex) return -1;
-    return itemType.getConfigIndex(id);
+function getToolEquipKey(subtype) {
+    const equipKeyMap = {
+        'axes': 'axe', 'pickaxes': 'pickaxe', 'chisels': 'chisel',
+        'needles': 'needle', 'scythes': 'scythe', 'hammers': 'hammer',
+        'tongs': 'tongs', 'rods': 'rod'
+    };
+    return equipKeyMap[subtype];
 }
+
+function getToolByTypeAndIndex(toolType, toolIndex) {
+    const configKey = getToolConfigKey(toolType);
+    return CONFIG.tools[configKey]?.[toolIndex];
+}
+
+function getToolInventory(toolType) {
+    const configKey = getToolConfigKey(toolType);
+    return gameState.toolsInventory[configKey] || [];
+}
+
+// 物品类型映射（用于商人出售等场景）
+const TYPE_TO_ITEM_TYPE = {
+    'wood': 'WOOD',
+    'stone': null,
+    'herb': null,
+    'ore': 'ORE',
+    'log': 'WOOD',
+    'essence': 'ESSENCE',
+    'brew': 'BREW',
+    'gathering': 'GATHERING',
+    'fabric': 'FABRIC',
+    'token': 'TOKEN',
+    'plank': 'PLANK',
+    'ingot': 'INGOT',
+    'potion': 'POTION'
+};
 
 // 通用物品添加
 function addItem(itemTypeKey, id, count = 1) {
