@@ -957,7 +957,6 @@ const ACTION_TYPES = {
         checkMaterials: (config) => canBrewPotion(config),
         consumeMaterials: (config) => {
             for (const [itemId, count] of Object.entries(config.materials)) {
-                // 采集物品
                 if (getItemCount('GATHERING', itemId) >= count) {
                     removeItem('GATHERING', itemId, count);
                 } else if (getItemCount('ESSENCE', itemId) >= count) {
@@ -1013,7 +1012,6 @@ const ACTION_TYPES = {
         checkMaterials: (config) => canBrewDrink(config),
         consumeMaterials: (config) => {
             for (const [itemId, count] of Object.entries(config.materials)) {
-                // 采集物品
                 if (getItemCount('GATHERING', itemId) >= count) {
                     removeItem('GATHERING', itemId, count);
                 } else if (getItemCount('ESSENCE', itemId) >= count) {
@@ -6357,6 +6355,22 @@ function completeBrewingOnce(brewId) {
     // 后端验证
     notifyActionComplete('brewing', brewId);
     
+    // 消耗材料
+    for (const [itemId, count] of Object.entries(brew.materials)) {
+        // 从采集库存扣除
+        if (getItemCount('GATHERING', itemId) >= count) {
+            removeItem('GATHERING', itemId, count);
+        }
+        // 从精华库存扣除
+        else if (getItemCount('ESSENCE', itemId) >= count) {
+            removeItem('ESSENCE', itemId, count);
+        }
+        // 从代币库存扣除
+        else if (getItemCount('TOKEN', itemId) >= count) {
+            removeItem('TOKEN', itemId, count);
+        }
+    }
+    
     // 添加酒类（使用辅助函数）
     addItem('BREW', brewId, 1);
     
@@ -6368,7 +6382,16 @@ function completeBrewingOnce(brewId) {
     gameState.brewingExp += brew.exp;
     checkBrewingLevelUp();
     
-    showToast(`🍻 获得 ${brew.name}`);
+    // 显示奖励
+    if (elements.actionRewards) {
+        let rewardHtml = `<span class="action-reward-item">+1 ${brew.icon} ${brew.name}</span>`;
+        if (token) {
+            rewardHtml += `<span class="action-reward-item token-reward">+1 ${token.icon} ${token.name}</span>`;
+        }
+        elements.actionRewards.innerHTML = rewardHtml;
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
+    }
+    
     renderBrewsList();
     renderBrewsInventory();
     renderMerchantWarehouse();
@@ -6419,22 +6442,6 @@ function scheduleBrewing(brewId) {
     }
     
     // 开始下一次行动
-    // 消耗材料
-    for (const [itemId, count] of Object.entries(brew.materials)) {
-        // 从采集库存扣除
-        if (getItemCount('GATHERING', itemId) > 0) {
-            removeItem('GATHERING', itemId, count);
-        }
-        // 从精华库存扣除
-        else if (getItemCount('ESSENCE', itemId) > 0) {
-            removeItem('ESSENCE', itemId, count);
-        }
-        // 从代币库存扣除
-        else if (getItemCount('TOKEN', itemId) > 0) {
-            removeItem('TOKEN', itemId, count);
-        }
-    }
-    
     // 应用装备加成（小桶加速酿造）
     const bonus = getEquipmentBonus('brewing');
     const actualDuration = Math.floor(brew.duration / (1 + bonus));
@@ -6530,19 +6537,30 @@ function startEssenceExtraction(essenceId, count) {
 
 function completeEssenceOnce(essenceId) {
     const essence = CONFIG.essences.find(e => e.id === essenceId);
+    const essenceIndex = CONFIG.essences.findIndex(e => e.id === essenceId);
     if (!essence) return;
     
     // 后端验证
     notifyActionComplete('essence', essenceId);
     
+    // 消耗材料
+    for (const [itemId, count] of Object.entries(essence.materials)) {
+        removeItem('GATHERING', itemId, count);
+    }
+    
     // 添加精华
     addItem('ESSENCE', essenceId, 1);
     
     // 增加经验
-    gameState.alchemyExp += essence.exp;
-    checkAlchemyLevelUp();
+    addExp(essence.exp);
+    addSkillExp('alchemy', essence.exp);
     
-    showToast(`✨ 获得 ${essence.name}`);
+    // 显示奖励
+    if (elements.actionRewards) {
+        elements.actionRewards.innerHTML = `<span class="action-reward-item">+1 ${essence.icon} ${essence.name}</span>`;
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
+    }
+    
     renderEssencesList();
     renderGatheringInventory();
     renderEssencesInventory();
@@ -6594,11 +6612,6 @@ function scheduleEssenceExtraction(essenceId) {
     }
     
     // 开始下一次行动
-    // 消耗材料
-    for (const [itemId, count] of Object.entries(essence.materials)) {
-        removeItem('GATHERING', itemId, count);
-    }
-    
     // 应用装备加成（搅拌棒加速炼金）
     const bonus = getEquipmentBonus('alchemy');
     const actualDuration = Math.floor(essence.duration / (1 + bonus));
@@ -6742,9 +6755,20 @@ function completeAlchemyOnce(potionId) {
     // 后端验证
     notifyActionComplete('alchemy', potionId);
     
-    // 消耗材料（使用辅助函数）
+    // 消耗材料（药水材料可能来自采集物品、精华或代币）
     for (const [itemId, count] of Object.entries(potion.materials)) {
-        removeItem('GATHERING', itemId, count);
+        // 从采集库存扣除
+        if (getItemCount('GATHERING', itemId) >= count) {
+            removeItem('GATHERING', itemId, count);
+        }
+        // 从精华库存扣除
+        else if (getItemCount('ESSENCE', itemId) >= count) {
+            removeItem('ESSENCE', itemId, count);
+        }
+        // 从代币库存扣除
+        else if (getItemCount('TOKEN', itemId) >= count) {
+            removeItem('TOKEN', itemId, count);
+        }
     }
     
     // 添加药水（使用辅助函数）
