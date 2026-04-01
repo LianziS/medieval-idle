@@ -1109,6 +1109,239 @@ function renderActionView(actionType) {
     }
 }
 
+// ============ 统一行动执行系统 ============
+
+// 统一开始行动函数
+function startGenericAction(actionTypeKey, actionId, count, extraParams = null) {
+    const actionType = getActionType(actionTypeKey);
+    if (!actionType) return false;
+    
+    const config = getActionConfig(actionType, actionId);
+    if (!config) return false;
+    
+    // 检查等级要求
+    const levelKey = actionType.skillLevelKey;
+    if (levelKey && gameState[levelKey] < config.reqLevel) {
+        showToast(`❌ 需要等级 ${config.reqLevel}`);
+        return false;
+    }
+    
+    // 计算实际可执行次数
+    let actualCount = count;
+    if (actionType.needsMaterials && actionType.checkMaterials) {
+        actualCount = calculateMaxActionCount(actionType.id, actionId, extraParams, count);
+        if (actualCount <= 0) {
+            showToast('❌ 材料不足');
+            return false;
+        }
+        if (actualCount < count && count < 99999) {
+            showToast(`⚠️ 材料仅够执行 ${actualCount} 次`);
+        }
+    }
+    
+    // 设置状态
+    setActionStateValue(actionType, 'active', actionId);
+    setActionStateValue(actionType, 'count', actualCount);
+    setActionStateValue(actionType, 'remaining', actualCount);
+    
+    // 设置额外状态（如采集的 locationId 和 itemId）
+    if (extraParams && actionType.stateKeys.locationId) {
+        setActionStateValue(actionType, 'locationId', extraParams.locationId);
+    }
+    if (extraParams && actionType.stateKeys.itemId) {
+        setActionStateValue(actionType, 'itemId', extraParams.itemId);
+    }
+    
+    // 重置进度条
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    
+    // 计算实际时长
+    const actualDuration = calculateActionDuration(actionType, config);
+    
+    // 设置行动名称
+    const actionName = actionType.getActionName ? actionType.getActionName(config) : `${actionType.name}${config.name}`;
+    setActionState({ name: actionName, icon: config.icon }, actualDuration, actualCount, actualCount);
+    
+    // 渲染视图
+    renderActionView(actionType);
+    
+    // 通知后端
+    notifyActionStart(actionType.id, actionId, actualCount);
+    
+    // 启动进度条动画
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    
+    // 启动定时器
+    gameState.actionTimerId = setTimeout(() => {
+        if (getActionStateValue(actionType, 'active') === actionId) {
+            completeGenericActionOnce(actionTypeKey, actionId, extraParams);
+            scheduleGenericAction(actionTypeKey, actionId, extraParams);
+        }
+    }, actualDuration);
+    
+    return true;
+}
+
+// 统一调度行动函数
+function scheduleGenericAction(actionTypeKey, actionId, extraParams = null) {
+    const actionType = getActionType(actionTypeKey);
+    if (!actionType) return;
+    
+    const count = getActionStateValue(actionType, 'count');
+    const remaining = getActionStateValue(actionType, 'remaining');
+    const isInfinite = count >= 99999;
+    
+    // 检查是否结束
+    if (!getActionStateValue(actionType, 'active') || (!isInfinite && remaining <= 0)) {
+        clearActionState(actionType);
+        setActionState(null, 0);
+        renderActionView(actionType);
+        onActionComplete();
+        return;
+    }
+    
+    const config = getActionConfig(actionType, actionId);
+    if (!config) return;
+    
+    // 检查材料（需要材料的行动）
+    if (actionType.needsMaterials && actionType.checkMaterials) {
+        if (!actionType.checkMaterials(config)) {
+            showToast('❌ 材料不足，停止执行');
+            clearActionState(actionType);
+            setActionState(null, 0);
+            renderActionView(actionType);
+            onActionComplete();
+            return;
+        }
+    }
+    
+    // 减少剩余次数
+    if (!isInfinite) {
+        setActionStateValue(actionType, 'remaining', remaining - 1);
+    }
+    
+    // 再次检查是否结束
+    const newRemaining = getActionStateValue(actionType, 'remaining');
+    if (!isInfinite && newRemaining <= 0) {
+        clearActionState(actionType);
+        setActionState(null, 0);
+        renderActionView(actionType);
+        onActionComplete();
+        return;
+    }
+    
+    // 开始下一次
+    const actualDuration = calculateActionDuration(actionType, config);
+    const actionName = actionType.getActionName ? actionType.getActionName(config) : `${actionType.name}${config.name}`;
+    setActionState({ name: actionName, icon: config.icon }, actualDuration, count, newRemaining);
+    
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    updateActionStatusBar();
+    renderActionView(actionType);
+    
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    
+    gameState.actionTimerId = setTimeout(() => {
+        if (getActionStateValue(actionType, 'active') === actionId) {
+            completeGenericActionOnce(actionTypeKey, actionId, extraParams);
+            scheduleGenericAction(actionTypeKey, actionId, extraParams);
+        }
+    }, actualDuration);
+}
+
+// 统一完成行动函数
+function completeGenericActionOnce(actionTypeKey, actionId, extraParams = null) {
+    const actionType = getActionType(actionTypeKey);
+    if (!actionType) return;
+    
+    const config = getActionConfig(actionType, actionId);
+    const configIndex = getActionConfigIndex(actionType, actionId);
+    if (!config) return;
+    
+    // 后端验证
+    notifyActionComplete(actionType.id, actionId);
+    
+    // 消耗材料（需要材料的行动）
+    if (actionType.needsMaterials && actionType.consumeMaterials) {
+        actionType.consumeMaterials(config);
+    }
+    
+    // 获取奖励信息
+    let dropCount = 1;
+    let dropItem = config.name;
+    let dropIcon = config.icon;
+    let token = null;
+    
+    if (actionType.getRewards) {
+        const rewards = actionType.getRewards(config, configIndex);
+        dropCount = rewards.dropCount;
+        dropItem = rewards.dropItem;
+        dropIcon = rewards.dropIcon;
+        token = rewards.token;
+    }
+    
+    // 添加产出物品
+    if (actionType.itemTypeKey) {
+        addItem(actionType.itemTypeKey, actionId, dropCount);
+    }
+    
+    // 增加经验
+    addExp(config.exp);
+    if (actionType.skillKey) {
+        addSkillExp(actionType.skillKey, config.exp);
+    }
+    
+    updateUI();
+    saveGame();
+    
+    // 显示奖励
+    if (elements.actionRewards) {
+        let rewardHtml = `<span class="action-reward-item">+${dropCount} ${dropIcon} ${dropItem}</span>`;
+        if (token) {
+            rewardHtml += `<span class="action-reward-item token-reward">+1 ${token.icon} ${token.name}</span>`;
+        }
+        elements.actionRewards.innerHTML = rewardHtml;
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
+    }
+}
+
+// 统一取消行动函数
+function cancelGenericAction(actionTypeKey) {
+    const actionType = getActionType(actionTypeKey);
+    if (!actionType) return;
+    
+    const actionId = getActionStateValue(actionType, 'active');
+    if (!actionId) return;
+    
+    // 清除定时器
+    if (gameState.actionTimerId) {
+        clearTimeout(gameState.actionTimerId);
+        gameState.actionTimerId = null;
+    }
+    
+    // 清除状态
+    clearActionState(actionType);
+    setActionState(null, 0);
+    
+    // 停止动画
+    if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+        animationFrame = null;
+    }
+    
+    renderActionView(actionType);
+    updateUI();
+    saveGame();
+}
+
 // ============ 游戏状态 ============
 
 let gameState = {
