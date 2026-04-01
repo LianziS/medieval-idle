@@ -134,8 +134,13 @@ app.post('/api/auth/register', async (req, res) => {
             if (err) return res.status(500).json({ error: '数据库错误' });
             if (row) return res.status(400).json({ error: '用户名已存在' });
             
-            // 加密密码
-            const passwordHash = await bcrypt.hash(password, 10);
+            // 检查邮箱是否存在
+            db.get('SELECT id FROM users WHERE email = ?', [email], async (err, row) => {
+                if (err) return res.status(500).json({ error: '数据库错误' });
+                if (row) return res.status(400).json({ error: '该邮箱已被注册' });
+            
+                // 加密密码
+                const passwordHash = await bcrypt.hash(password, 10);
             
             // 创建用户
             db.run(
@@ -186,7 +191,8 @@ app.post('/api/auth/register', async (req, res) => {
                     res.json({ success: true, message: '注册成功' });
                 }
             );
-        });
+            });  // 结束邮箱检查的 db.get
+        });  // 结束用户名检查的 db.get
     } catch (e) {
         res.status(500).json({ error: '服务器错误' });
     }
