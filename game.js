@@ -2305,14 +2305,26 @@ function setupEventListeners() {
     
     // 行动次数选择弹窗事件
     if (elements.actionModalClose) {
-        elements.actionModalClose.addEventListener('click', () => elements.actionModal.classList.remove('show'));
+        elements.actionModalClose.addEventListener('click', () => {
+            elements.actionModal.classList.remove('show');
+            // 清除选中状态
+            document.querySelectorAll('.count-option').forEach(o => o.classList.remove('selected'));
+        });
     }
     if (elements.actionModalCancel) {
-        elements.actionModalCancel.addEventListener('click', () => elements.actionModal.classList.remove('show'));
+        elements.actionModalCancel.addEventListener('click', () => {
+            elements.actionModal.classList.remove('show');
+            // 清除选中状态
+            document.querySelectorAll('.count-option').forEach(o => o.classList.remove('selected'));
+        });
     }
     if (elements.actionModal) {
         elements.actionModal.addEventListener('click', (e) => {
-            if (e.target === elements.actionModal) elements.actionModal.classList.remove('show');
+            if (e.target === elements.actionModal) {
+                elements.actionModal.classList.remove('show');
+                // 清除选中状态
+                document.querySelectorAll('.count-option').forEach(o => o.classList.remove('selected'));
+            }
         });
     }
     if (elements.actionModalConfirm) {
