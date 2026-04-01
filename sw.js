@@ -1,4 +1,4 @@
-const CACHE_NAME = 'medieval-mercenary-v9';
+const CACHE_NAME = 'medieval-mercenary-v10';
 const ASSETS = ['/', '/index.html', '/style.css', '/game.js'];
 
 self.addEventListener('install', (e) => {

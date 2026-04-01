@@ -806,6 +806,309 @@ function hasItem(itemTypeKey, id, count = 1) {
     return getItemCount(itemTypeKey, id) >= count;
 }
 
+// ============ 行动类型定义系统 ============
+// 统一管理所有行动类型的属性、状态映射、技能关联等
+
+const ACTION_TYPES = {
+    // 基础采集行动（无需材料，随机掉落）
+    WOODCUTTING: {
+        id: 'woodcutting',
+        name: '伐木',
+        itemTypeKey: 'WOOD',
+        configKey: 'trees',
+        stateKeys: { active: 'activeWoodcutting', count: 'woodcuttingCount', remaining: 'woodcuttingRemaining' },
+        skillKey: 'woodcutting',
+        skillLevelKey: 'woodcuttingLevel',
+        equipmentBonus: 'woodcutting',
+        needsMaterials: false,
+        hasRandomDrop: true,
+        renderFn: 'renderWoodcutting',
+        getActionName: (config) => `采集${config.name}`,
+        getRewards: (config, configIndex) => {
+            const dropCount = Math.floor(Math.random() * 3) + 1;
+            const token = tryGetToken('wood_token', configIndex, 'standard');
+            return { dropCount, dropItem: config.drop, dropIcon: config.dropIcon, token };
+        }
+    },
+    MINING: {
+        id: 'mining',
+        name: '挖矿',
+        itemTypeKey: 'ORE',
+        configKey: 'ores',
+        stateKeys: { active: 'activeMining', count: 'miningCount', remaining: 'miningRemaining' },
+        skillKey: 'mining',
+        skillLevelKey: 'miningLevel',
+        equipmentBonus: 'mining',
+        needsMaterials: false,
+        hasRandomDrop: true,
+        renderFn: 'renderMining',
+        getActionName: (config) => `挖掘${config.name}`,
+        getRewards: (config, configIndex) => {
+            const dropCount = Math.floor(Math.random() * 3) + 1;
+            const token = tryGetToken('mining_token', configIndex, 'standard');
+            return { dropCount, dropItem: config.drop, dropIcon: config.dropIcon, token };
+        }
+    },
+    // 采集行动（有额外状态 locationId, itemId）
+    GATHERING: {
+        id: 'gathering',
+        name: '采集',
+        itemTypeKey: 'GATHERING',
+        configKey: 'gatheringLocations',
+        stateKeys: { active: 'activeGathering', count: 'gatheringCount', remaining: 'gatheringRemaining', locationId: 'gatheringLocationId', itemId: 'gatheringItemId' },
+        skillKey: 'gathering',
+        skillLevelKey: 'gatheringLevel',
+        equipmentBonus: 'gathering',
+        needsMaterials: false,
+        hasRandomDrop: false,
+        renderFn: 'renderGathering',
+        // 特殊处理：需要额外的 locationId 和 itemId
+        hasExtraParams: true
+    },
+    // 制作行动（需要材料，固定产出）
+    CRAFTING: {
+        id: 'crafting',
+        name: '制作',
+        itemTypeKey: 'PLANK',
+        configKey: 'woodPlanks',
+        stateKeys: { active: 'activeCrafting', count: 'craftingCount', remaining: 'craftingRemaining' },
+        skillKey: 'crafting',
+        skillLevelKey: 'craftingLevel',
+        equipmentBonus: 'crafting',
+        needsMaterials: true,
+        hasRandomDrop: false,
+        renderFn: 'renderCrafting',
+        getActionName: (config) => `制作${config.name}`,
+        checkMaterials: (config) => canCraftPlank(config),
+        consumeMaterials: (config) => {
+            for (const [woodId, count] of Object.entries(config.materials)) {
+                removeItem('WOOD', woodId, count);
+            }
+        },
+        getRewards: (config, configIndex) => {
+            const token = tryGetToken('crafting_token', configIndex, 'standard');
+            return { dropCount: 1, dropItem: config.name, dropIcon: config.icon, token };
+        }
+    },
+    // 锻造行动（需要材料，固定产出）
+    FORGING: {
+        id: 'forging',
+        name: '锻造',
+        itemTypeKey: 'INGOT',
+        configKey: 'ingots',
+        stateKeys: { active: 'activeForging', count: 'forgingCount', remaining: 'forgingRemaining' },
+        skillKey: 'forging',
+        skillLevelKey: 'forgingLevel',
+        equipmentBonus: 'forging',
+        needsMaterials: true,
+        hasRandomDrop: false,
+        renderFn: 'renderForging',
+        getActionName: (config) => `锻造${config.name}`,
+        checkMaterials: (config) => canForgeIngot(config),
+        consumeMaterials: (config) => {
+            for (const [oreId, count] of Object.entries(config.materials)) {
+                removeItem('ORE', oreId, count);
+            }
+        },
+        getRewards: (config, configIndex) => {
+            const token = tryGetToken('forging_token', configIndex, 'standard');
+            return { dropCount: 1, dropItem: config.name, dropIcon: config.icon, token };
+        }
+    },
+    // 缝制行动（需要材料，固定产出）
+    TAILORING: {
+        id: 'tailoring',
+        name: '缝制',
+        itemTypeKey: 'FABRIC',
+        configKey: 'fabrics',
+        stateKeys: { active: 'activeTailoring', count: 'tailoringCount', remaining: 'tailoringRemaining' },
+        skillKey: 'tailoring',
+        skillLevelKey: 'tailoringLevel',
+        equipmentBonus: 'tailoring',
+        needsMaterials: true,
+        hasRandomDrop: false,
+        renderFn: 'renderTailoring',
+        getActionName: (config) => `缝制${config.name}`,
+        checkMaterials: (config) => canTailorFabric(config),
+        consumeMaterials: (config) => {
+            for (const [itemId, count] of Object.entries(config.materials)) {
+                // 检查是采集物品还是木板
+                if (getItemCount('GATHERING', itemId) >= count) {
+                    removeItem('GATHERING', itemId, count);
+                } else if (getItemCount('PLANK', itemId) >= count) {
+                    removeItem('PLANK', itemId, count);
+                }
+            }
+        },
+        getRewards: (config, configIndex) => {
+            const token = tryGetToken('tailoring_token', configIndex, 'standard');
+            return { dropCount: 1, dropItem: config.name, dropIcon: config.icon, token };
+        }
+    },
+    // 炼药行动（需要材料，固定产出）
+    ALCHEMY: {
+        id: 'alchemy',
+        name: '炼药',
+        itemTypeKey: 'POTION',
+        configKey: 'potions',
+        stateKeys: { active: 'activeAlchemy', count: 'alchemyCount', remaining: 'alchemyRemaining' },
+        skillKey: 'alchemy',
+        skillLevelKey: 'alchemyLevel',
+        equipmentBonus: 'alchemy',
+        needsMaterials: true,
+        hasRandomDrop: false,
+        renderFn: 'renderAlchemy',
+        getActionName: (config) => `炼制${config.name}`,
+        checkMaterials: (config) => canBrewPotion(config),
+        consumeMaterials: (config) => {
+            for (const [itemId, count] of Object.entries(config.materials)) {
+                // 采集物品
+                if (getItemCount('GATHERING', itemId) >= count) {
+                    removeItem('GATHERING', itemId, count);
+                } else if (getItemCount('ESSENCE', itemId) >= count) {
+                    removeItem('ESSENCE', itemId, count);
+                } else if (getItemCount('TOKEN', itemId) >= count) {
+                    removeItem('TOKEN', itemId, count);
+                }
+            }
+        },
+        getRewards: (config, configIndex) => {
+            const token = tryGetToken('alchemy_token', configIndex, 'standard');
+            return { dropCount: 1, dropItem: config.name, dropIcon: config.icon, token };
+        }
+    },
+    // 提炼精华行动（需要材料，固定产出）
+    ESSENCE: {
+        id: 'essence',
+        name: '提炼精华',
+        itemTypeKey: 'ESSENCE',
+        configKey: 'essences',
+        stateKeys: { active: 'activeEssence', count: 'essenceCount', remaining: 'essenceRemaining' },
+        skillKey: 'alchemy',
+        skillLevelKey: 'alchemyLevel',
+        equipmentBonus: 'alchemy',
+        needsMaterials: true,
+        hasRandomDrop: false,
+        renderFn: 'renderEssencesList',
+        getActionName: (config) => `提炼${config.name}`,
+        checkMaterials: (config) => canExtractEssence(config),
+        consumeMaterials: (config) => {
+            for (const [itemId, count] of Object.entries(config.materials)) {
+                removeItem('GATHERING', itemId, count);
+            }
+        },
+        getRewards: (config) => {
+            return { dropCount: 1, dropItem: config.name, dropIcon: config.icon, token: null };
+        }
+    },
+    // 酿造行动（需要材料，固定产出）
+    BREWING: {
+        id: 'brewing',
+        name: '酿造',
+        itemTypeKey: 'BREW',
+        configKey: 'brews',
+        stateKeys: { active: 'activeBrew', count: 'brewCount', remaining: 'brewRemaining' },
+        skillKey: 'brewing',
+        skillLevelKey: 'brewingLevel',
+        equipmentBonus: 'brewing',
+        needsMaterials: true,
+        hasRandomDrop: false,
+        renderFn: 'renderBrewing',
+        getActionName: (config) => `酿造${config.name}`,
+        checkMaterials: (config) => canBrewDrink(config),
+        consumeMaterials: (config) => {
+            for (const [itemId, count] of Object.entries(config.materials)) {
+                // 采集物品
+                if (getItemCount('GATHERING', itemId) >= count) {
+                    removeItem('GATHERING', itemId, count);
+                } else if (getItemCount('ESSENCE', itemId) >= count) {
+                    removeItem('ESSENCE', itemId, count);
+                } else if (getItemCount('TOKEN', itemId) >= count) {
+                    removeItem('TOKEN', itemId, count);
+                }
+            }
+        },
+        getRewards: (config, configIndex) => {
+            const token = tryGetToken('brewing_token', configIndex, 'standard');
+            return { dropCount: 1, dropItem: config.name, dropIcon: config.icon, token };
+        }
+    }
+};
+
+const ACTION_TYPE_LIST = Object.values(ACTION_TYPES);
+
+// ============ 行动系统辅助函数 ============
+
+// 获取行动类型定义
+function getActionType(actionKey) {
+    return ACTION_TYPES[actionKey?.toUpperCase()] || null;
+}
+
+// 获取行动配置
+function getActionConfig(actionType, id) {
+    if (!actionType.configKey) return null;
+    return CONFIG[actionType.configKey]?.find(c => c.id === id);
+}
+
+// 获取行动配置索引
+function getActionConfigIndex(actionType, id) {
+    if (!actionType.configKey) return -1;
+    return CONFIG[actionType.configKey]?.findIndex(c => c.id === id) ?? -1;
+}
+
+// 获取行动状态
+function getActionStateValue(actionType, stateKey) {
+    const keyName = actionType.stateKeys[stateKey];
+    if (!keyName) return null;
+    return gameState[keyName];
+}
+
+// 设置行动状态
+function setActionStateValue(actionType, stateKey, value) {
+    const keyName = actionType.stateKeys[stateKey];
+    if (!keyName) return;
+    gameState[keyName] = value;
+}
+
+// 清除行动状态
+function clearActionState(actionType) {
+    Object.keys(actionType.stateKeys).forEach(key => {
+        const keyName = actionType.stateKeys[key];
+        if (keyName) {
+            gameState[keyName] = key === 'active' ? null : 0;
+        }
+    });
+}
+
+// 检查行动是否正在进行
+function hasActiveActionOfType(actionType, id) {
+    const activeId = getActionStateValue(actionType, 'active');
+    return activeId === id;
+}
+
+// 获取行动剩余次数
+function getActionRemainingCount(actionType) {
+    const count = getActionStateValue(actionType, 'count');
+    const remaining = getActionStateValue(actionType, 'remaining');
+    const isInfinite = count >= 99999;
+    return isInfinite ? Infinity : remaining;
+}
+
+// 计算行动实际时长（含装备加成）
+function calculateActionDuration(actionType, config) {
+    const bonus = getEquipmentBonus(actionType.equipmentBonus);
+    return Math.floor(config.duration / (1 + bonus));
+}
+
+// 调用渲染函数
+function renderActionView(actionType) {
+    if (actionType.renderFn && typeof window[actionType.renderFn] === 'function') {
+        window[actionType.renderFn]();
+    } else if (typeof window[actionType.renderFn] === 'function') {
+        window[actionType.renderFn]();
+    }
+}
+
 // ============ 游戏状态 ============
 
 let gameState = {
