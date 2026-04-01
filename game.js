@@ -5178,7 +5178,22 @@ function renderToolsInventory() {
         
         // 遍历每种工具
         Object.entries(toolCounts).forEach(([toolId, count]) => {
-            const tool = CONFIG.tools[type.config].find(t => t.id === toolId);
+            // 先尝试在当前类型的配置中查找
+            let tool = CONFIG.tools[type.config].find(t => t.id === toolId);
+            
+            // 如果找不到，尝试在其他类型中查找（修复放错位置的工具）
+            if (!tool) {
+                const allToolTypes = ['axes', 'pickaxes', 'chisels', 'needles', 'scythes', 'hammers', 'tongs', 'rods'];
+                for (const otherType of allToolTypes) {
+                    const found = CONFIG.tools[otherType]?.find(t => t.id === toolId);
+                    if (found) {
+                        console.log(`⚠️ 工具 ${toolId} 放错位置了！应该在 ${otherType} 但在 ${type.config}`);
+                        tool = found;
+                        break;
+                    }
+                }
+            }
+            
             if (!tool) {
                 console.log(`❌ 找不到工具配置: ${toolId}`);
                 return;
@@ -5203,6 +5218,7 @@ function renderToolsInventory() {
             
             // 未装备的工具单独一格（显示数量）
             if (unequippedCount > 0) {
+                console.log(`    ✅ 生成未装备格子: ${tool.name} ×${unequippedCount}`);
                 html += `
                     <div class="storage-item-small">
                         <div class="storage-item-small-icon">${tool.icon}</div>
@@ -5210,6 +5226,8 @@ function renderToolsInventory() {
                         <div class="storage-item-small-count">×${unequippedCount}</div>
                     </div>
                 `;
+            } else {
+                console.log(`    ⏭️ 跳过: ${tool.name} (unequippedCount=${unequippedCount})`);
             }
         });
     });
