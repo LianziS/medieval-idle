@@ -584,6 +584,152 @@ const CONFIG = {
     ]
 };
 
+// ============ 物品类型定义系统 ============
+// 统一管理所有物品类型的属性、库存映射、技能关联等
+
+const ITEM_TYPES = {
+    // 基础资源类型
+    WOOD: {
+        id: 'wood', name: '木材',
+        configKey: 'trees', inventoryKey: 'woodcuttingInventory',
+        skillKey: 'woodcutting', skillLevelKey: 'woodcuttingLevel',
+        tokenType: 'wood_token', equipmentBonus: 'woodcutting',
+        stateKeys: { active: 'activeWoodcutting', count: 'woodcuttingCount', remaining: 'woodcuttingRemaining' },
+        getDropCount: () => Math.floor(Math.random() * 3) + 1,
+        getConfig: (id) => CONFIG.trees.find(t => t.id === id),
+        getConfigIndex: (id) => CONFIG.trees.findIndex(t => t.id === id)
+    },
+    ORE: {
+        id: 'ore', name: '矿石',
+        configKey: 'ores', inventoryKey: 'miningInventory',
+        skillKey: 'mining', skillLevelKey: 'miningLevel',
+        tokenType: 'mining_token', equipmentBonus: 'mining',
+        stateKeys: { active: 'activeMining', count: 'miningCount', remaining: 'miningRemaining' },
+        getDropCount: () => Math.floor(Math.random() * 3) + 1,
+        getConfig: (id) => CONFIG.ores.find(o => o.id === id),
+        getConfigIndex: (id) => CONFIG.ores.findIndex(o => o.id === id)
+    },
+    GATHERING: {
+        id: 'gathering', name: '采集物品',
+        configKey: 'gatheringLocations', inventoryKey: 'gatheringInventory',
+        skillKey: 'gathering', skillLevelKey: 'gatheringLevel',
+        tokenType: 'gathering_token', equipmentBonus: 'gathering',
+        stateKeys: { active: 'activeGathering', count: 'gatheringCount', remaining: 'gatheringRemaining', locationId: 'gatheringLocationId', itemId: 'gatheringItemId' },
+        getDropCount: () => 1,
+        getConfig: (id) => CONFIG.gatheringLocations.find(l => l.id === id),
+        getConfigIndex: (id) => CONFIG.gatheringLocations.findIndex(l => l.id === id)
+    },
+    // 制作产物类型
+    PLANK: {
+        id: 'plank', name: '木板',
+        configKey: 'woodPlanks', inventoryKey: 'planksInventory',
+        skillKey: 'crafting', skillLevelKey: 'craftingLevel',
+        tokenType: 'crafting_token', equipmentBonus: 'crafting',
+        stateKeys: { active: 'activeCrafting', count: 'craftingCount', remaining: 'craftingRemaining' },
+        getDropCount: () => 1,
+        getConfig: (id) => CONFIG.woodPlanks.find(p => p.id === id),
+        getConfigIndex: (id) => CONFIG.woodPlanks.findIndex(p => p.id === id)
+    },
+    INGOT: {
+        id: 'ingot', name: '矿锭',
+        configKey: 'ingots', inventoryKey: 'ingotsInventory',
+        skillKey: 'forging', skillLevelKey: 'forgingLevel',
+        tokenType: 'forging_token', equipmentBonus: 'forging',
+        stateKeys: { active: 'activeForging', count: 'forgingCount', remaining: 'forgingRemaining' },
+        getDropCount: () => 1,
+        getConfig: (id) => CONFIG.ingots.find(i => i.id === id),
+        getConfigIndex: (id) => CONFIG.ingots.findIndex(i => i.id === id)
+    },
+    FABRIC: {
+        id: 'fabric', name: '布料',
+        configKey: 'fabrics', inventoryKey: 'fabricsInventory',
+        skillKey: 'tailoring', skillLevelKey: 'tailoringLevel',
+        tokenType: 'tailoring_token', equipmentBonus: 'tailoring',
+        stateKeys: { active: 'activeTailoring', count: 'tailoringCount', remaining: 'tailoringRemaining' },
+        getDropCount: () => 1,
+        getConfig: (id) => CONFIG.fabrics.find(f => f.id === id),
+        getConfigIndex: (id) => CONFIG.fabrics.findIndex(f => f.id === id)
+    },
+    // 高级产物类型
+    POTION: {
+        id: 'potion', name: '药水',
+        configKey: 'potions', inventoryKey: 'potionsInventory',
+        skillKey: 'alchemy', skillLevelKey: 'alchemyLevel',
+        tokenType: 'alchemy_token', equipmentBonus: 'alchemy',
+        stateKeys: { active: 'activeAlchemy', count: 'alchemyCount', remaining: 'alchemyRemaining' },
+        getDropCount: () => 1,
+        getConfig: (id) => CONFIG.potions.find(p => p.id === id),
+        getConfigIndex: (id) => CONFIG.potions.findIndex(p => p.id === id)
+    },
+    ESSENCE: {
+        id: 'essence', name: '精华',
+        configKey: 'essences', inventoryKey: 'essencesInventory',
+        skillKey: 'alchemy', skillLevelKey: 'alchemyLevel',
+        tokenType: null, equipmentBonus: 'alchemy',
+        stateKeys: { active: 'activeEssence', count: 'essenceCount', remaining: 'essenceRemaining' },
+        getDropCount: () => 1,
+        getConfig: (id) => CONFIG.essences.find(e => e.id === id),
+        getConfigIndex: (id) => CONFIG.essences.findIndex(e => e.id === id)
+    },
+    BREW: {
+        id: 'brew', name: '酿造品',
+        configKey: 'brews', inventoryKey: 'brewsInventory',
+        skillKey: 'brewing', skillLevelKey: 'brewingLevel',
+        tokenType: 'brewing_token', equipmentBonus: 'brewing',
+        stateKeys: { active: 'activeBrew', count: 'brewCount', remaining: 'brewRemaining' },
+        getDropCount: () => 1,
+        getConfig: (id) => CONFIG.brews.find(b => b.id === id),
+        getConfigIndex: (id) => CONFIG.brews.findIndex(b => b.id === id)
+    },
+    // 特殊类型
+    TOKEN: {
+        id: 'token', name: '代币',
+        configKey: 'tokens', inventoryKey: 'tokensInventory',
+        skillKey: null, skillLevelKey: null,
+        tokenType: null, equipmentBonus: null,
+        stateKeys: {},
+        getDropCount: () => 1,
+        getConfig: (id) => CONFIG.tokens?.find(t => t.id === id),
+        getConfigIndex: (id) => CONFIG.tokens?.findIndex(t => t.id === id)
+    }
+};
+
+// 工具类型定义
+const TOOL_TYPES = {
+    AXE: { id: 'axe', name: '斧头', configKey: 'axes', equipKey: 'axe', skillBonus: 'woodcutting', icon: '🪓' },
+    PICKAXE: { id: 'pickaxe', name: '镐子', configKey: 'pickaxes', equipKey: 'pickaxe', skillBonus: 'mining', icon: '⛏️' },
+    CHISEL: { id: 'chisel', name: '凿子', configKey: 'chisels', equipKey: 'chisel', skillBonus: 'crafting', icon: '🔨' },
+    NEEDLE: { id: 'needle', name: '针', configKey: 'needles', equipKey: 'needle', skillBonus: 'tailoring', icon: '🪡' },
+    SCYTHE: { id: 'scythe', name: '镰刀', configKey: 'scythes', equipKey: 'scythe', skillBonus: 'gathering', icon: '🗡️' },
+    HAMMER: { id: 'hammer', name: '锤', configKey: 'hammers', equipKey: 'hammer', skillBonus: 'forging', icon: '🔨' },
+    TONGS: { id: 'tongs', name: '小桶', configKey: 'tongs', equipKey: 'tongs', skillBonus: 'brewing', icon: '🪣' },
+    ROD: { id: 'rod', name: '搅拌棒', configKey: 'rods', equipKey: 'rod', skillBonus: 'alchemy', icon: '🥄' }
+};
+
+const TOOL_TYPE_LIST = Object.values(TOOL_TYPES);
+const ITEM_TYPE_LIST = Object.values(ITEM_TYPES);
+
+// 辅助函数
+function getItemType(typeKey) { return ITEM_TYPES[typeKey?.toUpperCase()] || null; }
+function getToolType(toolKey) { return TOOL_TYPES[toolKey?.toUpperCase()] || null; }
+function getInventoryCount(itemType, id) {
+    const inventory = gameState[itemType.inventoryKey];
+    return inventory ? (inventory[id] || 0) : 0;
+}
+function addToInventory(itemType, id, count = 1) {
+    const inventory = gameState[itemType.inventoryKey];
+    if (inventory) inventory[id] = (inventory[id] || 0) + count;
+}
+function removeFromInventory(itemType, id, count = 1) {
+    const inventory = gameState[itemType.inventoryKey];
+    if (inventory) inventory[id] = Math.max(0, (inventory[id] || 0) - count);
+}
+function hasEnoughItems(itemType, id, count) {
+    return getInventoryCount(itemType, id) >= count;
+}
+
+// ============ 游戏状态 ============
+
 let gameState = {
     resources: { gold: 0, wood: 0, stone: 0, herb: 0 },
     buildings: {},
