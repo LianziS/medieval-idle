@@ -6629,24 +6629,95 @@ const style = document.createElement('style');
 style.textContent = `@keyframes toastFade { 0% { opacity: 0; transform: translateX(-50%) translateY(-20px); } 10% { opacity: 1; transform: translateX(-50%) translateY(0); } 90% { opacity: 1; transform: translateX(-50%) translateY(0); } 100% { opacity: 0; transform: translateX(-50%) translateY(-20px); } }`;
 document.head.appendChild(style);
 
+// ============ 后端 API 集成 ============
+
+const API_BASE = window.location.origin;
+let isBackendSync = false;
+
+// 从后端加载游戏数据
+async function loadGameFromBackend() {
+    const token = localStorage.getItem('medieval_token');
+    if (!token) return null;
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/game/data`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.data) {
+                isBackendSync = true;
+                return data.data;
+            }
+        }
+    } catch (e) {
+        console.warn('后端同步失败，使用本地存储:', e);
+    }
+    return null;
+}
+
+// 保存游戏数据到后端
+async function saveGameToBackend(state) {
+    if (!isBackendSync) return;
+    
+    const token = localStorage.getItem('medieval_token');
+    if (!token) return;
+    
+    try {
+        await fetch(`${API_BASE}/api/game/save`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(state)
+        });
+    } catch (e) {
+        console.warn('后端保存失败:', e);
+    }
+}
+
 function saveGame() {
     gameState.lastSave = Date.now();
     // 排除配置项（不应该被存档覆盖）
     const stateToSave = { ...gameState };
     delete stateToSave.maxQueueSize;
+    
+    // 本地存储（快速响应）
     localStorage.setItem('medievalMercenarySave', JSON.stringify(stateToSave));
+    
+    // 后端同步（异步）
+    saveGameToBackend(stateToSave);
 }
 
-function loadGame() {
-    const saved = localStorage.getItem('medievalMercenarySave');
-    if (saved) {
-        try {
-            const loaded = JSON.parse(saved);
-            gameState = { ...gameState, ...loaded };
-            // 强制重置队列大小限制（防止旧存档覆盖）
-            gameState.maxQueueSize = 2;
-            const now = Date.now();
-            for (const [actionId, endTime] of Object.entries(gameState.activeActions)) {
+async function loadGame() {
+    // 尝试从后端加载
+    const backendData = await loadGameFromBackend();
+    
+    if (backendData) {
+        // 使用后端数据
+        gameState = { ...gameState, ...backendData };
+        console.log('✅ 从后端加载游戏数据');
+    } else {
+        // 回退到本地存储
+        const saved = localStorage.getItem('medievalMercenarySave');
+        if (saved) {
+            try {
+                const loaded = JSON.parse(saved);
+                gameState = { ...gameState, ...loaded };
+                console.log('✅ 从本地存储加载游戏数据');
+            } catch (e) {
+                console.error('加载存档失败:', e);
+            }
+        }
+    }
+    
+    // 强制重置队列大小限制（防止旧存档覆盖）
+    gameState.maxQueueSize = 2;
+    
+    // 离线计算
+    const now = Date.now();
+    for (const [actionId, endTime] of Object.entries(gameState.activeActions)) {
                 if (endTime > now) setTimeout(() => completeAction(actionId), endTime - now);
                 else delete gameState.activeActions[actionId];
             }
@@ -7204,9 +7275,6 @@ function loadGame() {
                     gameState.buildings[b.id] = { level: 0 };
                 }
             });
-            
-        } catch (e) { console.error('加载失败:', e); }
-    }
 }
 
 function resetGame() {
