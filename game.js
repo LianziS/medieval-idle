@@ -6640,6 +6640,9 @@ function toggleCombat() {
     gameState.combat.active = true;
     gameState.combat.zoneId = zone.id;
     gameState.combat.endTime = Date.now() + zone.duration;
+    
+    // 通知后端行动开始
+    notifyActionStart('combat', zone.id, 1);
     setActionState({ name: `${zone.name}`, icon: zone.icon }, zone.duration);
     updateCombatUI();
     renderCombatZones();
@@ -6649,6 +6652,9 @@ function toggleCombat() {
 function completeCombat(zone) {
     // 检查行动是否仍然有效（可能已被取消）
     if (!gameState.combat.active) return;
+    
+    // 后端验证
+    notifyActionComplete('combat', zone.id);
     
     gameState.combat.active = false;
     setActionState(null, 0);
