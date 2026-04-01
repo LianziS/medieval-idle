@@ -4448,8 +4448,8 @@ function startForgingToolWithCount(toolId, count, toolType, toolIndex) {
         return;
     }
     
-    // 工具锻造每次只能锻造1个
-    const actualCount = 1;
+    // 使用用户选择的次数
+    const actualCount = count;
     
     gameState.activeForgingTool = toolId;
     gameState.forgingToolCount = actualCount;
