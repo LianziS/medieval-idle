@@ -1121,7 +1121,10 @@ function openUpgradeModal(buildingId) {
  */
 function getResourceName(resourceId) {
     const names = {
+        // 金币
         'gold': '金币',
+        
+        // 木材类
         'pine': '青杉木',
         'iron_birch': '铁桦木',
         'wind_tree': '风啸木',
@@ -1130,6 +1133,18 @@ function getResourceName(resourceId) {
         'thunder_tree': '雷鸣木',
         'ancient_oak': '古橡木',
         'world_tree': '世界树枝',
+        
+        // 木板类
+        'pine_plank': '青杉木板',
+        'iron_birch_plank': '铁桦木板',
+        'wind_tree_plank': '风啸木板',
+        'flame_tree_plank': '焰心木板',
+        'frost_maple_plank': '霜叶枫木板',
+        'thunder_tree_plank': '雷鸣木板',
+        'ancient_oak_plank': '古橡木板',
+        'world_tree_plank': '世界树木板',
+        
+        // 矿石类
         'cyan_ore': '青闪石',
         'red_iron': '赤铁石',
         'feather_ore': '羽石',
@@ -1137,7 +1152,58 @@ function getResourceName(resourceId) {
         'white_ore': '狱炎石',
         'thunder_ore': '雷鸣石',
         'brilliant': '璀璨原石',
-        'star_ore': '星辉原石'
+        'star_ore': '星辉原石',
+        
+        // 矿锭类
+        'cyan_ingot': '青闪锭',
+        'red_copper_ingot': '赤铜锭',
+        'feather_ingot': '羽石锭',
+        'white_silver_ingot': '白银锭',
+        'hell_steel_ingot': '白鸠钢锭',
+        'thunder_steel_ingot': '雷鸣钢锭',
+        'brilliant_crystal': '璀璨水晶',
+        'star_crystal': '星辉水晶',
+        
+        // 布料类
+        'jute_cloth': '黄麻布料',
+        'linen_cloth': '亚麻布料',
+        'wool_cloth': '羊毛布料',
+        'silk_cloth': '丝绸布料',
+        'wind_silk': '风丝绸',
+        'dream_cloth': '梦幻布料',
+        
+        // 采集物类
+        'sweet_berry': '甜浆果',
+        'wild_mint': '野薄荷',
+        'honey': '蜂蜜',
+        'blood_rose': '血蔷薇',
+        'jute': '黄麻',
+        'wheat': '小麦',
+        'pine_needle': '松针',
+        'star_dew_herb': '星露草',
+        'flax': '亚麻',
+        'feather': '羽毛',
+        'hops': '啤酒花',
+        'vanilla': '香草',
+        'blossom_honey': '花蜜',
+        'red_serpent_fruit': '红蛇果',
+        'jade_feather': '翡翠羽',
+        'apple': '苹果',
+        'sage': '鼠尾草',
+        'moonlight_mushroom': '月光菇',
+        'wool': '羊毛',
+        'falcon_tail_feather': '隼尾羽',
+        'silk': '丝绸原料',
+        
+        // 药水类
+        'hp_potion_1': '小型生命药水',
+        'mp_potion_1': '小型魔力药水',
+        'hp_potion_2': '中型生命药水',
+        'mp_potion_2': '中型魔力药水',
+        'hp_potion_3': '大型生命药水',
+        'mp_potion_3': '大型魔力药水',
+        'hp_potion_4': '超级生命药水',
+        'mp_potion_4': '超级魔力药水'
     };
     return names[resourceId] || resourceId;
 }
@@ -1146,19 +1212,55 @@ function getResourceName(resourceId) {
  * 获取资源数量
  */
 function getResourceCount(resourceId) {
-    // 检查伐木物品
-    if (gameState.woodcuttingInventory?.[resourceId]) {
-        return gameState.woodcuttingInventory[resourceId];
+    // 定义所有木材类型
+    const woodTypes = ['pine', 'iron_birch', 'wind_tree', 'flame_tree', 'frost_maple', 'thunder_tree', 'ancient_oak', 'world_tree'];
+    // 定义所有矿石类型
+    const oreTypes = ['cyan_ore', 'red_iron', 'feather_ore', 'hell_ore', 'white_ore', 'thunder_ore', 'brilliant', 'star_ore'];
+    // 定义布料类型
+    const fabricTypes = ['jute_cloth', 'linen_cloth', 'wool_cloth', 'silk_cloth', 'wind_silk', 'shadow_cloth', 'dragon_silk', 'celestial_cloth'];
+    // 定义采集物类型
+    const gatheringTypes = ['sweet_berry', 'wild_mint', 'honey', 'blood_rose', 'jute', 'flax', 'wool', 'silk', 'wind_silk_raw', 'shadow_thread', 'dragon_fiber', 'celestial_lotus'];
+    
+    // 检查木材
+    if (woodTypes.includes(resourceId)) {
+        return gameState.woodcuttingInventory?.[resourceId] || 0;
     }
-    // 检查挖矿物品
-    if (gameState.miningInventory?.[resourceId]) {
-        return gameState.miningInventory[resourceId];
+    // 检查矿石
+    if (oreTypes.includes(resourceId)) {
+        return gameState.miningInventory?.[resourceId] || 0;
+    }
+    // 检查木板
+    if (resourceId.endsWith('_plank')) {
+        return gameState.planksInventory?.[resourceId] || 0;
+    }
+    // 检查矿锭
+    if (resourceId.endsWith('_ingot')) {
+        return gameState.ingotsInventory?.[resourceId] || 0;
+    }
+    // 检查布料
+    if (fabricTypes.includes(resourceId) || resourceId.endsWith('_cloth')) {
+        return gameState.fabricsInventory?.[resourceId] || 0;
+    }
+    // 检查采集物
+    if (gatheringTypes.includes(resourceId)) {
+        return gameState.gatheringInventory?.[resourceId] || 0;
+    }
+    // 检查药水
+    if (resourceId.endsWith('_potion') || resourceId.includes('potion')) {
+        return gameState.potionsInventory?.[resourceId] || 0;
     }
     // 检查金币
     if (resourceId === 'gold') {
         return gameState.gold || 0;
     }
-    return 0;
+    // 默认：尝试从所有库存查找
+    return gameState.woodcuttingInventory?.[resourceId] || 
+           gameState.miningInventory?.[resourceId] || 
+           gameState.gatheringInventory?.[resourceId] || 
+           gameState.planksInventory?.[resourceId] || 
+           gameState.ingotsInventory?.[resourceId] || 
+           gameState.fabricsInventory?.[resourceId] || 
+           gameState.potionsInventory?.[resourceId] || 0;
 }
 
 /**
@@ -2567,10 +2669,10 @@ function formatTime(ms) {
  */
 function formatCost(cost, separator = ' ') {
     const resourceNames = {
+        // 金币
         'gold': '金币',
-        'wood': '木材',
-        'stone': '石头',
-        'herb': '草药',
+        
+        // 木材类
         'pine': '青杉木',
         'iron_birch': '铁桦木',
         'wind_tree': '风啸木',
@@ -2579,6 +2681,18 @@ function formatCost(cost, separator = ' ') {
         'thunder_tree': '雷鸣木',
         'ancient_oak': '古橡木',
         'world_tree': '世界树枝',
+        
+        // 木板类
+        'pine_plank': '青杉木板',
+        'iron_birch_plank': '铁桦木板',
+        'wind_tree_plank': '风啸木板',
+        'flame_tree_plank': '焰心木板',
+        'frost_maple_plank': '霜叶枫木板',
+        'thunder_tree_plank': '雷鸣木板',
+        'ancient_oak_plank': '古橡木板',
+        'world_tree_plank': '世界树木板',
+        
+        // 矿石类
         'cyan_ore': '青闪石',
         'red_iron': '赤铁石',
         'feather_ore': '羽石',
@@ -2586,7 +2700,48 @@ function formatCost(cost, separator = ' ') {
         'white_ore': '狱炎石',
         'thunder_ore': '雷鸣石',
         'brilliant': '璀璨原石',
-        'star_ore': '星辉原石'
+        'star_ore': '星辉原石',
+        
+        // 矿锭类
+        'cyan_ingot': '青闪锭',
+        'red_copper_ingot': '赤铜锭',
+        'feather_ingot': '羽石锭',
+        'white_silver_ingot': '白银锭',
+        'hell_steel_ingot': '白鸠钢锭',
+        'thunder_steel_ingot': '雷鸣钢锭',
+        'brilliant_crystal': '璀璨水晶',
+        'star_crystal': '星辉水晶',
+        
+        // 布料类
+        'jute_cloth': '黄麻布料',
+        'linen_cloth': '亚麻布料',
+        'wool_cloth': '羊毛布料',
+        'silk_cloth': '丝绸布料',
+        'wind_silk': '风丝绸',
+        'dream_cloth': '梦幻布料',
+        
+        // 采集物类
+        'sweet_berry': '甜浆果',
+        'wild_mint': '野薄荷',
+        'honey': '蜂蜜',
+        'blood_rose': '血蔷薇',
+        'jute': '黄麻',
+        'wheat': '小麦',
+        'pine_needle': '松针',
+        'star_dew_herb': '星露草',
+        'flax': '亚麻',
+        'feather': '羽毛',
+        'hops': '啤酒花',
+        'vanilla': '香草',
+        'blossom_honey': '花蜜',
+        'red_serpent_fruit': '红蛇果',
+        'jade_feather': '翡翠羽',
+        'apple': '苹果',
+        'sage': '鼠尾草',
+        'moonlight_mushroom': '月光菇',
+        'wool': '羊毛',
+        'falcon_tail_feather': '隼尾羽',
+        'silk': '丝绸原料'
     };
     
     return Object.entries(cost)

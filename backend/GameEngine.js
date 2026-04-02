@@ -1028,36 +1028,53 @@ class GameEngine {
             }
         }
         
-        // 检查资源
+        // 检查资源 - 使用 ITEM_TYPES 确定库存位置
         const woodcuttingInv = this.state.woodcuttingInventory || {};
         const miningInv = this.state.miningInventory || {};
+        const gatheringInv = this.state.gatheringInventory || {};
         const planksInv = this.state.planksInventory || {};
+        const ingotsInv = this.state.ingotsInventory || {};
+        const fabricsInv = this.state.fabricsInventory || {};
+        
+        // 定义所有木材类型
+        const woodTypes = ['pine', 'iron_birch', 'wind_tree', 'flame_tree', 'frost_maple', 'thunder_tree', 'ancient_oak', 'world_tree'];
+        // 定义所有矿石类型
+        const oreTypes = ['cyan_ore', 'red_iron', 'feather_ore', 'hell_ore', 'white_ore', 'thunder_ore', 'brilliant', 'star_ore'];
         
         for (const [resource, amount] of Object.entries(cost)) {
             let available = 0;
             
             // 检查木材
-            if (['pine', 'iron_birch', 'wind_tree', 'flame_tree'].includes(resource)) {
+            if (woodTypes.includes(resource)) {
                 available = woodcuttingInv[resource] || 0;
             }
             // 检查矿石
-            else if (['cyan_ore', 'red_iron', 'feather_ore'].includes(resource)) {
+            else if (oreTypes.includes(resource)) {
                 available = miningInv[resource] || 0;
             }
             // 检查木板
             else if (resource.endsWith('_plank')) {
                 available = planksInv[resource] || 0;
             }
+            // 检查矿锭
+            else if (resource.endsWith('_ingot')) {
+                available = ingotsInv[resource] || 0;
+            }
+            // 检查布料
+            else if (resource.endsWith('_cloth') || ['jute_cloth', 'linen_cloth', 'wool_cloth', 'silk_cloth', 'wind_silk', 'shadow_cloth', 'dragon_silk', 'celestial_cloth'].includes(resource)) {
+                available = fabricsInv[resource] || 0;
+            }
+            // 检查采集物（草药、蜂蜜等）
+            else if (['sweet_berry', 'wild_mint', 'honey', 'blood_rose', 'jute', 'flax', 'wool', 'silk', 'wind_silk_raw', 'shadow_thread', 'dragon_fiber', 'celestial_lotus'].includes(resource)) {
+                available = gatheringInv[resource] || 0;
+            }
             // 检查金币
             else if (resource === 'gold') {
                 available = this.state.gold || 0;
             }
-            // 检查石头/草药（简化处理）
-            else if (resource === 'stone') {
-                available = miningInv[resource] || 0;
-            }
-            else if (resource === 'herb') {
-                available = (this.state.gatheringInventory || {})[resource] || 0;
+            // 默认：尝试从各库存查找
+            else {
+                available = woodcuttingInv[resource] || miningInv[resource] || gatheringInv[resource] || planksInv[resource] || ingotsInv[resource] || fabricsInv[resource] || 0;
             }
             
             if (available < amount) {
@@ -1067,11 +1084,11 @@ class GameEngine {
         
         // 扣除资源
         for (const [resource, amount] of Object.entries(cost)) {
-            if (['pine', 'iron_birch', 'wind_tree', 'flame_tree'].includes(resource)) {
+            if (woodTypes.includes(resource)) {
                 woodcuttingInv[resource] = (woodcuttingInv[resource] || 0) - amount;
                 if (woodcuttingInv[resource] <= 0) delete woodcuttingInv[resource];
             }
-            else if (['cyan_ore', 'red_iron', 'feather_ore', 'stone'].includes(resource)) {
+            else if (oreTypes.includes(resource)) {
                 miningInv[resource] = (miningInv[resource] || 0) - amount;
                 if (miningInv[resource] <= 0) delete miningInv[resource];
             }
@@ -1079,13 +1096,33 @@ class GameEngine {
                 planksInv[resource] = (planksInv[resource] || 0) - amount;
                 if (planksInv[resource] <= 0) delete planksInv[resource];
             }
+            else if (resource.endsWith('_ingot')) {
+                ingotsInv[resource] = (ingotsInv[resource] || 0) - amount;
+                if (ingotsInv[resource] <= 0) delete ingotsInv[resource];
+            }
+            else if (resource.endsWith('_cloth') || ['jute_cloth', 'linen_cloth', 'wool_cloth', 'silk_cloth', 'wind_silk', 'shadow_cloth', 'dragon_silk', 'celestial_cloth'].includes(resource)) {
+                fabricsInv[resource] = (fabricsInv[resource] || 0) - amount;
+                if (fabricsInv[resource] <= 0) delete fabricsInv[resource];
+            }
+            else if (['sweet_berry', 'wild_mint', 'honey', 'blood_rose', 'jute', 'flax', 'wool', 'silk', 'wind_silk_raw', 'shadow_thread', 'dragon_fiber', 'celestial_lotus'].includes(resource)) {
+                gatheringInv[resource] = (gatheringInv[resource] || 0) - amount;
+                if (gatheringInv[resource] <= 0) delete gatheringInv[resource];
+            }
             else if (resource === 'gold') {
                 this.state.gold = (this.state.gold || 0) - amount;
             }
-            else if (resource === 'herb') {
-                const gatheringInv = this.state.gatheringInventory || {};
-                gatheringInv[resource] = (gatheringInv[resource] || 0) - amount;
-                if (gatheringInv[resource] <= 0) delete gatheringInv[resource];
+            else {
+                // 尝试从各库存扣除
+                if (woodcuttingInv[resource]) {
+                    woodcuttingInv[resource] -= amount;
+                    if (woodcuttingInv[resource] <= 0) delete woodcuttingInv[resource];
+                } else if (miningInv[resource]) {
+                    miningInv[resource] -= amount;
+                    if (miningInv[resource] <= 0) delete miningInv[resource];
+                } else if (gatheringInv[resource]) {
+                    gatheringInv[resource] -= amount;
+                    if (gatheringInv[resource] <= 0) delete gatheringInv[resource];
+                }
             }
         }
         
