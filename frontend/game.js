@@ -416,6 +416,30 @@ function switchPage(pageId) {
     elements.pages.forEach(page => {
         page.classList.toggle('active', page.id === `page-${pageId}`);
     });
+    
+    // 根据页面重新渲染对应内容
+    if (gameState && CONFIG) {
+        switch(pageId) {
+            case 'gathering':
+                renderGathering();
+                break;
+            case 'crafting':
+                renderCrafting();
+                break;
+            case 'tailoring':
+                renderTailoring();
+                break;
+            case 'forging':
+                renderForging();
+                break;
+            case 'alchemy':
+                renderAlchemy();
+                break;
+            case 'brewing':
+                renderBrewing();
+                break;
+        }
+    }
 }
 
 // ============ 渲染函数 ============
