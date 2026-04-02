@@ -3037,3 +3037,132 @@ body::after {
     background: rgba(100, 100, 100, 0.3);
     border-color: rgba(100, 100, 100, 0.5);
 }
+
+/* ============ GM 测试面板 ============ */
+
+.gm-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(27, 42, 58, 0.98);
+    border: 2px solid #8B2C2D;
+    border-radius: 12px;
+    padding: 20px;
+    z-index: 9999;
+    min-width: 300px;
+}
+
+.gm-panel h3 {
+    color: #E8C57F;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.gm-commands {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.gm-btn {
+    background: linear-gradient(135deg, #8B2C2D 0%, #a33435 100%);
+    border: none;
+    color: #fff;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.gm-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(139, 44, 45, 0.4);
+}
+
+.gm-close {
+    width: 100%;
+    background: #333;
+    border: 1px solid #555;
+    color: #aaa;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.gm-close:hover {
+    background: #444;
+    color: #fff;
+}
+
+/* ============ Toast 提示 ============ */
+
+.toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(27, 42, 58, 0.95);
+    border: 1px solid rgba(107, 79, 60, 0.6);
+    color: #E8C57F;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 9999;
+    animation: toastFadeIn 0.3s ease-out;
+}
+
+.toast.fade-out {
+    animation: toastFadeOut 0.3s ease-out forwards;
+}
+
+@keyframes toastFadeIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@keyframes toastFadeOut {
+    from { opacity: 1; transform: translateX(-50%) translateY(0); }
+    to { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+}
+
+/* ============ 库存网格 ============ */
+
+.inventory-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(45, 63, 82, 0.5);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(107, 79, 60, 0.3);
+}
+
+.inventory-item .item-icon {
+    font-size: 1.2rem;
+}
+
+.inventory-item .item-name {
+    flex: 1;
+    color: #E8C57F;
+}
+
+.inventory-item .item-count {
+    color: #A0B2C0;
+    font-size: 0.9rem;
+}
+
+.empty-message {
+    color: #6b7f90;
+    text-align: center;
+    padding: 20px;
+    font-style: italic;
+}
+
+/* ============ 行动卡片激活状态 ============ */
+
+.action-card.active {
+    border-color: #E8C57F !important;
+    box-shadow: 0 0 10px rgba(232, 197, 127, 0.3);
+}
