@@ -16,6 +16,41 @@ body {
     overflow-x: hidden;
 }
 
+/* ============ 响应式字体 ============ */
+/* 侧边栏、顶部栏：最大14px，最小9.8px */
+.sidebar,
+.sidebar *,
+.top-fixed,
+.top-fixed * {
+    font-size: clamp(9.8px, 0.9vw + 8px, 14px) !important;
+}
+
+/* 主页栏、商人页面、弹窗、弹出式卡片：最大13px，最小9.1px */
+.game-container,
+.game-container *,
+.page,
+.page *,
+.merchant-modal,
+.merchant-modal *,
+.merchant-modal-panel,
+.merchant-modal-panel *,
+.merchant-card,
+.merchant-card *,
+.merchant-content,
+.merchant-content *,
+.modal,
+.modal *,
+.modal-content,
+.modal-content *,
+.popover,
+.popover *,
+.popup,
+.popup *,
+.card,
+.card * {
+    font-size: clamp(9.1px, 0.85vw + 7px, 13px) !important;
+}
+
 /* ============ 背景 + 噪点纹理 ============ */
 body::before {
     content: '';
@@ -64,13 +99,28 @@ body::after {
 }
 
 .top-fixed-content {
-    max-width: 1400px;
-    margin: 0 auto;
     padding: 8px 20px;
     width: 100%;
     display: flex;
     justify-content: flex-end;
     align-items: center;
+    gap: 10px;
+}
+
+.logout-btn {
+    background: rgba(139, 44, 45, 0.5);
+    border: 1px solid rgba(255, 100, 100, 0.3);
+    color: #ff9999;
+    padding: 4px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+.logout-btn:hover {
+    background: rgba(139, 44, 45, 0.8);
+    border-color: rgba(255, 100, 100, 0.5);
 }
 
 .player-badge {
@@ -86,11 +136,27 @@ body::after {
     font-weight: bold;
 }
 
+.update-time-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(139, 44, 45, 0.3);
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(139, 44, 45, 0.5);
+    font-size: 0.7rem;
+    color: #A0B2C0;
+    margin-right: auto;
+    position: fixed;
+    left: 90px;
+    top: 12px;
+}
+
 /* 行动状态栏 */
 .action-status-bar {
     background: transparent;
     border-top: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 6px 20px 10px 20px;
+    padding: 6px 20px 10px 90px;
     min-height: 80px;
 }
 
@@ -99,8 +165,6 @@ body::after {
     flex-direction: column;
     gap: 6px;
     width: 100%;
-    max-width: 1400px;
-    margin: 0 auto;
 }
 
 .action-rewards {
@@ -861,6 +925,21 @@ body::after {
     max-height: 80vh;
     overflow-y: auto;
     position: relative;
+    /* 弹窗字体和侧边栏一致：最大14px，最小9.8px */
+    font-size: clamp(9.8px, 0.9vw + 8px, 14px) !important;
+}
+
+.modal-content * {
+    /* 确保子元素继承字体大小 */
+    font-size: inherit !important;
+}
+
+.modal-content button,
+.modal-content input,
+.modal-content .count-option {
+    /* 确保按钮和输入框可以点击 */
+    pointer-events: auto;
+    cursor: pointer;
 }
 
 .modal-close {
@@ -897,6 +976,168 @@ body::after {
     margin-top: 20px;
     padding-top: 15px;
     border-top: 1px solid rgba(107, 79, 60, 0.3);
+}
+
+/* 出售数量弹出卡片 */
+.sell-popup-card {
+    position: fixed;
+    display: none;
+    width: 200px;
+    background: linear-gradient(180deg, rgba(40, 50, 60, 0.95) 0%, rgba(27, 42, 58, 0.98) 100%);
+    border: 2px solid rgba(107, 79, 60, 0.6);
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 2100;
+    font-size: 13px;
+}
+
+.sell-popup-card.show {
+    display: block;
+}
+
+.sell-popup-card.show-above {
+    /* 标记类，JS已计算好位置，无需额外transform */
+}
+
+.sell-popup-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.sell-popup-header #sell-item-icon {
+    font-size: 20px;
+}
+
+.sell-popup-header #sell-item-name {
+    flex: 1;
+    color: #E8C57F;
+}
+
+.sell-popup-close {
+    color: #888;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 2px 6px;
+}
+
+.sell-popup-close:hover {
+    color: #fff;
+}
+
+.sell-popup-info {
+    color: #888;
+    font-size: 11px;
+    margin-bottom: 8px;
+}
+
+.sell-popup-options {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.sell-opt-btn {
+    background: rgba(107, 79, 60, 0.3);
+    border: 1px solid rgba(107, 79, 60, 0.4);
+    border-radius: 4px;
+    padding: 6px 4px;
+    color: #A0B2C0;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.2s;
+}
+
+.sell-opt-btn:hover {
+    background: rgba(107, 79, 60, 0.5);
+    color: #fff;
+}
+
+.sell-opt-btn.selected {
+    background: rgba(139, 44, 45, 0.6);
+    border-color: #8B2C2D;
+    color: #fff;
+}
+
+.sell-opt-all {
+    grid-column: span 1;
+}
+
+.sell-popup-custom {
+    margin-bottom: 8px;
+}
+
+.sell-popup-custom input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid rgba(107, 79, 60, 0.4);
+    border-radius: 4px;
+    background: rgba(27, 42, 58, 0.6);
+    color: #A0B2C0;
+    font-size: 12px;
+}
+
+.sell-popup-total {
+    text-align: center;
+    color: #4CAF50;
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.sell-popup-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.sell-popup-btn {
+    flex: 1;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.sell-popup-btn.cancel {
+    background: rgba(160, 178, 192, 0.2);
+    color: #A0B2C0;
+}
+
+.sell-popup-btn.cancel:hover {
+    background: rgba(160, 178, 192, 0.3);
+}
+
+.sell-popup-btn.confirm {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: #fff;
+}
+
+.sell-popup-btn.confirm:hover {
+    background: linear-gradient(135deg, #45a049 0%, #4CAF50 100%);
+}
+
+.sell-popup-btn.sell {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+    color: #fff;
+}
+
+.sell-popup-btn.sell:hover {
+    background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%);
+}
+
+.sell-popup-btn.confirm-danger {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+    color: #fff;
+}
+
+.sell-popup-btn.confirm-danger:hover {
+    background: linear-gradient(135deg, #d32f2f 0%, #f44336 100%);
 }
 
 .modal-btn {
@@ -1202,9 +1443,21 @@ body::after {
         padding: 6px 15px;
     }
     
+    /* 时间戳隐藏，节省空间 */
+    .update-time-badge {
+        display: none;
+    }
+    
     .player-badge {
         padding: 4px 10px;
         font-size: 0.75rem;
+    }
+    
+    /* 退出按钮优化 */
+    .logout-btn {
+        padding: 6px 14px;
+        font-size: 0.8rem;
+        min-height: 36px;
     }
     
     .action-status-bar {
@@ -1257,9 +1510,10 @@ body::after {
         padding: 1px 5px;
     }
     
+    /* 侧边栏在手机端默认收起 */
     .sidebar {
-        top: 115px;
-        height: calc(100% - 115px);
+        top: 85px;
+        height: calc(100% - 85px);
         width: 50px;
         border: 2px solid rgba(255, 255, 255, 0.2);
         border-top: none;
@@ -1385,6 +1639,88 @@ body::after {
     .zone-name {
         font-size: 0.9rem;
     }
+    
+    /* 按钮触摸区域优化 */
+    .action-btn,
+    .build-btn,
+    .craft-btn,
+    .forge-btn,
+    .merchant-btn,
+    .quest-btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 12px 16px;
+    }
+    
+    /* 弹窗全屏优化 */
+    .modal,
+    .merchant-modal {
+        width: 100vw !important;
+        height: 100vh !important;
+    }
+    
+    .modal.show {
+        display: flex !important;
+    }
+    
+    .modal-content {
+        width: 95vw !important;
+        max-width: 95vw !important;
+        height: auto !important;
+        max-height: 90vh !important;
+        border-radius: 12px !important;
+        overflow-y: auto !important;
+        margin: auto;
+        padding: 20px !important;
+    }
+    
+    .merchant-modal-panel {
+        width: 95vw !important;
+        max-width: 95vw !important;
+        height: auto !important;
+        max-height: 90vh !important;
+        border-radius: 12px !important;
+    }
+    
+    /* 关闭按钮增大触摸区域 */
+    .modal-close,
+    .sell-popup-close,
+    .merchant-modal-close {
+        font-size: 2rem;
+        padding: 10px;
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    /* 出售弹窗优化 */
+    .sell-popup-card {
+        width: 280px !important;
+        padding: 16px !important;
+    }
+    
+    .sell-opt-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* 页面内容间距优化 */
+    .page {
+        padding: 12px;
+    }
+    
+    /* 列表项增大触摸区域 */
+    .nav-item {
+        min-height: 44px;
+        padding: 8px 10px;
+    }
+    
+    /* 卡片网格优化 */
+    .gathering-item-card,
+    .tool-card,
+    .crafting-item {
+        min-height: 60px;
+        padding: 10px;
+    }
 }
 
 /* ============ 商人系统 ============ */
@@ -1489,15 +1825,17 @@ body::after {
 .merchant-modal {
     position: fixed;
     top: 0;
-    right: -100%;
+    left: 0;
     width: 100%;
     height: 100vh;
     z-index: 2000;
-    transition: right 0.3s ease;
+    pointer-events: none;
+    display: none;
 }
 
 .merchant-modal.active {
-    right: 0;
+    pointer-events: auto;
+    display: flex;
 }
 
 .merchant-modal-overlay {
@@ -1506,7 +1844,13 @@ body::after {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0px);
+    transition: background 0.4s ease, backdrop-filter 0.4s ease;
+}
+
+.merchant-modal.active .merchant-modal-overlay {
+    background: rgba(0, 0, 0, 0.35);
     backdrop-filter: blur(4px);
 }
 
@@ -1522,7 +1866,13 @@ body::after {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: -3px 0 15px rgba(0, 0, 0, 0.3);
+    box-shadow: -5px 0 20px rgba(0, 0, 0, 0.4);
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.merchant-modal.active .merchant-modal-panel {
+    transform: translateX(0);
 }
 
 @media (max-width: 768px) {
@@ -2141,13 +2491,45 @@ body::after {
 
 .gathering-tab.locked {
     opacity: 0.5;
-    cursor: not-allowed;
 }
 
 .gathering-items-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 14px;
+}
+
+/* 锻造页面需要标签切换，所以默认隐藏 */
+#forging-ingots-list,
+#forging-tools-list {
+    display: none;
+}
+
+#forging-ingots-list.active,
+#forging-tools-list.active {
+    display: grid;
+}
+
+/* 炼金页面标签切换 */
+#alchemy-potions-list,
+#alchemy-essences-list {
+    display: none;
+}
+
+#alchemy-potions-list.active,
+#alchemy-essences-list.active {
+    display: grid;
+}
+
+/* 酿造页面标签切换 */
+#brewing-brews-list,
+#brewing-aging-list {
+    display: none;
+}
+
+#brewing-brews-list.active,
+#brewing-aging-list.active {
+    display: grid;
 }
 
 .gathering-item-card {
@@ -2246,4 +2628,414 @@ body::after {
     font-size: 0.9rem;
     color: #E8C57F;
     font-weight: bold;
+}
+
+.storage-item-small.equipped {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(76, 175, 80, 0.1));
+    border: 1px solid rgba(76, 175, 80, 0.4);
+}
+
+.storage-item-small.equipped .storage-item-small-name {
+    color: #4CAF50;
+}
+
+.storage-item-small.equipped .storage-item-small-count {
+    color: #4CAF50;
+}
+
+/* ============ 仓库二级菜单 ============ */
+.storage-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(107, 79, 60, 0.3);
+}
+
+.storage-tab {
+    background: transparent;
+    border: none;
+    color: #A0B2C0;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.3s;
+}
+
+.storage-tab:hover {
+    color: #fff;
+    background: rgba(107, 79, 60, 0.2);
+}
+
+.storage-tab.active {
+    color: #E8C57F;
+    background: rgba(107, 79, 60, 0.3);
+}
+
+.storage-tab-divider {
+    color: rgba(160, 178, 192, 0.4);
+}
+
+.storage-tab-content {
+    display: none !important;
+}
+
+.storage-tab-content.active {
+    display: block !important;
+}
+
+/* ============ 装备栏 ============ */
+.equipment-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+}
+
+@media (max-width: 480px) {
+    .equipment-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.equipment-slot {
+    background: linear-gradient(180deg, rgba(45, 63, 82, 0.8) 0%, rgba(27, 42, 58, 0.9) 100%);
+    border: 2px solid rgba(107, 79, 60, 0.4);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    min-height: 120px;
+}
+
+.equipment-slot:hover {
+    border-color: #8B2C2D;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.equipment-slot.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.6);
+}
+
+.equipment-slot.locked:hover {
+    border-color: rgba(107, 79, 60, 0.4);
+    transform: none;
+    box-shadow: none;
+}
+
+.equipment-slot.equipped {
+    border-color: #6b4f3c;
+    background: linear-gradient(180deg, rgba(107, 79, 60, 0.3) 0%, rgba(27, 42, 58, 0.9) 100%);
+}
+
+.equipment-slot-label {
+    font-size: 0.75rem;
+    color: #6b7f90;
+    margin-bottom: 8px;
+}
+
+.equipment-slot-icon {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+}
+
+.equipment-slot-name {
+    font-size: 0.85rem;
+    color: #A0B2C0;
+    font-weight: bold;
+}
+
+.equipment-slot.equipped .equipment-slot-name {
+    color: #E8C57F;
+}
+
+/* ============ 工具选择列表 ============ */
+.tool-select-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.tool-select-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(107, 79, 60, 0.2);
+    border: 2px solid rgba(107, 79, 60, 0.3);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.tool-select-item:hover {
+    border-color: #8B2C2D;
+    background: rgba(107, 79, 60, 0.35);
+}
+
+.tool-select-item.equipped {
+    border-color: #6b4f3c;
+    background: rgba(107, 79, 60, 0.4);
+}
+
+.tool-select-item.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.6);
+}
+
+.tool-select-item.locked:hover {
+    border-color: rgba(107, 79, 60, 0.3);
+    background: rgba(107, 79, 60, 0.2);
+}
+
+.tool-select-icon {
+    font-size: 2rem;
+    width: 50px;
+    text-align: center;
+}
+
+.tool-select-info {
+    flex: 1;
+}
+
+.tool-select-name {
+    font-size: 1rem;
+    color: #fff;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.tool-select-desc {
+    font-size: 0.85rem;
+    color: #6b7f90;
+}
+
+.tool-select-item.equipped .tool-select-name {
+    color: #E8C57F;
+}
+
+.tool-select-badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(107, 79, 60, 0.3);
+    color: #A0B2C0;
+}
+
+.tool-select-item.equipped .tool-select-badge {
+    background: rgba(107, 79, 60, 0.5);
+    color: #E8C57F;
+}
+
+.tool-empty-message {
+    text-align: center;
+    padding: 40px;
+    color: #6b7f90;
+    font-size: 1rem;
+}
+
+/* ============ 行动队列 ============ */
+.action-queue-btn {
+    background: rgba(107, 79, 60, 0.6);
+    border: 1px solid rgba(107, 79, 60, 0.8);
+    color: #E8C57F;
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.3s;
+}
+
+.action-queue-btn:hover {
+    background: rgba(107, 79, 60, 0.8);
+}
+
+/* ============ 行动队列弹出卡片 ============ */
+.queue-popover {
+    position: fixed;
+    width: 380px;
+    max-height: 500px;
+    background: linear-gradient(180deg, rgba(27, 42, 58, 0.98) 0%, rgba(45, 63, 82, 0.98) 100%);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(107, 79, 60, 0.5);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    z-index: 1200;
+    display: none;
+    /* 默认位置会在JS中动态计算 */
+    top: 50px;
+    right: 80px;
+}
+
+.queue-popover * {
+    /* 弹窗字体和侧边栏一致：最大14px，最小9.8px */
+    font-size: clamp(9.8px, 0.9vw + 8px, 14px) !important;
+}
+
+.queue-popover.show {
+    display: block;
+    animation: popoverFadeIn 0.2s ease-out;
+}
+
+@keyframes popoverFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.queue-popover-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(107, 79, 60, 0.3);
+}
+
+.queue-popover-header h3 {
+    font-size: 1.1rem;
+    color: #E8C57F;
+    margin: 0;
+}
+
+.queue-popover-close {
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6b7f90;
+    transition: color 0.2s;
+}
+
+.queue-popover-close:hover {
+    color: #8B2C2D;
+}
+
+.queue-popover-body {
+    padding: 12px 16px;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.queue-popover-footer {
+    padding: 12px 16px;
+    border-top: 1px solid rgba(107, 79, 60, 0.3);
+    display: flex;
+    justify-content: center;
+}
+
+.queue-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.queue-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(107, 79, 60, 0.2);
+    border: 2px solid rgba(107, 79, 60, 0.3);
+    border-radius: 8px;
+}
+
+.queue-item-order {
+    font-size: 0.85rem;
+    color: #6b7f90;
+    min-width: 30px;
+}
+
+.queue-item-icon {
+    font-size: 1.5rem;
+}
+
+.queue-item-info {
+    flex: 1;
+}
+
+.queue-item-name {
+    font-size: 0.95rem;
+    color: #fff;
+    font-weight: bold;
+}
+
+.queue-item-count {
+    font-size: 0.8rem;
+    color: #6b7f90;
+}
+
+.queue-item-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.queue-action-btn {
+    background: rgba(107, 79, 60, 0.3);
+    border: none;
+    color: #A0B2C0;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+.queue-action-btn:hover {
+    background: rgba(107, 79, 60, 0.5);
+    color: #fff;
+}
+
+.queue-action-btn.delete:hover {
+    background: rgba(139, 44, 45, 0.5);
+    color: #ff6b6b;
+}
+
+.queue-empty-message {
+    text-align: center;
+    padding: 40px;
+    color: #6b7f90;
+    font-size: 1rem;
+}
+
+.modal-btn.danger {
+    background: rgba(139, 44, 45, 0.6);
+    border-color: rgba(139, 44, 45, 0.8);
+}
+
+.modal-btn.danger:hover {
+    background: rgba(139, 44, 45, 0.8);
+}
+
+#action-modal-queue {
+    background: rgba(74, 124, 45, 0.3);
+    border-color: rgba(74, 124, 45, 0.5);
+}
+
+#action-modal-queue:hover:not(:disabled) {
+    background: rgba(74, 124, 45, 0.5);
+}
+
+#action-modal-queue:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(100, 100, 100, 0.3);
+    border-color: rgba(100, 100, 100, 0.5);
 }
