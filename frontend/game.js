@@ -1458,85 +1458,74 @@ function renderToolForge() {
     
     const forgingLevel = gameState.forgingLevel || 1;
     
-    // 工具类型中文名
-    const typeNames = {
-        axes: '🪓 斧头',
-        pickaxes: '⛏️ 镐子',
-        chisels: '🔨 凿子',
-        needles: '🪡 针',
-        scythes: '🗡️ 镰刀',
-        hammers: '🔨 锤子',
-        tongs: '🪣 小桶',
-        rods: '🥄 搅拌棒'
-    };
+    // 系列名称和颜色
+    const seriesNames = [
+        { name: '青闪系列', color: '#4ECDC4', level: 2 },
+        { name: '赤铁系列', color: '#FF6B6B', level: 12 },
+        { name: '羽系列', color: '#95E1D3', level: 22 },
+        { name: '白银系列', color: '#C0C0C0', level: 37 },
+        { name: '狱炎系列', color: '#FF8C00', level: 52 },
+        { name: '雷鸣系列', color: '#9370DB', level: 67 },
+        { name: '璀璨系列', color: '#FFD700', level: 82 },
+        { name: '星辉系列', color: '#E6E6FA', level: 97 }
+    ];
     
-    // 生成二级标签栏
-    const tabsHtml = Object.keys(CONFIG.tools).map((toolType, index) => `
-        <button class="gathering-tab ${index === 0 ? 'active' : ''}" data-tool-type="${toolType}">
-            ${typeNames[toolType] || toolType}
-        </button>
-    `).join('');
+    let html = '';
     
-    // 生成各工具类型的内容区域
-    const contentsHtml = Object.entries(CONFIG.tools).map(([toolType, tools], index) => {
-        const cardsHtml = tools.map((tool, toolIndex) => {
-            const unlocked = forgingLevel >= (tool.reqForgeLevel || 1);
-            const owned = (gameState.toolsInventory?.[toolType] || []).includes(tool.id);
-            
-            return `
-                <div class="tool-card ${unlocked ? '' : 'locked'} ${owned ? 'owned' : ''}" 
-                     data-tool-type="${toolType}" data-tool-index="${toolIndex}">
-                    <div class="tool-icon">${tool.icon}</div>
-                    <div class="tool-info">
-                        <div class="tool-name">${tool.name}</div>
-                        <div class="tool-meta">
-                            <span>+${Math.round(tool.speedBonus * 100)}%</span>
-                            <span>Lv.${tool.reqForgeLevel || 1}</span>
-                        </div>
-                        ${owned ? '<div class="tool-owned">✓</div>' : ''}
-                    </div>
-                    ${!unlocked ? `<div class="locked-overlay">🔒 Lv.${tool.reqForgeLevel || 1}</div>` : ''}
-                </div>
-            `;
-        }).join('');
+    // 按系列（等级索引）分组
+    for (let seriesIndex = 0; seriesIndex < 8; seriesIndex++) {
+        const series = seriesNames[seriesIndex];
+        const seriesTools = [];
         
-        return `
-            <div class="tool-type-content ${index === 0 ? 'active' : ''}" id="tool-content-${toolType}">
-                <div class="tool-grid">
-                    ${cardsHtml}
+        // 收集该系列的所有工具
+        Object.entries(CONFIG.tools).forEach(([toolType, tools]) => {
+            if (tools[seriesIndex]) {
+                seriesTools.push({
+                    tool: tools[seriesIndex],
+                    toolType: toolType,
+                    toolIndex: seriesIndex
+                });
+            }
+        });
+        
+        if (seriesTools.length === 0) continue;
+        
+        const unlocked = forgingLevel >= series.level;
+        
+        html += `
+            <div class="tool-series-section ${unlocked ? '' : 'locked'}">
+                <div class="tool-series-header" style="border-left: 3px solid ${series.color};">
+                    <span class="tool-series-name">${series.name}</span>
+                    <span class="tool-series-level">Lv.${series.level}</span>
                 </div>
+                <div class="tool-series-grid">
+                    ${seriesTools.map(({ tool, toolType, toolIndex }) => {
+                        const owned = (gameState.toolsInventory?.[toolType] || []).includes(tool.id);
+                        
+                        return `
+                            <div class="tool-card ${owned ? 'owned' : ''}" 
+                                 data-tool-type="${toolType}" data-tool-index="${toolIndex}">
+                                <div class="tool-icon">${tool.icon}</div>
+                                <div class="tool-info">
+                                    <div class="tool-name">${tool.name}</div>
+                                    <div class="tool-meta">
+                                        <span>+${Math.round(tool.speedBonus * 100)}%</span>
+                                    </div>
+                                    ${owned ? '<div class="tool-owned">✓</div>' : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                ${!unlocked ? `<div class="locked-overlay">🔒 需要 Lv.${series.level}</div>` : ''}
             </div>
         `;
-    }).join('');
+    }
     
-    container.innerHTML = `
-        <div class="tool-tabs-container">
-            <div class="tool-tabs">${tabsHtml}</div>
-        </div>
-        <div class="tool-contents-container">
-            ${contentsHtml}
-        </div>
-    `;
-    
-    // 绑定二级标签切换
-    container.querySelectorAll('.tool-tabs .gathering-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            // 切换标签激活状态
-            container.querySelectorAll('.tool-tabs .gathering-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            
-            // 切换内容显示
-            const toolType = tab.dataset.toolType;
-            container.querySelectorAll('.tool-type-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            const targetContent = container.querySelector(`#tool-content-${toolType}`);
-            if (targetContent) targetContent.classList.add('active');
-        });
-    });
+    container.innerHTML = html;
     
     // 绑定工具卡片点击事件
-    container.querySelectorAll('.tool-card:not(.locked):not(.owned)').forEach(card => {
+    container.querySelectorAll('.tool-card:not(.locked)').forEach(card => {
         card.addEventListener('click', () => {
             const toolType = card.dataset.toolType;
             const toolIndex = parseInt(card.dataset.toolIndex);
