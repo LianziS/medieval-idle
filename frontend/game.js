@@ -647,17 +647,57 @@ function showQueuePopover() {
     if (!popover || !queueList) return;
     
     const queue = gameState?.actionQueue || [];
+    const queueLength = queue.length;
     
     queueList.innerHTML = queue.map((item, index) => `
         <div class="queue-item" data-index="${index}">
             <span class="queue-item-icon">${item.icon}</span>
             <span class="queue-item-name">${item.name}</span>
             <span class="queue-item-count">×${item.count}</span>
-            <button class="queue-item-remove" data-index="${index}">×</button>
+            <div class="queue-item-actions">
+                ${index > 0 ? `<button class="queue-item-btn" data-action="top" data-index="${index}" title="置顶">⏫</button>` : ''}
+                ${index > 0 ? `<button class="queue-item-btn" data-action="up" data-index="${index}" title="上移">▲</button>` : ''}
+                ${index < queueLength - 1 ? `<button class="queue-item-btn" data-action="down" data-index="${index}" title="下移">▼</button>` : ''}
+                ${index < queueLength - 1 ? `<button class="queue-item-btn" data-action="bottom" data-index="${index}" title="置底">⏬</button>` : ''}
+                <button class="queue-item-remove" data-index="${index}" title="移除">×</button>
+            </div>
         </div>
     `).join('') || '<div class="queue-empty">队列为空</div>';
     
+    // 定位在队列按钮下方居中
+    const btn = elements.actionQueueBtn;
+    if (btn) {
+        const btnRect = btn.getBoundingClientRect();
+        const popoverWidth = 320;
+        const popoverHeight = popover.offsetHeight || 200;
+        
+        // 水平居中于按钮
+        let left = btnRect.left + btnRect.width / 2 - popoverWidth / 2;
+        // 确保不超出屏幕
+        left = Math.max(10, Math.min(left, window.innerWidth - popoverWidth - 10));
+        
+        // 垂直位置在按钮上方
+        let top = btnRect.top - popoverHeight - 10;
+        // 如果上方空间不够，则显示在下方
+        if (top < 10) {
+            top = btnRect.bottom + 10;
+        }
+        
+        popover.style.left = `${left}px`;
+        popover.style.top = `${top}px`;
+    }
+    
     popover.style.display = 'block';
+    
+    // 绑定操作事件
+    queueList.querySelectorAll('.queue-item-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const index = parseInt(btn.dataset.index);
+            const action = btn.dataset.action;
+            socket.emit('queue_move', { index, action });
+        });
+    });
     
     // 绑定移除事件
     queueList.querySelectorAll('.queue-item-remove').forEach(btn => {

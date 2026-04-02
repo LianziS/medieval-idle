@@ -472,6 +472,14 @@ io.on('connection', (socket) => {
         socket.emit('game_state_update', gameEngine.getFullState());
     });
     
+    // 移动队列中的行动
+    socket.on('queue_move', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.moveQueueItem(data.index, data.action);
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
     // 清空队列
     socket.on('queue_clear', () => {
         if (!gameEngine) return socket.emit('error', { message: '未认证' });

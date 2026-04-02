@@ -510,6 +510,43 @@ class GameEngine {
     }
     
     /**
+     * 移动队列中的行动
+     */
+    moveQueueItem(index, action) {
+        const queue = this.state.actionQueue;
+        if (index < 0 || index >= queue.length) {
+            return { success: false, reason: '索引无效' };
+        }
+        
+        const item = queue[index];
+        
+        switch (action) {
+            case 'up':
+                if (index > 0) {
+                    queue.splice(index, 1);
+                    queue.splice(index - 1, 0, item);
+                }
+                break;
+            case 'down':
+                if (index < queue.length - 1) {
+                    queue.splice(index, 1);
+                    queue.splice(index + 1, 0, item);
+                }
+                break;
+            case 'top':
+                queue.splice(index, 1);
+                queue.unshift(item);
+                break;
+            case 'bottom':
+                queue.splice(index, 1);
+                queue.push(item);
+                break;
+        }
+        
+        return { success: true };
+    }
+    
+    /**
      * 清空队列
      */
     clearQueue() {
