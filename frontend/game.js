@@ -101,9 +101,9 @@ function setupSocket() {
     // 设置超时：5秒后强制隐藏 loading
     setTimeout(() => {
         const loadingEl = document.getElementById('loading');
-        if (loadingEl && loadingEl.style.display !== 'none') {
-            loadingEl.style.display = 'none';
-            console.log('Loading 超时隐藏');
+        if (loadingEl) {
+            loadingEl.remove(); // 完全移除元素
+            console.log('Loading 元素已移除');
         }
     }, 5000);
     
@@ -123,9 +123,9 @@ function setupSocket() {
             showToast('✅ 已连接服务器');
         } else {
             console.error('认证失败:', data.error);
-            // 隐藏 loading，跳转到登录页
+            // 移除 loading，跳转到登录页
             const loadingEl = document.getElementById('loading');
-            if (loadingEl) loadingEl.style.display = 'none';
+            if (loadingEl) loadingEl.remove();
             window.location.href = '/login';
         }
     });
@@ -136,10 +136,10 @@ function setupSocket() {
         renderAll();
         console.log('游戏状态已同步');
         
-        // 隐藏 loading 元素
+        // 移除 loading 元素
         const loadingEl = document.getElementById('loading');
         if (loadingEl) {
-            loadingEl.style.display = 'none';
+            loadingEl.remove();
         }
     });
     
