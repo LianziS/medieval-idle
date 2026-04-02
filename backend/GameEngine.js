@@ -499,6 +499,24 @@ class GameEngine {
     }
     
     /**
+     * 移除队列中的行动
+     */
+    removeQueueItem(index) {
+        if (index >= 0 && index < this.state.actionQueue.length) {
+            const removed = this.state.actionQueue.splice(index, 1);
+            return { success: true, removed: removed[0] };
+        }
+        return { success: false, reason: '索引无效' };
+    }
+    
+    /**
+     * 清空队列
+     */
+    clearQueue() {
+        this.state.actionQueue = [];
+    }
+    
+    /**
      * 获取完整状态（用于同步到前端）
      */
     getFullState() {

@@ -464,6 +464,22 @@ io.on('connection', (socket) => {
         socket.emit('game_state_update', gameEngine.getFullState());
     });
     
+    // 移除队列中的行动
+    socket.on('queue_remove', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.removeQueueItem(data.index);
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
+    // 清空队列
+    socket.on('queue_clear', () => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        gameEngine.clearQueue();
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
     // 装备工具
     socket.on('equip_tool', (data) => {
         if (!gameEngine) return socket.emit('error', { message: '未认证' });

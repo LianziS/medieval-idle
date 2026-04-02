@@ -281,6 +281,32 @@ function setupEventListeners() {
             }
         });
     }
+    
+    // 队列按钮
+    if (elements.actionQueueBtn) {
+        elements.actionQueueBtn.addEventListener('click', () => {
+            showQueuePopover();
+        });
+    }
+    
+    // 队列面板关闭按钮
+    const queuePopoverClose = document.getElementById('queue-popover-close');
+    if (queuePopoverClose) {
+        queuePopoverClose.addEventListener('click', () => {
+            hideQueuePopover();
+        });
+    }
+    
+    // 清空队列按钮
+    const queueClearBtn = document.getElementById('queue-clear-btn');
+    if (queueClearBtn) {
+        queueClearBtn.addEventListener('click', () => {
+            if (confirm('确定要清空队列吗？')) {
+                socket.emit('queue_clear');
+                hideQueuePopover();
+            }
+        });
+    }
 }
 
 /**
@@ -609,6 +635,46 @@ function updateQueueButton() {
     } else {
         elements.actionQueueBtn.style.display = 'none';
     }
+}
+
+/**
+ * 显示队列面板
+ */
+function showQueuePopover() {
+    const popover = document.getElementById('queue-popover');
+    const queueList = document.getElementById('queue-list');
+    
+    if (!popover || !queueList) return;
+    
+    const queue = gameState?.actionQueue || [];
+    
+    queueList.innerHTML = queue.map((item, index) => `
+        <div class="queue-item" data-index="${index}">
+            <span class="queue-item-icon">${item.icon}</span>
+            <span class="queue-item-name">${item.name}</span>
+            <span class="queue-item-count">×${item.count}</span>
+            <button class="queue-item-remove" data-index="${index}">×</button>
+        </div>
+    `).join('') || '<div class="queue-empty">队列为空</div>';
+    
+    popover.style.display = 'block';
+    
+    // 绑定移除事件
+    queueList.querySelectorAll('.queue-item-remove').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const index = parseInt(btn.dataset.index);
+            socket.emit('queue_remove', { index });
+        });
+    });
+}
+
+/**
+ * 隐藏队列面板
+ */
+function hideQueuePopover() {
+    const popover = document.getElementById('queue-popover');
+    if (popover) popover.style.display = 'none';
 }
 
 /**
@@ -1463,6 +1529,7 @@ function showActionModal(config) {
             </div>
             <div class="action-modal-footer">
                 <button class="action-btn secondary" id="action-cancel">取消</button>
+                <button class="action-btn queue" id="action-queue">加入队列</button>
                 <button class="action-btn primary" id="action-confirm">开始</button>
             </div>
         </div>
@@ -1490,8 +1557,25 @@ function showActionModal(config) {
         });
     });
     
-    // 确认按钮
+    // 确认按钮 - 开始行动
     modal.querySelector('#action-confirm').addEventListener('click', () => {
+        const countInput = modal.querySelector('#custom-count');
+        const count = parseInt(countInput.value) || 1;
+        
+        if (pendingAction) {
+            socket.emit('action_start', {
+                type: pendingAction.type,
+                id: pendingAction.id,
+                count: count
+            });
+        }
+        
+        modal.remove();
+        pendingAction = null;
+    });
+    
+    // 加入队列按钮
+    modal.querySelector('#action-queue').addEventListener('click', () => {
         const countInput = modal.querySelector('#custom-count');
         const count = parseInt(countInput.value) || 1;
         
