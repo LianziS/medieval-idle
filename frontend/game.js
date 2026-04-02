@@ -698,6 +698,7 @@ function showQueuePopover() {
             <span class="queue-item-name">${item.name}</span>
             <span class="queue-item-count">×${item.count}</span>
             <div class="queue-item-actions">
+                ${index === 0 ? `<button class="queue-item-btn replace" data-action="up" data-index="${index}" title="替换当前行动">⏫</button>` : ''}
                 ${index > 0 ? `<button class="queue-item-btn" data-action="top" data-index="${index}" title="置顶">⏫</button>` : ''}
                 ${index > 0 ? `<button class="queue-item-btn" data-action="up" data-index="${index}" title="上移">▲</button>` : ''}
                 ${index < queueLength - 1 ? `<button class="queue-item-btn" data-action="down" data-index="${index}" title="下移">▼</button>` : ''}
@@ -738,8 +739,8 @@ function showQueuePopover() {
             const index = parseInt(btn.dataset.index);
             const action = btn.dataset.action;
             
-            // 如果是上移或置顶到第一位，询问是否替换当前行动
-            if ((action === 'up' && index === 1) || (action === 'top' && index > 0)) {
+            // 第一个项点击上移（替换按钮），或第二项上移到第一位
+            if ((action === 'up' && index === 0) || (action === 'up' && index === 1) || (action === 'top' && index > 0)) {
                 const currentAction = gameState?.activeAction;
                 if (currentAction) {
                     showReplaceActionConfirm(index, action, queue[index]);

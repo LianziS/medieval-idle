@@ -3172,7 +3172,7 @@ body::after {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 10000;
+    z-index: 10010;
 }
 
 .action-modal {
@@ -4080,6 +4080,14 @@ body::after {
 .queue-item-btn:hover {
     background: rgba(107, 79, 60, 0.6);
     color: #fff;
+}
+
+.queue-item-btn.replace {
+    background: rgba(139, 44, 45, 0.4);
+}
+
+.queue-item-btn.replace:hover {
+    background: rgba(139, 44, 45, 0.7);
 }
 
 .queue-item-remove {
