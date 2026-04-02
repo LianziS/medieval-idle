@@ -303,6 +303,7 @@ function renderAll() {
     renderToolForge();
     renderInventories();
     renderEquipmentSlots();
+    renderMerchants();
     updateUI();
 }
 
@@ -326,8 +327,15 @@ function renderEquipmentSlots() {
     slots.forEach(slot => {
         const slotEl = document.getElementById(`equipment-slot-${slot.id}`);
         const nameEl = document.getElementById(`equipment-slot-${slot.id}-name`);
+        const cardEl = slotEl?.closest('.equipment-slot');
         
         if (!slotEl || !nameEl) return;
+        
+        // 清除旧事件
+        if (cardEl) {
+            cardEl.onclick = null;
+            cardEl.style.cursor = 'pointer';
+        }
         
         const equippedId = gameState.equipment[slot.id];
         if (equippedId && CONFIG.tools) {
@@ -339,26 +347,30 @@ function renderEquipmentSlots() {
             if (tool) {
                 slotEl.innerHTML = `${tool.icon} ✓`;
                 nameEl.textContent = tool.name;
-                slotEl.closest('.equipment-slot')?.classList.add('equipped');
+                cardEl?.classList.add('equipped');
                 
-                // 添加点击事件 - 卸下装备
-                slotEl.onclick = () => {
-                    if (confirm(`卸下 ${tool.name}?`)) {
-                        socket.emit('unequip_tool', { slotType: slot.id });
-                    }
-                };
+                // 点击卸下装备
+                if (cardEl) {
+                    cardEl.onclick = () => {
+                        if (confirm(`卸下 ${tool.name}?`)) {
+                            socket.emit('unequip_tool', { slotType: slot.id });
+                        }
+                    };
+                }
             } else {
                 slotEl.innerHTML = slot.icon;
                 nameEl.textContent = '未知';
-                slotEl.onclick = null;
+                cardEl?.classList.remove('equipped');
             }
         } else {
             slotEl.innerHTML = slot.icon;
             nameEl.textContent = '空';
-            slotEl.closest('.equipment-slot')?.classList.remove('equipped');
+            cardEl?.classList.remove('equipped');
             
-            // 添加点击事件 - 选择装备
-            slotEl.onclick = () => openEquipModal(slot.id);
+            // 点击选择装备
+            if (cardEl) {
+                cardEl.onclick = () => openEquipModal(slot.id);
+            }
         }
     });
 }
@@ -1221,6 +1233,38 @@ function renderInventories() {
     if (CONFIG.essences) {
         renderInventoryGrid('storage-essences-items', gameState.essencesInventory, CONFIG.essences);
     }
+}
+
+/**
+ * 渲染商人列表
+ */
+function renderMerchants() {
+    const merchantList = document.getElementById('merchant-list');
+    if (!merchantList || !CONFIG.merchants) return;
+    
+    merchantList.innerHTML = CONFIG.merchants.map(merchant => {
+        const merchantData = gameState.merchantData?.[merchant.id] || { favorability: 0 };
+        const favorPercent = Math.floor(merchantData.favorability * 100);
+        
+        return `
+            <div class="merchant-card" data-merchant-id="${merchant.id}">
+                <div class="merchant-avatar">${merchant.avatar}</div>
+                <div class="merchant-info">
+                    <div class="merchant-name">${merchant.name}</div>
+                    <div class="merchant-title">${merchant.title}</div>
+                    <div class="merchant-favor">好感: ${favorPercent}%</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // 绑定点击事件
+    merchantList.querySelectorAll('.merchant-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const merchantId = card.dataset.merchantId;
+            socket.emit('get_merchant', { merchantId });
+        });
+    });
 }
 
 /**
