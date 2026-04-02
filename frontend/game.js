@@ -76,13 +76,13 @@ function cacheElements() {
     elements.buildingsList = document.getElementById('buildings-list');
     elements.woodcuttingList = document.getElementById('woodcutting-list');
     elements.miningList = document.getElementById('mining-list');
-    elements.gatheringList = document.getElementById('gathering-list');
-    elements.craftingList = document.getElementById('crafting-list');
-    elements.forgingList = document.getElementById('forging-list');
-    elements.tailoringList = document.getElementById('tailoring-list');
-    elements.alchemyList = document.getElementById('alchemy-list');
-    elements.brewingList = document.getElementById('brewing-list');
-    elements.essenceList = document.getElementById('essence-list');
+    elements.gatheringList = document.getElementById('gathering-items-list');
+    elements.craftingList = document.getElementById('crafting-planks-list');
+    elements.forgingList = document.getElementById('forging-ingots-list');
+    elements.tailoringList = document.getElementById('tailoring-fabrics-list');
+    elements.alchemyList = document.getElementById('alchemy-potions-list');
+    elements.brewingList = document.getElementById('brewing-brews-list');
+    elements.essenceList = document.getElementById('alchemy-essences-list');
     
     // 库存显示
     elements.storageWoodcuttingItems = document.getElementById('storage-woodcutting-items');
