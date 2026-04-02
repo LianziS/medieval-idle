@@ -426,6 +426,13 @@ function switchPage(pageId) {
 function renderAll() {
     if (!gameState) return;
     
+    console.log('renderAll 开始, CONFIG 存在:', !!CONFIG);
+    console.log('CONFIG.woodPlanks:', CONFIG?.woodPlanks?.length);
+    console.log('CONFIG.fabrics:', CONFIG?.fabrics?.length);
+    console.log('CONFIG.gatheringLocations:', CONFIG?.gatheringLocations?.length);
+    console.log('elements.craftingList 存在:', !!elements.craftingList);
+    console.log('elements.tailoringList 存在:', !!elements.tailoringList);
+    
     renderBuildings();
     renderWoodcutting();
     renderMining();
@@ -1113,6 +1120,10 @@ function renderMining() {
  */
 function renderGathering() {
     if (!gameState) return;
+    if (!CONFIG || !CONFIG.gatheringLocations) {
+        console.warn('renderGathering: CONFIG.gatheringLocations 未加载');
+        return;
+    }
     
     const level = gameState.gatheringLevel || 1;
     const tabsContainer = document.getElementById('gathering-tabs');
@@ -1130,7 +1141,9 @@ function renderGathering() {
     tabsContainer.innerHTML = tabs;
     
     // 默认显示第一个区域
-    renderGatheringLocation(CONFIG.gatheringLocations[0].id, level);
+    if (CONFIG.gatheringLocations.length > 0) {
+        renderGatheringLocation(CONFIG.gatheringLocations[0].id, level);
+    }
     
     // 绑定标签点击事件
     tabsContainer.querySelectorAll('.gathering-tab').forEach(tab => {
@@ -1335,6 +1348,10 @@ function openGatheringItemModal(locId, itemId) {
  */
 function renderCrafting() {
     if (!elements.craftingList || !gameState) return;
+    if (!CONFIG || !CONFIG.woodPlanks) {
+        console.warn('renderCrafting: CONFIG.woodPlanks 未加载');
+        return;
+    }
     
     const level = gameState.craftingLevel || 1;
     
@@ -1439,7 +1456,11 @@ function initForgingTabs() {
  * 渲染缝制列表
  */
 function renderTailoring() {
-    if (!elements.tailoringList || !gameState || !CONFIG.fabrics) return;
+    if (!elements.tailoringList || !gameState) return;
+    if (!CONFIG || !CONFIG.fabrics) {
+        console.warn('renderTailoring: CONFIG.fabrics 未加载');
+        return;
+    }
     
     const level = gameState.tailoringLevel || 1;
     
