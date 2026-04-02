@@ -2679,11 +2679,11 @@ body::after {
 }
 
 .storage-tab-content {
-    display: none;
+    display: none !important;
 }
 
 .storage-tab-content.active {
-    display: block;
+    display: block !important;
 }
 
 /* ============ 装备栏 ============ */
