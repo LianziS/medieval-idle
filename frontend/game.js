@@ -823,7 +823,6 @@ function showReplaceActionConfirm(index, action, queueItem) {
     });
     
     modal.querySelector('#replace-confirm').addEventListener('click', () => {
-        console.log('确认替换，index:', index);
         socket.emit('queue_replace_current', { index });
         modal.remove();
     });
@@ -1702,12 +1701,10 @@ function showActionModal(config) {
             </div>
             <div class="action-modal-footer">
                 <button class="action-btn secondary" id="action-cancel">取消</button>
-                ${currentAction ? 
-                  (queueAvailable ? 
+                ${queueAvailable ? 
                     `<button class="action-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` : 
-                    `<button class="action-btn queue disabled" id="action-queue" disabled>队列已满</button>`) : 
-                  ''}
-                <button class="action-btn primary" id="action-confirm">开始</button>
+                    `<button class="action-btn queue disabled" id="action-queue" disabled>队列已满</button>`}
+                <button class="action-btn primary" id="action-start">立即开始</button>
             </div>
         </div>
     `;
@@ -1734,30 +1731,35 @@ function showActionModal(config) {
         });
     });
     
-    // 确认按钮 - 开始行动
-    modal.querySelector('#action-confirm').addEventListener('click', () => {
-        const countInput = modal.querySelector('#custom-count');
-        const count = parseInt(countInput.value) || 1;
-        
-        if (pendingAction) {
-            socket.emit('action_start', {
-                type: pendingAction.type,
-                id: pendingAction.id,
-                count: count
-            });
-        }
-        
-        modal.remove();
-        pendingAction = null;
-    });
+    // 获取次数
+    const getCount = () => parseInt(modal.querySelector('#custom-count').value) || 1;
     
     // 加入队列按钮
     const queueBtn = modal.querySelector('#action-queue');
     if (queueBtn && !queueBtn.disabled) {
         queueBtn.addEventListener('click', () => {
-            const countInput = modal.querySelector('#custom-count');
-            const count = parseInt(countInput.value) || 1;
-            
+            if (pendingAction) {
+                socket.emit('action_start', {
+                    type: pendingAction.type,
+                    id: pendingAction.id,
+                    count: getCount()
+                });
+            }
+            modal.remove();
+            pendingAction = null;
+        });
+    }
+    
+    // 立即开始按钮
+    modal.querySelector('#action-start').addEventListener('click', () => {
+        const count = getCount();
+        
+        // 检查是否有正在进行的行动
+        if (currentAction) {
+            // 显示确认替换卡片
+            showStartImmediatelyConfirm(pendingAction, count, currentAction, currentQueue);
+        } else {
+            // 没有正在进行的行动，直接开始
             if (pendingAction) {
                 socket.emit('action_start', {
                     type: pendingAction.type,
@@ -1765,11 +1767,10 @@ function showActionModal(config) {
                     count: count
                 });
             }
-            
             modal.remove();
             pendingAction = null;
-        });
-    }
+        }
+    });
     
     // 点击背景关闭
     modal.addEventListener('click', (e) => {
@@ -1782,6 +1783,73 @@ function showActionModal(config) {
     // 默认选中1次
     modal.querySelector('.count-btn[data-count="1"]').classList.add('active');
     modal.querySelector('#custom-count').value = 1;
+}
+
+/**
+ * 显示立即开始确认卡片
+ */
+function showStartImmediatelyConfirm(newAction, count, currentAction, currentQueue) {
+    const actionConfig = getActionConfig(currentAction.type, currentAction.id);
+    const currentName = actionConfig?.name || '当前行动';
+    const newName = newAction?.name || '新行动';
+    
+    let queueInfo = '';
+    if (currentQueue.length > 0) {
+        queueInfo = `<p style="color: #A0B2C0; font-size: 0.8rem; margin-top: 10px;">⚠️ 队列中的 ${currentQueue.length} 个行动也将被清空</p>`;
+    }
+    
+    const modal = document.createElement('div');
+    modal.className = 'action-modal-overlay';
+    modal.innerHTML = `
+        <div class="confirm-dialog">
+            <div class="confirm-dialog-title">⚠️ 立即开始将清空当前行动</div>
+            <div class="confirm-dialog-content">
+                <div class="confirm-dialog-compare">
+                    <div class="confirm-dialog-item">
+                        <span class="confirm-dialog-icon" style="opacity: 0.5;">${actionConfig?.icon || '🔧'}</span>
+                        <span class="confirm-dialog-name" style="opacity: 0.5;">${currentName}</span>
+                    </div>
+                    <span class="confirm-dialog-arrow">→</span>
+                    <div class="confirm-dialog-item">
+                        <span class="confirm-dialog-icon">${newAction?.icon || '🔧'}</span>
+                        <span class="confirm-dialog-name">${newName}</span>
+                    </div>
+                </div>
+                ${queueInfo}
+            </div>
+            <div class="confirm-dialog-footer">
+                <button class="dialog-btn secondary" id="start-cancel">取消</button>
+                <button class="dialog-btn danger" id="start-confirm">确认开始</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('#start-cancel').addEventListener('click', () => {
+        modal.remove();
+    });
+    
+    modal.querySelector('#start-confirm').addEventListener('click', () => {
+        if (newAction) {
+            socket.emit('start_immediately', {
+                type: newAction.type,
+                id: newAction.id,
+                count: count
+            });
+        }
+        modal.remove();
+        // 关闭行动选择卡片
+        const actionModal = document.querySelector('.action-modal-overlay');
+        if (actionModal) actionModal.remove();
+        pendingAction = null;
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
 }
 
 /**

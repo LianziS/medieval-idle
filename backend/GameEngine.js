@@ -551,15 +551,12 @@ class GameEngine {
      */
     replaceCurrentWithQueue(index) {
         const queue = this.state.actionQueue;
-        console.log('replaceCurrentWithQueue called, index:', index, 'queue:', queue.length);
         
         if (index < 0 || index >= queue.length) {
-            console.log('索引无效');
             return { success: false, reason: '索引无效' };
         }
         
         if (!this.state.activeAction) {
-            console.log('没有进行中的行动');
             return { success: false, reason: '没有进行中的行动' };
         }
         
@@ -569,9 +566,7 @@ class GameEngine {
         const config = CONFIG[actionType.configKey];
         const item = config.find(c => c.id === currentAction.id);
         
-        console.log('当前行动:', currentAction.type, currentAction.id, '剩余:', currentAction.remaining);
-        
-        // 保存当前行动
+        // 保存当前行动（剩余次数）
         const savedAction = {
             type: currentAction.type,
             id: currentAction.id,
@@ -583,20 +578,32 @@ class GameEngine {
         
         // 获取要执行的队列项
         const queueItem = queue[index];
-        console.log('队列项:', queueItem.type, queueItem.id, 'count:', queueItem.count);
         
-        // 先移除被选中的队列项
+        // 移除被选中的队列项
         queue.splice(index, 1);
         
-        // 把当前行动放到队列第一位
+        // 当前行动放到队列第一位
         queue.unshift(savedAction);
-        
-        console.log('替换后队列:', queue.map(q => q.name));
         
         // 开始新的行动
         this.startAction(queueItem.type, queueItem.id, queueItem.count);
         
         return { success: true };
+    }
+    
+    /**
+     * 立即开始新行动（清空当前行动和队列）
+     */
+    startImmediately(actionTypeKey, actionId, count = 1) {
+        // 清空当前行动
+        this.state.activeAction = null;
+        this.state.actionRemaining = 0;
+        
+        // 清空队列
+        this.state.actionQueue = [];
+        
+        // 开始新行动
+        return this.startAction(actionTypeKey, actionId, count);
     }
     
     /**

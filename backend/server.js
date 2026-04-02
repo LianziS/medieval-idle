@@ -484,10 +484,19 @@ io.on('connection', (socket) => {
     socket.on('queue_replace_current', (data) => {
         if (!gameEngine) return socket.emit('error', { message: '未认证' });
         
-        console.log('queue_replace_current received:', data);
         const result = gameEngine.replaceCurrentWithQueue(data.index);
-        console.log('replaceCurrentWithQueue result:', result);
         socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
+    // 立即开始（清空当前和队列）
+    socket.on('start_immediately', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.startImmediately(data.type, data.id, data.count || 1);
+        socket.emit('action_result', result);
+        if (result.success) {
+            socket.emit('game_state_update', gameEngine.getFullState());
+        }
     });
     
     // 清空队列
