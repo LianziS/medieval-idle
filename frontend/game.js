@@ -79,6 +79,9 @@ function cacheElements() {
     elements.gatheringList = document.getElementById('gathering-list');
     elements.craftingList = document.getElementById('crafting-list');
     elements.forgingList = document.getElementById('forging-list');
+    elements.tailoringList = document.getElementById('tailoring-list');
+    elements.alchemyList = document.getElementById('alchemy-list');
+    elements.brewingList = document.getElementById('brewing-list');
     
     // 库存显示
     elements.storageWoodcuttingItems = document.getElementById('storage-woodcutting-items');
@@ -209,6 +212,7 @@ function renderAll() {
     renderGathering();
     renderCrafting();
     renderForging();
+    renderTailoring();
     renderInventories();
     updateUI();
 }
@@ -542,22 +546,68 @@ function renderForging() {
 }
 
 /**
+ * 渲染缝制列表
+ */
+function renderTailoring() {
+    if (!elements.tailoringList || !gameState || !CONFIG.fabrics) return;
+    
+    const level = gameState.tailoringLevel || 1;
+    
+    elements.tailoringList.innerHTML = CONFIG.fabrics.map(fabric => {
+        const unlocked = level >= fabric.reqLevel;
+        
+        return `
+            <div class="action-card ${unlocked ? '' : 'locked'}" 
+                 data-action="tailoring" data-id="${fabric.id}">
+                <div class="action-icon">${fabric.icon}</div>
+                <div class="action-info">
+                    <div class="action-name">${fabric.name}</div>
+                    <div class="action-details">
+                        <span>⏱️ ${formatTime(fabric.duration)}</span>
+                        <span>✨ ${fabric.exp}</span>
+                    </div>
+                </div>
+                ${!unlocked ? `<div class="locked-overlay">🔒 Lv.${fabric.reqLevel}</div>` : ''}
+            </div>
+        `;
+    }).join('');
+    
+    elements.tailoringList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
+        card.addEventListener('click', () => {
+            const fabricId = card.dataset.id;
+            openActionModal('TAILORING', fabricId);
+        });
+    });
+}
+
+/**
  * 渲染库存
  */
 function renderInventories() {
     if (!gameState) return;
     
     // 伐木物品
-    renderInventoryGrid('storage-woodcutting-items', gameState.woodcuttingInventory, CONFIG.trees, 'dropItem');
+    renderInventoryGrid('storage-woodcutting-items', gameState.woodcuttingInventory, CONFIG.trees, 'dropId');
     
     // 挖矿物品
-    renderInventoryGrid('storage-mining-items', gameState.miningInventory, CONFIG.ores, 'dropItem');
+    renderInventoryGrid('storage-mining-items', gameState.miningInventory, CONFIG.ores, 'dropId');
+    
+    // 采集物品
+    if (CONFIG.gatheringLocations) {
+        const allGatherItems = CONFIG.gatheringLocations.flatMap(loc => loc.items || []);
+        renderInventoryGrid('storage-gathering-items', gameState.gatheringInventory, allGatherItems);
+    }
     
     // 木板
     renderInventoryGrid('storage-planks-items', gameState.planksInventory, CONFIG.woodPlanks);
     
     // 矿锭
     renderInventoryGrid('storage-ingots-items', gameState.ingotsInventory, CONFIG.ingots);
+    
+    // 布料
+    if (CONFIG.fabrics) {
+        renderInventoryGrid('storage-fabrics-items', gameState.fabricsInventory, CONFIG.fabrics);
+    }
 }
 
 /**
@@ -596,7 +646,8 @@ function openActionModal(type, id) {
         MINING: CONFIG.ores,
         GATHERING: CONFIG.gatheringLocations,
         CRAFTING: CONFIG.woodPlanks,
-        FORGING: CONFIG.ingots
+        FORGING: CONFIG.ingots,
+        TAILORING: CONFIG.fabrics
     };
     
     const config = configs[type]?.find(c => c.id === id);
