@@ -12,6 +12,10 @@ const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const path = require('path');
+const { GameEngine } = require('./GameEngine');
+
+// 游戏引擎实例管理（按用户ID）
+const gameEngines = new Map();
 
 const app = express();
 const server = http.createServer(app);
@@ -364,6 +368,7 @@ io.on('connection', (socket) => {
     console.log(`用户连接: ${socket.id}`);
     
     let currentUser = null;
+    let gameEngine = null;
     
     // 认证
     socket.on('auth', (data) => {
@@ -374,10 +379,113 @@ io.on('connection', (socket) => {
             socket.username = decoded.username;
             socket.join('global'); // 加入全服频道
             console.log(`用户认证成功: ${decoded.username}`);
+            
+            // 获取或创建游戏引擎实例
+            if (gameEngines.has(decoded.userId)) {
+                gameEngine = gameEngines.get(decoded.userId);
+            } else {
+                gameEngine = new GameEngine(decoded.userId);
+                gameEngines.set(decoded.userId, gameEngine);
+            }
+            
             socket.emit('auth_result', { success: true, userId: decoded.userId });
+            
+            // 发送完整游戏状态
+            socket.emit('game_state', gameEngine.getFullState());
         } catch (e) {
             socket.emit('auth_result', { success: false, error: 'Token无效' });
         }
+    });
+    
+    // ============ 游戏事件处理 ============
+    
+    // 开始行动
+    socket.on('action_start', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.startAction(data.type, data.id, data.count || 1);
+        socket.emit('action_result', result);
+        
+        // 如果成功，广播状态更新
+        if (result.success) {
+            socket.emit('game_state_update', gameEngine.getFullState());
+        }
+    });
+    
+    // 完成一次行动
+    socket.on('action_complete', () => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.completeActionOnce();
+        socket.emit('action_complete_result', result);
+        socket.emit('game_state_update', gameEngine.getFullState());
+        
+        // 如果有下一个行动在队列中
+        if (result.nextAction) {
+            socket.emit('queue_next', result.nextAction);
+        }
+    });
+    
+    // 取消行动
+    socket.on('action_cancel', () => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.cancelAction();
+        socket.emit('action_cancel_result', result);
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
+    // 装备工具
+    socket.on('equip_tool', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.equipTool(data.slotType, data.toolId);
+        socket.emit('equip_result', result);
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
+    // 卸下装备
+    socket.on('unequip_tool', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.unequipTool(data.slotType);
+        socket.emit('unequip_result', result);
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
+    // 获取游戏状态
+    socket.on('get_state', () => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        socket.emit('game_state', gameEngine.getFullState());
+    });
+    
+    // GM 指令（测试用）
+    socket.on('gm_command', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        // 检查是否是 GM（可以根据用户ID或其他方式判断）
+        // 这里暂时允许所有用户使用 GM 指令（测试阶段）
+        
+        switch (data.command) {
+            case 'add_gold':
+                gameEngine.state.gold += data.amount || 1000;
+                break;
+            case 'add_item':
+                gameEngine.addItem(data.itemType, data.itemId, data.count || 1);
+                break;
+            case 'set_level':
+                const skillKey = data.skill + 'Level';
+                if (gameEngine.state[skillKey] !== undefined) {
+                    gameEngine.state[skillKey] = data.level || 10;
+                }
+                break;
+            case 'add_exp':
+                gameEngine.addSkillExp(data.skill + 'Level', data.amount || 100);
+                break;
+        }
+        
+        socket.emit('gm_result', { success: true, command: data.command });
+        socket.emit('game_state_update', gameEngine.getFullState());
     });
     
     // 聊天消息
@@ -403,6 +511,14 @@ io.on('connection', (socket) => {
     
     socket.on('disconnect', () => {
         console.log(`用户断开: ${socket.id}`);
+        
+        // 保存游戏状态到数据库
+        if (currentUser && gameEngine) {
+            db.run(
+                'INSERT OR REPLACE INTO user_game_data (user_id, data, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
+                [currentUser.userId, JSON.stringify(gameEngine.state)]
+            );
+        }
     });
 });
 
