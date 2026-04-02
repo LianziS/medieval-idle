@@ -55,7 +55,7 @@ const CONFIG = {
     // 采集地点配置
     gatheringLocations: [
         {
-            id: 'char_border', name: '夏尔边境', reqLevel: 1, duration: 6000, exp: 5,
+            id: 'char_border', name: '夏尔边境', icon: '🌲', reqLevel: 1, duration: 6000, exp: 5,
             items: [
                 { id: 'sweet_berry', name: '甜浆果', icon: '🫐', exp: 2, probability: 0.3 },
                 { id: 'wild_mint', name: '野薄荷', icon: '🌿', exp: 2, probability: 0.3 },
@@ -65,7 +65,7 @@ const CONFIG = {
             ]
         },
         {
-            id: 'wolf_forest', name: '狼林边缘', reqLevel: 10, duration: 8000, exp: 7.5,
+            id: 'wolf_forest', name: '狼林边缘', icon: '🐺', reqLevel: 10, duration: 8000, exp: 7.5,
             items: [
                 { id: 'wheat', name: '小麦', icon: '🌾', exp: 3, probability: 0.3 },
                 { id: 'pine_needle', name: '松针', icon: '🌲', exp: 3, probability: 0.25 },
@@ -75,7 +75,7 @@ const CONFIG = {
             ]
         },
         {
-            id: 'riverland', name: '河间地带', reqLevel: 20, duration: 10000, exp: 12.5,
+            id: 'riverland', name: '河间地带', icon: '🌊', reqLevel: 20, duration: 10000, exp: 12.5,
             items: [
                 { id: 'hops', name: '啤酒花', icon: '🌿', exp: 5, probability: 0.3 },
                 { id: 'vanilla', name: '香草', icon: '🌱', exp: 5, probability: 0.25 },
@@ -85,7 +85,7 @@ const CONFIG = {
             ]
         },
         {
-            id: 'arin_valley', name: '艾林谷地', reqLevel: 35, duration: 12000, exp: 20,
+            id: 'arin_valley', name: '艾林谷地', icon: '🍃', reqLevel: 35, duration: 12000, exp: 20,
             items: [
                 { id: 'apple', name: '苹果', icon: '🍎', exp: 8, probability: 0.3 },
                 { id: 'sage', name: '鼠尾草', icon: '🌿', exp: 8, probability: 0.25 },
@@ -95,7 +95,7 @@ const CONFIG = {
             ]
         },
         {
-            id: 'lorhan_plain', name: '洛汗平原', reqLevel: 50, duration: 15000, exp: 30,
+            id: 'lorhan_plain', name: '洛汗平原', icon: '🌾', reqLevel: 50, duration: 15000, exp: 30,
             items: [
                 { id: 'grape', name: '葡萄', icon: '🍇', exp: 12, probability: 0.3 },
                 { id: 'chili', name: '辣椒', icon: '🌶️', exp: 12, probability: 0.25 },
@@ -105,7 +105,7 @@ const CONFIG = {
             ]
         },
         {
-            id: 'dorn_border', name: '多恩边疆', reqLevel: 65, duration: 18000, exp: 40,
+            id: 'dorn_border', name: '多恩边疆', icon: '🏰', reqLevel: 65, duration: 18000, exp: 40,
             items: [
                 { id: 'rye', name: '黑麦', icon: '🌾', exp: 16, probability: 0.3 },
                 { id: 'mist_flower', name: '雾菱花', icon: '💠', exp: 18, probability: 0.25 },
@@ -115,7 +115,7 @@ const CONFIG = {
             ]
         },
         {
-            id: 'sigh_canyon', name: '叹息峡谷', reqLevel: 80, duration: 22000, exp: 55,
+            id: 'sigh_canyon', name: '叹息峡谷', icon: '🏔️', reqLevel: 80, duration: 22000, exp: 55,
             items: [
                 { id: 'mist_fruit', name: '雾果', icon: '🍑', exp: 22, probability: 0.3 },
                 { id: 'rock_rose_honey', name: '岩玫瑰蜜', icon: '🍯', exp: 28, probability: 0.25 },
@@ -124,7 +124,7 @@ const CONFIG = {
             ]
         },
         {
-            id: 'dragon_ridge', name: '龙脊山脉', reqLevel: 95, duration: 30000, exp: 73,
+            id: 'dragon_ridge', name: '龙脊山脉', icon: '🐉', reqLevel: 95, duration: 30000, exp: 73,
             items: [
                 { id: 'dragon_blood_fruit', name: '龙血果', icon: '🐉', exp: 30, probability: 0.3 },
                 { id: 'four_leaf_clover', name: '四叶草', icon: '🍀', exp: 35, probability: 0.25 },

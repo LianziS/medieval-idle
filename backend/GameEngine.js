@@ -212,7 +212,7 @@ class GameEngine {
     /**
      * 开始行动
      */
-    startAction(actionTypeKey, actionId, count = 1) {
+    startAction(actionTypeKey, actionId, count = 1, extraParams = null) {
         // 检查是否可以执行
         const check = this.canDoAction(actionTypeKey, actionId);
         if (!check.canDo) {
@@ -232,7 +232,8 @@ class GameEngine {
                     id: actionId,
                     count: count,
                     name: item.name,
-                    icon: item.icon
+                    icon: item.icon,
+                    itemId: extraParams?.itemId
                 });
                 
                 return { success: true, queued: true, queueLength: this.state.actionQueue.length };
@@ -259,7 +260,8 @@ class GameEngine {
             type: actionTypeKey,
             id: actionId,
             count: actualCount,
-            remaining: actualCount
+            remaining: actualCount,
+            itemId: extraParams?.itemId // 采集选择的物品ID
         };
         
         // 计算行动时长（考虑装备加成）

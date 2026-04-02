@@ -1027,16 +1027,33 @@ function renderGathering() {
     
     elements.gatheringList.innerHTML = CONFIG.gatheringLocations.map(loc => {
         const unlocked = level >= loc.reqLevel;
+        const items = loc.items || [];
+        
+        // 生成采集品子列表
+        const itemsHtml = items.map(item => `
+            <div class="gathering-item-card" data-action="gathering" data-loc-id="${loc.id}" data-item-id="${item.id}">
+                <span class="gathering-item-icon">${item.icon}</span>
+                <span class="gathering-item-name">${item.name}</span>
+            </div>
+        `).join('');
         
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'}" 
-                 data-action="gathering" data-id="${loc.id}">
-                <div class="action-icon">${loc.icon}</div>
-                <div class="action-info">
-                    <div class="action-name">${loc.name}</div>
-                    <div class="action-details">
-                        <span>⏱️ ${formatTime(loc.duration)}</span>
-                        <span>✨ ${loc.exp}</span>
+            <div class="gathering-region-card ${unlocked ? '' : 'locked'}" data-region="${loc.id}">
+                <div class="gathering-region-header">
+                    <span class="gathering-region-icon">${loc.icon || '🌿'}</span>
+                    <div class="gathering-region-info">
+                        <div class="gathering-region-name">${loc.name}</div>
+                        <div class="gathering-region-meta">
+                            <span>⏱️ ${formatTime(loc.duration)}</span>
+                            <span>✨ ${loc.exp}</span>
+                            <span>Lv.${loc.reqLevel}</span>
+                        </div>
+                    </div>
+                    <span class="gathering-region-expand">▼</span>
+                </div>
+                <div class="gathering-items-container" style="display: none;">
+                    <div class="gathering-items-grid">
+                        ${itemsHtml}
                     </div>
                 </div>
                 ${!unlocked ? `<div class="locked-overlay">🔒 Lv.${loc.reqLevel}</div>` : ''}
@@ -1044,12 +1061,152 @@ function renderGathering() {
         `;
     }).join('');
     
-    elements.gatheringList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
-        card.addEventListener('click', () => {
-            const locId = card.dataset.id;
-            openActionModal('GATHERING', locId);
+    // 绑定区域展开/收起事件
+    elements.gatheringList.querySelectorAll('.gathering-region-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const card = header.closest('.gathering-region-card');
+            const container = card.querySelector('.gathering-items-container');
+            const expand = card.querySelector('.gathering-region-expand');
+            
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                expand.textContent = '▲';
+            } else {
+                container.style.display = 'none';
+                expand.textContent = '▼';
+            }
         });
     });
+    
+    // 绑定采集品点击事件
+    elements.gatheringList.querySelectorAll('.gathering-item-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const locId = card.dataset.locId;
+            const itemId = card.dataset.itemId;
+            openGatheringItemModal(locId, itemId);
+        });
+    });
+}
+
+/**
+ * 打开采集品选择模态框
+ */
+function openGatheringItemModal(locId, itemId) {
+    const loc = CONFIG.gatheringLocations.find(l => l.id === locId);
+    const item = loc?.items?.find(i => i.id === itemId);
+    if (!loc || !item) return;
+    
+    pendingAction = { type: 'GATHERING', id: locId, name: `${loc.name} - ${item.name}`, icon: item.icon, itemId: itemId };
+    
+    // 检查队列状态
+    const currentQueue = gameState?.actionQueue || [];
+    const maxQueueSize = 2;
+    const currentAction = gameState?.activeAction;
+    const queueAvailable = currentQueue.length < maxQueueSize;
+    const queuePosition = currentQueue.length + 1;
+    
+    const modal = document.createElement('div');
+    modal.className = 'action-modal-overlay';
+    modal.innerHTML = `
+        <div class="action-modal">
+            <div class="action-modal-header">
+                <span class="action-modal-icon">${item.icon}</span>
+                <span class="action-modal-title">${item.name}</span>
+                <button class="action-modal-close">&times;</button>
+            </div>
+            <div class="action-modal-body">
+                <div class="action-modal-info">
+                    <span>📍 ${loc.name}</span>
+                    <span>⏱️ ${formatTime(loc.duration)}</span>
+                    <span>✨ ${item.exp} 经验</span>
+                </div>
+                <div class="action-modal-counts">
+                    <button class="count-btn" data-count="1">1次</button>
+                    <button class="count-btn" data-count="5">5次</button>
+                    <button class="count-btn" data-count="10">10次</button>
+                    <button class="count-btn" data-count="50">50次</button>
+                    <button class="count-btn" data-count="999">∞</button>
+                </div>
+                <div class="action-modal-custom">
+                    <input type="number" id="custom-count" min="1" max="999" placeholder="自定义次数">
+                </div>
+            </div>
+            <div class="action-modal-footer">
+                <button class="action-btn secondary" id="action-cancel">取消</button>
+                ${queueAvailable ? 
+                    `<button class="action-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` : 
+                    `<button class="action-btn queue disabled" id="action-queue" disabled>队列已满</button>`}
+                <button class="action-btn primary" id="action-start">立即开始</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('.action-modal-close').addEventListener('click', () => {
+        modal.remove();
+        pendingAction = null;
+    });
+    
+    modal.querySelector('#action-cancel').addEventListener('click', () => {
+        modal.remove();
+        pendingAction = null;
+    });
+    
+    modal.querySelectorAll('.count-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            modal.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            modal.querySelector('#custom-count').value = btn.dataset.count;
+        });
+    });
+    
+    const getCount = () => parseInt(modal.querySelector('#custom-count').value) || 1;
+    
+    const queueBtn = modal.querySelector('#action-queue');
+    if (queueBtn && !queueBtn.disabled) {
+        queueBtn.addEventListener('click', () => {
+            if (pendingAction) {
+                socket.emit('action_start', {
+                    type: pendingAction.type,
+                    id: pendingAction.id,
+                    count: getCount(),
+                    itemId: pendingAction.itemId
+                });
+            }
+            modal.remove();
+            pendingAction = null;
+        });
+    }
+    
+    modal.querySelector('#action-start').addEventListener('click', () => {
+        const count = getCount();
+        if (currentAction) {
+            showStartImmediatelyConfirm(pendingAction, count, currentAction, currentQueue);
+        } else {
+            if (pendingAction) {
+                socket.emit('action_start', {
+                    type: pendingAction.type,
+                    id: pendingAction.id,
+                    count: count,
+                    itemId: pendingAction.itemId
+                });
+            }
+            modal.remove();
+            pendingAction = null;
+        }
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+            pendingAction = null;
+        }
+    });
+    
+    modal.querySelector('.count-btn[data-count="1"]').classList.add('active');
+    modal.querySelector('#custom-count').value = 1;
 }
 
 /**

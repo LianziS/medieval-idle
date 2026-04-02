@@ -4238,3 +4238,109 @@ body::after {
 .dialog-btn.danger:hover {
     background: #a33435;
 }
+
+/* ============ 采集区域卡片样式 ============ */
+
+.gathering-region-card {
+    background: linear-gradient(135deg, rgba(45, 63, 82, 0.9) 0%, rgba(27, 42, 58, 0.95) 100%);
+    border: 1px solid rgba(107, 79, 60, 0.4);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.gathering-region-card.locked {
+    opacity: 0.6;
+}
+
+.gathering-region-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    cursor: pointer;
+}
+
+.gathering-region-header:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.gathering-region-icon {
+    font-size: 1.8rem;
+    width: 40px;
+    text-align: center;
+}
+
+.gathering-region-info {
+    flex: 1;
+}
+
+.gathering-region-name {
+    color: #E8C57F;
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.gathering-region-meta {
+    display: flex;
+    gap: 12px;
+    color: #A0B2C0;
+    font-size: 0.85rem;
+}
+
+.gathering-region-expand {
+    color: #A0B2C0;
+    font-size: 0.8rem;
+    transition: transform 0.3s;
+}
+
+/* 采集品容器 */
+.gathering-items-container {
+    padding: 0 15px 15px;
+    border-top: 1px solid rgba(107, 79, 60, 0.2);
+}
+
+.gathering-items-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding-top: 12px;
+}
+
+@media (max-width: 500px) {
+    .gathering-items-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* 采集品卡片 */
+.gathering-item-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    background: rgba(45, 63, 82, 0.6);
+    border: 1px solid rgba(107, 79, 60, 0.3);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.gathering-item-card:hover {
+    border-color: #8B2C2D;
+    background: rgba(50, 70, 90, 0.8);
+    transform: translateY(-2px);
+}
+
+.gathering-item-icon {
+    font-size: 1.5rem;
+    margin-bottom: 6px;
+}
+
+.gathering-item-name {
+    color: #E8C57F;
+    font-size: 0.8rem;
+    text-align: center;
+}
