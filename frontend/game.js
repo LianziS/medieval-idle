@@ -143,6 +143,7 @@ function setupSocket() {
     // 接收游戏状态
     socket.on('game_state', (state) => {
         gameState = state;
+        lastActionStartTime = Date.now(); // 初始化时间戳
         renderAll();
         console.log('游戏状态已同步');
         
@@ -156,16 +157,21 @@ function setupSocket() {
     // 状态更新
     socket.on('game_state_update', (state) => {
         gameState = state;
+        // 如果收到更新时 action 已完成，重置标志
+        if (!state.activeAction) {
+            completingAction = false;
+        }
         updateUI();
     });
     
     // 行动结果
     socket.on('action_result', (result) => {
         if (result.success) {
+            lastActionStartTime = Date.now(); // 更新时间戳
+            completingAction = false; // 重置标志
             if (result.queued) {
                 showToast(`📋 已加入队列 (#${result.queueLength + 1})`);
             }
-            startActionAnimation();
         } else {
             showToast(`❌ ${result.reason}`);
         }
@@ -173,12 +179,18 @@ function setupSocket() {
     
     // 行动完成结果
     socket.on('action_complete_result', (result) => {
-        completingAction = false; // 重置标志
         if (result.success && result.rewards) {
             showRewards(result.rewards);
             if (result.completed) {
                 showToast('✅ 行动全部完成');
+                completingAction = false;
+            } else if (result.remaining > 0) {
+                // 还有剩余次数，重置开始时间
+                lastActionStartTime = Date.now();
+                completingAction = false;
             }
+        } else {
+            completingAction = false;
         }
     });
     
@@ -529,8 +541,15 @@ function updateActionStatusBar() {
     
     // 进度完成时自动发送完成事件（防止重复发送）
     if (progress >= 1 && gameState.activeAction && !completingAction) {
-        completingAction = true;
-        socket.emit('action_complete');
+        // 检查是否等待了足够时间（至少 duration 的 80%）
+        const minWaitTime = (gameState.actionDuration || 5000) * 0.8;
+        const timeSinceLastStart = Date.now() - lastActionStartTime;
+        
+        if (timeSinceLastStart >= minWaitTime) {
+            completingAction = true;
+            lastActionStartTime = Date.now(); // 更新时间戳
+            socket.emit('action_complete');
+        }
     }
     
     // 更新队列按钮
@@ -1467,19 +1486,7 @@ function showActionModal(config) {
 function startActionAnimation() {
     lastActionStartTime = Date.now();
     
-    if (animationFrame) {
-        cancelAnimationFrame(animationFrame);
-    }
-    
-    function animate() {
-        updateActionStatusBar();
-        
-        if (gameState?.activeAction) {
-            animationFrame = requestAnimationFrame(animate);
-        }
-    }
-    
-    animate();
+    // 不需要单独的动画循环，gameLoop 已经在运行
 }
 
 // ============ GM 指令面板 ============
