@@ -13,6 +13,7 @@
 // ============ 全局状态 ============
 
 let gameState = null;  // 从后端同步的游戏状态
+let CONFIG = null;     // 从后端获取的配置数据
 let socket = null;     // Socket.io 连接
 let animationFrame = null;
 let lastActionStartTime = 0;
@@ -20,94 +21,33 @@ let lastActionStartTime = 0;
 // DOM 元素缓存
 const elements = {};
 
-// ============ 配置数据（仅用于 UI 显示） ============
+// 配置数据从后端 /api/config 加载
 
-const CONFIG = {
-    trees: [
-        { id: 'pine', name: '青杉木', icon: '🌲', duration: 5000, exp: 3, reqLevel: 1, dropItem: 'pine', dropIcon: '🪵' },
-        { id: 'iron_birch', name: '铁桦木', icon: '🌳', duration: 8000, exp: 5, reqLevel: 5, dropItem: 'iron_birch', dropIcon: '🪵' },
-        { id: 'wind_tree', name: '风啸木', icon: '🌬️', duration: 12000, exp: 8, reqLevel: 10, dropItem: 'wind_tree', dropIcon: '🪵' },
-        { id: 'flame_tree', name: '焰心木', icon: '🔥', duration: 18000, exp: 12, reqLevel: 20, dropItem: 'flame_tree', dropIcon: '🪵' },
-        { id: 'frost_maple', name: '霜叶木', icon: '❄️', duration: 25000, exp: 18, reqLevel: 35, dropItem: 'frost_maple', dropIcon: '🪵' },
-        { id: 'thunder_tree', name: '雷鸣木', icon: '⚡', duration: 35000, exp: 25, reqLevel: 50, dropItem: 'thunder_tree', dropIcon: '🪵' },
-        { id: 'ancient_oak', name: '古橡木', icon: '🪴', duration: 50000, exp: 35, reqLevel: 65, dropItem: 'ancient_oak', dropIcon: '🪵' },
-        { id: 'world_tree', name: '世界木', icon: '✨', duration: 80000, exp: 50, reqLevel: 80, dropItem: 'world_tree', dropIcon: '🪵' }
-    ],
-    ores: [
-        { id: 'iron_ore', name: '铁矿', icon: '🪨', duration: 6000, exp: 4, reqLevel: 1, dropItem: 'iron_ore', dropIcon: '🪨' },
-        { id: 'silver_ore', name: '银矿', icon: '⚪', duration: 10000, exp: 7, reqLevel: 5, dropItem: 'silver_ore', dropIcon: '🪨' },
-        { id: 'gold_ore', name: '金矿', icon: '🟡', duration: 15000, exp: 10, reqLevel: 10, dropItem: 'gold_ore', dropIcon: '🪨' },
-        { id: 'ruby_ore', name: '红宝石矿', icon: '🔴', duration: 22000, exp: 15, reqLevel: 20, dropItem: 'ruby_ore', dropIcon: '💎' },
-        { id: 'emerald_ore', name: '绿宝石矿', icon: '🟢', duration: 30000, exp: 22, reqLevel: 35, dropItem: 'emerald_ore', dropIcon: '💎' },
-        { id: 'diamond_ore', name: '钻石矿', icon: '💎', duration: 45000, exp: 30, reqLevel: 50, dropItem: 'diamond_ore', dropIcon: '💎' },
-        { id: 'star_ore', name: '星辰矿', icon: '🌟', duration: 60000, exp: 45, reqLevel: 65, dropItem: 'star_ore', dropIcon: '🌟' },
-        { id: 'void_ore', name: '虚空矿', icon: '🌀', duration: 90000, exp: 60, reqLevel: 80, dropItem: 'void_ore', dropIcon: '🌀' }
-    ],
-    gatheringLocations: [
-        {
-            id: 'forest_edge', name: '森林边缘', icon: '🌲', duration: 8000, exp: 5, reqLevel: 1,
-            items: [
-                { id: 'wild_herb', name: '野草', icon: '🌿', exp: 2, probability: 0.8 },
-                { id: 'mushroom', name: '蘑菇', icon: '🍄', exp: 3, probability: 0.5 },
-                { id: 'berry', name: '浆果', icon: '🫐', exp: 2, probability: 0.6 }
-            ]
-        },
-        {
-            id: 'deep_forest', name: '深林腹地', icon: '🌳', duration: 15000, exp: 10, reqLevel: 10,
-            items: [
-                { id: 'rare_herb', name: '稀有草药', icon: '🌱', exp: 5, probability: 0.4 },
-                { id: 'forest_flower', name: '森林花', icon: '🌸', exp: 4, probability: 0.6 },
-                { id: 'tree_resin', name: '树树脂', icon: '🍯', exp: 6, probability: 0.3 }
-            ]
-        }
-    ],
-    woodPlanks: [
-        { id: 'pine_plank', name: '青杉木板', icon: '🪵', reqLevel: 1, duration: 6000, exp: 5, materials: { pine: 2 } },
-        { id: 'iron_birch_plank', name: '铁桦木板', icon: '🪵', reqLevel: 10, duration: 8000, exp: 7.5, materials: { iron_birch: 2 } },
-        { id: 'wind_tree_plank', name: '风啸木板', icon: '🪵', reqLevel: 20, duration: 10000, exp: 12.5, materials: { wind_tree: 2 } },
-        { id: 'flame_tree_plank', name: '焰心木板', icon: '🪵', reqLevel: 35, duration: 12000, exp: 20, materials: { flame_tree: 2 } },
-        { id: 'frost_maple_plank', name: '霜叶木板', icon: '🪵', reqLevel: 50, duration: 14000, exp: 30, materials: { frost_maple: 2 } },
-        { id: 'thunder_tree_plank', name: '雷鸣木板', icon: '🪵', reqLevel: 65, duration: 16000, exp: 40, materials: { thunder_tree: 2 } },
-        { id: 'ancient_oak_plank', name: '古橡木板', icon: '🪵', reqLevel: 80, duration: 18000, exp: 55, materials: { ancient_oak: 2 } },
-        { id: 'world_tree_plank', name: '世界木板', icon: '🪵', reqLevel: 95, duration: 30000, exp: 73, materials: { world_tree: 2 } }
-    ],
-    ingots: [
-        { id: 'iron_ingot', name: '铁锭', icon: '🔩', reqLevel: 1, duration: 8000, exp: 6, materials: { iron_ore: 3 } },
-        { id: 'silver_ingot', name: '银锭', icon: '⚪', reqLevel: 5, duration: 12000, exp: 10, materials: { silver_ore: 3 } },
-        { id: 'gold_ingot', name: '金锭', icon: '🟡', reqLevel: 10, duration: 18000, exp: 15, materials: { gold_ore: 3 } },
-        { id: 'ruby_ingot', name: '红宝石锭', icon: '🔴', reqLevel: 20, duration: 25000, exp: 22, materials: { ruby_ore: 3 } },
-        { id: 'emerald_ingot', name: '绿宝石锭', icon: '🟢', reqLevel: 35, duration: 35000, exp: 32, materials: { emerald_ore: 3 } },
-        { id: 'diamond_ingot', name: '钻石锭', icon: '💎', reqLevel: 50, duration: 50000, exp: 45, materials: { diamond_ore: 3 } },
-        { id: 'star_ingot', name: '星辰锭', icon: '🌟', reqLevel: 65, duration: 70000, exp: 60, materials: { star_ore: 3 } },
-        { id: 'void_ingot', name: '虚空锭', icon: '🌀', reqLevel: 80, duration: 100000, exp: 80, materials: { void_ore: 3 } }
-    ],
-    buildings: [
-        { id: 'tent', name: '帐篷', icon: '🏕️', baseCost: { gold: 0 }, maxLevel: 9, 
-          levelNames: ['破帐篷', '简陋帐篷', '普通帐篷', '精致帐篷', '豪华帐篷', '行军帐篷', '营地', '军营', '城堡'] }
-    ],
-    tools: {
-        axes: [
-            { id: 'basic_axe', name: '基础斧', icon: '🔧', speedBonus: 0.1, reqCraftLevel: 1, reqEquipLevel: 1 },
-            { id: 'iron_axe', name: '铁斧', icon: '🪓', speedBonus: 0.2, reqCraftLevel: 5, reqEquipLevel: 5 },
-            { id: 'steel_axe', name: '钢斧', icon: '⚔️', speedBonus: 0.35, reqCraftLevel: 15, reqEquipLevel: 15 }
-        ],
-        pickaxes: [
-            { id: 'basic_pickaxe', name: '基础镐', icon: '⛏️', speedBonus: 0.1, reqCraftLevel: 1, reqEquipLevel: 1 },
-            { id: 'iron_pickaxe', name: '铁镐', icon: '⛏️', speedBonus: 0.2, reqCraftLevel: 5, reqEquipLevel: 5 },
-            { id: 'steel_pickaxe', name: '钢镐', icon: '⛏️', speedBonus: 0.35, reqCraftLevel: 15, reqEquipLevel: 15 }
-        ]
-    }
-};
 
 // ============ 初始化 ============
 
 document.addEventListener('DOMContentLoaded', init);
 
-function init() {
+async function init() {
     cacheElements();
+    await loadConfig();
     setupSocket();
     setupEventListeners();
     setupNavigation();
+}
+
+/**
+ * 从后端加载游戏配置
+ */
+async function loadConfig() {
+    try {
+        const response = await fetch('/api/config');
+        CONFIG = await response.json();
+        console.log('游戏配置已加载');
+    } catch (error) {
+        console.error('加载配置失败:', error);
+        showToast('❌ 加载游戏配置失败');
+    }
 }
 
 /**

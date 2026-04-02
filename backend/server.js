@@ -362,6 +362,14 @@ app.get('/', (req, res) => {
     res.redirect('/login');
 });
 
+// ============ API 路由 ============
+
+// 获取游戏配置（公开API）
+app.get('/api/config', (req, res) => {
+    const { CONFIG } = require('./GameConfig');
+    res.json(CONFIG);
+});
+
 // ============ Socket.io 连接处理 ============
 
 io.on('connection', (socket) => {
