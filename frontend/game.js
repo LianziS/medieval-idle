@@ -1275,7 +1275,7 @@ function renderCrafting() {
 }
 
 /**
- * 渲染锻造列表
+ * 渲染锻造列表（矿锭）
  */
 function renderForging() {
     if (!elements.forgingList || !gameState) return;
@@ -1305,6 +1305,41 @@ function renderForging() {
         card.addEventListener('click', () => {
             const ingotId = card.dataset.id;
             openActionModal('FORGING', ingotId);
+        });
+    });
+    
+    // 初始化锻造标签切换
+    initForgingTabs();
+}
+
+/**
+ * 初始化锻造标签切换
+ */
+function initForgingTabs() {
+    const tabsContainer = document.getElementById('forging-tabs');
+    if (!tabsContainer) return;
+    
+    const tabs = tabsContainer.querySelectorAll('.gathering-tab');
+    const ingotsList = document.getElementById('forging-ingots-list');
+    const toolsList = document.getElementById('forging-tools-list');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            const tabName = tab.dataset.tab;
+            
+            // 切换显示
+            if (ingotsList) ingotsList.classList.remove('active');
+            if (toolsList) toolsList.classList.remove('active');
+            
+            if (tabName === 'ingots' && ingotsList) {
+                ingotsList.classList.add('active');
+            } else if (tabName === 'tools' && toolsList) {
+                toolsList.classList.add('active');
+                renderToolForge(); // 渲染工具列表
+            }
         });
     });
 }
@@ -1418,7 +1453,7 @@ function renderAlchemy() {
  * 渲染工具锻造列表
  */
 function renderToolForge() {
-    const container = document.getElementById('tool-forge-list');
+    const container = document.getElementById('forging-tools-list');
     if (!container || !gameState || !CONFIG.tools) return;
     
     const forgingLevel = gameState.forgingLevel || 1;

@@ -4533,3 +4533,13 @@ body::after {
     color: #E8C57F;
     font-size: 0.9rem;
 }
+
+/* ============ 锻造标签切换样式 ============ */
+
+.gathering-items-list {
+    display: none;
+}
+
+.gathering-items-list.active {
+    display: block;
+}
