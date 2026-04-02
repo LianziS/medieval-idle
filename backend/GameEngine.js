@@ -680,6 +680,140 @@ class GameEngine {
         };
         return map[slotType] || 'level';
     }
+    
+    /**
+     * 商人系统方法
+     */
+    
+    // 获取商人数据
+    getMerchantData(merchantId) {
+        const merchant = CONFIG.merchants.find(m => m.id === merchantId);
+        if (!merchant) return null;
+        
+        // 从用户状态获取好感度
+        const userMerchantData = this.state.merchantData?.[merchantId] || {
+            favorability: merchant.favorability || 0,
+            completedQuests: []
+        };
+        
+        return {
+            ...merchant,
+            ...userMerchantData
+        };
+    }
+    
+    // 购买商品
+    buyGoods(merchantId, goodsId, count = 1) {
+        const merchant = CONFIG.merchants.find(m => m.id === merchantId);
+        if (!merchant) return { success: false, reason: '商人不存在' };
+        
+        const goods = merchant.goods?.find(g => g.id === goodsId);
+        if (!goods) return { success: false, reason: '商品不存在' };
+        
+        const totalCost = goods.price * count;
+        
+        if (goods.currency === 'gold') {
+            if ((this.state.gold || 0) < totalCost) {
+                return { success: false, reason: '金币不足' };
+            }
+            this.state.gold -= totalCost;
+        } else {
+            // 代币支付
+            const tokens = this.state.tokensInventory || {};
+            if ((tokens[goods.currency] || 0) < totalCost) {
+                return { success: false, reason: '代币不足' };
+            }
+            tokens[goods.currency] -= totalCost;
+        }
+        
+        // 添加商品到背包（这里简化处理，添加到采集物品）
+        // 实际应该根据商品类型决定存储位置
+        if (!this.state.gatheringInventory) {
+            this.state.gatheringInventory = {};
+        }
+        this.state.gatheringInventory[goodsId] = (this.state.gatheringInventory[goodsId] || 0) + count;
+        
+        return { success: true, goods: goods, count: count };
+    }
+    
+    // 提交任务
+    submitQuest(merchantId, questId) {
+        const merchant = CONFIG.merchants.find(m => m.id === merchantId);
+        if (!merchant) return { success: false, reason: '商人不存在' };
+        
+        const quest = merchant.quests?.find(q => q.id === questId);
+        if (!quest) return { success: false, reason: '任务不存在' };
+        
+        // 检查是否已完成
+        const merchantData = this.state.merchantData?.[merchantId] || { favorability: 0, completedQuests: [] };
+        if (merchantData.completedQuests?.includes(questId)) {
+            return { success: false, reason: '任务已完成' };
+        }
+        
+        // 检查材料
+        const req = quest.requirement;
+        const itemType = ITEM_TYPES[req.type];
+        if (!itemType) return { success: false, reason: '物品类型错误' };
+        
+        const inventory = this.state[itemType.inventoryKey] || {};
+        if ((inventory[req.id] || 0) < req.count) {
+            return { success: false, reason: '材料不足' };
+        }
+        
+        // 消耗材料
+        inventory[req.id] -= req.count;
+        if (inventory[req.id] <= 0) delete inventory[req.id];
+        
+        // 发放奖励
+        if (quest.reward.gold) {
+            this.state.gold = (this.state.gold || 0) + quest.reward.gold;
+        }
+        
+        // 更新好感度
+        if (!this.state.merchantData) {
+            this.state.merchantData = {};
+        }
+        if (!this.state.merchantData[merchantId]) {
+            this.state.merchantData[merchantId] = { favorability: 0, completedQuests: [] };
+        }
+        
+        if (quest.reward.favorability) {
+            this.state.merchantData[merchantId].favorability += quest.reward.favorability;
+        }
+        this.state.merchantData[merchantId].completedQuests.push(questId);
+        
+        return { 
+            success: true, 
+            quest: quest,
+            reward: quest.reward
+        };
+    }
+    
+    // 出售物品
+    sellItem(itemTypeKey, itemId, count = 1) {
+        const itemType = ITEM_TYPES[itemTypeKey];
+        if (!itemType) return { success: false, reason: '物品类型错误' };
+        
+        const inventory = this.state[itemType.inventoryKey] || {};
+        if ((inventory[itemId] || 0) < count) {
+            return { success: false, reason: '物品数量不足' };
+        }
+        
+        // 获取价格（简化：按类型定价）
+        const basePrice = CONFIG.resourcePrices?.[itemTypeKey.toLowerCase()] || 1;
+        const totalPrice = basePrice * count;
+        
+        // 扣除物品，增加金币
+        inventory[itemId] -= count;
+        if (inventory[itemId] <= 0) delete inventory[itemId];
+        this.state.gold = (this.state.gold || 0) + totalPrice;
+        
+        return { 
+            success: true, 
+            sold: { type: itemTypeKey, id: itemId, count: count },
+            gold: totalPrice
+        };
+    }
 }
 
 module.exports = { GameEngine, CONFIG, ACTION_TYPES, ITEM_TYPES };

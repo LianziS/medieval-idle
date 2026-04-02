@@ -3422,3 +3422,169 @@ body::after {
     background: rgba(27, 42, 58, 0.8);
     color: #E8C57F;
 }
+
+/* ============ 商人面板样式 ============ */
+
+.merchant-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.merchant-modal {
+    background: linear-gradient(180deg, #2d3f52 0%, #1B2A3A 100%);
+    border: 2px solid #8B2C2D;
+    border-radius: 12px;
+    padding: 20px;
+    min-width: 400px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.merchant-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(107, 79, 60, 0.4);
+    margin-bottom: 15px;
+}
+
+.merchant-avatar {
+    font-size: 3rem;
+}
+
+.merchant-info {
+    flex: 1;
+}
+
+.merchant-name {
+    font-size: 1.2rem;
+    color: #E8C57F;
+}
+
+.merchant-title {
+    color: #A0B2C0;
+    font-size: 0.9rem;
+}
+
+.merchant-favor {
+    color: #4a7c59;
+    font-size: 0.85rem;
+    margin-top: 5px;
+}
+
+.merchant-close {
+    background: transparent;
+    border: none;
+    color: #A0B2C0;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.merchant-section {
+    margin-bottom: 20px;
+}
+
+.merchant-section h4 {
+    color: #E8C57F;
+    margin-bottom: 10px;
+    font-size: 1rem;
+}
+
+.goods-list, .quest-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.goods-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(45, 63, 82, 0.5);
+    border-radius: 8px;
+    border: 1px solid rgba(107, 79, 60, 0.3);
+}
+
+.goods-icon {
+    font-size: 1.5rem;
+}
+
+.goods-name {
+    flex: 1;
+    color: #E8C57F;
+}
+
+.goods-price {
+    color: #FFD700;
+}
+
+.buy-btn {
+    background: #8B2C2D;
+    border: none;
+    color: #fff;
+    padding: 5px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.quest-item {
+    padding: 12px;
+    background: rgba(45, 63, 82, 0.5);
+    border-radius: 8px;
+    border: 1px solid rgba(107, 79, 60, 0.3);
+}
+
+.quest-item.completed {
+    opacity: 0.6;
+    border-color: #4a7c59;
+}
+
+.quest-name {
+    color: #E8C57F;
+    font-size: 0.95rem;
+    margin-bottom: 5px;
+}
+
+.quest-desc {
+    color: #A0B2C0;
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+}
+
+.quest-reward {
+    color: #4a7c59;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+}
+
+.quest-completed {
+    color: #4a7c59;
+    font-weight: bold;
+}
+
+.submit-quest-btn {
+    background: #4a7c59;
+    border: none;
+    color: #fff;
+    padding: 5px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.empty {
+    color: #6b7f90;
+    text-align: center;
+    padding: 20px;
+    font-style: italic;
+}

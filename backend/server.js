@@ -499,6 +499,49 @@ io.on('connection', (socket) => {
         socket.emit('game_state', gameEngine.getFullState());
     });
     
+    // ============ 商人系统事件 ============
+    
+    // 获取商人数据
+    socket.on('get_merchant', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const merchantData = gameEngine.getMerchantData(data.merchantId);
+        socket.emit('merchant_data', { merchantId: data.merchantId, data: merchantData });
+    });
+    
+    // 购买商品
+    socket.on('buy_goods', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.buyGoods(data.merchantId, data.goodsId, data.count || 1);
+        socket.emit('buy_result', result);
+        if (result.success) {
+            socket.emit('game_state_update', gameEngine.getFullState());
+        }
+    });
+    
+    // 提交任务
+    socket.on('submit_quest', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.submitQuest(data.merchantId, data.questId);
+        socket.emit('quest_result', result);
+        if (result.success) {
+            socket.emit('game_state_update', gameEngine.getFullState());
+        }
+    });
+    
+    // 出售物品
+    socket.on('sell_item', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.sellItem(data.itemType, data.itemId, data.count || 1);
+        socket.emit('sell_result', result);
+        if (result.success) {
+            socket.emit('game_state_update', gameEngine.getFullState());
+        }
+    });
+    
     // GM 指令（测试用）
     socket.on('gm_command', (data) => {
         if (!gameEngine) return socket.emit('error', { message: '未认证' });

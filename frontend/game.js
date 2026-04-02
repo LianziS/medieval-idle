@@ -150,15 +150,39 @@ function setupSocket() {
         }
     });
     
-    // 队列下一个
-    socket.on('queue_next', (nextAction) => {
-        showToast(`📋 自动开始: ${nextAction.name}`);
-    });
-    
     // 锻造结果
     socket.on('forge_result', (result) => {
         if (result.success) {
             showToast(`✅ 锻造成功: ${result.tool.name}`);
+        } else {
+            showToast(`❌ ${result.reason}`);
+        }
+    });
+    
+    // 商人系统事件
+    socket.on('merchant_data', (data) => {
+        renderMerchantPanel(data.merchantId, data.data);
+    });
+    
+    socket.on('buy_result', (result) => {
+        if (result.success) {
+            showToast(`✅ 购买成功: ${result.goods.name}`);
+        } else {
+            showToast(`❌ ${result.reason}`);
+        }
+    });
+    
+    socket.on('quest_result', (result) => {
+        if (result.success) {
+            showToast(`✅ 任务完成: +${result.reward.gold}金币`);
+        } else {
+            showToast(`❌ ${result.reason}`);
+        }
+    });
+    
+    socket.on('sell_result', (result) => {
+        if (result.success) {
+            showToast(`✅ 出售成功: +${result.gold}金币`);
         } else {
             showToast(`❌ ${result.reason}`);
         }
@@ -864,6 +888,89 @@ function openToolForgeModal(toolType, toolIndex) {
     
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.remove();
+    });
+}
+
+/**
+ * 打开商人面板
+ */
+function openMerchantPanel(merchantId) {
+    socket.emit('get_merchant', { merchantId });
+}
+
+/**
+ * 渲染商人面板
+ */
+function renderMerchantPanel(merchantId, merchantData) {
+    if (!merchantData) return;
+    
+    const modal = document.createElement('div');
+    modal.className = 'merchant-modal-overlay';
+    modal.innerHTML = `
+        <div class="merchant-modal">
+            <div class="merchant-header">
+                <span class="merchant-avatar">${merchantData.avatar}</span>
+                <div class="merchant-info">
+                    <div class="merchant-name">${merchantData.name}</div>
+                    <div class="merchant-title">${merchantData.title}</div>
+                    <div class="merchant-favor">好感度: ${Math.floor((merchantData.favorability || 0) * 100)}%</div>
+                </div>
+                <button class="merchant-close">&times;</button>
+            </div>
+            <div class="merchant-body">
+                <div class="merchant-section">
+                    <h4>商品</h4>
+                    <div class="goods-list">
+                        ${merchantData.goods?.map(goods => `
+                            <div class="goods-item" data-goods-id="${goods.id}">
+                                <span class="goods-icon">${goods.icon}</span>
+                                <span class="goods-name">${goods.name}</span>
+                                <span class="goods-price">${goods.price} ${goods.currency === 'gold' ? '💰' : '🪙'}</span>
+                                <button class="buy-btn" data-goods-id="${goods.id}" data-price="${goods.price}">购买</button>
+                            </div>
+                        `).join('') || '<div class="empty">暂无商品</div>'}
+                    </div>
+                </div>
+                <div class="merchant-section">
+                    <h4>任务</h4>
+                    <div class="quest-list">
+                        ${merchantData.quests?.map(quest => {
+                            const completed = merchantData.completedQuests?.includes(quest.id);
+                            return `
+                                <div class="quest-item ${completed ? 'completed' : ''}" data-quest-id="${quest.id}">
+                                    <div class="quest-name">${quest.name}</div>
+                                    <div class="quest-desc">${quest.desc}</div>
+                                    <div class="quest-reward">奖励: ${quest.reward.gold}💰 ${quest.reward.favorability ? `+${Math.floor(quest.reward.favorability * 100)}%好感` : ''}</div>
+                                    ${completed ? '<div class="quest-completed">✓ 已完成</div>' : `<button class="submit-quest-btn" data-quest-id="${quest.id}">提交</button>`}
+                                </div>
+                            `;
+                        }).join('') || '<div class="empty">暂无任务</div>'}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // 绑定事件
+    modal.querySelector('.merchant-close').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+    
+    // 购买按钮
+    modal.querySelectorAll('.buy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const goodsId = btn.dataset.goodsId;
+            socket.emit('buy_goods', { merchantId, goodsId, count: 1 });
+        });
+    });
+    
+    // 提交任务按钮
+    modal.querySelectorAll('.submit-quest-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const questId = btn.dataset.questId;
+            socket.emit('submit_quest', { merchantId, questId });
+        });
     });
 }
 

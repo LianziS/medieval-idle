@@ -294,6 +294,88 @@ const CONFIG = {
         herb: 5
     },
     
+    // 商人配置
+    merchants: [
+        { 
+            id: 'architect', 
+            name: '建筑师', 
+            title: '建筑大师',
+            avatar: '🏗️', 
+            favorability: 0,
+            goods: [
+                { id: 'architect_scroll', name: '建筑大师卷轴', icon: '📜', price: 1000, currency: 'gold' }
+            ],
+            quests: [
+                { id: 'architect_quest_1', name: '木材收集', desc: '提交 20 木材', reward: { gold: 200, favorability: 0.5 }, requirement: { type: 'WOOD', id: 'pine', count: 20 } }
+            ]
+        },
+        { 
+            id: 'carpenter', 
+            name: '木匠', 
+            title: '木工大师',
+            avatar: '🪚', 
+            favorability: 0,
+            goods: [
+                { id: 'carpenter_scroll', name: '木工大师卷轴', icon: '📜', price: 1000, currency: 'gold' }
+            ],
+            quests: [
+                { id: 'carpenter_quest_1', name: '木板订单', desc: '提交 10 木板', reward: { gold: 150, favorability: 0.5 }, requirement: { type: 'PLANK', id: 'pine_plank', count: 10 } }
+            ]
+        },
+        { 
+            id: 'armorsmith', 
+            name: '铸甲师', 
+            title: '锻造大师',
+            avatar: '⚒️', 
+            favorability: 0,
+            goods: [
+                { id: 'armorsmith_scroll', name: '锻造大师卷轴', icon: '📜', price: 1000, currency: 'gold' }
+            ],
+            quests: [
+                { id: 'armorsmith_quest_1', name: '矿锭订单', desc: '提交 10 矿锭', reward: { gold: 150, favorability: 0.5 }, requirement: { type: 'INGOT', id: 'cyan_ingot', count: 10 } }
+            ]
+        },
+        { 
+            id: 'tailor', 
+            name: '缝缀师', 
+            title: '裁缝大师',
+            avatar: '🧵', 
+            favorability: 0,
+            goods: [
+                { id: 'tailor_scroll', name: '裁缝大师卷轴', icon: '📜', price: 1000, currency: 'gold' }
+            ],
+            quests: [
+                { id: 'tailor_quest_1', name: '布料订单', desc: '提交 10 布料', reward: { gold: 120, favorability: 0.5 }, requirement: { type: 'FABRIC', id: 'jute_cloth', count: 10 } }
+            ]
+        },
+        { 
+            id: 'alchemist', 
+            name: '药剂师', 
+            title: '炼金大师',
+            avatar: '⚗️', 
+            favorability: 0,
+            goods: [
+                { id: 'alchemist_scroll', name: '药剂大师卷轴', icon: '📜', price: 1000, currency: 'gold' }
+            ],
+            quests: [
+                { id: 'alchemist_quest_1', name: '甜浆果收集', desc: '提交 10 甜浆果', reward: { gold: 100, favorability: 0.5 }, requirement: { type: 'GATHERING', id: 'sweet_berry', count: 10 } }
+            ]
+        },
+        { 
+            id: 'tavern', 
+            name: '酒馆', 
+            title: '美酒佳酿',
+            avatar: '🍺', 
+            favorability: 0,
+            goods: [
+                { id: 'tavern_scroll', name: '酿酒秘方', icon: '📜', price: 1000, currency: 'gold' }
+            ],
+            quests: [
+                { id: 'tavern_quest_1', name: '酿造材料', desc: '提交 10 蜂蜜', reward: { gold: 180, favorability: 0.5 }, requirement: { type: 'GATHERING', id: 'honey', count: 10 } }
+            ]
+        }
+    ],
+    
     // 代币获取概率配置
     tokenDropRates: {
         standard: [0.017, 0.024, 0.037, 0.053, 0.071, 0.092, 0.149, 0.210],
