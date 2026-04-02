@@ -229,11 +229,18 @@ function setupSocket() {
     
     // 商人系统事件
     socket.on('merchant_data', (data) => {
-        // 移除旧的商人面板
+        // 记住当前选中的tab
         const oldModal = document.querySelector('.merchant-modal.active');
-        if (oldModal) oldModal.remove();
+        let activeTab = 'trade'; // 默认交易tab
+        if (oldModal) {
+            const activeTabEl = oldModal.querySelector('.merchant-tab.active');
+            if (activeTabEl) {
+                activeTab = activeTabEl.dataset.tab;
+            }
+            oldModal.remove();
+        }
         
-        renderMerchantPanel(data.merchantId, data.data);
+        renderMerchantPanel(data.merchantId, data.data, activeTab);
     });
     
     socket.on('buy_result', (result) => {
@@ -1880,7 +1887,7 @@ function openMerchantPanel(merchantId) {
 /**
  * 渲染商人面板
  */
-function renderMerchantPanel(merchantId, merchantData) {
+function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade') {
     if (!merchantData) return;
     
     // 构建我的物品列表（网格显示）
@@ -1932,11 +1939,11 @@ function renderMerchantPanel(merchantId, merchantData) {
                 <button class="merchant-modal-close">&times;</button>
             </div>
             <div class="merchant-tabs">
-                <button class="merchant-tab active" data-tab="trade">交易</button>
-                <button class="merchant-tab" data-tab="quest">任务</button>
+                <button class="merchant-tab ${activeTab === 'trade' ? 'active' : ''}" data-tab="trade">交易</button>
+                <button class="merchant-tab ${activeTab === 'quest' ? 'active' : ''}" data-tab="quest">任务</button>
             </div>
             <div class="merchant-modal-body">
-                <div class="merchant-tab-content active" id="merchant-tab-trade">
+                <div class="merchant-tab-content ${activeTab === 'trade' ? 'active' : ''}" id="merchant-tab-trade">
                     <div class="merchant-section">
                         <h4>商品</h4>
                         <div class="goods-grid">
@@ -1957,7 +1964,7 @@ function renderMerchantPanel(merchantId, merchantData) {
                         </div>
                     </div>
                 </div>
-                <div class="merchant-tab-content" id="merchant-tab-quest">
+                <div class="merchant-tab-content ${activeTab === 'quest' ? 'active' : ''}" id="merchant-tab-quest">
                     <div class="quest-list">
                         ${merchantData.quests?.map(quest => {
                             const completed = merchantData.completedQuests?.includes(quest.id);
