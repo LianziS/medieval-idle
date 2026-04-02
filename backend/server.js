@@ -29,9 +29,8 @@ const TOKEN_EXPIRY = '365d'; // 1年过期（自动登录用户）
 // 中间件
 app.use(express.json());
 
-// 静态文件服务
+// 静态文件服务（统一使用 frontend 目录）
 app.use(express.static(path.join(__dirname, '../frontend')));
-app.use(express.static(path.join(__dirname, '..'))); // 根目录的 index.html, game.js 等
 
 // ============ 数据库初始化 ============
 
@@ -347,11 +346,11 @@ app.get('/login', (req, res) => {
 
 // 游戏页（兼容 /game 和 /game.html）
 app.get('/game', (req, res) => {
-    res.sendFile(path.join(__dirname, '../index.html'));
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 app.get('/game.html', (req, res) => {
-    res.sendFile(path.join(__dirname, '../index.html'));
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 // 默认路由
