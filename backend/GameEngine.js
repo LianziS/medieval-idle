@@ -585,10 +585,11 @@ class GameEngine {
         // 当前行动放到队列第一位
         queue.unshift(savedAction);
         
-        // 开始新的行动
-        this.startAction(queueItem.type, queueItem.id, queueItem.count);
+        // 关键：先清除当前行动，这样 startAction 才会直接开始
+        this.state.activeAction = null;
         
-        return { success: true };
+        // 开始新的行动
+        return this.startAction(queueItem.type, queueItem.id, queueItem.count);
     }
     
     /**
