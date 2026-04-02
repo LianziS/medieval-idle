@@ -219,6 +219,26 @@ function setupSocket() {
         }
     });
     
+    // 装备结果
+    socket.on('equip_result', (result) => {
+        if (result.success) {
+            showToast(`✅ 已装备 ${result.tool?.name || ''}`);
+            renderEquipmentSlots();
+        } else {
+            showToast(`❌ ${result.reason}`);
+        }
+    });
+    
+    // 卸下装备结果
+    socket.on('unequip_result', (result) => {
+        if (result.success) {
+            showToast(`✅ 已卸下装备`);
+            renderEquipmentSlots();
+        } else {
+            showToast(`❌ ${result.reason}`);
+        }
+    });
+    
     // 错误处理
     socket.on('error', (data) => {
         showToast(`❌ ${data.message}`);
@@ -320,15 +340,83 @@ function renderEquipmentSlots() {
                 slotEl.innerHTML = `${tool.icon} ✓`;
                 nameEl.textContent = tool.name;
                 slotEl.closest('.equipment-slot')?.classList.add('equipped');
+                
+                // 添加点击事件 - 卸下装备
+                slotEl.onclick = () => {
+                    if (confirm(`卸下 ${tool.name}?`)) {
+                        socket.emit('unequip_tool', { slotType: slot.id });
+                    }
+                };
             } else {
                 slotEl.innerHTML = slot.icon;
                 nameEl.textContent = '未知';
+                slotEl.onclick = null;
             }
         } else {
             slotEl.innerHTML = slot.icon;
             nameEl.textContent = '空';
             slotEl.closest('.equipment-slot')?.classList.remove('equipped');
+            
+            // 添加点击事件 - 选择装备
+            slotEl.onclick = () => openEquipModal(slot.id);
         }
+    });
+}
+
+/**
+ * 打开装备选择模态框
+ */
+function openEquipModal(slotType) {
+    const toolType = slotType === 'tongs' ? 'tongs' : 
+                     slotType === 'rod' ? 'rods' : `${slotType}s`;
+    const tools = CONFIG.tools?.[toolType] || [];
+    const inventory = gameState?.toolsInventory?.[toolType] || [];
+    
+    if (inventory.length === 0) {
+        showToast('背包中没有可装备的工具');
+        return;
+    }
+    
+    const modal = document.createElement('div');
+    modal.className = 'action-modal-overlay';
+    modal.innerHTML = `
+        <div class="action-modal">
+            <div class="action-modal-header">
+                <span class="action-modal-title">选择装备</span>
+                <button class="action-modal-close">&times;</button>
+            </div>
+            <div class="action-modal-body">
+                <div class="equip-list">
+                    ${inventory.map(toolId => {
+                        const tool = tools.find(t => t.id === toolId);
+                        if (!tool) return '';
+                        return `
+                            <div class="equip-item" data-tool-id="${toolId}">
+                                <span class="equip-icon">${tool.icon}</span>
+                                <div class="equip-info">
+                                    <div class="equip-name">${tool.name}</div>
+                                    <div class="equip-bonus">+${Math.round(tool.speedBonus * 100)}% 速度</div>
+                                </div>
+                                <button class="equip-btn">装备</button>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('.action-modal-close').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+    
+    modal.querySelectorAll('.equip-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const toolId = btn.closest('.equip-item').dataset.toolId;
+            socket.emit('equip_tool', { slotType, toolId });
+            modal.remove();
+        });
     });
 }
 
@@ -971,6 +1059,39 @@ function openMerchantPanel(merchantId) {
 function renderMerchantPanel(merchantId, merchantData) {
     if (!merchantData) return;
     
+    // 构建我的物品列表（用于出售）
+    let myItemsHtml = '';
+    const itemTypes = [
+        { key: 'woodcuttingInventory', type: 'WOOD', config: CONFIG.trees, idField: 'dropId' },
+        { key: 'miningInventory', type: 'ORE', config: CONFIG.ores, idField: 'dropId' },
+        { key: 'gatheringInventory', type: 'GATHERING', config: CONFIG.gatheringLocations?.flatMap(l => l.items || []) || [], idField: 'id' },
+        { key: 'planksInventory', type: 'PLANK', config: CONFIG.woodPlanks, idField: 'id' },
+        { key: 'ingotsInventory', type: 'INGOT', config: CONFIG.ingots, idField: 'id' },
+        { key: 'fabricsInventory', type: 'FABRIC', config: CONFIG.fabrics || [], idField: 'id' },
+        { key: 'potionsInventory', type: 'POTION', config: CONFIG.potions || [], idField: 'id' },
+        { key: 'brewsInventory', type: 'BREW', config: CONFIG.brews || [], idField: 'id' },
+        { key: 'essencesInventory', type: 'ESSENCE', config: CONFIG.essences || [], idField: 'id' }
+    ];
+    
+    itemTypes.forEach(({ key, type, config, idField }) => {
+        const inventory = gameState[key] || {};
+        Object.entries(inventory).forEach(([itemId, count]) => {
+            if (count > 0) {
+                const configItem = config.find(c => c[idField] === itemId) || { name: itemId, icon: '❓' };
+                const price = Math.floor((CONFIG.resourcePrices?.[type.toLowerCase()] || 1) * 2);
+                myItemsHtml += `
+                    <div class="my-item">
+                        <span class="item-icon">${configItem.icon}</span>
+                        <span class="item-name">${configItem.name}</span>
+                        <span class="item-count">×${count}</span>
+                        <span class="item-price">${price}💰</span>
+                        <button class="sell-btn" data-item-type="${type}" data-item-id="${itemId}" data-count="1">出售</button>
+                    </div>
+                `;
+            }
+        });
+    });
+    
     const modal = document.createElement('div');
     modal.className = 'merchant-modal-overlay';
     modal.innerHTML = `
@@ -1014,6 +1135,12 @@ function renderMerchantPanel(merchantId, merchantData) {
                         }).join('') || '<div class="empty">暂无任务</div>'}
                     </div>
                 </div>
+                <div class="merchant-section">
+                    <h4>我的物品 (点击出售)</h4>
+                    <div class="my-items-list">
+                        ${myItemsHtml || '<div class="empty">暂无可出售物品</div>'}
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -1037,6 +1164,16 @@ function renderMerchantPanel(merchantId, merchantData) {
         btn.addEventListener('click', () => {
             const questId = btn.dataset.questId;
             socket.emit('submit_quest', { merchantId, questId });
+        });
+    });
+    
+    // 出售按钮
+    modal.querySelectorAll('.sell-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const itemType = btn.dataset.itemType;
+            const itemId = btn.dataset.itemId;
+            const count = parseInt(btn.dataset.count) || 1;
+            socket.emit('sell_item', { itemType, itemId, count });
         });
     });
 }
