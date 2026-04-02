@@ -116,6 +116,15 @@ function setupSocket() {
         window.location.href = '/login';
     }
     
+    // 强制移除 loading（3秒超时）
+    setTimeout(() => {
+        const loadingEl = document.getElementById('loading');
+        if (loadingEl) {
+            loadingEl.remove();
+            console.log('Loading 超时移除');
+        }
+    }, 3000);
+    
     // 认证结果
     socket.on('auth_result', (data) => {
         if (data.success) {
