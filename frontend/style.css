@@ -4139,3 +4139,93 @@ body::after {
 .action-btn.danger:hover {
     background: #a33435;
 }
+
+/* ============ 确认弹窗样式 ============ */
+
+.confirm-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(180deg, #2d3f52 0%, #1B2A3A 100%);
+    border: 2px solid #8B2C2D;
+    border-radius: 12px;
+    padding: 16px;
+    min-width: 240px;
+    max-width: 300px;
+    z-index: 10002;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.confirm-dialog-title {
+    color: #E8C57F;
+    font-size: 1rem;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.confirm-dialog-content {
+    padding: 8px 0;
+}
+
+.confirm-dialog-compare {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.confirm-dialog-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.confirm-dialog-icon {
+    font-size: 1.8rem;
+}
+
+.confirm-dialog-name {
+    color: #E8C57F;
+    font-size: 0.85rem;
+}
+
+.confirm-dialog-arrow {
+    color: #8B2C2D;
+    font-size: 1.2rem;
+}
+
+.confirm-dialog-footer {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.dialog-btn {
+    padding: 6px 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.dialog-btn.secondary {
+    background: #555;
+    color: #fff;
+}
+
+.dialog-btn.secondary:hover {
+    background: #666;
+}
+
+.dialog-btn.danger {
+    background: #8B2C2D;
+    color: #fff;
+}
+
+.dialog-btn.danger:hover {
+    background: #a33435;
+}

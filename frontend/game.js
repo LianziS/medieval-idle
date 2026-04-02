@@ -701,7 +701,6 @@ function showQueuePopover() {
                 ${index > 0 ? `<button class="queue-item-btn" data-action="top" data-index="${index}" title="置顶">⏫</button>` : ''}
                 ${index > 0 ? `<button class="queue-item-btn" data-action="up" data-index="${index}" title="上移">▲</button>` : ''}
                 ${index < queueLength - 1 ? `<button class="queue-item-btn" data-action="down" data-index="${index}" title="下移">▼</button>` : ''}
-                ${index < queueLength - 1 ? `<button class="queue-item-btn" data-action="bottom" data-index="${index}" title="置底">⏬</button>` : ''}
                 <button class="queue-item-remove" data-index="${index}" title="移除">×</button>
             </div>
         </div>
@@ -787,29 +786,24 @@ function showReplaceActionConfirm(index, action, queueItem) {
     const modal = document.createElement('div');
     modal.className = 'action-modal-overlay';
     modal.innerHTML = `
-        <div class="action-modal" style="min-width: 320px;">
-            <div class="action-modal-header">
-                <span class="action-modal-title">⚠️ 替换当前行动</span>
-            </div>
-            <div class="action-modal-body" style="padding: 20px;">
-                <p style="color: #A0B2C0; margin-bottom: 15px;">确定要用队列中的行动替换正在进行的行动吗？</p>
-                <div style="display: flex; align-items: center; gap: 15px; justify-content: center;">
-                    <div style="text-align: center;">
-                        <div style="color: #E8C57F; font-size: 0.9rem;">当前</div>
-                        <div style="font-size: 1.5rem; margin: 5px 0;">${actionConfig?.icon || '🔧'}</div>
-                        <div style="color: #E8C57F;">${currentName}</div>
+        <div class="confirm-dialog">
+            <div class="confirm-dialog-title">⚠️ 替换当前行动</div>
+            <div class="confirm-dialog-content">
+                <div class="confirm-dialog-compare">
+                    <div class="confirm-dialog-item">
+                        <span class="confirm-dialog-icon">${actionConfig?.icon || '🔧'}</span>
+                        <span class="confirm-dialog-name">${currentName}</span>
                     </div>
-                    <div style="font-size: 1.5rem; color: #8B2C2D;">→</div>
-                    <div style="text-align: center;">
-                        <div style="color: #4a7c59; font-size: 0.9rem;">替换为</div>
-                        <div style="font-size: 1.5rem; margin: 5px 0;">${queueItem?.icon || '🔧'}</div>
-                        <div style="color: #E8C57F;">${replaceName}</div>
+                    <span class="confirm-dialog-arrow">→</span>
+                    <div class="confirm-dialog-item">
+                        <span class="confirm-dialog-icon">${queueItem?.icon || '🔧'}</span>
+                        <span class="confirm-dialog-name">${replaceName}</span>
                     </div>
                 </div>
             </div>
-            <div class="action-modal-footer" style="justify-content: center;">
-                <button class="action-btn secondary" id="replace-cancel">取消</button>
-                <button class="action-btn danger" id="replace-confirm">确认替换</button>
+            <div class="confirm-dialog-footer">
+                <button class="dialog-btn secondary" id="replace-cancel">取消</button>
+                <button class="dialog-btn danger" id="replace-confirm">确认</button>
             </div>
         </div>
     `;
