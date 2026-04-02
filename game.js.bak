@@ -2224,7 +2224,7 @@ function renderMerchantWarehouse() {
             e.stopPropagation();
             const type = this.dataset.itemType;
             const id = this.dataset.itemId;
-            const count = getItemCountFromObject({ type, id });
+            const count = getItemCount({ type, id });
             
             // 找到物品信息
             const itemInfo = allItems.find(i => i.type === type && i.id === id);
@@ -2503,7 +2503,7 @@ function updateSellBar() {
     }
 }
 
-function getItemCountFromObject(item) {
+function getItemCount(item) {
     const itemTypeKey = TYPE_TO_ITEM_TYPE[item.type];
     if (itemTypeKey) {
         return getItemCount(itemTypeKey, item.id);
@@ -2998,45 +2998,405 @@ function executePendingAction() {
     if (!pendingAction) return;
     const { type, id, count, itemId } = pendingAction;
     
-    // 使用新的统一行动系统
     if (type === 'woodcutting') {
-        startGenericAction('WOODCUTTING', id, count);
+        startWoodcuttingWithCount(id, count);
     } else if (type === 'mining') {
-        startGenericAction('MINING', id, count);
+        startMiningWithCount(id, count);
     } else if (type === 'gathering_item' || type === 'gathering_all') {
-        startGenericAction('GATHERING', id, count, { locationId: id, itemId: itemId });
+        startGatheringWithCount(type, id, itemId, count);
     } else if (type === 'crafting') {
-        startGenericAction('CRAFTING', id, count);
+        startCraftingWithCount(id, count);
     } else if (type === 'forging') {
-        startGenericAction('FORGING', id, count);
+        startForgingWithCount(id, count);
     } else if (type === 'forging_tool') {
-        // 锻造工具需要特殊处理（暂保留旧函数）
         startForgingToolWithCount(id, count, itemId.toolType, itemId.toolIndex);
     } else if (type === 'tailoring') {
-        startGenericAction('TAILORING', id, count);
+        startTailoringWithCount(id, count);
     } else if (type === 'alchemy') {
-        startGenericAction('ALCHEMY', id, count);
+        startAlchemyWithCount(id, count);
     } else if (type === 'essence') {
-        startGenericAction('ESSENCE', id, count);
+        startEssenceExtraction(id, count);
     } else if (type === 'brew') {
-        startGenericAction('BREWING', id, count);
+        startBrewingWithCount(id, count);
     }
     
     pendingAction = null;
 }
 
-function startWoodcuttingWithCount(id, count) {
-    startGenericAction('WOODCUTTING', id, count);
+function startWoodcuttingWithCount(treeId, count) {
+    const tree = CONFIG.trees.find(t => t.id === treeId);
+    gameState.activeWoodcutting = treeId;
+    gameState.woodcuttingCount = count;
+    gameState.woodcuttingRemaining = count;
+    
+    // 通知后端行动开始
+    notifyActionStart('woodcutting', treeId, count);
+    
+    // 重置进度条
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    // 应用装备加成
+    const bonus = getEquipmentBonus('woodcutting');
+    const actualDuration = Math.floor(tree.duration / (1 + bonus));
+    setActionState({ name: `采集${tree.name}`, icon: tree.icon }, actualDuration, count, count);
+    renderWoodcutting();
+    // 启动进度条动画
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeWoodcutting === treeId) {
+            completeWoodcuttingOnce(treeId);
+            // 行动完成后继续下一次
+            scheduleWoodcutting(treeId);
+        }
+    }, actualDuration);
 }
 
-function startMiningWithCount(id, count) {
-    startGenericAction('MINING', id, count);
+function scheduleWoodcutting(treeId) {
+    const isInfinite = gameState.woodcuttingCount >= 99999;
+    if (!gameState.activeWoodcutting || (!isInfinite && gameState.woodcuttingRemaining <= 0)) {
+        gameState.activeWoodcutting = null;
+        gameState.woodcuttingCount = 0;
+        gameState.woodcuttingRemaining = 0;
+        setActionState(null, 0);
+        renderWoodcutting();
+        // 行动完成，检查队列
+        onActionComplete();
+        return;
+    }
+    
+    // 减少剩余次数（上一次已完成）
+    if (!isInfinite) {
+        gameState.woodcuttingRemaining--;
+    }
+    
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.woodcuttingRemaining <= 0) {
+        gameState.activeWoodcutting = null;
+        gameState.woodcuttingCount = 0;
+        gameState.woodcuttingRemaining = 0;
+        setActionState(null, 0);
+        renderWoodcutting();
+        onActionComplete();
+        return;
+    }
+    
+    const tree = CONFIG.trees.find(t => t.id === treeId);
+    if (!tree) return;
+    
+    // 开始下一次行动
+    if (gameState.activeWoodcutting === treeId) {
+        // 应用装备加成
+        const bonus = getEquipmentBonus('woodcutting');
+        const actualDuration = Math.floor(tree.duration / (1 + bonus));
+        // 设置状态（remaining已经减少，显示正确的当前次数）
+        setActionState({ name: `采集${tree.name}`, icon: tree.icon }, actualDuration, gameState.woodcuttingCount, gameState.woodcuttingRemaining);
+        // 重置进度条为 0
+        if (elements.actionProgressFill) {
+            elements.actionProgressFill.style.width = '0%';
+        }
+        updateActionStatusBar();
+        renderWoodcutting();
+        
+        // 启动进度条动画
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        lastActionStartTime = gameState.actionStartTime;
+        animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+        
+        // 减少剩余次数（在设置状态之后）
+        if (!isInfinite) {
+            gameState.woodcuttingRemaining--;
+        }
+        
+        // 等待行动完成后继续
+        gameState.actionTimerId = setTimeout(() => {
+            if (gameState.activeWoodcutting === treeId) {
+                completeWoodcuttingOnce(treeId);
+                // 递归调用继续下一次行动
+                scheduleWoodcutting(treeId);
+            }
+        }, actualDuration);
+    }
+}
+
+function completeWoodcuttingOnce(treeId) {
+    const tree = CONFIG.trees.find(t => t.id === treeId);
+    const treeIndex = CONFIG.trees.findIndex(t => t.id === treeId);
+    
+    // 后端验证（可选，失败不影响本地游戏）
+    notifyActionComplete('woodcutting', treeId);
+    
+    // 随机掉落1-3个（各33.3%概率）
+    const dropCount = Math.floor(Math.random() * 3) + 1;
+    
+    // 添加对应的木材到物品存储（使用辅助函数）
+    addItem('WOOD', treeId, dropCount);
+    
+    // 检查是否获得伐木代币
+    const token = tryGetToken('wood_token', treeIndex, 'standard');
+    
+    addExp(tree.exp);
+    addSkillExp('woodcutting', tree.exp);
+    updateUI();
+    saveGame();
+    // 显示奖励
+    if (elements.actionRewards) {
+        let rewardHtml = `<span class="action-reward-item">+${dropCount} ${tree.dropIcon} ${tree.drop}</span>`;
+        if (token) {
+            rewardHtml += `<span class="action-reward-item token-reward">+1 ${token.icon} ${token.name}</span>`;
+        }
+        elements.actionRewards.innerHTML = rewardHtml;
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
+    }
+}
+
+function startMiningWithCount(oreId, count) {
+    const ore = CONFIG.ores.find(o => o.id === oreId);
+    gameState.activeMining = oreId;
+    gameState.miningCount = count;
+    gameState.miningRemaining = count;
+    
+    // 通知后端行动开始
+    notifyActionStart('mining', oreId, count);
+    
+    // 重置进度条
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    // 应用装备加成
+    const bonus = getEquipmentBonus('mining');
+    const actualDuration = Math.floor(ore.duration / (1 + bonus));
+    setActionState({ name: `挖掘${ore.name}`, icon: ore.icon }, actualDuration, count, count);
+    renderMining();
+    // 启动进度条动画
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeMining === oreId) {
+            completeMiningOnce(oreId);
+            scheduleMining(oreId);
+        }
+    }, actualDuration);
+}
+
+function scheduleMining(oreId) {
+    const isInfinite = gameState.miningCount >= 99999;
+    if (!gameState.activeMining || (!isInfinite && gameState.miningRemaining <= 0)) {
+        gameState.activeMining = null;
+        gameState.miningCount = 0;
+        gameState.miningRemaining = 0;
+        setActionState(null, 0);
+        renderMining();
+        onActionComplete();
+        return;
+    }
+    
+    // 减少剩余次数
+    if (!isInfinite) {
+        gameState.miningRemaining--;
+    }
+    
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.miningRemaining <= 0) {
+        gameState.activeMining = null;
+        gameState.miningCount = 0;
+        gameState.miningRemaining = 0;
+        setActionState(null, 0);
+        renderMining();
+        onActionComplete();
+        return;
+    }
+    
+    const ore = CONFIG.ores.find(o => o.id === oreId);
+    if (!ore) return;
+    
+    // 开始下一次行动
+    if (gameState.activeMining === oreId) {
+        // 应用装备加成
+        const bonus = getEquipmentBonus('mining');
+        const actualDuration = Math.floor(ore.duration / (1 + bonus));
+        setActionState({ name: `挖掘${ore.name}`, icon: ore.icon }, actualDuration, gameState.miningCount, gameState.miningRemaining);
+        // 重置进度条为 0
+        if (elements.actionProgressFill) {
+            elements.actionProgressFill.style.width = '0%';
+        }
+        updateActionStatusBar();
+        renderMining();
+        
+        // 启动进度条动画
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        lastActionStartTime = gameState.actionStartTime;
+        animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+        
+        // 等待行动完成后继续
+        gameState.actionTimerId = setTimeout(() => {
+            if (gameState.activeMining === oreId) {
+                completeMiningOnce(oreId);
+                // 递归调用继续下一次行动
+                scheduleMining(oreId);
+            }
+        }, actualDuration);
+    }
+}
+
+function completeMiningOnce(oreId) {
+    const ore = CONFIG.ores.find(o => o.id === oreId);
+    const oreIndex = CONFIG.ores.findIndex(o => o.id === oreId);
+    
+    // 后端验证
+    notifyActionComplete('mining', oreId);
+    
+    // 随机掉落1-3个（各33.3%概率）
+    const dropCount = Math.floor(Math.random() * 3) + 1;
+    
+    // 添加对应的矿石到物品存储（使用辅助函数）
+    addItem('ORE', oreId, dropCount);
+    
+    // 检查是否获得挖矿代币
+    const token = tryGetToken('mining_token', oreIndex, 'standard');
+    
+    addExp(ore.exp);
+    addSkillExp('mining', ore.exp);
+    updateUI();
+    saveGame();
+    // 显示奖励
+    if (elements.actionRewards) {
+        let rewardHtml = `<span class="action-reward-item">+${dropCount} ${ore.dropIcon} ${ore.drop}</span>`;
+        if (token) {
+            rewardHtml += `<span class="action-reward-item token-reward">+1 ${token.icon} ${token.name}</span>`;
+        }
+        elements.actionRewards.innerHTML = rewardHtml;
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
+    }
 }
 
 // ============ 采集行动循环 ============
 
 function startGatheringWithCount(type, locationId, itemId, count) {
-    startGenericAction('GATHERING', locationId, count, { locationId, itemId });
+    const location = CONFIG.gatheringLocations.find(l => l.id === locationId);
+    gameState.activeGathering = type;
+    gameState.gatheringLocationId = locationId;
+    gameState.gatheringItemId = itemId;
+    gameState.gatheringCount = count;
+    gameState.gatheringRemaining = count;
+    
+    // 通知后端行动开始
+    notifyActionStart('gathering', locationId, count);
+    
+    // 重置进度条
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    
+    let actionName = '';
+    let actionIcon = '🌾';
+    
+    if (type === 'gathering_item' && itemId) {
+        const item = location.items.find(i => i.id === itemId);
+        actionName = `采集${item.name}`;
+        actionIcon = item.icon;
+    } else {
+        actionName = `${location.name}·全采集`;
+    }
+    
+    // 应用装备加成（镰刀加速采集）
+    const bonus = getEquipmentBonus('gathering');
+    const actualDuration = Math.floor(location.duration / (1 + bonus));
+    setActionState({ name: actionName, icon: actionIcon }, actualDuration, count, count);
+    renderGathering();
+    
+    // 启动进度条动画
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeGathering) {
+            completeGatheringOnce(type, locationId, itemId);
+            scheduleGathering(type, locationId, itemId);
+        }
+    }, actualDuration);
+}
+
+function scheduleGathering(type, locationId, itemId) {
+    const isInfinite = gameState.gatheringCount >= 99999;
+    if (!gameState.activeGathering || (!isInfinite && gameState.gatheringRemaining <= 0)) {
+        gameState.activeGathering = null;
+        gameState.gatheringLocationId = null;
+        gameState.gatheringItemId = null;
+        gameState.gatheringCount = 0;
+        gameState.gatheringRemaining = 0;
+        setActionState(null, 0);
+        renderGathering();
+        onActionComplete();
+        return;
+    }
+    
+    // 减少剩余次数
+    if (!isInfinite) {
+        gameState.gatheringRemaining--;
+    }
+    
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.gatheringRemaining <= 0) {
+        gameState.activeGathering = null;
+        gameState.gatheringLocationId = null;
+        gameState.gatheringItemId = null;
+        gameState.gatheringCount = 0;
+        gameState.gatheringRemaining = 0;
+        setActionState(null, 0);
+        renderGathering();
+        onActionComplete();
+        return;
+    }
+    
+    const location = CONFIG.gatheringLocations.find(l => l.id === locationId);
+    if (!location) return;
+    
+    // 开始下一次行动
+    if (gameState.activeGathering) {
+        let actionName = '';
+        let actionIcon = '🌾';
+        
+        if (type === 'gathering_item' && itemId) {
+            const item = location.items.find(i => i.id === itemId);
+            actionName = `采集${item.name}`;
+            actionIcon = item.icon;
+        } else {
+            actionName = `${location.name}·全采集`;
+        }
+        
+        // 应用装备加成（镰刀加速采集）
+        const bonus = getEquipmentBonus('gathering');
+        const actualDuration = Math.floor(location.duration / (1 + bonus));
+        setActionState({ name: actionName, icon: actionIcon }, actualDuration, gameState.gatheringCount, gameState.gatheringRemaining);
+        // 重置进度条为 0
+        if (elements.actionProgressFill) {
+            elements.actionProgressFill.style.width = '0%';
+        }
+        updateActionStatusBar();
+        renderGathering();
+        
+        // 启动进度条动画
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        lastActionStartTime = gameState.actionStartTime;
+        animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+        
+        // 等待行动完成后继续
+        gameState.actionTimerId = setTimeout(() => {
+            if (gameState.activeGathering) {
+                completeGatheringOnce(type, locationId, itemId);
+                // 递归调用继续下一次行动
+                scheduleGathering(type, locationId, itemId);
+            }
+        }, actualDuration);
+    }
 }
 
 // 根据物品ID获取采集掉落数量
@@ -3073,6 +3433,63 @@ function getGatheringDropCount(itemId) {
     } else {
         // 其他：每次1个
         return 1;
+    }
+}
+
+function completeGatheringOnce(type, locationId, itemId) {
+    const location = CONFIG.gatheringLocations.find(l => l.id === locationId);
+    const locationIndex = CONFIG.gatheringLocations.findIndex(l => l.id === locationId);
+    
+    // 后端验证
+    notifyActionComplete('gathering', locationId);
+    
+    let rewards = [];
+    
+    if (type === 'gathering_item' && itemId) {
+        // 单个物品采集 - 100% 获得
+        const item = location.items.find(i => i.id === itemId);
+        const dropCount = getGatheringDropCount(itemId);
+        addItem('GATHERING', item.id, dropCount);
+        rewards.push({ icon: item.icon, name: item.name, amount: dropCount });
+    } else {
+        // 全采集 - 每次行动 100% 成功，但每种物品独立 30% 概率
+        location.items.forEach(item => {
+            if (Math.random() < 0.3) {
+                // 先确定获得这个物品，再计算数量
+                const dropCount = getGatheringDropCount(item.id);
+                addItem('GATHERING', item.id, dropCount);
+                rewards.push({ icon: item.icon, name: item.name, amount: dropCount });
+            }
+        });
+        // 如果全采集什么都没获得，至少给一个随机物品保底
+        if (rewards.length === 0 && location.items.length > 0) {
+            const randomItem = location.items[Math.floor(Math.random() * location.items.length)];
+            const dropCount = getGatheringDropCount(randomItem.id);
+            addItem('GATHERING', randomItem.id, dropCount);
+            rewards.push({ icon: randomItem.icon, name: randomItem.name, amount: dropCount });
+        }
+    }
+    
+    // 检查是否获得采集代币（根据采集地点索引）
+    const token = tryGetToken('gathering_token', locationIndex, 'standard');
+    
+    // 增加经验
+    addExp(location.exp);
+    addSkillExp('gathering', location.exp);
+    
+    updateUI();
+    saveGame();
+    
+    // 显示奖励
+    if (elements.actionRewards && rewards.length > 0) {
+        let rewardHtml = rewards.map(r => 
+            `<span class="action-reward-item">+${r.amount} ${r.icon} ${r.name}</span>`
+        ).join('');
+        if (token) {
+            rewardHtml += `<span class="action-reward-item token-reward">+1 ${token.icon} ${token.name}</span>`;
+        }
+        elements.actionRewards.innerHTML = rewardHtml;
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
     }
 }
 
@@ -3944,8 +4361,154 @@ function canCraftPlank(plank) {
     return true;
 }
 
-function startCraftingWithCount(id, count) {
-    startGenericAction('CRAFTING', id, count);
+function startCraftingWithCount(plankId, count) {
+    const plank = CONFIG.woodPlanks.find(p => p.id === plankId);
+    if (!plank) return;
+    
+    // 计算实际可执行次数
+    const actualCount = calculateMaxActionCount('crafting', plankId, null, count);
+    if (actualCount <= 0) {
+        showToast('❌ 材料不足');
+        return;
+    }
+    
+    // 如果实际次数小于请求次数，显示提示
+    if (actualCount < count && count < 99999) {
+        showToast(`⚠️ 材料仅够制作 ${actualCount} 次`);
+    }
+    
+    gameState.activeCrafting = plankId;
+    gameState.craftingCount = actualCount;
+    gameState.craftingRemaining = actualCount;
+    
+    // 重置进度条
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    // 应用装备加成（凿子加速制作）
+    const bonus = getEquipmentBonus('crafting');
+    const actualDuration = Math.floor(plank.duration / (1 + bonus));
+    setActionState({ name: `制作${plank.name}`, icon: plank.icon }, actualDuration, actualCount, actualCount);
+    renderCrafting();
+    
+    // 通知后端行动开始
+    notifyActionStart('crafting', plankId, actualCount);
+    
+    // 启动进度条动画
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeCrafting === plankId) {
+            completeCraftingOnce(plankId);
+            scheduleCrafting(plankId);
+        }
+    }, actualDuration);
+}
+
+function scheduleCrafting(plankId) {
+    const isInfinite = gameState.craftingCount >= 99999;
+    if (!gameState.activeCrafting || (!isInfinite && gameState.craftingRemaining <= 0)) {
+        gameState.activeCrafting = null;
+        gameState.craftingCount = 0;
+        gameState.craftingRemaining = 0;
+        setActionState(null, 0);
+        renderCrafting();
+        onActionComplete();
+        return;
+    }
+    
+    const plank = CONFIG.woodPlanks.find(p => p.id === plankId);
+    if (!plank) return;
+    
+    // 检查材料
+    if (!canCraftPlank(plank)) {
+        showToast('❌ 材料不足，制作停止');
+        gameState.activeCrafting = null;
+        gameState.craftingCount = 0;
+        gameState.craftingRemaining = 0;
+        setActionState(null, 0);
+        renderCrafting();
+        onActionComplete();
+        return;
+    }
+    
+    // 减少剩余次数
+    if (!isInfinite) {
+        gameState.craftingRemaining--;
+    }
+    
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.craftingRemaining <= 0) {
+        gameState.activeCrafting = null;
+        gameState.craftingCount = 0;
+        gameState.craftingRemaining = 0;
+        setActionState(null, 0);
+        renderCrafting();
+        onActionComplete();
+        return;
+    }
+    
+    // 开始下一次行动
+    if (gameState.activeCrafting === plankId) {
+        // 应用装备加成（凿子加速制作）
+        const bonus = getEquipmentBonus('crafting');
+        const actualDuration = Math.floor(plank.duration / (1 + bonus));
+        setActionState({ name: `制作${plank.name}`, icon: plank.icon }, actualDuration, gameState.craftingCount, gameState.craftingRemaining);
+        if (elements.actionProgressFill) {
+            elements.actionProgressFill.style.width = '0%';
+        }
+        updateActionStatusBar();
+        renderCrafting();
+        
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        lastActionStartTime = gameState.actionStartTime;
+        animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+        
+        gameState.actionTimerId = setTimeout(() => {
+            if (gameState.activeCrafting === plankId) {
+                completeCraftingOnce(plankId);
+                scheduleCrafting(plankId);
+            }
+        }, actualDuration);
+    }
+}
+
+function completeCraftingOnce(plankId) {
+    const plank = CONFIG.woodPlanks.find(p => p.id === plankId);
+    const plankIndex = CONFIG.woodPlanks.findIndex(p => p.id === plankId);
+    if (!plank) return;
+    
+    // 后端验证
+    notifyActionComplete('crafting', plankId);
+    
+    // 消耗材料（使用辅助函数）
+    for (const [woodId, count] of Object.entries(plank.materials)) {
+        removeItem('WOOD', woodId, count);
+    }
+    
+    // 添加木板到存储（使用辅助函数）
+    addItem('PLANK', plankId, 1);
+    
+    // 检查是否获得制作代币
+    const token = tryGetToken('crafting_token', plankIndex, 'standard');
+    
+    addExp(plank.exp);
+    addSkillExp('crafting', plank.exp);
+    updateUI();
+    saveGame();
+    
+    // 显示奖励
+    if (elements.actionRewards) {
+        let rewardHtml = `<span class="action-reward-item">+1 ${plank.icon} ${plank.name}</span>`;
+        if (token) {
+            rewardHtml += `<span class="action-reward-item token-reward">+1 ${token.icon} ${token.name}</span>`;
+        }
+        elements.actionRewards.innerHTML = rewardHtml;
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
+    }
 }
 
 function renderPlanksInventory() {
@@ -4823,8 +5386,154 @@ function completeForgingToolOnce(toolId, toolType, toolIndex) {
     }
 }
 
-function startForgingWithCount(id, count) {
-    startGenericAction('FORGING', id, count);
+function startForgingWithCount(ingotId, count) {
+    const ingot = CONFIG.ingots.find(i => i.id === ingotId);
+    if (!ingot) return;
+    
+    // 计算实际可执行次数
+    const actualCount = calculateMaxActionCount('forging', ingotId, null, count);
+    if (actualCount <= 0) {
+        showToast('❌ 材料不足');
+        return;
+    }
+    
+    // 如果实际次数小于请求次数，显示提示
+    if (actualCount < count && count < 99999) {
+        showToast(`⚠️ 材料仅够锻造 ${actualCount} 次`);
+    }
+    
+    gameState.activeForging = ingotId;
+    gameState.forgingCount = actualCount;
+    gameState.forgingRemaining = actualCount;
+    
+    // 通知后端行动开始
+    notifyActionStart('forging', ingotId, actualCount);
+    
+    // 重置进度条
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    // 应用装备加成（锤子加速锻造）
+    const bonus = getEquipmentBonus('forging');
+    const actualDuration = Math.floor(ingot.duration / (1 + bonus));
+    setActionState({ name: `锻造${ingot.name}`, icon: ingot.icon }, actualDuration, actualCount, actualCount);
+    renderForging();
+    
+    // 启动进度条动画
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeForging === ingotId) {
+            completeForgingOnce(ingotId);
+            scheduleForging(ingotId);
+        }
+    }, actualDuration);
+}
+
+function scheduleForging(ingotId) {
+    const isInfinite = gameState.forgingCount >= 99999;
+    if (!gameState.activeForging || (!isInfinite && gameState.forgingRemaining <= 0)) {
+        gameState.activeForging = null;
+        gameState.forgingCount = 0;
+        gameState.forgingRemaining = 0;
+        setActionState(null, 0);
+        renderForging();
+        onActionComplete();
+        return;
+    }
+    
+    const ingot = CONFIG.ingots.find(i => i.id === ingotId);
+    if (!ingot) return;
+    
+    // 检查材料
+    if (!canForgeIngot(ingot)) {
+        showToast('❌ 材料不足，锻造停止');
+        gameState.activeForging = null;
+        gameState.forgingCount = 0;
+        gameState.forgingRemaining = 0;
+        setActionState(null, 0);
+        renderForging();
+        onActionComplete();
+        return;
+    }
+    
+    // 减少剩余次数
+    if (!isInfinite) {
+        gameState.forgingRemaining--;
+    }
+    
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.forgingRemaining <= 0) {
+        gameState.activeForging = null;
+        gameState.forgingCount = 0;
+        gameState.forgingRemaining = 0;
+        setActionState(null, 0);
+        renderForging();
+        onActionComplete();
+        return;
+    }
+    
+    // 开始下一次行动
+    if (gameState.activeForging === ingotId) {
+        // 应用装备加成（锤子加速锻造）
+        const bonus = getEquipmentBonus('forging');
+        const actualDuration = Math.floor(ingot.duration / (1 + bonus));
+        setActionState({ name: `锻造${ingot.name}`, icon: ingot.icon }, actualDuration, gameState.forgingCount, gameState.forgingRemaining);
+        if (elements.actionProgressFill) {
+            elements.actionProgressFill.style.width = '0%';
+        }
+        updateActionStatusBar();
+        renderForging();
+        
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        lastActionStartTime = gameState.actionStartTime;
+        animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+        
+        gameState.actionTimerId = setTimeout(() => {
+            if (gameState.activeForging === ingotId) {
+                completeForgingOnce(ingotId);
+                scheduleForging(ingotId);
+            }
+        }, actualDuration);
+    }
+}
+
+function completeForgingOnce(ingotId) {
+    const ingot = CONFIG.ingots.find(i => i.id === ingotId);
+    const ingotIndex = CONFIG.ingots.findIndex(i => i.id === ingotId);
+    if (!ingot) return;
+    
+    // 后端验证
+    notifyActionComplete('forging', ingotId);
+    
+    // 消耗材料（使用辅助函数）
+    for (const [oreId, count] of Object.entries(ingot.materials)) {
+        removeItem('ORE', oreId, count);
+    }
+    
+    // 添加矿锭到存储（使用辅助函数）
+    addItem('INGOT', ingotId, 1);
+    
+    // 检查是否获得锻造代币
+    const token = tryGetToken('forging_token', ingotIndex, 'standard');
+    
+    addExp(ingot.exp);
+    addSkillExp('forging', ingot.exp);
+    updateUI();
+    saveGame();
+    
+    // 显示奖励
+    if (elements.actionRewards) {
+        let rewardHtml = `<span class="action-reward-item">+1 ${ingot.icon} ${ingot.name}</span>`;
+        if (token) {
+            rewardHtml += `<span class="action-reward-item token-reward">+1 ${token.icon} ${token.name}</span>`;
+        }
+        elements.actionRewards.innerHTML = rewardHtml;
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
+    }
 }
 
 function renderIngotsInventory() {
@@ -4970,8 +5679,154 @@ function canTailorFabric(fabric) {
     return true;
 }
 
-function startTailoringWithCount(id, count) {
-    startGenericAction('TAILORING', id, count);
+function startTailoringWithCount(fabricId, count) {
+    const fabric = CONFIG.fabrics.find(f => f.id === fabricId);
+    if (!fabric) return;
+    
+    // 计算实际可执行次数
+    const actualCount = calculateMaxActionCount('tailoring', fabricId, null, count);
+    if (actualCount <= 0) {
+        showToast('❌ 材料不足');
+        return;
+    }
+    
+    // 如果实际次数小于请求次数，显示提示
+    if (actualCount < count && count < 99999) {
+        showToast(`⚠️ 材料仅够缝制 ${actualCount} 次`);
+    }
+    
+    gameState.activeTailoring = fabricId;
+    gameState.tailoringCount = actualCount;
+    gameState.tailoringRemaining = actualCount;
+    
+    // 通知后端行动开始
+    notifyActionStart('tailoring', fabricId, actualCount);
+    
+    // 重置进度条
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    // 应用装备加成（针加速缝制）
+    const bonus = getEquipmentBonus('tailoring');
+    const actualDuration = Math.floor(fabric.duration / (1 + bonus));
+    setActionState({ name: `缝制${fabric.name}`, icon: fabric.icon }, actualDuration, actualCount, actualCount);
+    renderTailoring();
+    
+    // 启动进度条动画
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeTailoring === fabricId) {
+            completeTailoringOnce(fabricId);
+            scheduleTailoring(fabricId);
+        }
+    }, actualDuration);
+}
+
+function scheduleTailoring(fabricId) {
+    const isInfinite = gameState.tailoringCount >= 99999;
+    if (!gameState.activeTailoring || (!isInfinite && gameState.tailoringRemaining <= 0)) {
+        gameState.activeTailoring = null;
+        gameState.tailoringCount = 0;
+        gameState.tailoringRemaining = 0;
+        setActionState(null, 0);
+        renderTailoring();
+        onActionComplete();
+        return;
+    }
+    
+    const fabric = CONFIG.fabrics.find(f => f.id === fabricId);
+    if (!fabric) return;
+    
+    // 检查材料
+    if (!canTailorFabric(fabric)) {
+        showToast('❌ 材料不足，缝制停止');
+        gameState.activeTailoring = null;
+        gameState.tailoringCount = 0;
+        gameState.tailoringRemaining = 0;
+        setActionState(null, 0);
+        renderTailoring();
+        onActionComplete();
+        return;
+    }
+    
+    // 减少剩余次数
+    if (!isInfinite) {
+        gameState.tailoringRemaining--;
+    }
+    
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.tailoringRemaining <= 0) {
+        gameState.activeTailoring = null;
+        gameState.tailoringCount = 0;
+        gameState.tailoringRemaining = 0;
+        setActionState(null, 0);
+        renderTailoring();
+        onActionComplete();
+        return;
+    }
+    
+    // 开始下一次行动
+    if (gameState.activeTailoring === fabricId) {
+        // 应用装备加成（针加速缝制）
+        const bonus = getEquipmentBonus('tailoring');
+        const actualDuration = Math.floor(fabric.duration / (1 + bonus));
+        setActionState({ name: `缝制${fabric.name}`, icon: fabric.icon }, actualDuration, gameState.tailoringCount, gameState.tailoringRemaining);
+        if (elements.actionProgressFill) {
+            elements.actionProgressFill.style.width = '0%';
+        }
+        updateActionStatusBar();
+        renderTailoring();
+        
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        lastActionStartTime = gameState.actionStartTime;
+        animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+        
+        gameState.actionTimerId = setTimeout(() => {
+            if (gameState.activeTailoring === fabricId) {
+                completeTailoringOnce(fabricId);
+                scheduleTailoring(fabricId);
+            }
+        }, actualDuration);
+    }
+}
+
+function completeTailoringOnce(fabricId) {
+    const fabric = CONFIG.fabrics.find(f => f.id === fabricId);
+    const fabricIndex = CONFIG.fabrics.findIndex(f => f.id === fabricId);
+    if (!fabric) return;
+    
+    // 后端验证
+    notifyActionComplete('tailoring', fabricId);
+    
+    // 消耗材料（使用辅助函数）
+    for (const [itemId, count] of Object.entries(fabric.materials)) {
+        removeItem('GATHERING', itemId, count);
+    }
+    
+    // 添加布料到存储（使用辅助函数）
+    addItem('FABRIC', fabricId, 1);
+    
+    // 检查是否获得缝制代币
+    const token = tryGetToken('tailoring_token', fabricIndex, 'standard');
+    
+    addExp(fabric.exp);
+    addSkillExp('tailoring', fabric.exp);
+    updateUI();
+    saveGame();
+    
+    // 显示奖励
+    if (elements.actionRewards) {
+        let rewardHtml = `<span class="action-reward-item">+1 ${fabric.icon} ${fabric.name}</span>`;
+        if (token) {
+            rewardHtml += `<span class="action-reward-item token-reward">+1 ${token.icon} ${token.name}</span>`;
+        }
+        elements.actionRewards.innerHTML = rewardHtml;
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
+    }
 }
 
 function renderFabricsInventory() {
@@ -5448,8 +6303,166 @@ function canBrewDrink(brew) {
     return true;
 }
 
-function startBrewingWithCount(id, count) {
-    startGenericAction('BREWING', id, count);
+function startBrewingWithCount(brewId, count) {
+    const brew = CONFIG.brews.find(b => b.id === brewId);
+    if (!brew) return;
+    
+    // 计算实际可执行次数
+    const actualCount = calculateMaxActionCount('brew', brewId, null, count);
+    if (actualCount <= 0) {
+        showToast('❌ 材料不足');
+        return;
+    }
+    
+    // 如果实际次数小于请求次数，显示提示
+    if (actualCount < count && count < 99999) {
+        showToast(`⚠️ 材料仅够酿造 ${actualCount} 次`);
+    }
+    
+    gameState.activeBrew = brewId;
+    gameState.brewCount = actualCount;
+    gameState.brewRemaining = actualCount;
+    
+    // 通知后端行动开始
+    notifyActionStart('brewing', brewId, actualCount);
+    
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    // 应用装备加成（小桶加速酿造）
+    const bonus = getEquipmentBonus('brewing');
+    const actualDuration = Math.floor(brew.duration / (1 + bonus));
+    setActionState({ name: `酿造${brew.name}`, icon: brew.icon }, actualDuration, actualCount, actualCount);
+    renderBrewsList();
+    
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeBrew === brewId) {
+            completeBrewingOnce(brewId);
+            scheduleBrewing(brewId);
+        }
+    }, actualDuration);
+}
+
+function completeBrewingOnce(brewId) {
+    const brew = CONFIG.brews.find(b => b.id === brewId);
+    if (!brew) return;
+    
+    // 后端验证
+    notifyActionComplete('brewing', brewId);
+    
+    // 消耗材料
+    for (const [itemId, count] of Object.entries(brew.materials)) {
+        // 从采集库存扣除
+        if (getItemCount('GATHERING', itemId) >= count) {
+            removeItem('GATHERING', itemId, count);
+        }
+        // 从精华库存扣除
+        else if (getItemCount('ESSENCE', itemId) >= count) {
+            removeItem('ESSENCE', itemId, count);
+        }
+        // 从代币库存扣除
+        else if (getItemCount('TOKEN', itemId) >= count) {
+            removeItem('TOKEN', itemId, count);
+        }
+    }
+    
+    // 添加酒类（使用辅助函数）
+    addItem('BREW', brewId, 1);
+    
+    // 检查是否获得酿造代币
+    const brewIndex = CONFIG.brews.findIndex(b => b.id === brewId);
+    const token = tryGetToken('brewing_token', brewIndex, 'standard');
+    
+    // 增加经验
+    gameState.brewingExp += brew.exp;
+    checkBrewingLevelUp();
+    
+    // 显示奖励
+    if (elements.actionRewards) {
+        let rewardHtml = `<span class="action-reward-item">+1 ${brew.icon} ${brew.name}</span>`;
+        if (token) {
+            rewardHtml += `<span class="action-reward-item token-reward">+1 ${token.icon} ${token.name}</span>`;
+        }
+        elements.actionRewards.innerHTML = rewardHtml;
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
+    }
+    
+    renderBrewsList();
+    renderBrewsInventory();
+    renderMerchantWarehouse();
+    saveGame();
+}
+
+function scheduleBrewing(brewId) {
+    const isInfinite = gameState.brewCount >= 99999;
+    if (!gameState.activeBrew || (!isInfinite && gameState.brewRemaining <= 0)) {
+        gameState.activeBrew = null;
+        gameState.brewCount = 0;
+        gameState.brewRemaining = 0;
+        setActionState(null, 0);
+        renderBrewsList();
+        onActionComplete();
+        return;
+    }
+    
+    const brew = CONFIG.brews.find(b => b.id === brewId);
+    if (!brew) return;
+    
+    // 检查材料是否足够
+    if (!canBrewDrink(brew)) {
+        showToast('❌ 材料不足，停止酿酒');
+        gameState.activeBrew = null;
+        gameState.brewCount = 0;
+        gameState.brewRemaining = 0;
+        setActionState(null, 0);
+        renderBrewsList();
+        onActionComplete();
+        return;
+    }
+    
+    // 减少剩余次数
+    if (!isInfinite) {
+        gameState.brewRemaining--;
+    }
+    
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.brewRemaining <= 0) {
+        gameState.activeBrew = null;
+        gameState.brewCount = 0;
+        gameState.brewRemaining = 0;
+        setActionState(null, 0);
+        renderBrewsList();
+        onActionComplete();
+        return;
+    }
+    
+    // 开始下一次行动
+    // 应用装备加成（小桶加速酿造）
+    const bonus = getEquipmentBonus('brewing');
+    const actualDuration = Math.floor(brew.duration / (1 + bonus));
+    setActionState({ name: `酿造${brew.name}`, icon: brew.icon }, actualDuration, gameState.brewCount, gameState.brewRemaining);
+    
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    updateActionStatusBar();
+    renderBrewsList();
+    
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeBrew === brewId) {
+            completeBrewingOnce(brewId);
+            scheduleBrewing(brewId);
+        }
+    }, actualDuration);
 }
 
 function renderBrewsInventory() {
@@ -5481,11 +6494,302 @@ function renderBrewsInventory() {
 }
 
 function startEssenceExtraction(essenceId, count) {
-    startGenericAction('ESSENCE', essenceId, count);
+    const essence = CONFIG.essences.find(e => e.id === essenceId);
+    if (!essence) return;
+    
+    // 计算实际可执行次数
+    const actualCount = calculateMaxActionCount('essence', essenceId, null, count);
+    if (actualCount <= 0) {
+        showToast('❌ 材料不足');
+        return;
+    }
+    
+    // 如果实际次数小于请求次数，显示提示
+    if (actualCount < count && count < 99999) {
+        showToast(`⚠️ 材料仅够提炼 ${actualCount} 次`);
+    }
+    
+    gameState.activeEssence = essenceId;
+    gameState.essenceCount = actualCount;
+    gameState.essenceRemaining = actualCount;
+    
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    // 应用装备加成（搅拌棒加速炼金）
+    const bonus = getEquipmentBonus('alchemy');
+    const actualDuration = Math.floor(essence.duration / (1 + bonus));
+    setActionState({ name: `提炼${essence.name}`, icon: essence.icon }, actualDuration, actualCount, actualCount);
+    renderEssencesList();
+    
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeEssence === essenceId) {
+            completeEssenceOnce(essenceId);
+            scheduleEssenceExtraction(essenceId);
+        }
+    }, essence.duration);
 }
 
-function startAlchemyWithCount(id, count) {
-    startGenericAction('ALCHEMY', id, count);
+function completeEssenceOnce(essenceId) {
+    const essence = CONFIG.essences.find(e => e.id === essenceId);
+    const essenceIndex = CONFIG.essences.findIndex(e => e.id === essenceId);
+    if (!essence) return;
+    
+    // 后端验证
+    notifyActionComplete('essence', essenceId);
+    
+    // 消耗材料
+    for (const [itemId, count] of Object.entries(essence.materials)) {
+        removeItem('GATHERING', itemId, count);
+    }
+    
+    // 添加精华
+    addItem('ESSENCE', essenceId, 1);
+    
+    // 增加经验
+    addExp(essence.exp);
+    addSkillExp('alchemy', essence.exp);
+    
+    // 显示奖励
+    if (elements.actionRewards) {
+        elements.actionRewards.innerHTML = `<span class="action-reward-item">+1 ${essence.icon} ${essence.name}</span>`;
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
+    }
+    
+    renderEssencesList();
+    renderGatheringInventory();
+    renderEssencesInventory();
+    renderMerchantWarehouse();
+    saveGame();
+}
+
+function scheduleEssenceExtraction(essenceId) {
+    const isInfinite = gameState.essenceCount >= 99999;
+    if (!gameState.activeEssence || (!isInfinite && gameState.essenceRemaining <= 0)) {
+        gameState.activeEssence = null;
+        gameState.essenceCount = 0;
+        gameState.essenceRemaining = 0;
+        setActionState(null, 0);
+        renderEssencesList();
+        onActionComplete();
+        return;
+    }
+    
+    const essence = CONFIG.essences.find(e => e.id === essenceId);
+    if (!essence) return;
+    
+    // 检查材料是否足够
+    if (!canExtractEssence(essence)) {
+        showToast('❌ 材料不足，停止提炼');
+        gameState.activeEssence = null;
+        gameState.essenceCount = 0;
+        gameState.essenceRemaining = 0;
+        setActionState(null, 0);
+        renderEssencesList();
+        onActionComplete();
+        return;
+    }
+    
+    // 减少剩余次数
+    if (!isInfinite) {
+        gameState.essenceRemaining--;
+    }
+    
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.essenceRemaining <= 0) {
+        gameState.activeEssence = null;
+        gameState.essenceCount = 0;
+        gameState.essenceRemaining = 0;
+        setActionState(null, 0);
+        renderEssencesList();
+        onActionComplete();
+        return;
+    }
+    
+    // 开始下一次行动
+    // 应用装备加成（搅拌棒加速炼金）
+    const bonus = getEquipmentBonus('alchemy');
+    const actualDuration = Math.floor(essence.duration / (1 + bonus));
+    setActionState({ name: `提炼${essence.name}`, icon: essence.icon }, actualDuration, gameState.essenceCount, gameState.essenceRemaining);
+    
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    updateActionStatusBar();
+    renderEssencesList();
+    
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeEssence === essenceId) {
+            completeEssenceOnce(essenceId);
+            scheduleEssenceExtraction(essenceId);
+        }
+    }, actualDuration);
+}
+
+function startAlchemyWithCount(potionId, count) {
+    const potion = CONFIG.potions.find(p => p.id === potionId);
+    if (!potion) return;
+    
+    // 计算实际可执行次数
+    const actualCount = calculateMaxActionCount('alchemy', potionId, null, count);
+    if (actualCount <= 0) {
+        showToast('❌ 材料不足');
+        return;
+    }
+    
+    // 如果实际次数小于请求次数，显示提示
+    if (actualCount < count && count < 99999) {
+        showToast(`⚠️ 材料仅够炼制 ${actualCount} 次`);
+    }
+    
+    gameState.activeAlchemy = potionId;
+    gameState.alchemyCount = actualCount;
+    gameState.alchemyRemaining = actualCount;
+    
+    // 通知后端行动开始
+    notifyActionStart('alchemy', potionId, actualCount);
+    
+    if (elements.actionProgressFill) {
+        elements.actionProgressFill.style.width = '0%';
+    }
+    // 应用装备加成（搅拌棒加速炼金）
+    const bonus = getEquipmentBonus('alchemy');
+    const actualDuration = Math.floor(potion.duration / (1 + bonus));
+    setActionState({ name: `炼制${potion.name}`, icon: potion.icon }, actualDuration, actualCount, actualCount);
+    renderAlchemy();
+    
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    lastActionStartTime = gameState.actionStartTime;
+    animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+    
+    // 启动定时器（第一次行动）
+    gameState.actionTimerId = setTimeout(() => {
+        if (gameState.activeAlchemy === potionId) {
+            completeAlchemyOnce(potionId);
+            scheduleAlchemy(potionId);
+        }
+    }, actualDuration);
+}
+
+function scheduleAlchemy(potionId) {
+    const isInfinite = gameState.alchemyCount >= 99999;
+    if (!gameState.activeAlchemy || (!isInfinite && gameState.alchemyRemaining <= 0)) {
+        gameState.activeAlchemy = null;
+        gameState.alchemyCount = 0;
+        gameState.alchemyRemaining = 0;
+        setActionState(null, 0);
+        renderAlchemy();
+        onActionComplete();
+        return;
+    }
+    
+    const potion = CONFIG.potions.find(p => p.id === potionId);
+    if (!potion) return;
+    
+    if (!canBrewPotion(potion)) {
+        showToast('❌ 材料不足，炼制停止');
+        gameState.activeAlchemy = null;
+        gameState.alchemyCount = 0;
+        gameState.alchemyRemaining = 0;
+        setActionState(null, 0);
+        renderAlchemy();
+        onActionComplete();
+        return;
+    }
+    
+    // 减少剩余次数
+    if (!isInfinite) {
+        gameState.alchemyRemaining--;
+    }
+    
+    // 检查是否还有剩余次数
+    if (!isInfinite && gameState.alchemyRemaining <= 0) {
+        gameState.activeAlchemy = null;
+        gameState.alchemyCount = 0;
+        gameState.alchemyRemaining = 0;
+        setActionState(null, 0);
+        renderAlchemy();
+        onActionComplete();
+        return;
+    }
+    
+    // 开始下一次行动
+    if (gameState.activeAlchemy === potionId) {
+        // 应用装备加成（搅拌棒加速炼金）
+        const bonus = getEquipmentBonus('alchemy');
+        const actualDuration = Math.floor(potion.duration / (1 + bonus));
+        setActionState({ name: `炼制${potion.name}`, icon: potion.icon }, actualDuration, gameState.alchemyCount, gameState.alchemyRemaining);
+        if (elements.actionProgressFill) {
+            elements.actionProgressFill.style.width = '0%';
+        }
+        updateActionStatusBar();
+        renderAlchemy();
+        
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        lastActionStartTime = gameState.actionStartTime;
+        animationFrame = requestAnimationFrame(updateActionStatusBarSmooth);
+        
+        gameState.actionTimerId = setTimeout(() => {
+            if (gameState.activeAlchemy === potionId) {
+                completeAlchemyOnce(potionId);
+                scheduleAlchemy(potionId);
+            }
+        }, actualDuration);
+    }
+}
+
+function completeAlchemyOnce(potionId) {
+    const potion = CONFIG.potions.find(p => p.id === potionId);
+    const potionIndex = CONFIG.potions.findIndex(p => p.id === potionId);
+    if (!potion) return;
+    
+    // 后端验证
+    notifyActionComplete('alchemy', potionId);
+    
+    // 消耗材料（药水材料可能来自采集物品、精华或代币）
+    for (const [itemId, count] of Object.entries(potion.materials)) {
+        // 从采集库存扣除
+        if (getItemCount('GATHERING', itemId) >= count) {
+            removeItem('GATHERING', itemId, count);
+        }
+        // 从精华库存扣除
+        else if (getItemCount('ESSENCE', itemId) >= count) {
+            removeItem('ESSENCE', itemId, count);
+        }
+        // 从代币库存扣除
+        else if (getItemCount('TOKEN', itemId) >= count) {
+            removeItem('TOKEN', itemId, count);
+        }
+    }
+    
+    // 添加药水（使用辅助函数）
+    addItem('POTION', potionId, 1);
+    
+    // 检查是否获得制药代币
+    const token = tryGetToken('alchemy_token', potionIndex, 'standard');
+    
+    addExp(potion.exp);
+    addSkillExp('alchemy', potion.exp);
+    updateUI();
+    saveGame();
+    
+    if (elements.actionRewards) {
+        let rewardHtml = `<span class="action-reward-item">+1 ${potion.icon} ${potion.name}</span>`;
+        if (token) {
+            rewardHtml += `<span class="action-reward-item token-reward">+1 ${token.icon} ${token.name}</span>`;
+        }
+        elements.actionRewards.innerHTML = rewardHtml;
+        setTimeout(() => { if (elements.actionRewards) elements.actionRewards.innerHTML = ''; }, 3000);
+    }
 }
 
 function renderPotionsInventory() {
