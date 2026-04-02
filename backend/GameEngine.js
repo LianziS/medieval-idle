@@ -547,6 +547,50 @@ class GameEngine {
     }
     
     /**
+     * 用队列项替换当前行动
+     */
+    replaceCurrentWithQueue(index) {
+        const queue = this.state.actionQueue;
+        if (index < 0 || index >= queue.length) {
+            return { success: false, reason: '索引无效' };
+        }
+        
+        if (!this.state.activeAction) {
+            return { success: false, reason: '没有进行中的行动' };
+        }
+        
+        // 获取当前行动信息
+        const currentAction = this.state.activeAction;
+        const actionType = ACTION_TYPES[currentAction.type];
+        const config = CONFIG[actionType.configKey];
+        const item = config.find(c => c.id === currentAction.id);
+        
+        // 保存当前行动到队列末尾
+        const savedAction = {
+            type: currentAction.type,
+            id: currentAction.id,
+            count: currentAction.remaining,
+            remaining: currentAction.remaining,
+            name: item?.name || currentAction.id,
+            icon: item?.icon || '🔧'
+        };
+        
+        // 获取队列项
+        const queueItem = queue[index];
+        queue.splice(index, 1);
+        
+        // 把当前行动放回队列
+        if (savedAction.count > 0) {
+            queue.push(savedAction);
+        }
+        
+        // 开始新的行动
+        this.startAction(queueItem.type, queueItem.id, queueItem.count);
+        
+        return { success: true };
+    }
+    
+    /**
      * 清空队列
      */
     clearQueue() {

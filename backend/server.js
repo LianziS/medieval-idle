@@ -480,6 +480,14 @@ io.on('connection', (socket) => {
         socket.emit('game_state_update', gameEngine.getFullState());
     });
     
+    // 替换当前行动
+    socket.on('queue_replace_current', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.replaceCurrentWithQueue(data.index);
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
     // 清空队列
     socket.on('queue_clear', () => {
         if (!gameEngine) return socket.emit('error', { message: '未认证' });

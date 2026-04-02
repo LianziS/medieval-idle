@@ -163,6 +163,12 @@ function setupSocket() {
             completingAction = false;
         }
         updateUI();
+        
+        // 如果队列面板打开，实时刷新
+        const popover = document.getElementById('queue-popover');
+        if (popover && popover.style.display === 'block') {
+            showQueuePopover();
+        }
     });
     
     // 行动结果
@@ -732,6 +738,16 @@ function showQueuePopover() {
             e.stopPropagation();
             const index = parseInt(btn.dataset.index);
             const action = btn.dataset.action;
+            
+            // 如果是上移或置顶到第一位，询问是否替换当前行动
+            if ((action === 'up' && index === 1) || (action === 'top' && index > 0)) {
+                const currentAction = gameState?.activeAction;
+                if (currentAction) {
+                    showReplaceActionConfirm(index, action, queue[index]);
+                    return;
+                }
+            }
+            
             socket.emit('queue_move', { index, action });
         });
     });
@@ -743,6 +759,77 @@ function showQueuePopover() {
             const index = parseInt(btn.dataset.index);
             socket.emit('queue_remove', { index });
         });
+    });
+    
+    // 点击其他地方关闭
+    const closePopover = (e) => {
+        if (!popover.contains(e.target) && !elements.actionQueueBtn?.contains(e.target)) {
+            hideQueuePopover();
+            document.removeEventListener('click', closePopover);
+        }
+    };
+    setTimeout(() => {
+        document.addEventListener('click', closePopover);
+    }, 100);
+}
+
+/**
+ * 显示替换行动确认卡片
+ */
+function showReplaceActionConfirm(index, action, queueItem) {
+    const currentAction = gameState?.activeAction;
+    if (!currentAction) return;
+    
+    const actionConfig = getActionConfig(currentAction.type, currentAction.id);
+    const currentName = actionConfig?.name || '当前行动';
+    const replaceName = queueItem?.name || '新行动';
+    
+    const modal = document.createElement('div');
+    modal.className = 'action-modal-overlay';
+    modal.innerHTML = `
+        <div class="action-modal" style="min-width: 320px;">
+            <div class="action-modal-header">
+                <span class="action-modal-title">⚠️ 替换当前行动</span>
+            </div>
+            <div class="action-modal-body" style="padding: 20px;">
+                <p style="color: #A0B2C0; margin-bottom: 15px;">确定要用队列中的行动替换正在进行的行动吗？</p>
+                <div style="display: flex; align-items: center; gap: 15px; justify-content: center;">
+                    <div style="text-align: center;">
+                        <div style="color: #E8C57F; font-size: 0.9rem;">当前</div>
+                        <div style="font-size: 1.5rem; margin: 5px 0;">${actionConfig?.icon || '🔧'}</div>
+                        <div style="color: #E8C57F;">${currentName}</div>
+                    </div>
+                    <div style="font-size: 1.5rem; color: #8B2C2D;">→</div>
+                    <div style="text-align: center;">
+                        <div style="color: #4a7c59; font-size: 0.9rem;">替换为</div>
+                        <div style="font-size: 1.5rem; margin: 5px 0;">${queueItem?.icon || '🔧'}</div>
+                        <div style="color: #E8C57F;">${replaceName}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="action-modal-footer" style="justify-content: center;">
+                <button class="action-btn secondary" id="replace-cancel">取消</button>
+                <button class="action-btn danger" id="replace-confirm">确认替换</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('#replace-cancel').addEventListener('click', () => {
+        modal.remove();
+    });
+    
+    modal.querySelector('#replace-confirm').addEventListener('click', () => {
+        socket.emit('queue_replace_current', { index, action });
+        modal.remove();
+        hideQueuePopover();
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
     });
 }
 
