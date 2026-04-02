@@ -1017,7 +1017,7 @@ function renderBuildings() {
         
         // 检查资源是否足够
         let canUpgrade = isUnlocked && !isMaxLevel;
-        const costText = Object.entries(cost).map(([r, a]) => `${r}×${a}`).join(' ');
+        const costText = formatCost(cost, ' ');
         
         return `
             <div class="building-card ${isUnlocked ? '' : 'locked'}" data-id="${b.id}">
@@ -1065,7 +1065,7 @@ function openUpgradeModal(buildingId) {
         }
     }
     
-    const costText = Object.entries(cost).map(([r, a]) => `${r} × ${a}`).join('\n');
+    const costText = formatCost(cost, '\n');
     const nextLevelName = buildingConfig.levelNames?.[level + 1] || `${buildingConfig.name} Lv.${level + 1}`;
     
     if (confirm(`升级到 ${nextLevelName}?\n\n需要:\n${costText}`)) {
@@ -2472,12 +2472,27 @@ function formatTime(ms) {
 }
 
 /**
- * 格式化花费
+ * 格式化花费（资源名称转中文）
  */
-function formatCost(cost) {
+function formatCost(cost, separator = ' ') {
+    const resourceNames = {
+        'gold': '金币',
+        'wood': '木材',
+        'stone': '石头',
+        'herb': '草药',
+        'pine': '青杉木',
+        'iron_birch': '铁桦木',
+        'wind_tree': '风啸木',
+        'flame_tree': '焰心木',
+        'frost_maple': '霜叶枫木',
+        'thunder_tree': '雷鸣木',
+        'ancient_oak': '古橡木',
+        'world_tree': '世界树枝'
+    };
+    
     return Object.entries(cost)
-        .map(([res, amount]) => `${res} ${amount}`)
-        .join(' ');
+        .map(([res, amount]) => `${resourceNames[res] || res} × ${amount}`)
+        .join(separator);
 }
 
 /**

@@ -12,7 +12,7 @@ const CONFIG = {
             id: 'tent', 
             name: '简陋帐篷', 
             icon: '⛺', 
-            baseCost: { pine: 1 },
+            baseCost: { wood: 10 },
             production: {}, 
             unlockReq: null,
             maxLevel: 5,
