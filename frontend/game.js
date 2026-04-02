@@ -82,6 +82,7 @@ function cacheElements() {
     elements.tailoringList = document.getElementById('tailoring-list');
     elements.alchemyList = document.getElementById('alchemy-list');
     elements.brewingList = document.getElementById('brewing-list');
+    elements.essenceList = document.getElementById('essence-list');
     
     // 库存显示
     elements.storageWoodcuttingItems = document.getElementById('storage-woodcutting-items');
@@ -213,6 +214,8 @@ function renderAll() {
     renderCrafting();
     renderForging();
     renderTailoring();
+    renderBrewing();
+    renderAlchemy();
     renderInventories();
     renderEquipmentSlots();
     updateUI();
@@ -628,6 +631,76 @@ function renderTailoring() {
 }
 
 /**
+ * 渲染酿造列表
+ */
+function renderBrewing() {
+    if (!elements.brewingList || !gameState || !CONFIG.brews) return;
+    
+    const level = gameState.brewingLevel || 1;
+    
+    elements.brewingList.innerHTML = CONFIG.brews.map(brew => {
+        const unlocked = level >= brew.reqLevel;
+        
+        return `
+            <div class="action-card ${unlocked ? '' : 'locked'}" 
+                 data-action="brewing" data-id="${brew.id}">
+                <div class="action-icon">${brew.icon}</div>
+                <div class="action-info">
+                    <div class="action-name">${brew.name}</div>
+                    <div class="action-details">
+                        <span>⏱️ ${formatTime(brew.duration)}</span>
+                        <span>✨ ${brew.exp}</span>
+                    </div>
+                </div>
+                ${!unlocked ? `<div class="locked-overlay">🔒 Lv.${brew.reqLevel}</div>` : ''}
+            </div>
+        `;
+    }).join('');
+    
+    elements.brewingList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
+        card.addEventListener('click', () => {
+            const brewId = card.dataset.id;
+            openActionModal('BREWING', brewId);
+        });
+    });
+}
+
+/**
+ * 渲染炼金列表
+ */
+function renderAlchemy() {
+    if (!elements.alchemyList || !gameState || !CONFIG.potions) return;
+    
+    const level = gameState.alchemyLevel || 1;
+    
+    elements.alchemyList.innerHTML = CONFIG.potions.map(potion => {
+        const unlocked = level >= potion.reqLevel;
+        
+        return `
+            <div class="action-card ${unlocked ? '' : 'locked'}" 
+                 data-action="alchemy" data-id="${potion.id}">
+                <div class="action-icon">${potion.icon}</div>
+                <div class="action-info">
+                    <div class="action-name">${potion.name}</div>
+                    <div class="action-details">
+                        <span>⏱️ ${formatTime(potion.duration)}</span>
+                        <span>✨ ${potion.exp}</span>
+                    </div>
+                </div>
+                ${!unlocked ? `<div class="locked-overlay">🔒 Lv.${potion.reqLevel}</div>` : ''}
+            </div>
+        `;
+    }).join('');
+    
+    elements.alchemyList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
+        card.addEventListener('click', () => {
+            const potionId = card.dataset.id;
+            openActionModal('ALCHEMY', potionId);
+        });
+    });
+}
+
+/**
  * 渲染库存
  */
 function renderInventories() {
@@ -654,6 +727,21 @@ function renderInventories() {
     // 布料
     if (CONFIG.fabrics) {
         renderInventoryGrid('storage-fabrics-items', gameState.fabricsInventory, CONFIG.fabrics);
+    }
+    
+    // 药水
+    if (CONFIG.potions) {
+        renderInventoryGrid('storage-potions-items', gameState.potionsInventory, CONFIG.potions);
+    }
+    
+    // 酒类
+    if (CONFIG.brews) {
+        renderInventoryGrid('storage-brews-items', gameState.brewsInventory, CONFIG.brews);
+    }
+    
+    // 精华
+    if (CONFIG.essences) {
+        renderInventoryGrid('storage-essences-items', gameState.essencesInventory, CONFIG.essences);
     }
 }
 
@@ -694,7 +782,10 @@ function openActionModal(type, id) {
         GATHERING: CONFIG.gatheringLocations,
         CRAFTING: CONFIG.woodPlanks,
         FORGING: CONFIG.ingots,
-        TAILORING: CONFIG.fabrics
+        TAILORING: CONFIG.fabrics,
+        BREWING: CONFIG.brews,
+        ALCHEMY: CONFIG.potions,
+        ESSENCE: CONFIG.essences
     };
     
     const config = configs[type]?.find(c => c.id === id);

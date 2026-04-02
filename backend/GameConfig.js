@@ -168,6 +168,38 @@ const CONFIG = {
         { id: 'dream_cloth', name: '梦幻布料', icon: '✨', reqLevel: 95, duration: 25000, exp: 72.5, materials: { life_fiber: 2 } }
     ],
     
+    // 药水配置
+    potions: [
+        { id: 'hp_potion_1', name: '素级生命药水', icon: '🧪', reqLevel: 1, duration: 6000, exp: 4, materials: { sweet_berry: 1, blood_rose: 1, honey: 4 } },
+        { id: 'mp_potion_1', name: '素级魔法药水', icon: '💧', reqLevel: 1, duration: 6000, exp: 4, materials: { sweet_berry: 1, star_dew_herb: 1, honey: 4 } },
+        { id: 'hp_potion_2', name: '良级生命药水', icon: '🧪', reqLevel: 10, duration: 6750, exp: 8, materials: { wheat: 1, blood_rose: 1, honey: 4 } },
+        { id: 'mp_potion_2', name: '良级魔法药水', icon: '💧', reqLevel: 10, duration: 6750, exp: 8, materials: { wheat: 1, star_dew_herb: 1, honey: 4 } },
+        { id: 'hp_potion_3', name: '中级生命药水', icon: '🧪', reqLevel: 20, duration: 7500, exp: 12, materials: { hops: 1, red_serpent_fruit: 1, blossom_honey: 4 } },
+        { id: 'mp_potion_3', name: '中级魔法药水', icon: '💧', reqLevel: 20, duration: 7500, exp: 12, materials: { hops: 1, moonlight_mushroom: 1, blossom_honey: 4 } },
+        { id: 'hp_potion_4', name: '优级生命药水', icon: '🧪', reqLevel: 35, duration: 8250, exp: 18, materials: { apple: 1, red_serpent_fruit: 1, blossom_honey: 4 } },
+        { id: 'mp_potion_4', name: '优级魔法药水', icon: '💧', reqLevel: 35, duration: 8250, exp: 18, materials: { apple: 1, moonlight_mushroom: 1, blossom_honey: 4 } }
+    ],
+    
+    // 酒类配置
+    brews: [
+        { id: 'woodcutting_wine', name: '伐木甜酒', icon: '🍷', reqLevel: 1, duration: 8000, exp: 6, materials: { sweet_berry: 1, mint_essence: 1, wood_token: 1 } },
+        { id: 'gathering_ale', name: '采集麦酒', icon: '🍺', reqLevel: 4, duration: 8000, exp: 9, materials: { wheat: 1, mint_essence: 1, gathering_token: 1 } },
+        { id: 'mining_wine', name: '挖矿甜酒', icon: '🍷', reqLevel: 7, duration: 9000, exp: 12, materials: { sweet_berry: 1, pine_essence: 1, mining_token: 1 } },
+        { id: 'forging_ale', name: '锻造麦酒', icon: '🍺', reqLevel: 10, duration: 9000, exp: 15, materials: { wheat: 1, pine_essence: 1, forging_token: 1 } },
+        { id: 'crafting_ale', name: '制作麦酒', icon: '🍺', reqLevel: 14, duration: 10000, exp: 18, materials: { wheat: 1, vanilla_essence: 1, crafting_token: 1 } },
+        { id: 'tailoring_beer', name: '缝制啤酒', icon: '🍻', reqLevel: 17, duration: 10000, exp: 21, materials: { hops: 1, vanilla_essence: 1, tailoring_token: 1 } },
+        { id: 'alchemy_beer', name: '炼金啤酒', icon: '🍻', reqLevel: 20, duration: 10000, exp: 24, materials: { hops: 1, sage_essence: 1, alchemy_token: 1 } },
+        { id: 'brewing_wine', name: '酿造果酒', icon: '🍷', reqLevel: 20, duration: 10000, exp: 24, materials: { apple: 1, sage_essence: 1, brewing_token: 1 } }
+    ],
+    
+    // 精华配置
+    essences: [
+        { id: 'mint_essence', name: '薄荷精华', icon: '🌿', reqLevel: 1, duration: 5000, exp: 3, materials: { wild_mint: 3 } },
+        { id: 'pine_essence', name: '松针精华', icon: '🌲', reqLevel: 5, duration: 6000, exp: 5, materials: { pine_needle: 3 } },
+        { id: 'vanilla_essence', name: '香草精华', icon: '🌱', reqLevel: 10, duration: 7000, exp: 8, materials: { vanilla: 3 } },
+        { id: 'sage_essence', name: '鼠尾草精华', icon: '🌿', reqLevel: 15, duration: 8000, exp: 12, materials: { sage: 3 } }
+    ],
+    
     // 装备槽位配置
     equipmentSlots: [
         { id: 'axe', name: '斧头', icon: '🪓', skill: 'woodcutting' },
@@ -305,6 +337,40 @@ const ACTION_TYPES = {
         expKey: 'tailoringExp',
         inventoryKey: 'fabricsInventory',
         resultType: 'FABRIC',
+        materialType: 'GATHERING',
+        needsMaterials: true
+    },
+    BREWING: {
+        id: 'brewing',
+        name: '酿造',
+        configKey: 'brews',
+        skillKey: 'brewingLevel',
+        expKey: 'brewingExp',
+        inventoryKey: 'brewsInventory',
+        resultType: 'BREW',
+        materialType: 'GATHERING',
+        needsMaterials: true,
+        needsToken: true
+    },
+    ALCHEMY: {
+        id: 'alchemy',
+        name: '炼金',
+        configKey: 'potions',
+        skillKey: 'alchemyLevel',
+        expKey: 'alchemyExp',
+        inventoryKey: 'potionsInventory',
+        resultType: 'POTION',
+        materialType: 'GATHERING',
+        needsMaterials: true
+    },
+    ESSENCE: {
+        id: 'essence',
+        name: '提炼',
+        configKey: 'essences',
+        skillKey: 'gatheringLevel',
+        expKey: 'gatheringExp',
+        inventoryKey: 'essencesInventory',
+        resultType: 'ESSENCE',
         materialType: 'GATHERING',
         needsMaterials: true
     }
