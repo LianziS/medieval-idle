@@ -163,6 +163,8 @@ function setupSocket() {
             completingAction = false;
         }
         updateUI();
+        renderEquipmentSlots(); // 实时更新装备栏
+        renderInventories(); // 实时更新物品栏
         
         // 如果队列面板打开，检查队列状态
         const popover = document.getElementById('queue-popover');
@@ -582,13 +584,9 @@ function renderEquipmentSlots() {
                 nameEl.textContent = tool.name;
                 cardEl?.classList.add('equipped');
                 
-                // 点击卸下装备
+                // 点击卸下装备 - 使用弹出式卡片
                 if (cardEl) {
-                    cardEl.onclick = () => {
-                        if (confirm(`卸下 ${tool.name}?`)) {
-                            socket.emit('unequip_tool', { slotType: slot.id });
-                        }
-                    };
+                    cardEl.onclick = () => showUnequipConfirm(slot.id, tool.name);
                 }
             } else {
                 slotEl.innerHTML = slot.icon;
@@ -605,6 +603,39 @@ function renderEquipmentSlots() {
                 cardEl.onclick = () => openEquipModal(slot.id);
             }
         }
+    });
+}
+
+/**
+ * 显示卸下装备确认卡片
+ */
+function showUnequipConfirm(slotId, toolName) {
+    const modal = document.createElement('div');
+    modal.className = 'action-modal-overlay';
+    modal.innerHTML = `
+        <div class="confirm-dialog">
+            <div class="confirm-dialog-title">⚠️ 卸下装备</div>
+            <div class="confirm-dialog-content">
+                <div style="text-align: center; padding: 10px;">
+                    确定要卸下 <strong>${toolName}</strong> 吗？
+                </div>
+            </div>
+            <div class="confirm-dialog-footer">
+                <button class="dialog-btn secondary" id="unequip-cancel">取消</button>
+                <button class="dialog-btn danger" id="unequip-confirm">确认卸下</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('#unequip-cancel').addEventListener('click', () => modal.remove());
+    modal.querySelector('#unequip-confirm').addEventListener('click', () => {
+        socket.emit('unequip_tool', { slotType: slotId });
+        modal.remove();
+    });
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
     });
 }
 
