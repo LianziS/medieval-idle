@@ -529,7 +529,13 @@ class GameEngine {
             if (this.state.actionQueue.length > 0) {
                 const queueItem = this.state.actionQueue.shift();
                 // 自动开始队列中的下一个行动
-                const startResult = this.startAction(queueItem.type, queueItem.id, queueItem.count, { itemId: queueItem.itemId });
+                let startResult;
+                if (queueItem.type === 'FORGING') {
+                    // 锻造行动使用 startForgeAction
+                    startResult = this.startForgeAction(queueItem.toolType, queueItem.toolIndex, queueItem.count);
+                } else {
+                    startResult = this.startAction(queueItem.type, queueItem.id, queueItem.count, { itemId: queueItem.itemId });
+                }
                 if (startResult.success) {
                     nextAction = queueItem;
                 }

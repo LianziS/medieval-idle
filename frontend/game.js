@@ -2762,8 +2762,24 @@ function showItemTooltip(item, event) {
             else if (id.includes('rod')) slotType = 'rod';
             
             if (slotType) {
-                socket.emit('equip_tool', { slotType, toolId: id });
-                tooltip.remove();
+                // 检查槽位是否已有装备
+                const currentEquipped = gameState?.equipment?.[slotType];
+                if (currentEquipped) {
+                    // 获取当前装备的名称
+                    const toolType = slotType === 'tongs' ? 'tongs' : 
+                                    slotType === 'rod' ? 'rods' : `${slotType}s`;
+                    const tools = CONFIG.tools?.[toolType] || [];
+                    const currentTool = tools.find(t => t.id === currentEquipped);
+                    const currentName = currentTool?.name || '当前装备';
+                    
+                    // 显示替换确认卡片
+                    tooltip.remove();
+                    showEquipReplaceConfirm(slotType, id, name, currentName);
+                } else {
+                    // 没有装备，直接装备
+                    socket.emit('equip_tool', { slotType, toolId: id });
+                    tooltip.remove();
+                }
             }
         });
     }
@@ -2779,6 +2795,41 @@ function showItemTooltip(item, event) {
             }
         });
     }
+}
+
+/**
+ * 显示装备替换确认卡片
+ */
+function showEquipReplaceConfirm(slotType, newToolId, newToolName, currentToolName) {
+    const modal = document.createElement('div');
+    modal.className = 'action-modal-overlay';
+    modal.innerHTML = `
+        <div class="confirm-dialog">
+            <div class="confirm-dialog-title">⚠️ 替换装备</div>
+            <div class="confirm-dialog-content">
+                <div style="text-align: center; padding: 10px;">
+                    <div style="margin-bottom: 8px; color: #A0B2C0;">当前装备：<strong style="color: #E8C57F;">${currentToolName}</strong></div>
+                    <div style="margin-bottom: 8px;">↓</div>
+                    <div style="color: #A0B2C0;">替换为：<strong style="color: #4CAF50;">${newToolName}</strong></div>
+                </div>
+            </div>
+            <div class="confirm-dialog-footer">
+                <button class="dialog-btn secondary" id="equip-cancel">取消</button>
+                <button class="dialog-btn primary" id="equip-confirm">确认替换</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('#equip-cancel').addEventListener('click', () => modal.remove());
+    modal.querySelector('#equip-confirm').addEventListener('click', () => {
+        socket.emit('equip_tool', { slotType, toolId: newToolId });
+        modal.remove();
+    });
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
 }
 
 /**

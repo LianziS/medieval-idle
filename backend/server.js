@@ -746,15 +746,9 @@ setInterval(() => {
                 socket.emit('action_complete_result', result);
                 socket.emit('game_state_update', gameEngine.getFullState());
                 
-                // 如果有下一个行动
+                // 如果有下一个行动（已由 completeActionOnce 自动开始）
                 if (result.nextAction) {
                     socket.emit('queue_next', result.nextAction);
-                    // 自动开始下一个行动
-                    const startResult = gameEngine.startAction(result.nextAction.type, result.nextAction.id, result.nextAction.count);
-                    if (startResult.success) {
-                        socket.emit('action_result', startResult);
-                        socket.emit('game_state_update', gameEngine.getFullState());
-                    }
                 }
             }
         }
