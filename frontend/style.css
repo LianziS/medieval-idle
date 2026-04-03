@@ -153,20 +153,24 @@ body::after {
 .action-status-bar {
     background: transparent;
     border-top: none;
-    padding: 8px 20px 8px 60px;
-    height: 60px;
+    padding: 6px 20px 6px 60px;
+    height: auto;
+    min-height: 70px;
     box-sizing: border-box;
 }
 
 .action-status-content {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     width: 100%;
 }
 
 .action-rewards {
-    min-height: 20px;
+    height: 24.67px;
+    min-height: 24.67px;
+    max-height: 24.67px;
+    overflow: hidden;
 }
 
 .action-status-left {
@@ -283,10 +287,10 @@ body::after {
 /* ============ 侧边栏 ============ */
 .sidebar {
     position: fixed;
-    top: 60px;
+    top: 70px;
     left: 0;
     width: 55px;
-    height: calc(100% - 60px);
+    height: calc(100% - 70px);
     background: #1B2A3A;
     backdrop-filter: blur(10px);
     z-index: 1000;
@@ -514,13 +518,13 @@ body::after {
     max-width: 1400px;
     margin: 0 auto;
     margin-left: 55px;
-    margin-top: 60px;
+    margin-top: 70px;
     background: #1B2A3A;
     backdrop-filter: blur(10px);
     border-radius: 0;
     overflow-x: hidden;
     transition: margin-left 0.3s ease;
-    min-height: calc(100vh - 60px);
+    min-height: calc(100vh - 70px);
     border: none;
     box-shadow: none;
 }
@@ -1488,7 +1492,7 @@ body::after {
     }
     
     .top-fixed {
-        min-height: 50px;
+        min-height: 60px;
     }
     
     .action-status-bar {
@@ -1543,8 +1547,8 @@ body::after {
     
     /* 侧边栏在手机端默认收起 */
     .sidebar {
-        top: 50px;
-        height: calc(100% - 50px);
+        top: 60px;
+        height: calc(100% - 60px);
         width: 50px;
         border: none;
     }
@@ -1604,7 +1608,7 @@ body::after {
     
     .game-container {
         margin-left: 55px;
-        margin-top: 50px;
+        margin-top: 60px;
     }
     
     .sidebar.expanded ~ .game-container {
@@ -1612,8 +1616,13 @@ body::after {
     }
     
     .action-status-bar {
-        padding: 6px 15px 6px 55px;
-        height: 50px;
+        padding: 4px 15px 4px 55px;
+        min-height: 60px;
+        height: auto;
+    }
+    
+    .action-rewards {
+        height: 24.67px;
     }
     
     .panel {
