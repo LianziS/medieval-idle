@@ -797,7 +797,7 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="game.js?v=202604031425"></script>
+    <script src="game.js?v=202604031436"></script>
     <script>
         // 登录验证
         (function() {
@@ -823,15 +823,6 @@
                 console.warn('后端未连接，进入离线模式');
             });
         })();
-        
-        // 退出登录
-        document.getElementById('logout-btn').addEventListener('click', function() {
-            if (confirm('确定要退出登录吗？')) {
-                localStorage.removeItem('medieval_token');
-                localStorage.removeItem('medieval_auto_login');
-                window.location.href = '/login';
-            }
-        });
     </script>
 </body>
 </html>

@@ -424,9 +424,13 @@ function showClearQueueConfirm() {
  * 设置导航
  */
 function setupNavigation() {
-    elements.navItems.forEach(item => {
-        item.addEventListener('click', () => {
+    console.log('📍 setupNavigation 开始, navItems数量:', elements.navItems.length);
+    
+    elements.navItems.forEach((item, index) => {
+        console.log(`  绑定导航项 [${index}]:`, item.dataset.page);
+        item.addEventListener('click', (e) => {
             const page = item.dataset.page;
+            console.log('🖱️ 点击导航项:', page);
             switchPage(page);
         });
     });
