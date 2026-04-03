@@ -335,7 +335,7 @@ body::after {
 .sidebar.expanded .sidebar-icon-bar {
     width: 220px;
     align-items: flex-start;
-    padding-left: 6px;
+    padding-left: 8px;
 }
 
 .toggle-btn {
@@ -356,6 +356,7 @@ body::after {
 
 .sidebar.expanded .toggle-btn {
     width: 40px;
+    margin-left: 0;
 }
 
 .toggle-btn:hover {
@@ -432,12 +433,11 @@ body::after {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: width 0.3s ease;
+    transition: all 0.3s ease;
 }
 
 .sidebar.expanded .nav-icon {
     width: 40px;
-    justify-content: center;
 }
 
 .nav-skill-wrapper {
@@ -1565,41 +1565,52 @@ body::after {
         width: 50px;
         padding-top: 10px;
         gap: 2px;
+        align-items: center;
     }
     
     .sidebar.expanded .sidebar-icon-bar {
         width: 160px;
-        padding-left: 4px;
+        padding-left: 0;
+        align-items: flex-start;
     }
     
     .toggle-btn {
         width: 50px;
         height: 28px;
         font-size: 1.1rem;
+        margin: 0 auto;
     }
     
     .sidebar.expanded .toggle-btn {
         width: 32px;
+        margin: 0;
+        margin-left: 9px;
     }
     
     .nav-item {
-        min-height: 22px;
+        min-height: 20px;
+        justify-content: center;
+    }
+    
+    .sidebar.expanded .nav-item {
+        justify-content: flex-start;
     }
     
     .nav-item-skill {
-        min-height: 20px;
+        min-height: 18px;
         padding: 0;
     }
     
     .nav-icon {
         width: 50px;
-        height: 22px;
+        height: 20px;
         font-size: 1rem;
     }
     
     .sidebar.expanded .nav-icon {
         width: 32px;
-        height: 22px;
+        height: 20px;
+        margin-left: 9px;
     }
     
     .nav-text {
