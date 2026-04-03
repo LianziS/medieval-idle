@@ -949,25 +949,29 @@ function updateActionStatusBar() {
 function getActionConfig(actionType, actionId) {
     // 特殊处理锻造行动
     if (actionType === 'FORGING') {
-        // actionId 格式: forge_{toolType}_{toolIndex}
-        const parts = actionId.split('_');
-        if (parts.length >= 3) {
-            const toolType = parts[1];
-            const toolIndex = parseInt(parts[2]);
-            const toolsKey = {
-                'axe': 'axes',
-                'pickaxe': 'pickaxes',
-                'chisel': 'chisels',
-                'needle': 'needles',
-                'scythe': 'scythes',
-                'hammer': 'hammers',
-                'tongs': 'tongs',
-                'rod': 'rods'
-            }[toolType] || toolType + 's';
-            const tool = CONFIG.tools?.[toolsKey]?.[toolIndex];
-            return tool ? { ...tool, duration: tool.duration || 6000 } : null;
+        // 锻造工具: actionId 格式为 forge_{toolType}_{toolIndex}
+        if (actionId.startsWith('forge_')) {
+            const parts = actionId.split('_');
+            if (parts.length >= 3) {
+                const toolType = parts[1];
+                const toolIndex = parseInt(parts[2]);
+                const toolsKey = {
+                    'axe': 'axes',
+                    'pickaxe': 'pickaxes',
+                    'chisel': 'chisels',
+                    'needle': 'needles',
+                    'scythe': 'scythes',
+                    'hammer': 'hammers',
+                    'tongs': 'tongs',
+                    'rod': 'rods'
+                }[toolType] || toolType + 's';
+                const tool = CONFIG.tools?.[toolsKey]?.[toolIndex];
+                return tool ? { ...tool, duration: tool.duration || 6000 } : null;
+            }
         }
-        return null;
+        // 锻造矿锭: 从 ingots 配置获取
+        const ingot = CONFIG.ingots?.find(c => c.id === actionId);
+        return ingot || null;
     }
     
     const configMaps = {
