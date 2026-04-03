@@ -164,8 +164,9 @@ class GameEngine {
         let leveledUp = false;
         let totalLevelGain = 0;
         
-        while (currentExp >= this.getExpForLevel(currentLevel + 1)) {
-            const expNeeded = this.getExpForLevel(currentLevel + 1);
+        // getExpForLevel(N) = 从 Lv.N 升到 Lv.N+1 所需的增量经验
+        while (currentExp >= this.getExpForLevel(currentLevel)) {
+            const expNeeded = this.getExpForLevel(currentLevel);
             currentExp -= expNeeded;
             currentLevel++;
             totalLevelGain++;

@@ -638,6 +638,7 @@ function updateSkillDisplay() {
     ];
     
     // 计算升级所需经验（与后端一致：100 × 1.5^(等级-1)）
+    // getExpForLevel(N) = 从 Lv.N 升到 Lv.N+1 所需的增量经验
     function getExpForLevel(level) {
         return Math.floor(100 * Math.pow(1.5, level - 1));
     }
@@ -650,9 +651,8 @@ function updateSkillDisplay() {
         const level = gameState[skill.key] || 1;
         const exp = gameState[skill.expKey] || 0;
         
-        // 计算当前级别的经验进度
+        // 升级所需经验
         const expForCurrentLevel = getExpForLevel(level);  // 当前等级升到下一级需要的经验
-        const currentExp = exp;  // 当前累计经验（后端已经扣除已用经验）
         
         // 更新等级显示
         if (levelEl) {
@@ -661,12 +661,12 @@ function updateSkillDisplay() {
         
         // 更新经验值信息 [当前/升级所需]
         if (expInfoEl) {
-            expInfoEl.textContent = `[${Math.floor(currentExp)}/${expForCurrentLevel}]`;
+            expInfoEl.textContent = `[${Math.floor(exp)}/${expForCurrentLevel}]`;
         }
         
         // 更新经验条
         if (expFillEl) {
-            const progress = Math.min(100, Math.max(0, (currentExp / expForCurrentLevel) * 100));
+            const progress = Math.min(100, Math.max(0, (exp / expForCurrentLevel) * 100));
             expFillEl.style.width = `${progress}%`;
         }
     });
