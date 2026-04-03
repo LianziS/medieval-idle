@@ -2491,31 +2491,71 @@ function renderInventories() {
         renderInventoryGrid('storage-fabrics-items', gameState.fabricsInventory, CONFIG.fabrics);
     }
     
-    // 锻造工具 - 显示所有工具背包
+    // 锻造工具 - 显示所有工具背包（已装备的置顶并打勾）
     const allTools = [];
+    const equippedToolIds = new Set(Object.values(gameState.equipment || {}).filter(id => id));
     const toolTypes = ['axes', 'pickaxes', 'chisels', 'needles', 'scythes', 'hammers', 'tongs', 'rods'];
+    
     toolTypes.forEach(toolType => {
         const tools = CONFIG.tools?.[toolType] || [];
         const inventory = gameState.toolsInventory?.[toolType] || [];
         inventory.forEach(toolId => {
             const tool = tools.find(t => t.id === toolId);
             if (tool) {
-                allTools.push({ id: toolId, name: tool.name, icon: tool.icon });
+                const isEquipped = equippedToolIds.has(toolId);
+                allTools.push({ id: toolId, name: tool.name, icon: tool.icon, isEquipped });
             }
         });
     });
+    
+    // 排序：已装备的在前
+    allTools.sort((a, b) => {
+        if (a.isEquipped && !b.isEquipped) return -1;
+        if (!a.isEquipped && b.isEquipped) return 1;
+        return 0;
+    });
+    
     // 统计每个工具的数量
     const toolCounts = {};
     allTools.forEach(tool => {
         const key = tool.id;
         if (!toolCounts[key]) {
-            toolCounts[key] = { count: 0, name: tool.name, icon: tool.icon };
+            toolCounts[key] = { count: 0, name: tool.name, icon: tool.icon, isEquipped: tool.isEquipped };
         }
         toolCounts[key].count++;
     });
-    renderInventoryGrid('storage-tools-items', Object.fromEntries(
-        Object.entries(toolCounts).map(([id, data]) => [id, data.count])
-    ), Object.entries(toolCounts).map(([id, data]) => ({ id, name: data.name, icon: data.icon })));
+    
+    // 渲染工具网格（带有已装备标记）
+    const toolsElement = document.getElementById('storage-tools-items');
+    if (toolsElement && Object.keys(toolCounts).length > 0) {
+        const items = Object.entries(toolCounts)
+            .map(([id, data]) => {
+                const price = 0;
+                const desc = getItemDescription(id, data);
+                return `
+                    <div class="inventory-item ${data.isEquipped ? 'equipped' : ''}" 
+                         data-id="${id}" 
+                         data-name="${data.name}" 
+                         data-count="${data.count}" 
+                         data-price="${price}"
+                         data-desc="${desc}"
+                         data-icon="${data.icon}">
+                        <span class="item-icon">${data.icon}</span>
+                        <span class="item-name">${data.name}</span>
+                        <span class="item-count">${data.count}</span>
+                        ${data.isEquipped ? '<span class="item-equipped-check">✓</span>' : ''}
+                    </div>
+                `;
+            }).join('');
+        toolsElement.innerHTML = items;
+        
+        // 绑定点击事件
+        toolsElement.querySelectorAll('.inventory-item').forEach(item => {
+            item.addEventListener('click', (e) => showItemTooltip(item, e));
+        });
+    } else if (toolsElement) {
+        toolsElement.innerHTML = '';
+    }
     
     // 药水
     if (CONFIG.potions) {
@@ -2606,12 +2646,11 @@ function renderInventoryGrid(elementId, inventory, config, idField = 'id') {
             `;
         }).join('');
     
-    element.innerHTML = items || '<div class="empty-message">暂无物品</div>';
+    element.innerHTML = items || ''; // 暂无物品时不显示任何内容
     
     // 绑定点击事件
     element.querySelectorAll('.inventory-item').forEach(item => {
         item.addEventListener('click', (e) => showItemTooltip(item, e));
-        item.addEventListener('mouseleave', () => hideItemTooltip(item));
     });
 }
 
@@ -2644,6 +2683,25 @@ function showItemTooltip(item, event) {
     const price = item.dataset.price;
     const desc = item.dataset.desc;
     const icon = item.dataset.icon;
+    const id = item.dataset.id;
+    
+    // 检查是否是工具
+    const isTool = id && (id.includes('axe') || id.includes('pickaxe') || id.includes('chisel') || 
+                          id.includes('needle') || id.includes('scythe') || id.includes('hammer') || 
+                          id.includes('tongs') || id.includes('rod'));
+    
+    // 检查是否已装备
+    let isEquipped = false;
+    let equipSlot = null;
+    if (isTool && gameState?.equipment) {
+        for (const [slot, toolId] of Object.entries(gameState.equipment)) {
+            if (toolId === id) {
+                isEquipped = true;
+                equipSlot = slot;
+                break;
+            }
+        }
+    }
     
     const tooltip = document.createElement('div');
     tooltip.className = 'item-tooltip';
@@ -2652,29 +2710,69 @@ function showItemTooltip(item, event) {
         <div class="item-tooltip-row"><span>数量</span><span>${count}</span></div>
         <div class="item-tooltip-row"><span>价值</span><span>${price > 0 ? price + ' 金币' : '不可出售'}</span></div>
         <div class="item-tooltip-desc">${desc}</div>
+        ${isTool && !isEquipped ? `<button class="item-equip-btn" data-id="${id}">装备</button>` : ''}
+        ${isEquipped ? `<div class="item-equipped-label">✓ 已装备</div>` : ''}
     `;
     
     document.body.appendChild(tooltip);
     
-    // 计算位置：显示在物品卡片右侧
+    // 计算位置：显示在物品卡片上方
     const rect = item.getBoundingClientRect();
     const tooltipRect = tooltip.getBoundingClientRect();
     
-    let left = rect.right + 8;
-    let top = rect.top;
+    let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+    let top = rect.top - tooltipRect.height - 8;
     
-    // 如果右侧空间不足，显示在左侧
-    if (left + tooltipRect.width > window.innerWidth - 10) {
-        left = rect.left - tooltipRect.width - 8;
+    // 如果上方空间不足，显示在下方
+    if (top < 10) {
+        top = rect.bottom + 8;
     }
     
-    // 如果上侧空间不足，向下调整
-    if (top + tooltipRect.height > window.innerHeight - 10) {
-        top = window.innerHeight - tooltipRect.height - 10;
+    // 如果左侧超出屏幕
+    if (left < 10) {
+        left = 10;
+    }
+    
+    // 如果右侧超出屏幕
+    if (left + tooltipRect.width > window.innerWidth - 10) {
+        left = window.innerWidth - tooltipRect.width - 10;
     }
     
     tooltip.style.left = left + 'px';
     tooltip.style.top = top + 'px';
+    
+    // 点击其他地方关闭
+    const closeTooltip = (e) => {
+        if (!tooltip.contains(e.target) && !item.contains(e.target)) {
+            tooltip.remove();
+            document.removeEventListener('click', closeTooltip);
+        }
+    };
+    setTimeout(() => {
+        document.addEventListener('click', closeTooltip);
+    }, 10);
+    
+    // 绑定装备按钮
+    const equipBtn = tooltip.querySelector('.item-equip-btn');
+    if (equipBtn) {
+        equipBtn.addEventListener('click', () => {
+            // 确定装备槽位
+            let slotType = null;
+            if (id.includes('axe')) slotType = 'axe';
+            else if (id.includes('pickaxe')) slotType = 'pickaxe';
+            else if (id.includes('chisel')) slotType = 'chisel';
+            else if (id.includes('needle')) slotType = 'needle';
+            else if (id.includes('scythe')) slotType = 'scythe';
+            else if (id.includes('hammer')) slotType = 'hammer';
+            else if (id.includes('tongs')) slotType = 'tongs';
+            else if (id.includes('rod')) slotType = 'rod';
+            
+            if (slotType) {
+                socket.emit('equip_tool', { slotType, toolId: id });
+                tooltip.remove();
+            }
+        });
+    }
 }
 
 /**

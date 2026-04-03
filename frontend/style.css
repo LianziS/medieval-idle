@@ -3295,6 +3295,54 @@ body::after {
     border-top: 1px solid rgba(107, 79, 60, 0.3);
 }
 
+.item-equip-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: linear-gradient(180deg, #4a6741 0%, #3a5331 100%);
+    border: 1px solid #5a7751;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.item-equip-btn:hover {
+    background: linear-gradient(180deg, #5a7751 0%, #4a6341 100%);
+}
+
+.item-equipped-label {
+    margin-top: 8px;
+    padding: 4px 8px;
+    background: rgba(232, 197, 127, 0.2);
+    border-radius: 4px;
+    color: #E8C57F;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+/* 已装备物品样式 */
+.inventory-item.equipped {
+    border-color: #E8C57F;
+    background: rgba(232, 197, 127, 0.15);
+}
+
+.item-equipped-check {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    color: #E8C57F;
+    font-size: 0.7rem;
+    background: rgba(0, 0, 0, 0.5);
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .empty-message {
     color: #6b7f90;
     text-align: center;
