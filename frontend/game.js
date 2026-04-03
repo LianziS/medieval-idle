@@ -334,8 +334,16 @@ function setupEventListeners() {
             if (isWide) {
                 // PC端：恢复上次状态或默认展开
                 const saved = localStorage.getItem('sidebarExpanded');
-                if (saved === null || saved === 'true') {
+                if (saved === null) {
+                    // 首次访问，默认展开
                     sidebar.classList.add('expanded');
+                    localStorage.setItem('sidebarExpanded', 'true');
+                } else if (saved === 'true') {
+                    // 用户上次保持展开，恢复展开
+                    sidebar.classList.add('expanded');
+                } else {
+                    // 用户上次保持收起，保持收起
+                    sidebar.classList.remove('expanded');
                 }
             } else {
                 // 移动端：强制收起
