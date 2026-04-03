@@ -2000,7 +2000,7 @@ function renderToolForge() {
                         const owned = (gameState.toolsInventory?.[toolType] || []).includes(tool.id);
                         
                         return `
-                            <div class="tool-card ${owned ? 'owned' : ''}" 
+                            <div class="tool-card" 
                                  data-tool-type="${toolType}" data-tool-index="${toolIndex}">
                                 <div class="tool-icon">${tool.icon}</div>
                                 <div class="tool-info">
@@ -2008,7 +2008,6 @@ function renderToolForge() {
                                     <div class="tool-meta">
                                         <span>+${Math.round(tool.speedBonus * 100)}%</span>
                                     </div>
-                                    ${owned ? '<div class="tool-owned">✓</div>' : ''}
                                 </div>
                             </div>
                         `;
@@ -2150,12 +2149,15 @@ function openToolForgeModal(toolType, toolIndex) {
         const count = getCount();
         if (count <= 0) return;
         
+        // 转换 toolType: axes -> axe, chisels -> chisel
+        const singularType = toolType.endsWith('s') ? toolType.slice(0, -1) : toolType;
+        
         // 检查是否有行动进行中
         if (currentAction) {
             showForgeImmediatelyConfirm(toolType, toolIndex, tool, count, modal);
         } else {
             socket.emit('forge_tool', {
-                toolType: toolType.replace('s', ''),
+                toolType: singularType,
                 toolIndex: toolIndex,
                 count: count
             });
@@ -2169,8 +2171,9 @@ function openToolForgeModal(toolType, toolIndex) {
         queueBtn.addEventListener('click', () => {
             const count = getCount();
             if (count <= 0) return;
+            const singularType = toolType.endsWith('s') ? toolType.slice(0, -1) : toolType;
             socket.emit('forge_tool', {
-                toolType: toolType.replace('s', ''),
+                toolType: singularType,
                 toolIndex: toolIndex,
                 count: count
             });
@@ -2227,8 +2230,9 @@ function showForgeImmediatelyConfirm(toolType, toolIndex, tool, count, parentMod
     modal.querySelector('#forge-cancel').addEventListener('click', () => modal.remove());
     
     modal.querySelector('#forge-confirm').addEventListener('click', () => {
+        const singularType = toolType.endsWith('s') ? toolType.slice(0, -1) : toolType;
         socket.emit('forge_tool_immediately', {
-            toolType: toolType.replace('s', ''),
+            toolType: singularType,
             toolIndex: toolIndex,
             count: count
         });
