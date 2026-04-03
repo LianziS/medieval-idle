@@ -396,7 +396,12 @@ class GameEngine {
         
         // 处理锻造行动
         if (action.type === 'FORGING') {
-            return this.completeForgeOnce();
+            // 区分锻造矿锭和锻造工具
+            // 锻造工具有 toolType 和 toolIndex 属性
+            if (action.toolType !== undefined && action.toolIndex !== undefined) {
+                return this.completeForgeOnce();
+            }
+            // 否则是锻造矿锭，走正常生产流程
         }
         
         const actionType = ACTION_TYPES[action.type];
