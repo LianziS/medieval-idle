@@ -254,12 +254,17 @@ class GameEngine {
         const config = CONFIG[actionType.configKey];
         const item = config.find(c => c.id === actionId);
         
-        // 无限模式：count 为 -1 或 Infinity 时
-        const isInfinite = count === -1 || count === Infinity;
+        // 判断是否允许无限模式（只有伐木、挖矿、采集可以）
+        const canBeInfinite = !actionType.needsMaterials;
+        const isInfiniteRequest = count === -1 || count === Infinity;
+        
+        // 只有允许无限的行动才能设置无限，否则计算实际次数
+        const isInfinite = isInfiniteRequest && canBeInfinite;
         count = isInfinite ? Infinity : count;
         
         let actualCount = count;
-        if (!isInfinite && actionType.needsMaterials && item.materials) {
+        // 需要材料的行动，计算实际可执行次数
+        if (actionType.needsMaterials && item.materials) {
             actualCount = this.calculateMaxCount(actionTypeKey, actionId, count);
             if (actualCount <= 0) {
                 return { success: false, reason: '材料不足' };
@@ -291,8 +296,9 @@ class GameEngine {
                 name: item.name,
                 icon: item.icon,
                 duration: duration,
-                count: actualCount,
-                remaining: actualCount
+                count: isInfinite ? Infinity : actualCount,
+                remaining: isInfinite ? Infinity : actualCount,
+                isInfinite: isInfinite
             }
         };
     }
