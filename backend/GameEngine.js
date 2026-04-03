@@ -766,12 +766,17 @@ class GameEngine {
             return { success: false, reason: '材料配置错误' };
         }
         
-        // 检查材料
+        // 获取库存
+        const mining = this.state.miningInventory || {};
         const ingots = this.state.ingotsInventory || {};
         const planks = this.state.planksInventory || {};
         
-        if (materials.ore && (ingots[ingotId] || 0) < materials.ore) {
-            return { success: false, reason: `矿锭不足: 需要 ${materials.ore}` };
+        // 从矿锭ID反推矿石ID（用于 ore 配置）
+        const oreId = CONFIG.ingotOreMapping?.[ingotId] || ingotId;
+        
+        // 检查材料（ore 用矿石，ingot 用矿锭）
+        if (materials.ore && (mining[oreId] || 0) < materials.ore) {
+            return { success: false, reason: `矿石不足: 需要 ${materials.ore}` };
         }
         
         if (materials.plank && (planks[plankId] || 0) < materials.plank) {
@@ -793,10 +798,10 @@ class GameEngine {
             prevTools.splice(prevIndex, 1);
         }
         
-        // 消耗材料
+        // 消耗材料（ore 用矿石，ingot 用矿锭）
         if (materials.ore) {
-            ingots[ingotId] = (ingots[ingotId] || 0) - materials.ore;
-            if (ingots[ingotId] <= 0) delete ingots[ingotId];
+            mining[oreId] = (mining[oreId] || 0) - materials.ore;
+            if (mining[oreId] <= 0) delete mining[oreId];
         }
         
         if (materials.plank) {

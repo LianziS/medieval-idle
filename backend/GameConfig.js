@@ -392,6 +392,18 @@ const CONFIG = {
         'star_ore': 'star_crystal'
     },
     
+    // 矿锭与矿石的反向映射（用于锻造工具）
+    ingotOreMapping: {
+        'cyan_ingot': 'cyan_ore',
+        'red_copper_ingot': 'red_iron',
+        'feather_ingot': 'feather_ore',
+        'white_silver_ingot': 'hell_ore',
+        'hell_steel_ingot': 'white_ore',
+        'thunder_steel_ingot': 'thunder_ore',
+        'brilliant_crystal': 'brilliant',
+        'star_crystal': 'star_ore'
+    },
+    
     // 木板ID映射
     plankIdMapping: {
         0: 'pine_plank',
