@@ -224,6 +224,12 @@ function setupSocket() {
     
     // 行动完成结果
     socket.on('action_complete_result', (result) => {
+        // 检查 result 是否存在
+        if (!result) {
+            console.warn('⚠️ action_complete_result 收到 null');
+            return;
+        }
+        
         console.log(`📥 action_complete_result:`, result.success ? '成功' : result.reason);
         
         // 清除超时定时器

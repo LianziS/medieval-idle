@@ -893,7 +893,9 @@ class GameEngine {
      */
     completeForgeOnce() {
         const action = this.state.activeAction;
-        if (!action || action.type !== 'FORGING') return null;
+        if (!action || action.type !== 'FORGING') {
+            return { success: false, reason: '没有进行中的锻造行动' };
+        }
         
         const toolType = action.toolType;
         const toolIndex = action.toolIndex;
@@ -901,11 +903,17 @@ class GameEngine {
         const tools = CONFIG.tools[toolsKey];
         const tool = tools?.[toolIndex];
         
-        if (!tool) return null;
+        if (!tool) {
+            this.state.activeAction = null;
+            return { success: false, reason: '工具不存在', stopped: true };
+        }
         
         // 再次检查材料
         const materials = CONFIG.toolCraftingMaterials?.[toolsKey]?.[toolIndex];
-        if (!materials) return null;
+        if (!materials) {
+            this.state.activeAction = null;
+            return { success: false, reason: '材料配置错误', stopped: true };
+        }
         
         const ingotId = CONFIG.ingotIdMapping?.[toolIndex];
         const plankId = CONFIG.plankIdMapping?.[toolIndex];
