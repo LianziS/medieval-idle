@@ -888,6 +888,29 @@ function updateActionStatusBar() {
  * 获取行动配置
  */
 function getActionConfig(actionType, actionId) {
+    // 特殊处理锻造行动
+    if (actionType === 'FORGING') {
+        // actionId 格式: forge_{toolType}_{toolIndex}
+        const parts = actionId.split('_');
+        if (parts.length >= 3) {
+            const toolType = parts[1];
+            const toolIndex = parseInt(parts[2]);
+            const toolsKey = {
+                'axe': 'axes',
+                'pickaxe': 'pickaxes',
+                'chisel': 'chisels',
+                'needle': 'needles',
+                'scythe': 'scythes',
+                'hammer': 'hammers',
+                'tongs': 'tongs',
+                'rod': 'rods'
+            }[toolType] || toolType + 's';
+            const tool = CONFIG.tools?.[toolsKey]?.[toolIndex];
+            return tool ? { ...tool, duration: tool.duration || 6000 } : null;
+        }
+        return null;
+    }
+    
     const configMaps = {
         WOODCUTTING: CONFIG.trees,
         MINING: CONFIG.ores,
@@ -2046,12 +2069,15 @@ function openToolForgeModal(toolType, toolIndex) {
     const plankCount = planksInv[plankId] || 0;
     const prevToolCount = materials.prevTool ? (gameState.toolsInventory?.[toolType] || []).filter(id => id === materials.prevTool).length : 0;
     
-    // 检查材料是否足够
-    const hasOre = !materials.ore || oreCount >= materials.ore;
-    const hasIngot = !materials.ingot || ingotCount >= materials.ingot;
-    const hasPlank = !materials.plank || plankCount >= materials.plank;
-    const hasPrevTool = !materials.prevTool || prevToolCount >= 1;
-    const canForge = hasOre && hasIngot && hasPlank && hasPrevTool;
+    // 计算最大可锻造次数
+    let maxByOre = Infinity, maxByIngot = Infinity, maxByPlank = Infinity, maxByPrevTool = Infinity;
+    if (materials.ore) maxByOre = Math.floor(oreCount / materials.ore);
+    if (materials.ingot) maxByIngot = Math.floor(ingotCount / materials.ingot);
+    if (materials.plank) maxByPlank = Math.floor(plankCount / materials.plank);
+    if (materials.prevTool) maxByPrevTool = prevToolCount;
+    const maxForgeCount = Math.min(maxByOre, maxByIngot, maxByPlank, maxByPrevTool);
+    
+    const canForge = maxForgeCount > 0;
     
     // 创建模态框
     const modal = document.createElement('div');
@@ -2070,12 +2096,21 @@ function openToolForgeModal(toolType, toolIndex) {
                     <span>✨ ${tool.exp || 14} 经验</span>
                 </div>
                 <div class="forge-materials">
-                    <h4>所需材料:</h4>
-                    ${materials.ore ? `<div class="${hasOre ? '' : 'insufficient'}">${ore?.name || oreId} × ${materials.ore} <span class="count">(${oreCount})</span></div>` : ''}
-                    ${materials.ingot ? `<div class="${hasIngot ? '' : 'insufficient'}">${ingot?.name || ingotId} × ${materials.ingot} <span class="count">(${ingotCount})</span></div>` : ''}
-                    ${materials.plank ? `<div class="${hasPlank ? '' : 'insufficient'}">${plank?.name || plankId} × ${materials.plank} <span class="count">(${plankCount})</span></div>` : ''}
-                    ${materials.prevTool ? `<div class="${hasPrevTool ? '' : 'insufficient'}">${prevTool?.name || materials.prevTool} × 1 <span class="count">(${prevToolCount})</span></div>` : ''}
+                    <h4>所需材料 (最多 ${maxForgeCount} 次):</h4>
+                    ${materials.ore ? `<div class="${oreCount >= materials.ore ? '' : 'insufficient'}">${ore?.name || oreId} × ${materials.ore} <span class="count">(${oreCount})</span></div>` : ''}
+                    ${materials.ingot ? `<div class="${ingotCount >= materials.ingot ? '' : 'insufficient'}">${ingot?.name || ingotId} × ${materials.ingot} <span class="count">(${ingotCount})</span></div>` : ''}
+                    ${materials.plank ? `<div class="${plankCount >= materials.plank ? '' : 'insufficient'}">${plank?.name || plankId} × ${materials.plank} <span class="count">(${plankCount})</span></div>` : ''}
+                    ${materials.prevTool ? `<div class="${prevToolCount >= 1 ? '' : 'insufficient'}">${prevTool?.name || materials.prevTool} × 1 <span class="count">(${prevToolCount})</span></div>` : ''}
                     ${!canForge ? '<div class="forge-warning">⚠️ 材料不足</div>' : ''}
+                </div>
+                <div class="action-modal-counts">
+                    <button class="count-btn" data-count="1">1次</button>
+                    <button class="count-btn" data-count="5">5次</button>
+                    <button class="count-btn" data-count="10">10次</button>
+                    <button class="count-btn" data-count="${maxForgeCount}">全部(${maxForgeCount})</button>
+                </div>
+                <div class="action-modal-custom">
+                    <input type="text" id="custom-count" placeholder="自定义次数">
                 </div>
             </div>
             <div class="action-modal-footer">
@@ -2083,7 +2118,7 @@ function openToolForgeModal(toolType, toolIndex) {
                 ${currentAction && queueAvailable ? 
                     `<button class="action-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` : 
                     (!currentAction ? '' : `<button class="action-btn queue disabled" disabled>队列已满</button>`)}
-                <button class="action-btn primary ${canForge ? '' : 'disabled'}" id="action-start" ${canForge ? '' : 'disabled'}>立即锻造</button>
+                <button class="action-btn primary ${canForge ? '' : 'disabled'}" id="action-start" ${canForge ? '' : 'disabled'}>开始锻造</button>
             </div>
         </div>
     `;
@@ -2094,19 +2129,35 @@ function openToolForgeModal(toolType, toolIndex) {
     modal.querySelector('.action-modal-close').addEventListener('click', () => modal.remove());
     modal.querySelector('#action-cancel').addEventListener('click', () => modal.remove());
     
-    // 立即锻造
+    // 快捷次数按钮
+    modal.querySelectorAll('.count-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            modal.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            modal.querySelector('#custom-count').value = btn.dataset.count;
+        });
+    });
+    
+    // 获取次数
+    const getCount = () => { 
+        const val = modal.querySelector('#custom-count').value; 
+        const num = parseInt(val) || 1;
+        return Math.min(num, maxForgeCount);
+    };
+    
+    // 开始锻造
     modal.querySelector('#action-start').addEventListener('click', () => {
+        const count = getCount();
+        if (count <= 0) return;
+        
         // 检查是否有行动进行中
         if (currentAction) {
-            // 显示确认替换卡片
-            showForgeImmediatelyConfirm(toolType, toolIndex, tool, ingotId, plankId, modal);
+            showForgeImmediatelyConfirm(toolType, toolIndex, tool, count, modal);
         } else {
-            // 直接锻造
             socket.emit('forge_tool', {
                 toolType: toolType.replace('s', ''),
                 toolIndex: toolIndex,
-                ingotId: ingotId,
-                plankId: plankId
+                count: count
             });
             modal.remove();
         }
@@ -2116,11 +2167,12 @@ function openToolForgeModal(toolType, toolIndex) {
     const queueBtn = modal.querySelector('#action-queue');
     if (queueBtn && !queueBtn.disabled) {
         queueBtn.addEventListener('click', () => {
+            const count = getCount();
+            if (count <= 0) return;
             socket.emit('forge_tool', {
                 toolType: toolType.replace('s', ''),
                 toolIndex: toolIndex,
-                ingotId: ingotId,
-                plankId: plankId
+                count: count
             });
             modal.remove();
         });
@@ -2129,12 +2181,16 @@ function openToolForgeModal(toolType, toolIndex) {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.remove();
     });
+    
+    // 默认选中1次
+    modal.querySelector('.count-btn[data-count="1"]').classList.add('active');
+    modal.querySelector('#custom-count').value = 1;
 }
 
 /**
  * 显示锻造立即开始确认卡片
  */
-function showForgeImmediatelyConfirm(toolType, toolIndex, tool, ingotId, plankId, parentModal) {
+function showForgeImmediatelyConfirm(toolType, toolIndex, tool, count, parentModal) {
     const currentAction = gameState?.activeAction;
     if (!currentAction) return;
     
@@ -2174,8 +2230,7 @@ function showForgeImmediatelyConfirm(toolType, toolIndex, tool, ingotId, plankId
         socket.emit('forge_tool_immediately', {
             toolType: toolType.replace('s', ''),
             toolIndex: toolIndex,
-            ingotId: ingotId,
-            plankId: plankId
+            count: count
         });
         modal.remove();
         parentModal.remove();

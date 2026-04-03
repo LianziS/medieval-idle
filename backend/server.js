@@ -531,12 +531,12 @@ io.on('connection', (socket) => {
         socket.emit('game_state_update', gameEngine.getFullState());
     });
     
-    // 锻造工具
+    // 开始锻造工具行动
     socket.on('forge_tool', (data) => {
         if (!gameEngine) return socket.emit('error', { message: '未认证' });
         
-        const result = gameEngine.forgeTool(data.toolType, data.toolIndex, data.ingotId, data.plankId);
-        socket.emit('forge_result', result);
+        const result = gameEngine.startForgeAction(data.toolType, data.toolIndex, data.count || 1);
+        socket.emit('action_result', result);
         if (result.success) {
             socket.emit('game_state_update', gameEngine.getFullState());
         }
@@ -550,10 +550,21 @@ io.on('connection', (socket) => {
         gameEngine.state.activeAction = null;
         gameEngine.state.actionQueue = [];
         
-        // 执行锻造
-        const result = gameEngine.forgeTool(data.toolType, data.toolIndex, data.ingotId, data.plankId);
-        socket.emit('forge_result', result);
+        // 开始锻造
+        const result = gameEngine.startForgeAction(data.toolType, data.toolIndex, data.count || 1);
+        socket.emit('action_result', result);
         socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
+    // 完成一次锻造
+    socket.on('forge_complete', () => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.completeForgeOnce();
+        if (result) {
+            socket.emit('forge_result', result);
+            socket.emit('game_state_update', gameEngine.getFullState());
+        }
     });
     
     // 获取游戏状态

@@ -383,6 +383,12 @@ class GameEngine {
         }
         
         const action = this.state.activeAction;
+        
+        // 处理锻造行动
+        if (action.type === 'FORGING') {
+            return this.completeForgeOnce();
+        }
+        
         const actionType = ACTION_TYPES[action.type];
         const config = CONFIG[actionType.configKey];
         const item = config.find(c => c.id === action.id);
@@ -750,7 +756,219 @@ class GameEngine {
     }
     
     /**
-     * 锻造工具
+     * 开始锻造工具行动
+     */
+    startForgeAction(toolType, toolIndex, count = 1) {
+        const toolsKey = this.getToolsKey(toolType);
+        const tools = CONFIG.tools[toolsKey];
+        const tool = tools?.[toolIndex];
+        
+        if (!tool) {
+            return { success: false, reason: '工具不存在' };
+        }
+        
+        // 检查等级要求
+        const forgingLevel = this.state.forgingLevel || 1;
+        if (forgingLevel < tool.reqForgeLevel) {
+            return { success: false, reason: `需要锻造 Lv.${tool.reqForgeLevel}` };
+        }
+        
+        // 检查材料（只检查第一级，后续每完成一次再检查）
+        const materials = CONFIG.toolCraftingMaterials?.[toolsKey]?.[toolIndex];
+        if (!materials) {
+            return { success: false, reason: '材料配置错误' };
+        }
+        
+        // 计算实际可锻造次数
+        let actualCount = this.calculateMaxForgeCount(toolType, toolIndex, count);
+        if (actualCount <= 0) {
+            return { success: false, reason: '材料不足' };
+        }
+        
+        // 判断是否无限模式（锻造不允许无限）
+        const isInfinite = count === -1 || count === Infinity;
+        if (isInfinite) {
+            actualCount = this.calculateMaxForgeCount(toolType, toolIndex, 999999);
+        }
+        
+        // 设置行动状态
+        this.state.activeAction = {
+            type: 'FORGING',
+            toolType: toolType,
+            toolIndex: toolIndex,
+            count: actualCount,
+            remaining: actualCount,
+            isInfinite: false,
+            id: `forge_${toolType}_${toolIndex}`
+        };
+        
+        // 计算时长
+        const duration = tool.duration || 6000;
+        this.state.actionStartTime = Date.now();
+        this.state.actionDuration = duration;
+        this.state.actionRemaining = actualCount;
+        this.state.actionCount = actualCount;
+        
+        return {
+            success: true,
+            action: {
+                type: 'FORGING',
+                id: `forge_${toolType}_${toolIndex}`,
+                name: tool.name,
+                icon: tool.icon,
+                duration: duration,
+                count: actualCount,
+                remaining: actualCount
+            }
+        };
+    }
+    
+    /**
+     * 完成一次锻造
+     */
+    completeForgeOnce() {
+        const action = this.state.activeAction;
+        if (!action || action.type !== 'FORGING') return null;
+        
+        const toolType = action.toolType;
+        const toolIndex = action.toolIndex;
+        const toolsKey = this.getToolsKey(toolType);
+        const tools = CONFIG.tools[toolsKey];
+        const tool = tools?.[toolIndex];
+        
+        if (!tool) return null;
+        
+        // 再次检查材料
+        const materials = CONFIG.toolCraftingMaterials?.[toolsKey]?.[toolIndex];
+        if (!materials) return null;
+        
+        const ingotId = CONFIG.ingotIdMapping?.[toolIndex];
+        const plankId = CONFIG.plankIdMapping?.[toolIndex];
+        const oreId = CONFIG.ingotOreMapping?.[ingotId];
+        
+        const mining = this.state.miningInventory || {};
+        const ingots = this.state.ingotsInventory || {};
+        const planks = this.state.planksInventory || {};
+        
+        // 检查材料是否足够
+        if (materials.ore && (mining[oreId] || 0) < materials.ore) {
+            // 材料不足，停止行动
+            this.state.activeAction = null;
+            return { success: false, reason: '矿石不足', stopped: true };
+        }
+        if (materials.plank && (planks[plankId] || 0) < materials.plank) {
+            this.state.activeAction = null;
+            return { success: false, reason: '木板不足', stopped: true };
+        }
+        if (materials.ingot && (ingots[ingotId] || 0) < materials.ingot) {
+            this.state.activeAction = null;
+            return { success: false, reason: '矿锭不足', stopped: true };
+        }
+        if (materials.prevTool) {
+            const prevTools = this.state.toolsInventory[toolsKey] || [];
+            if (!prevTools.includes(materials.prevTool)) {
+                this.state.activeAction = null;
+                return { success: false, reason: '需要前置工具', stopped: true };
+            }
+        }
+        
+        // 消耗材料
+        if (materials.ore) {
+            mining[oreId] = (mining[oreId] || 0) - materials.ore;
+            if (mining[oreId] <= 0) delete mining[oreId];
+        }
+        if (materials.plank) {
+            planks[plankId] = (planks[plankId] || 0) - materials.plank;
+            if (planks[plankId] <= 0) delete planks[plankId];
+        }
+        if (materials.ingot) {
+            ingots[ingotId] = (ingots[ingotId] || 0) - materials.ingot;
+            if (ingots[ingotId] <= 0) delete ingots[ingotId];
+        }
+        if (materials.prevTool) {
+            const prevTools = this.state.toolsInventory[toolsKey] || [];
+            const idx = prevTools.indexOf(materials.prevTool);
+            if (idx !== -1) prevTools.splice(idx, 1);
+        }
+        
+        // 添加工具
+        if (!this.state.toolsInventory[toolsKey]) {
+            this.state.toolsInventory[toolsKey] = [];
+        }
+        this.state.toolsInventory[toolsKey].push(tool.id);
+        
+        // 添加经验
+        const exp = tool.exp || (toolIndex * 20 + 10);
+        this.addSkillExp('forgingLevel', exp);
+        
+        // 更新剩余次数
+        action.remaining--;
+        this.state.actionRemaining = action.remaining;
+        
+        // 检查是否完成
+        if (action.remaining <= 0) {
+            this.state.activeAction = null;
+            return { 
+                success: true, 
+                tool: tool, 
+                exp: exp,
+                completed: true 
+            };
+        }
+        
+        // 重置开始时间
+        this.state.actionStartTime = Date.now();
+        
+        return { 
+            success: true, 
+            tool: tool, 
+            exp: exp,
+            remaining: action.remaining 
+        };
+    }
+    
+    /**
+     * 计算最大可锻造次数
+     */
+    calculateMaxForgeCount(toolType, toolIndex, requestedCount) {
+        const toolsKey = this.getToolsKey(toolType);
+        const materials = CONFIG.toolCraftingMaterials?.[toolsKey]?.[toolIndex];
+        if (!materials) return 0;
+        
+        const ingotId = CONFIG.ingotIdMapping?.[toolIndex];
+        const plankId = CONFIG.plankIdMapping?.[toolIndex];
+        const oreId = CONFIG.ingotOreMapping?.[ingotId];
+        
+        const mining = this.state.miningInventory || {};
+        const ingots = this.state.ingotsInventory || {};
+        const planks = this.state.planksInventory || {};
+        
+        let maxByOre = Infinity;
+        let maxByIngot = Infinity;
+        let maxByPlank = Infinity;
+        let maxByPrevTool = Infinity;
+        
+        if (materials.ore) {
+            maxByOre = Math.floor((mining[oreId] || 0) / materials.ore);
+        }
+        if (materials.ingot) {
+            maxByIngot = Math.floor((ingots[ingotId] || 0) / materials.ingot);
+        }
+        if (materials.plank) {
+            maxByPlank = Math.floor((planks[plankId] || 0) / materials.plank);
+        }
+        if (materials.prevTool) {
+            const prevTools = this.state.toolsInventory[toolsKey] || [];
+            const prevCount = prevTools.filter(id => id === materials.prevTool).length;
+            maxByPrevTool = prevCount;
+        }
+        
+        const maxPossible = Math.min(maxByOre, maxByIngot, maxByPlank, maxByPrevTool);
+        return Math.min(maxPossible, requestedCount);
+    }
+    
+    /**
+     * 锻造工具（直接完成，用于向后兼容）
      */
     forgeTool(toolType, toolIndex, ingotId, plankId) {
         const toolsKey = this.getToolsKey(toolType);
