@@ -934,33 +934,9 @@ function updateActionStatusBar() {
         elements.actionProgressTime.textContent = `${totalSeconds}s`;
     }
     
-    // 进度完成时自动发送完成事件（防止重复发送）
-    if (progress >= 1 && gameState.activeAction && !completingAction) {
-        // 检查是否等待了足够时间（至少 duration 的 80%）
-        const minWaitTime = (gameState.actionDuration || 5000) * 0.8;
-        const timeSinceLastStart = Date.now() - lastActionStartTime;
-        
-        if (timeSinceLastStart >= minWaitTime) {
-            completingAction = true;
-            lastActionStartTime = Date.now(); // 更新时间戳
-            console.log(`📤 行动完成，发送 action_complete: ${gameState.activeAction.id}`);
-            socket.emit('action_complete');
-            
-            // 清除之前的超时定时器
-            if (actionCompleteTimeout) {
-                clearTimeout(actionCompleteTimeout);
-            }
-            
-            // 超时保护：5秒后如果还没收到响应，重置标志
-            actionCompleteTimeout = setTimeout(() => {
-                if (completingAction) {
-                    console.warn('⚠️ action_complete 超时，重置标志');
-                    completingAction = false;
-                    actionCompleteTimeout = null;
-                }
-            }, 5000);
-        }
-    }
+    // 进度完成时不发送完成事件（由后端定时器处理）
+    // 后端每500ms检查一次，完成时自动发送 action_complete_result
+    // 前端只负责显示进度，不主动触发完成
     
     // 更新队列按钮
     updateQueueButton();
