@@ -254,8 +254,11 @@ class GameEngine {
         const config = CONFIG[actionType.configKey];
         const item = config.find(c => c.id === actionId);
         
+        // 无限模式：count 为 Infinity 或 -1
+        const isInfinite = count === Infinity || count === -1 || count >= 999;
+        
         let actualCount = count;
-        if (actionType.needsMaterials && item.materials) {
+        if (!isInfinite && actionType.needsMaterials && item.materials) {
             actualCount = this.calculateMaxCount(actionTypeKey, actionId, count);
             if (actualCount <= 0) {
                 return { success: false, reason: '材料不足' };
@@ -266,17 +269,18 @@ class GameEngine {
         this.state.activeAction = {
             type: actionTypeKey,
             id: actionId,
-            count: actualCount,
-            remaining: actualCount,
-            itemId: extraParams?.itemId // 采集选择的物品ID
+            count: isInfinite ? Infinity : actualCount,
+            remaining: isInfinite ? Infinity : actualCount,
+            isInfinite: isInfinite,  // 标记是否为无限模式
+            itemId: extraParams?.itemId
         };
         
         // 计算行动时长（考虑装备加成）
         const duration = this.calculateDuration(actionTypeKey, actionId);
         this.state.actionStartTime = Date.now();
         this.state.actionDuration = duration;
-        this.state.actionRemaining = actualCount;
-        this.state.actionCount = actualCount;
+        this.state.actionRemaining = isInfinite ? Infinity : actualCount;
+        this.state.actionCount = isInfinite ? Infinity : actualCount;
         
         return {
             success: true,
@@ -464,12 +468,14 @@ class GameEngine {
             rewards.push({ type: 'TOKEN', id: tokenId, name: `${actionType.name}代币`, icon: '🪙', count: 1 });
         }
         
-        // 更新剩余次数
-        action.remaining--;
-        this.state.actionRemaining = action.remaining;
+        // 更新剩余次数（无限模式不递减）
+        if (!action.isInfinite) {
+            action.remaining--;
+            this.state.actionRemaining = action.remaining;
+        }
         
-        // 检查是否完成所有次数
-        if (action.remaining <= 0) {
+        // 检查是否完成所有次数（无限模式永远不会完成）
+        if (!action.isInfinite && action.remaining <= 0) {
             this.state.activeAction = null;
             
             // 检查队列
@@ -486,10 +492,10 @@ class GameEngine {
             return { success: true, completed: true, rewards: rewards };
         }
         
-        // 还有剩余次数，重置开始时间
+        // 还有剩余次数（或无限模式），重置开始时间
         this.state.actionStartTime = Date.now();
         
-        return { success: true, rewards: rewards, remaining: action.remaining };
+        return { success: true, rewards: rewards, remaining: action.remaining, isInfinite: action.isInfinite };
     }
     
     /**

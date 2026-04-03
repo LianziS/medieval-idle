@@ -788,9 +788,10 @@ function updateActionStatusBar() {
     }
     
     const action = gameState.activeAction;
-    const totalCount = action.count || gameState.actionCount || 1;
+    const isInfinite = action.isInfinite || action.count === Infinity;
+    const totalCount = isInfinite ? Infinity : (action.count || gameState.actionCount || 1);
     const remaining = action.remaining || 0;
-    const current = totalCount - remaining + 1; // 当前是第几次
+    const current = isInfinite ? 0 : (totalCount - remaining + 1); // 当前是第几次（无限模式不显示）
     
     // 获取行动信息
     const actionType = action.type;
@@ -805,7 +806,7 @@ function updateActionStatusBar() {
         elements.actionStatusName.textContent = config?.name || actionId;
     }
     if (elements.actionStatusCount) {
-        if (totalCount >= 999) {
+        if (isInfinite) {
             elements.actionStatusCount.textContent = '[∞]';
         } else {
             elements.actionStatusCount.textContent = `[${current}/${totalCount}]`;
@@ -1540,7 +1541,7 @@ function openGatheringItemModal(locId, itemId) {
                     <button class="count-btn" data-count="5">5次</button>
                     <button class="count-btn" data-count="10">10次</button>
                     <button class="count-btn" data-count="50">50次</button>
-                    <button class="count-btn infinity" data-count="999">∞</button>
+                    <button class="count-btn infinity" data-count="infinity">∞</button>
                 </div>
                 <div class="action-modal-custom">
                     <input type="number" id="custom-count" min="1" max="999" placeholder="自定义次数">
@@ -1576,7 +1577,7 @@ function openGatheringItemModal(locId, itemId) {
         });
     });
     
-    const getCount = () => parseInt(modal.querySelector('#custom-count').value) || 1;
+    const getCount = () => { const val = modal.querySelector('#custom-count').value; if (val === 'infinity' || val === '∞') return Infinity; return parseInt(val) || 1; };
     
     const queueBtn = modal.querySelector('#action-queue');
     if (queueBtn && !queueBtn.disabled) {
@@ -2468,7 +2469,7 @@ function showActionModal(config) {
                     <button class="count-btn" data-count="5">5次</button>
                     <button class="count-btn" data-count="10">10次</button>
                     <button class="count-btn" data-count="50">50次</button>
-                    <button class="count-btn infinity" data-count="999">∞</button>
+                    <button class="count-btn infinity" data-count="infinity">∞</button>
                 </div>
                 <div class="action-modal-custom">
                     <input type="number" id="custom-count" min="1" max="999" placeholder="自定义次数">
@@ -2507,7 +2508,7 @@ function showActionModal(config) {
     });
     
     // 获取次数
-    const getCount = () => parseInt(modal.querySelector('#custom-count').value) || 1;
+    const getCount = () => { const val = modal.querySelector('#custom-count').value; if (val === 'infinity' || val === '∞') return Infinity; return parseInt(val) || 1; };
     
     // 加入队列按钮
     const queueBtn = modal.querySelector('#action-queue');
