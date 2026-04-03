@@ -491,6 +491,12 @@ function switchPage(pageId) {
                 break;
         }
     }
+    
+    // 移动端点击导航后自动收起侧边栏
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        sidebar.classList.remove('expanded');
+    }
 }
 
 // ============ 渲染函数 ============
