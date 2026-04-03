@@ -2594,6 +2594,15 @@ body::after {
 }
 
 /* 炼金页面标签切换 */
+#alchemy-essences-list {
+    display: none;
+}
+
+#alchemy-essences-list.active {
+    display: grid;
+}
+
+/* 炼金页面标签切换 */
 #alchemy-potions-list,
 #alchemy-essences-list {
     display: none;

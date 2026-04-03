@@ -1948,6 +1948,26 @@ function renderAlchemy() {
     
     // 渲染提炼列表
     renderAlchemyEssences();
+    
+    // 绑定炼金标签切换
+    const alchemyTabs = document.getElementById('alchemy-tabs');
+    if (alchemyTabs) {
+        alchemyTabs.querySelectorAll('.gathering-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 切换标签激活状态
+                alchemyTabs.querySelectorAll('.gathering-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // 切换列表显示
+                const tabName = tab.dataset.tab;
+                const potionsList = document.getElementById('alchemy-potions-list');
+                const essencesList = document.getElementById('alchemy-essences-list');
+                
+                if (potionsList) potionsList.classList.toggle('active', tabName === 'potions');
+                if (essencesList) essencesList.classList.toggle('active', tabName === 'essences');
+            });
+        });
+    }
 }
 
 /**
