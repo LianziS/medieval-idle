@@ -172,12 +172,11 @@ function setupSocket() {
         
         // 如果行动刚开始或改变了，更新时间戳
         if (state.activeAction && state.actionStartTime) {
-            // 如果是新行动或时间戳变化，更新 lastActionStartTime
-            if (!prevAction || prevAction.id !== state.activeAction.id || 
-                !lastActionStartTime || Date.now() - lastActionStartTime > 60000) {
-                lastActionStartTime = state.actionStartTime;
+            // 如果是新行动，使用前端当前时间作为开始时间
+            if (!prevAction || prevAction.id !== state.activeAction.id) {
+                lastActionStartTime = Date.now(); // 使用前端时间，确保进度从0%开始
                 completingAction = false;
-                console.log(`🔄 行动开始/更新: ${state.activeAction.id}, duration: ${state.actionDuration}ms`);
+                console.log(`🔄 行动开始: ${state.activeAction.id}, duration: ${state.actionDuration}ms`);
             }
         }
         
@@ -926,10 +925,10 @@ function updateActionStatusBar() {
         elements.actionCancelBtn.disabled = false;
     }
     
-    // 计算进度
-    const elapsed = Date.now() - (gameState.actionStartTime || Date.now());
+    // 计算进度（使用前端记录的开始时间，确保从0%开始）
+    const elapsed = Date.now() - (lastActionStartTime || Date.now());
     const duration = gameState.actionDuration || 5000;
-    const progress = Math.min(elapsed / duration, 1);
+    const progress = Math.min(Math.max(elapsed / duration, 0), 1); // 限制在0-1之间
     
     if (elements.actionProgressFill) {
         elements.actionProgressFill.style.width = `${progress * 100}%`;
