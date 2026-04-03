@@ -3521,6 +3521,26 @@ body::after {
     padding: 4px 0;
 }
 
+.forge-materials > div.insufficient {
+    color: #FF6B6B;
+}
+
+.forge-materials > div .count {
+    color: #6B8299;
+    font-size: 0.8rem;
+    margin-left: 4px;
+}
+
+.forge-materials .forge-warning {
+    color: #FF6B6B;
+    font-size: 0.85rem;
+    margin-top: 8px;
+    padding: 6px;
+    background: rgba(255, 107, 107, 0.1);
+    border-radius: 4px;
+    text-align: center;
+}
+
 .forge-select {
     margin: 10px 0;
 }

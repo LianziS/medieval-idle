@@ -2037,17 +2037,33 @@ function openToolForgeModal(toolType, toolIndex) {
     const queueAvailable = currentQueue.length < maxQueueSize;
     const queuePosition = currentQueue.length + 1;
     
-    // 获取用户拥有的矿锭和木板
-    const ingots = Object.entries(gameState.ingotsInventory || {})
-        .filter(([id, count]) => count > 0);
-    const planks = Object.entries(gameState.planksInventory || {})
-        .filter(([id, count]) => count > 0);
+    // 根据 toolIndex 确定具体材料
+    const ingotId = CONFIG.ingotIdMapping?.[toolIndex];
+    const plankId = CONFIG.plankIdMapping?.[toolIndex];
+    const oreId = CONFIG.ingotOreMapping?.[ingotId];
     
-    // 检查前置工具
-    let hasPrevTool = true;
-    if (materials.prevTool) {
-        hasPrevTool = (gameState.toolsInventory?.[toolType] || []).includes(materials.prevTool);
-    }
+    // 获取材料名称
+    const ore = CONFIG.ores?.find(o => o.id === oreId);
+    const ingot = CONFIG.ingots?.find(i => i.id === ingotId);
+    const plank = CONFIG.woodPlanks?.find(p => p.id === plankId);
+    const prevTool = materials.prevTool ? CONFIG.tools[toolType].find(t => t.id === materials.prevTool) : null;
+    
+    // 获取库存数量
+    const miningInv = gameState.miningInventory || {};
+    const ingotsInv = gameState.ingotsInventory || {};
+    const planksInv = gameState.planksInventory || {};
+    
+    const oreCount = miningInv[oreId] || 0;
+    const ingotCount = ingotsInv[ingotId] || 0;
+    const plankCount = planksInv[plankId] || 0;
+    const prevToolCount = materials.prevTool ? (gameState.toolsInventory?.[toolType] || []).filter(id => id === materials.prevTool).length : 0;
+    
+    // 检查材料是否足够
+    const hasOre = !materials.ore || oreCount >= materials.ore;
+    const hasIngot = !materials.ingot || ingotCount >= materials.ingot;
+    const hasPlank = !materials.plank || plankCount >= materials.plank;
+    const hasPrevTool = !materials.prevTool || prevToolCount >= 1;
+    const canForge = hasOre && hasIngot && hasPlank && hasPrevTool;
     
     // 创建模态框
     const modal = document.createElement('div');
@@ -2067,51 +2083,19 @@ function openToolForgeModal(toolType, toolIndex) {
                 </div>
                 <div class="forge-materials">
                     <h4>所需材料:</h4>
-                    ${materials.ore ? `<div>矿石 × ${materials.ore}</div>` : ''}
-                    ${materials.plank ? `<div>木板 × ${materials.plank}</div>` : ''}
-                    ${materials.ingot ? `<div>矿锭 × ${materials.ingot}</div>` : ''}
-                    ${materials.prevTool ? `<div>前置: ${CONFIG.tools[toolType].find(t => t.id === materials.prevTool)?.name || materials.prevTool} ${hasPrevTool ? '✓' : '✗'}</div>` : ''}
+                    ${materials.ore ? `<div class="${hasOre ? '' : 'insufficient'}">${ore?.name || oreId} × ${materials.ore} <span class="count">(${oreCount})</span></div>` : ''}
+                    ${materials.ingot ? `<div class="${hasIngot ? '' : 'insufficient'}">${ingot?.name || ingotId} × ${materials.ingot} <span class="count">(${ingotCount})</span></div>` : ''}
+                    ${materials.plank ? `<div class="${hasPlank ? '' : 'insufficient'}">${plank?.name || plankId} × ${materials.plank} <span class="count">(${plankCount})</span></div>` : ''}
+                    ${materials.prevTool ? `<div class="${hasPrevTool ? '' : 'insufficient'}">${prevTool?.name || materials.prevTool} × 1 <span class="count">(${prevToolCount})</span></div>` : ''}
+                    ${!canForge ? '<div class="forge-warning">⚠️ 材料不足</div>' : ''}
                 </div>
-                ${materials.ore && ingots.length > 0 ? `
-                <div class="forge-select">
-                    <label>选择矿锭:</label>
-                    <select id="forge-ingot">
-                        ${ingots.map(([id, count]) => {
-                            const ingot = CONFIG.ingots?.find(i => i.id === id);
-                            return `<option value="${id}">${ingot?.name || id} (${count})</option>`;
-                        }).join('')}
-                    </select>
-                </div>
-                ` : ''}
-                ${materials.ingot && ingots.length > 0 ? `
-                <div class="forge-select">
-                    <label>选择矿锭:</label>
-                    <select id="forge-ingot">
-                        ${ingots.map(([id, count]) => {
-                            const ingot = CONFIG.ingots?.find(i => i.id === id);
-                            return `<option value="${id}">${ingot?.name || id} (${count})</option>`;
-                        }).join('')}
-                    </select>
-                </div>
-                ` : ''}
-                ${materials.plank && planks.length > 0 ? `
-                <div class="forge-select">
-                    <label>选择木板:</label>
-                    <select id="forge-plank">
-                        ${planks.map(([id, count]) => {
-                            const plank = CONFIG.woodPlanks?.find(p => p.id === id);
-                            return `<option value="${id}">${plank?.name || id} (${count})</option>`;
-                        }).join('')}
-                    </select>
-                </div>
-                ` : ''}
             </div>
             <div class="action-modal-footer">
                 <button class="action-btn secondary" id="action-cancel">取消</button>
                 ${currentAction && queueAvailable ? 
                     `<button class="action-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` : 
                     (!currentAction ? '' : `<button class="action-btn queue disabled" disabled>队列已满</button>`)}
-                <button class="action-btn primary" id="action-start">立即锻造</button>
+                <button class="action-btn primary ${canForge ? '' : 'disabled'}" id="action-start" ${canForge ? '' : 'disabled'}>立即锻造</button>
             </div>
         </div>
     `;
@@ -2124,20 +2108,17 @@ function openToolForgeModal(toolType, toolIndex) {
     
     // 立即锻造
     modal.querySelector('#action-start').addEventListener('click', () => {
-        const ingotSelect = modal.querySelector('#forge-ingot');
-        const plankSelect = modal.querySelector('#forge-plank');
-        
         // 检查是否有行动进行中
         if (currentAction) {
             // 显示确认替换卡片
-            showForgeImmediatelyConfirm(toolType, toolIndex, tool, ingotSelect?.value, plankSelect?.value, modal);
+            showForgeImmediatelyConfirm(toolType, toolIndex, tool, ingotId, plankId, modal);
         } else {
             // 直接锻造
             socket.emit('forge_tool', {
                 toolType: toolType.replace('s', ''),
                 toolIndex: toolIndex,
-                ingotId: ingotSelect?.value,
-                plankId: plankSelect?.value
+                ingotId: ingotId,
+                plankId: plankId
             });
             modal.remove();
         }
@@ -2147,14 +2128,11 @@ function openToolForgeModal(toolType, toolIndex) {
     const queueBtn = modal.querySelector('#action-queue');
     if (queueBtn && !queueBtn.disabled) {
         queueBtn.addEventListener('click', () => {
-            const ingotSelect = modal.querySelector('#forge-ingot');
-            const plankSelect = modal.querySelector('#forge-plank');
-            
             socket.emit('forge_tool', {
                 toolType: toolType.replace('s', ''),
                 toolIndex: toolIndex,
-                ingotId: ingotSelect?.value,
-                plankId: plankSelect?.value
+                ingotId: ingotId,
+                plankId: plankId
             });
             modal.remove();
         });
