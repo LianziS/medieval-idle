@@ -458,8 +458,31 @@ class GameEngine {
             newLevel: expResult.newLevel 
         });
         
-        // 尝试获取代币
-        if (Math.random() < 0.05) {
+        // 尝试获取代币（按等级段概率）
+        const tokenDropRates = CONFIG.tokenDropRates || {
+            standard: [0.017, 0.024, 0.037, 0.053, 0.071, 0.092, 0.149, 0.210],
+            tool: [0.017, 0.033, 0.061, 0.110, 0.196, 0.343, 0.590, 0.990],
+            tailoring: [0.017, 0.032, 0.053, 0.078, 0.126, 0.195],
+            brewing: [0.022, 0.023, 0.024, 0.028, 0.029, 0.033, 0.033, 0.033]
+        };
+        
+        // 根据行动类型选择概率表
+        let rateTable = tokenDropRates.standard;
+        if (actionType.id === 'tailoring') {
+            rateTable = tokenDropRates.tailoring;
+        } else if (actionType.id === 'brewing') {
+            rateTable = tokenDropRates.brewing;
+        } else if (actionType.id === 'forging') {
+            rateTable = tokenDropRates.tool;
+        }
+        
+        // 根据等级获取概率（每10级一个区间）
+        const skillKey = actionType.skillKey;
+        const level = this.state[skillKey] || 1;
+        const levelIndex = Math.min(Math.floor((level - 1) / 10), rateTable.length - 1);
+        const dropRate = rateTable[levelIndex];
+        
+        if (Math.random() < dropRate) {
             // 代币ID映射
             const tokenIdMap = {
                 'woodcutting': 'wood_token',
