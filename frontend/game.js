@@ -203,8 +203,14 @@ function setupSocket() {
     
     // 行动完成结果
     socket.on('action_complete_result', (result) => {
-        if (result.success && result.rewards) {
-            showRewards(result.rewards);
+        if (result.success) {
+            // 处理锻造结果
+            if (result.tool) {
+                showToast(`✅ 锻造成功: ${result.tool.name}`);
+            } else if (result.rewards) {
+                showRewards(result.rewards);
+            }
+            
             if (result.completed) {
                 showToast('✅ 行动全部完成');
                 completingAction = false;
@@ -215,6 +221,9 @@ function setupSocket() {
             }
         } else {
             completingAction = false;
+            if (result.reason) {
+                showToast(`❌ ${result.reason}`);
+            }
         }
     });
     
