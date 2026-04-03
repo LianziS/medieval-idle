@@ -2457,6 +2457,32 @@ function renderInventories() {
         renderInventoryGrid('storage-fabrics-items', gameState.fabricsInventory, CONFIG.fabrics);
     }
     
+    // 锻造工具 - 显示所有工具背包
+    const allTools = [];
+    const toolTypes = ['axes', 'pickaxes', 'chisels', 'needles', 'scythes', 'hammers', 'tongs', 'rods'];
+    toolTypes.forEach(toolType => {
+        const tools = CONFIG.tools?.[toolType] || [];
+        const inventory = gameState.toolsInventory?.[toolType] || [];
+        inventory.forEach(toolId => {
+            const tool = tools.find(t => t.id === toolId);
+            if (tool) {
+                allTools.push({ id: toolId, name: tool.name, icon: tool.icon });
+            }
+        });
+    });
+    // 统计每个工具的数量
+    const toolCounts = {};
+    allTools.forEach(tool => {
+        const key = tool.id;
+        if (!toolCounts[key]) {
+            toolCounts[key] = { count: 0, name: tool.name, icon: tool.icon };
+        }
+        toolCounts[key].count++;
+    });
+    renderInventoryGrid('storage-tools-items', Object.fromEntries(
+        Object.entries(toolCounts).map(([id, data]) => [id, data.count])
+    ), Object.entries(toolCounts).map(([id, data]) => ({ id, name: data.name, icon: data.icon })));
+    
     // 药水
     if (CONFIG.potions) {
         renderInventoryGrid('storage-potions-items', gameState.potionsInventory, CONFIG.potions);
