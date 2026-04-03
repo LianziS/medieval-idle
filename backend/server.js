@@ -754,4 +754,55 @@ setInterval(() => {
     }
 }, 30000);
 
+// ============ 错误处理和进程管理 ============
+
+// 捕获未处理的异常
+process.on('uncaughtException', (err) => {
+    console.error('❌ 未捕获的异常:', err);
+    console.error('Stack:', err.stack);
+    // 不退出，尝试继续运行
+});
+
+// 捕获未处理的 Promise 拒绝
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ 未处理的 Promise 拒绝:', reason);
+});
+
+// 优雅关闭
+function gracefulShutdown(signal) {
+    console.log(`\n📢 收到 ${signal} 信号，正在保存数据并关闭服务器...`);
+    
+    // 保存所有用户数据
+    let savedCount = 0;
+    for (const [userId, gameEngine] of gameEngines) {
+        if (gameEngine.state) {
+            try {
+                db.run(
+                    'INSERT OR REPLACE INTO user_game_data (user_id, data, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
+                    [userId, JSON.stringify(gameEngine.state)]
+                );
+                savedCount++;
+            } catch (err) {
+                console.error(`保存用户 ${userId} 数据失败:`, err);
+            }
+        }
+    }
+    console.log(`✅ 已保存 ${savedCount} 个用户的数据`);
+    
+    // 关闭数据库
+    db.close(() => {
+        console.log('✅ 数据库已关闭');
+        process.exit(0);
+    });
+    
+    // 强制退出超时
+    setTimeout(() => {
+        console.log('⚠️ 强制退出');
+        process.exit(1);
+    }, 5000);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
 module.exports = { app, io, db };
