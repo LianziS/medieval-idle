@@ -793,6 +793,24 @@ class GameEngine {
             actualCount = this.calculateMaxForgeCount(toolType, toolIndex, 999999);
         }
         
+        // 检查是否有行动在进行中
+        if (this.state.activeAction) {
+            // 有行动在进行中，加入队列
+            if (this.state.actionQueue.length < 2) {
+                this.state.actionQueue.push({
+                    type: 'FORGING',
+                    toolType: toolType,
+                    toolIndex: toolIndex,
+                    count: actualCount,
+                    name: tool.name,
+                    icon: tool.icon
+                });
+                return { success: true, queued: true, queueLength: this.state.actionQueue.length };
+            } else {
+                return { success: false, reason: '队列已满' };
+            }
+        }
+        
         // 设置行动状态
         this.state.activeAction = {
             type: 'FORGING',

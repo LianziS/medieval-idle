@@ -289,7 +289,7 @@ function setupSocket() {
     // 装备结果
     socket.on('equip_result', (result) => {
         if (result.success) {
-            showToast(`✅ 已装备 ${result.tool?.name || ''}`);
+            showToast(`✅ 已装备`);
             renderEquipmentSlots();
         } else {
             showToast(`❌ ${result.reason}`);
