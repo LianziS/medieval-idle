@@ -335,7 +335,13 @@ class GameEngine {
         
         // 装备加成
         const bonus = this.getEquipmentBonus(actionType.id);
+        const originalDuration = duration;
         duration = Math.floor(duration / (1 + bonus));
+        
+        // 调试日志
+        if (bonus > 0) {
+            console.log(`⚡ 装备加成: ${actionType.id} 原始时间=${originalDuration}ms, 加成=${bonus*100}%, 实际时间=${duration}ms`);
+        }
         
         return duration;
     }
