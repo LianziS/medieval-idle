@@ -424,30 +424,43 @@ class GameEngine {
                     // 采集单个物品
                     const itemConfig = location.items.find(i => i.id === selectedItemId);
                     if (itemConfig) {
-                        this.addItem('GATHERING', selectedItemId, 1);
+                        // 计算掉落数量
+                        const category = this.getItemDropCategory(selectedItemId);
+                        const count = this.calculateDropCount(category, selectedItemId);
+                        this.addItem('GATHERING', selectedItemId, count);
                         rewards.push({ 
                             type: 'GATHERING', 
                             id: selectedItemId, 
                             name: itemConfig.name, 
                             icon: itemConfig.icon, 
-                            count: 1 
+                            count: count 
                         });
                     }
                 } else {
-                    // 全采集：每个物品30%概率获得
+                    // 全采集：先计算获得哪几个物品，再计算数量
                     let drops = [];
+                    
+                    // 第一步：确定获得哪些物品（每个30%概率）
+                    const obtainedItems = [];
                     location.items.forEach(itemConfig => {
                         if (Math.random() < 0.3) {
-                            this.addItem('GATHERING', itemConfig.id, 1);
-                            drops.push({ name: itemConfig.name, icon: itemConfig.icon, count: 1 });
+                            obtainedItems.push(itemConfig);
                         }
                     });
+                    
                     // 保底：至少获得一个
-                    if (drops.length === 0 && location.items.length > 0) {
-                        const randomItem = location.items[Math.floor(Math.random() * location.items.length)];
-                        this.addItem('GATHERING', randomItem.id, 1);
-                        drops.push({ name: randomItem.name, icon: randomItem.icon, count: 1 });
+                    if (obtainedItems.length === 0 && location.items.length > 0) {
+                        obtainedItems.push(location.items[Math.floor(Math.random() * location.items.length)]);
                     }
+                    
+                    // 第二步：对每个获得的物品计算数量
+                    obtainedItems.forEach(itemConfig => {
+                        const category = this.getItemDropCategory(itemConfig.id);
+                        const count = this.calculateDropCount(category, itemConfig.id);
+                        this.addItem('GATHERING', itemConfig.id, count);
+                        drops.push({ name: itemConfig.name, icon: itemConfig.icon, count: count });
+                    });
+                    
                     rewards.push(...drops.map(d => ({ type: 'GATHERING', ...d })));
                 }
             } else {
@@ -456,13 +469,17 @@ class GameEngine {
                 const dropName = item.drop || item.name;
                 const dropIcon = item.dropIcon || item.icon;
                 
-                this.addItem(actionType.dropType, dropId, 1);
+                // 计算掉落数量（伐木用wood，挖矿用ore）
+                const category = action.type === 'WOODCUTTING' ? 'wood' : 'ore';
+                const count = this.calculateDropCount(category, dropId);
+                
+                this.addItem(actionType.dropType, dropId, count);
                 rewards.push({ 
                     type: actionType.dropType, 
                     id: dropId, 
                     name: dropName, 
                     icon: dropIcon, 
-                    count: 1 
+                    count: count 
                 });
             }
         }
@@ -1124,6 +1141,69 @@ class GameEngine {
             rod: 'rods'
         };
         return map[slotType] || slotType;
+    }
+    
+    /**
+     * 计算掉落数量
+     * @param {string} category - 物品类别: 'wood', 'ore', 'honey', 'berry', 'herb', 'other'
+     * @param {string} itemId - 物品ID（用于特殊判断）
+     * @returns {number} 掉落数量
+     */
+    calculateDropCount(category, itemId) {
+        // 数量概率表
+        const dropTables = {
+            // 伐木、挖矿：1-3个，各33.3%
+            wood: { counts: [1, 2, 3], probabilities: [0.333, 0.333, 0.334] },
+            ore: { counts: [1, 2, 3], probabilities: [0.333, 0.333, 0.334] },
+            
+            // 四种蜜：1-7个
+            honey: { counts: [1, 2, 3, 4, 5, 6, 7], probabilities: [0.05, 0.10, 0.20, 0.30, 0.20, 0.10, 0.05] },
+            
+            // 甜浆果、小麦、啤酒花、苹果、葡萄、黑麦、雾果、龙血果：1-5个
+            berry: { counts: [1, 2, 3, 4, 5], probabilities: [0.10, 0.20, 0.40, 0.20, 0.10] },
+            
+            // 血蔷薇等：1-3个，各33.3%
+            herb: { counts: [1, 2, 3], probabilities: [0.333, 0.333, 0.334] },
+            
+            // 其他：固定1个
+            other: { counts: [1], probabilities: [1.0] }
+        };
+        
+        const table = dropTables[category] || dropTables.other;
+        const rand = Math.random();
+        let cumulative = 0;
+        
+        for (let i = 0; i < table.counts.length; i++) {
+            cumulative += table.probabilities[i];
+            if (rand < cumulative) {
+                return table.counts[i];
+            }
+        }
+        
+        return table.counts[table.counts.length - 1];
+    }
+    
+    /**
+     * 获取物品的掉落类别
+     * @param {string} itemId - 物品ID
+     * @returns {string} 类别
+     */
+    getItemDropCategory(itemId) {
+        // 四种蜜
+        const honeyItems = ['honey', 'blossom_honey', 'moonlight_honey', 'rock_rose_honey'];
+        if (honeyItems.includes(itemId)) return 'honey';
+        
+        // 甜浆果、小麦、啤酒花、苹果、葡萄、黑麦、雾果、龙血果
+        const berryItems = ['sweet_berry', 'wheat', 'hops', 'apple', 'grape', 'rye', 'mist_fruit', 'dragon_blood_fruit'];
+        if (berryItems.includes(itemId)) return 'berry';
+        
+        // 血蔷薇、黄麻、星露草、亚麻、赤炼蛇果、月光菇、羊毛、蚕丝、灵魂草、风语绒、原野之心、迷心浆果、生命纤维、星辰花
+        const herbItems = ['blood_rose', 'jute', 'star_dew_herb', 'flax', 'red_serpent_fruit', 
+                          'moonlight_mushroom', 'wool', 'silk', 'soul_herb', 'wind_velvet',
+                          'wild_heart', 'bewitch_berry', 'life_fiber', 'star_blossom'];
+        if (herbItems.includes(itemId)) return 'herb';
+        
+        return 'other';
     }
     
     getSkillKeyFromSlot(slotType) {
