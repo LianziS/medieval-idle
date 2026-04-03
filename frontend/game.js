@@ -411,6 +411,31 @@ function setupNavigation() {
             switchPage(page);
         });
     });
+    
+    // 我的物品/装备栏 切换
+    document.querySelectorAll('.storage-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabName = tab.dataset.tab;
+            
+            // 切换 tab 激活状态
+            document.querySelectorAll('.storage-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // 切换内容
+            document.querySelectorAll('.storage-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            const targetContent = document.getElementById(`storage-tab-${tabName}`);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+            
+            // 如果是装备栏，渲染装备
+            if (tabName === 'equipment') {
+                renderEquipmentSlots();
+            }
+        });
+    });
 }
 
 /**
