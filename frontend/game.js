@@ -2589,16 +2589,80 @@ function renderInventoryGrid(elementId, inventory, config, idField = 'id') {
         .filter(([id, count]) => count > 0)
         .map(([id, count]) => {
             const configItem = config.find(c => c[idField] === id) || { name: id, icon: '❓' };
+            const price = configItem.price || 0;
+            const desc = configItem.desc || configItem.description || getItemDescription(id, configItem);
             return `
-                <div class="inventory-item">
+                <div class="inventory-item" 
+                     data-id="${id}" 
+                     data-name="${configItem.name}" 
+                     data-count="${count}" 
+                     data-price="${price}"
+                     data-desc="${desc}"
+                     data-icon="${configItem.icon}">
                     <span class="item-icon">${configItem.icon}</span>
                     <span class="item-name">${configItem.name}</span>
-                    <span class="item-count">×${count}</span>
+                    <span class="item-count">${count}</span>
                 </div>
             `;
         }).join('');
     
     element.innerHTML = items || '<div class="empty-message">暂无物品</div>';
+    
+    // 绑定点击事件
+    element.querySelectorAll('.inventory-item').forEach(item => {
+        item.addEventListener('click', (e) => showItemTooltip(item, e));
+        item.addEventListener('mouseleave', () => hideItemTooltip(item));
+    });
+}
+
+/**
+ * 获取物品描述
+ */
+function getItemDescription(id, configItem) {
+    // 根据物品类型返回默认描述
+    if (id.includes('_token')) return '用于兑换特殊奖励';
+    if (id.includes('axe')) return '伐木工具，提升伐木速度';
+    if (id.includes('pickaxe')) return '挖矿工具，提升挖矿速度';
+    if (id.includes('chisel')) return '制作工具，提升制作速度';
+    if (id.includes('needle')) return '缝制工具，提升缝制速度';
+    if (id.includes('scythe')) return '采集工具，提升采集速度';
+    if (id.includes('hammer')) return '锻造工具，提升锻造速度';
+    if (id.includes('tongs')) return '酿造工具，提升酿造速度';
+    if (id.includes('rod')) return '炼金工具，提升炼金速度';
+    return '材料物品';
+}
+
+/**
+ * 显示物品详情弹出卡片
+ */
+function showItemTooltip(item, event) {
+    // 先移除已有的弹出卡片
+    document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+    
+    const name = item.dataset.name;
+    const count = item.dataset.count;
+    const price = item.dataset.price;
+    const desc = item.dataset.desc;
+    const icon = item.dataset.icon;
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'item-tooltip';
+    tooltip.innerHTML = `
+        <div class="item-tooltip-name">${icon} ${name}</div>
+        <div class="item-tooltip-row"><span>数量</span><span>${count}</span></div>
+        <div class="item-tooltip-row"><span>价值</span><span>${price > 0 ? price + ' 金币' : '不可出售'}</span></div>
+        <div class="item-tooltip-desc">${desc}</div>
+    `;
+    
+    item.appendChild(tooltip);
+}
+
+/**
+ * 隐藏物品详情弹出卡片
+ */
+function hideItemTooltip(item) {
+    const tooltip = item.querySelector('.item-tooltip');
+    if (tooltip) tooltip.remove();
 }
 
 // ============ 行动模态框 ============

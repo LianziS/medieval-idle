@@ -3215,27 +3215,96 @@ body::after {
 /* ============ 库存网格 ============ */
 
 .inventory-item {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    background: rgba(45, 63, 82, 0.5);
+    border-radius: 8px;
+    border: 1px solid rgba(107, 79, 60, 0.3);
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: rgba(45, 63, 82, 0.5);
-    padding: 8px 12px;
-    border-radius: 6px;
-    border: 1px solid rgba(107, 79, 60, 0.3);
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.inventory-item:hover {
+    border-color: #E8C57F;
+    background: rgba(45, 63, 82, 0.8);
+    transform: translateY(-2px);
 }
 
 .inventory-item .item-icon {
-    font-size: 1.2rem;
+    font-size: 1.5rem;
 }
 
 .inventory-item .item-name {
-    flex: 1;
-    color: #E8C57F;
+    display: none; /* 隐藏名称 */
 }
 
 .inventory-item .item-count {
+    position: absolute;
+    right: 4px;
+    bottom: 2px;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: bold;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+/* 物品详情弹出卡片 */
+.item-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    background: #1B2A3A;
+    border: 1px solid #E8C57F;
+    border-radius: 8px;
+    padding: 10px 12px;
+    min-width: 140px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.item-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #E8C57F;
+}
+
+.item-tooltip-name {
+    color: #E8C57F;
+    font-weight: bold;
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+}
+
+.item-tooltip-row {
+    display: flex;
+    justify-content: space-between;
     color: #A0B2C0;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
+    margin: 3px 0;
+}
+
+.item-tooltip-row span:last-child {
+    color: #fff;
+}
+
+.item-tooltip-desc {
+    color: #7a9ab0;
+    font-size: 0.75rem;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(107, 79, 60, 0.3);
 }
 
 .empty-message {
