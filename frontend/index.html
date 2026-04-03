@@ -8,7 +8,7 @@
     <meta name="format-detection" content="telephone=no">
     <title>中世纪雇佣兵 - 放置游戏</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="style.css?v=202604031210">
+    <link rel="stylesheet" href="style.css?v=202604031220">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#1B2A3A;color:#A0B2C0;min-height:100vh;padding:0;font-size:14px;overflow-x:hidden}
@@ -191,6 +191,15 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            
+            <!-- 分隔线 -->
+            <div class="icon-separator"></div>
+            
+            <!-- 游戏帮助 -->
+            <div class="nav-item" data-page="help">
+                <span class="nav-icon">❓</span>
+                <span class="nav-text">游戏帮助</span>
             </div>
             
         </div>
@@ -518,6 +527,88 @@
             <section class="panel">
                 <h2 class="panel-title">🏪 商人</h2>
                 <div class="merchant-grid" id="merchant-list"></div>
+            </section>
+        </main>
+
+        <!-- 游戏帮助页 -->
+        <main class="page" id="page-help">
+            <section class="panel">
+                <h2 class="panel-title">❓ 游戏帮助</h2>
+                <div class="help-content">
+                    <div class="help-section">
+                        <h3>🎮 游戏简介</h3>
+                        <p>《中世纪雇佣兵》是一款放置类养成游戏。你将扮演一名中世纪的雇佣兵，通过伐木、挖矿、采集、制作等行动获取资源，升级技能，打造装备，逐步成长为一名强大的冒险者。</p>
+                    </div>
+                    
+                    <div class="help-section">
+                        <h3>🪓 技能系统</h3>
+                        <p>游戏共有 <strong>8 个技能</strong>，每个技能都有独立的等级和经验值：</p>
+                        <ul>
+                            <li><strong>伐木</strong> - 砍伐各种树木获取木材，从青杉到世界树</li>
+                            <li><strong>挖矿</strong> - 开采矿石，从青闪矿到月华结晶</li>
+                            <li><strong>采集</strong> - 在野外采集草药、果实、羽毛等材料</li>
+                            <li><strong>制作</strong> - 将木材加工成木板，用于建造和锻造</li>
+                            <li><strong>锻造</strong> - 将矿石冶炼成矿锭，打造各种工具</li>
+                            <li><strong>缝制</strong> - 将采集材料加工成布料和装备</li>
+                            <li><strong>炼金</strong> - 制作各种药剂</li>
+                            <li><strong>酿造</strong> - 酿造各种酒类</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="help-section">
+                        <h3>🏠 建筑系统</h3>
+                        <p>建造和升级建筑可以解锁更多功能：</p>
+                        <ul>
+                            <li><strong>帐篷</strong> - 核心建筑，升级可解锁其他建筑</li>
+                            <li><strong>伐木场</strong> - 解锁更高级的树木</li>
+                            <li><strong>矿洞</strong> - 解锁更高级的矿石</li>
+                            <li><strong>锻造屋</strong> - 打造工具</li>
+                            <li><strong>木工坊/裁缝铺/炼金小屋/酿酒坊</strong> - 解锁相应制作</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="help-section">
+                        <h3>⚔️ 装备系统</h3>
+                        <p>在「我的物品 → 装备栏」中可以装备工具。每个技能都有对应的装备槽位：</p>
+                        <ul>
+                            <li>装备工具可以获得 <strong>加速加成</strong>，提高行动效率</li>
+                            <li>工具需要在锻造屋打造，消耗矿锭和木板</li>
+                            <li>高级工具需要更高的锻造等级和相应技能等级</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="help-section">
+                        <h3>📊 升级经验公式</h3>
+                        <p>技能升级所需经验：<strong>100 × 1.5^(等级-1)</strong></p>
+                        <table class="help-table">
+                            <tr><th>等级</th><th>所需经验</th></tr>
+                            <tr><td>1→2</td><td>100</td></tr>
+                            <tr><td>5→6</td><td>506</td></tr>
+                            <tr><td>10→11</td><td>3,844</td></tr>
+                            <tr><td>20→21</td><td>22,291</td></tr>
+                            <tr><td>50→51</td><td>563,823</td></tr>
+                        </table>
+                    </div>
+                    
+                    <div class="help-section">
+                        <h3>💡 新手建议</h3>
+                        <ol>
+                            <li>先从<strong>伐木和挖矿</strong>开始，收集基础资源</li>
+                            <li>升级<strong>帐篷</strong>解锁更多建筑</li>
+                            <li>在锻造屋打造<strong>青闪斧和青闪镐</strong>，提高效率</li>
+                            <li>资源等级越高，经验越多，但需要更高的技能等级</li>
+                            <li>点击行动卡片的 <strong>∞ 按钮</strong> 可以无限循环执行</li>
+                            <li>可以在行动进行时将新行动<strong>加入队列</strong></li>
+                        </ol>
+                    </div>
+                    
+                    <div class="help-section">
+                        <h3>🔥 资源等级一览</h3>
+                        <p><strong>木材：</strong>青杉(Lv.1) → 铁桦(Lv.10) → 风啸树(Lv.20) → 焰心树(Lv.35) → 霜叶枫(Lv.50) → 雷鸣树(Lv.65) → 古橡(Lv.80) → 世界树(Lv.95)</p>
+                        <p><strong>矿石：</strong>青闪矿(Lv.1) → 赤铁矿(Lv.10) → 羽石矿(Lv.20) → 白鸠矿(Lv.35) → 狱炎矿(Lv.50) → 雷鸣矿(Lv.65) → 曜光结晶(Lv.80) → 月华结晶(Lv.95)</p>
+                        <p><strong>工具：</strong>青闪系列(15%加成) → 赤铁系列(22.5%) → 羽系列(30%) → 白银系列(45%) → 狱炎系列(60%) → 雷鸣系列(75%) → 璀璨系列(90%) → 星辉系列(105%)</p>
+                    </div>
+                </div>
             </section>
         </main>
     </div>

@@ -4852,3 +4852,71 @@ body::after {
     font-size: 2em;
     padding: 4px 16px;
 }
+
+/* ============ 游戏帮助页面 ============ */
+.help-content {
+    padding: 10px 0;
+}
+
+.help-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    background: rgba(107, 79, 60, 0.08);
+    border-radius: 8px;
+    border-left: 3px solid #8B5A2B;
+}
+
+.help-section h3 {
+    color: #D4A574;
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(139, 90, 43, 0.3);
+    padding-bottom: 8px;
+}
+
+.help-section p {
+    color: #B8C8D8;
+    line-height: 1.7;
+    margin-bottom: 10px;
+}
+
+.help-section ul,
+.help-section ol {
+    margin-left: 20px;
+    color: #A0B2C0;
+    line-height: 1.8;
+}
+
+.help-section li {
+    margin-bottom: 6px;
+}
+
+.help-section strong {
+    color: #D4A574;
+}
+
+.help-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.help-table th,
+.help-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border: 1px solid rgba(107, 79, 60, 0.3);
+}
+
+.help-table th {
+    background: rgba(107, 79, 60, 0.2);
+    color: #D4A574;
+}
+
+.help-table td {
+    color: #A0B2C0;
+}
+
+.help-table tr:hover td {
+    background: rgba(107, 79, 60, 0.1);
+}
