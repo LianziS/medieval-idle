@@ -157,11 +157,25 @@ function setupSocket() {
     
     // 状态更新
     socket.on('game_state_update', (state) => {
+        const prevAction = gameState?.activeAction;
         gameState = state;
+        
         // 如果收到更新时 action 已完成，重置标志
         if (!state.activeAction) {
             completingAction = false;
         }
+        
+        // 如果行动刚开始或改变了，更新时间戳
+        if (state.activeAction && state.actionStartTime) {
+            // 如果是新行动或时间戳变化，更新 lastActionStartTime
+            if (!prevAction || prevAction.id !== state.activeAction.id || 
+                !lastActionStartTime || Date.now() - lastActionStartTime > 60000) {
+                lastActionStartTime = state.actionStartTime;
+                completingAction = false;
+                console.log(`🔄 行动开始/更新: ${state.activeAction.id}, duration: ${state.actionDuration}ms`);
+            }
+        }
+        
         updateUI();
         renderEquipmentSlots(); // 实时更新装备栏
         renderInventories(); // 实时更新物品栏
@@ -205,6 +219,8 @@ function setupSocket() {
     
     // 行动完成结果
     socket.on('action_complete_result', (result) => {
+        console.log(`📥 action_complete_result:`, result.success ? '成功' : result.reason);
+        
         if (result.success) {
             // 处理锻造结果
             if (result.tool) {
@@ -916,7 +932,16 @@ function updateActionStatusBar() {
         if (timeSinceLastStart >= minWaitTime) {
             completingAction = true;
             lastActionStartTime = Date.now(); // 更新时间戳
+            console.log(`📤 行动完成，发送 action_complete: ${gameState.activeAction.id}`);
             socket.emit('action_complete');
+            
+            // 超时保护：5秒后如果还没收到响应，重置标志
+            setTimeout(() => {
+                if (completingAction) {
+                    console.warn('⚠️ action_complete 超时，重置标志');
+                    completingAction = false;
+                }
+            }, 5000);
         }
     }
     

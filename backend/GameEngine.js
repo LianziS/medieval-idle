@@ -546,6 +546,10 @@ class GameEngine {
         // 检查是否完成所有次数（无限模式永远不会完成）
         if (!action.isInfinite && action.remaining <= 0) {
             this.state.activeAction = null;
+            this.state.actionStartTime = null;
+            this.state.actionDuration = null;
+            this.state.actionRemaining = 0;
+            this.state.actionCount = 0;
             
             // 检查队列，自动开始下一个
             let nextAction = null;
@@ -588,7 +592,10 @@ class GameEngine {
         
         const action = this.state.activeAction;
         this.state.activeAction = null;
+        this.state.actionStartTime = null;
+        this.state.actionDuration = null;
         this.state.actionRemaining = 0;
+        this.state.actionCount = 0;
         
         // 检查队列，自动开始第一个
         let nextAction = null;
