@@ -2654,14 +2654,34 @@ function showItemTooltip(item, event) {
         <div class="item-tooltip-desc">${desc}</div>
     `;
     
-    item.appendChild(tooltip);
+    document.body.appendChild(tooltip);
+    
+    // 计算位置：显示在物品卡片右侧
+    const rect = item.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    
+    let left = rect.right + 8;
+    let top = rect.top;
+    
+    // 如果右侧空间不足，显示在左侧
+    if (left + tooltipRect.width > window.innerWidth - 10) {
+        left = rect.left - tooltipRect.width - 8;
+    }
+    
+    // 如果上侧空间不足，向下调整
+    if (top + tooltipRect.height > window.innerHeight - 10) {
+        top = window.innerHeight - tooltipRect.height - 10;
+    }
+    
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
 }
 
 /**
  * 隐藏物品详情弹出卡片
  */
 function hideItemTooltip(item) {
-    const tooltip = item.querySelector('.item-tooltip');
+    const tooltip = document.querySelector('.item-tooltip');
     if (tooltip) tooltip.remove();
 }
 

@@ -2681,8 +2681,9 @@ body::after {
 
 .storage-items-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(6, 60px);
+    gap: 8px;
+    justify-content: start;
 }
 
 .storage-item-small {
@@ -3256,28 +3257,14 @@ body::after {
 
 /* 物品详情弹出卡片 */
 .item-tooltip {
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-bottom: 8px;
+    position: fixed;
     background: #1B2A3A;
     border: 1px solid #E8C57F;
     border-radius: 8px;
     padding: 10px 12px;
     min-width: 140px;
-    z-index: 1000;
+    z-index: 2000;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-
-.item-tooltip::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 6px solid transparent;
-    border-top-color: #E8C57F;
 }
 
 .item-tooltip-name {
