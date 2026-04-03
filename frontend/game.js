@@ -1840,6 +1840,45 @@ function renderAlchemy() {
             openActionModal('ALCHEMY', potionId);
         });
     });
+    
+    // 渲染提炼列表
+    renderAlchemyEssences();
+}
+
+/**
+ * 渲染提炼列表
+ */
+function renderAlchemyEssences() {
+    if (!elements.essenceList || !gameState || !CONFIG.essences) return;
+    
+    // 提炼使用采集等级
+    const level = gameState.gatheringLevel || 1;
+    
+    elements.essenceList.innerHTML = CONFIG.essences.map(essence => {
+        const unlocked = level >= essence.reqLevel;
+        
+        return `
+            <div class="action-card ${unlocked ? '' : 'locked'}" 
+                 data-action="ESSENCE" data-id="${essence.id}">
+                <div class="action-icon">${essence.icon}</div>
+                <div class="action-info">
+                    <div class="action-name">${essence.name}</div>
+                    <div class="action-details">
+                        <span>⏱️ ${formatTime(essence.duration)}</span>
+                        <span>✨ ${essence.exp}</span>
+                    </div>
+                </div>
+                ${!unlocked ? `<div class="locked-overlay">🔒 采集 Lv.${essence.reqLevel}</div>` : ''}
+            </div>
+        `;
+    }).join('');
+    
+    elements.essenceList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
+        card.addEventListener('click', () => {
+            const essenceId = card.dataset.id;
+            openActionModal('ESSENCE', essenceId);
+        });
+    });
 }
 
 /**
