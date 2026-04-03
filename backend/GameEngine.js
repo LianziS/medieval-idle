@@ -313,7 +313,9 @@ class GameEngine {
         
         if (!item.materials) return requestedCount;
         
-        let maxCount = requestedCount;
+        // 无限模式（-1 或 Infinity）时，初始值设为 Infinity，否则用请求的数量
+        let maxCount = (requestedCount === -1 || requestedCount === Infinity) ? Infinity : requestedCount;
+        
         for (const [matId, count] of Object.entries(item.materials)) {
             const owned = this.getItemCount(actionType.materialType || 'WOOD', matId);
             const possible = Math.floor(owned / count);
