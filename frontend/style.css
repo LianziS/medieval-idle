@@ -153,8 +153,8 @@ body::after {
 .action-status-bar {
     background: transparent;
     border-top: none;
-    padding: 10px 20px 10px 90px;
-    height: 101px;
+    padding: 8px 20px 8px 60px;
+    height: 60px;
     box-sizing: border-box;
 }
 
@@ -283,10 +283,10 @@ body::after {
 /* ============ 侧边栏 ============ */
 .sidebar {
     position: fixed;
-    top: 130px;
+    top: 60px;
     left: 0;
     width: 55px;
-    height: calc(100% - 130px);
+    height: calc(100% - 60px);
     background: #1B2A3A;
     backdrop-filter: blur(10px);
     z-index: 1000;
@@ -514,13 +514,13 @@ body::after {
     max-width: 1400px;
     margin: 0 auto;
     margin-left: 55px;
-    margin-top: 135px;
+    margin-top: 60px;
     background: #1B2A3A;
     backdrop-filter: blur(10px);
     border-radius: 0;
     overflow-x: hidden;
     transition: margin-left 0.3s ease;
-    min-height: calc(100vh - 135px);
+    min-height: calc(100vh - 60px);
     border: none;
     box-shadow: none;
 }
@@ -1488,28 +1488,7 @@ body::after {
     }
     
     .top-fixed {
-        min-height: 85px;
-    }
-    
-    .top-fixed-content {
-        padding: 6px 15px;
-    }
-    
-    /* 时间戳隐藏，节省空间 */
-    .update-time-badge {
-        display: none;
-    }
-    
-    .player-badge {
-        padding: 4px 10px;
-        font-size: 0.75rem;
-    }
-    
-    /* 退出按钮优化 */
-    .logout-btn {
-        padding: 6px 14px;
-        font-size: 0.8rem;
-        min-height: 36px;
+        min-height: 50px;
     }
     
     .action-status-bar {
@@ -1564,8 +1543,8 @@ body::after {
     
     /* 侧边栏在手机端默认收起 */
     .sidebar {
-        top: 85px;
-        height: calc(100% - 85px);
+        top: 50px;
+        height: calc(100% - 50px);
         width: 50px;
         border: none;
     }
@@ -1625,11 +1604,16 @@ body::after {
     
     .game-container {
         margin-left: 55px;
-        margin-top: 85px;
+        margin-top: 50px;
     }
     
     .sidebar.expanded ~ .game-container {
         margin-left: 160px;
+    }
+    
+    .action-status-bar {
+        padding: 6px 15px 6px 55px;
+        height: 50px;
     }
     
     .panel {
