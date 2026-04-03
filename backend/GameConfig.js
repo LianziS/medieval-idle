@@ -192,12 +192,15 @@ const CONFIG = {
         { id: 'brewing_wine', name: '酿造果酒', icon: '🍷', reqLevel: 20, duration: 10000, exp: 24, materials: { apple: 1, sage_essence: 1, brewing_token: 1 } }
     ],
     
-    // 精华配置
+    // 精华配置（提炼功能）
     essences: [
-        { id: 'mint_essence', name: '薄荷精华', icon: '🌿', reqLevel: 1, duration: 5000, exp: 3, materials: { wild_mint: 3 } },
-        { id: 'pine_essence', name: '松针精华', icon: '🌲', reqLevel: 5, duration: 6000, exp: 5, materials: { pine_needle: 3 } },
-        { id: 'vanilla_essence', name: '香草精华', icon: '🌱', reqLevel: 10, duration: 7000, exp: 8, materials: { vanilla: 3 } },
-        { id: 'sage_essence', name: '鼠尾草精华', icon: '🌿', reqLevel: 15, duration: 8000, exp: 12, materials: { sage: 3 } }
+        { id: 'mint_essence', name: '薄荷精华', icon: '🌿', reqLevel: 6, duration: 6000, exp: 4, materials: { wild_mint: 2 } },
+        { id: 'pine_essence', name: '松针精华', icon: '🌲', reqLevel: 10, duration: 8000, exp: 8, materials: { pine_needle: 2 } },
+        { id: 'vanilla_essence', name: '香草精华', icon: '🌱', reqLevel: 16, duration: 11000, exp: 12, materials: { vanilla: 2 } },
+        { id: 'sage_essence', name: '鼠尾草精华', icon: '🌿', reqLevel: 22, duration: 14000, exp: 18, materials: { sage: 2 } },
+        { id: 'chili_essence', name: '辣椒精华', icon: '🌶️', reqLevel: 30, duration: 17000, exp: 24, materials: { chili: 2 } },
+        { id: 'mist_essence', name: '雾菱精华', icon: '💠', reqLevel: 40, duration: 20000, exp: 32, materials: { mist_flower: 2 } },
+        { id: 'clover_essence', name: '四叶草精华', icon: '🍀', reqLevel: 55, duration: 30000, exp: 40, materials: { four_leaf_clover: 2 } }
     ],
     
     // 装备槽位配置
