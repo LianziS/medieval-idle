@@ -782,6 +782,9 @@ function switchPage(pageId) {
             case 'enhance':
                 renderEnhance();
                 break;
+            case 'settings':
+                renderSettings();
+                break;
         }
     }
     
@@ -793,6 +796,45 @@ function switchPage(pageId) {
 }
 
 // ============ 渲染函数 ============
+
+/**
+ * 渲染设置页面
+ */
+function renderSettings() {
+    const usernameEl = document.getElementById('settings-username');
+    if (usernameEl) {
+        // 从localStorage获取用户名
+        const token = localStorage.getItem('medieval_token');
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                usernameEl.textContent = payload.username || '未知用户';
+            } catch (e) {
+                usernameEl.textContent = '未知用户';
+            }
+        }
+    }
+    
+    // 退出登录按钮
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.onclick = () => {
+            if (confirm('确定要退出登录吗？')) {
+                // 清除本地存储
+                localStorage.removeItem('medieval_token');
+                localStorage.removeItem('medieval_auto_login');
+                
+                // 断开socket连接
+                if (socket) {
+                    socket.disconnect();
+                }
+                
+                // 跳转到登录页
+                window.location.href = '/login';
+            }
+        };
+    }
+}
 
 /**
  * 渲染所有内容
