@@ -648,6 +648,110 @@ io.on('connection', (socket) => {
         }
     });
     
+    // ============ 强化系统事件 ============
+    
+    // 开始强化（如果有行动正在进行则返回错误）
+    socket.on('enhance_start', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.startEnhanceAction(
+            data.toolType,
+            data.toolIndex,
+            data.targetLevel,
+            data.count || 1,
+            data.protection,
+            data.protectionStartLevel || 2
+        );
+        
+        socket.emit('enhance_result', result);
+        if (result.success && !result.queued) {
+            socket.emit('game_state_update', gameEngine.getFullState());
+        }
+    });
+    
+    // 添加强化到队列（直接加入队列，不管是否有当前行动）
+    socket.on('enhance_queue', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const queueLength = gameEngine.state.actionQueue.length;
+        const maxQueueSize = gameEngine.state.maxQueueSize || 10;
+        
+        if (queueLength >= maxQueueSize) {
+            return socket.emit('enhance_result', { success: false, reason: '队列已满' });
+        }
+        
+        // 添加到队列
+        gameEngine.state.actionQueue.push({
+            type: 'ENHANCE',
+            toolType: data.toolType,
+            toolIndex: data.toolIndex,
+            targetLevel: data.targetLevel,
+            count: data.count || 1,
+            protection: data.protection,
+            protectionStartLevel: data.protectionStartLevel || 2,
+            name: '强化'
+        });
+        
+        socket.emit('enhance_result', { 
+            success: true, 
+            queued: true, 
+            queueLength: queueLength + 1 
+        });
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
+    // 完成强化
+    socket.on('enhance_complete', () => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.completeEnhanceOnce();
+        socket.emit('enhance_complete_result', result);
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
+    // 获取强化预览信息
+    socket.on('get_enhance_preview', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const { toolType, toolIndex } = data;
+        const toolsKey = gameEngine.getToolsKey(toolType);
+        const tools = gameEngine.state.toolsInventory[toolsKey] || [];
+        
+        if (toolIndex < 0 || toolIndex >= tools.length) {
+            return socket.emit('enhance_preview', { success: false, reason: '工具不存在' });
+        }
+        
+        const tool = tools[toolIndex];
+        const toolId = typeof tool === 'string' ? tool : tool.id;
+        const currentLevel = typeof tool === 'object' && tool ? (tool.enhanceLevel || 0) : 0;
+        
+        const toolConfig = gameEngine.getToolConfig(toolType, toolId);
+        const tier = gameEngine.getToolTier(toolId);
+        const materialCheck = gameEngine.checkEnhanceMaterials(toolId, toolType);
+        const successRate = gameEngine.getEnhanceSuccessRate(currentLevel);
+        const exp = gameEngine.calculateEnhanceExp(toolId, currentLevel);
+        
+        // 获取可用保护垫
+        const protectionTools = gameEngine.getSameToolsForProtection(toolType, toolId, currentLevel, toolIndex);
+        
+        socket.emit('enhance_preview', {
+            success: true,
+            toolId,
+            toolName: toolConfig?.name || toolId,
+            toolIcon: toolConfig?.icon || '🔧',
+            currentLevel,
+            targetLevel: currentLevel + 1,
+            tier,
+            successRate,
+            exp,
+            materials: materialCheck.cost,
+            canEnhance: materialCheck.canEnhance,
+            missing: materialCheck.missing,
+            protectionTools,
+            reqEquipLevel: toolConfig?.reqEquipLevel || 1
+        });
+    });
+    
     // GM 指令（测试用）
     socket.on('gm_command', (data) => {
         if (!gameEngine) return socket.emit('error', { message: '未认证' });
@@ -742,8 +846,18 @@ setInterval(() => {
             
             // 如果行动时间到了
             if (elapsed >= duration) {
-                const result = gameEngine.completeActionOnce();
-                socket.emit('action_complete_result', result);
+                const action = gameEngine.state.activeAction;
+                let result;
+                
+                // 根据行动类型调用不同的完成方法
+                if (action.type === 'ENHANCE') {
+                    result = gameEngine.completeEnhanceOnce();
+                    socket.emit('enhance_complete_result', result);
+                } else {
+                    result = gameEngine.completeActionOnce();
+                    socket.emit('action_complete_result', result);
+                }
+                
                 socket.emit('game_state_update', gameEngine.getFullState());
                 
                 // 如果有下一个行动（已由 completeActionOnce 自动开始）

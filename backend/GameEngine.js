@@ -183,7 +183,12 @@ class GameEngine {
      * 计算升级所需经验
      */
     getExpForLevel(level) {
-        return Math.floor(100 * Math.pow(1.5, level - 1));
+        // 使用更合理的经验曲线，避免高级别经验过高
+        // 公式：100 * level * (1 + 0.3 * (level - 1))
+        // 1级: 100, 10级: 3700, 50级: 75100, 100级: 300100
+        const baseExp = 100;
+        const exp = baseExp * level * (1 + 0.3 * Math.max(0, level - 1));
+        return Math.floor(exp);
     }
     
     /**
@@ -345,9 +350,7 @@ class GameEngine {
         duration = Math.floor(duration / (1 + bonus));
         
         // 调试日志
-        if (bonus > 0) {
-            console.log(`⚡ 装备加成: ${actionType.id} 原始时间=${originalDuration}ms, 加成=${bonus*100}%, 实际时间=${duration}ms`);
-        }
+        console.log(`⏱️ 计算时长: ${actionType.id} 原始=${originalDuration}ms, 装备加成=${(bonus*100).toFixed(0)}%, 实际=${duration}ms`);
         
         return duration;
     }
@@ -370,20 +373,33 @@ class GameEngine {
         const equipSlot = equipMap[actionId];
         if (!equipSlot) return 0;
         
-        const equippedId = this.state.equipment[equipSlot];
-        if (!equippedId) return 0;
+        const equippedData = this.state.equipment[equipSlot];
+        if (!equippedData) return 0;
         
-        // 查找工具配置
-        const toolsKey = equipSlot === 'axe' ? 'axes' : 
-                        equipSlot === 'pickaxe' ? 'pickaxes' :
-                        equipSlot === 'chisel' ? 'chisels' :
-                        equipSlot === 'needle' ? 'needles' :
-                        equipSlot === 'scythe' ? 'scythes' :
-                        equipSlot === 'hammer' ? 'hammers' :
-                        equipSlot === 'tongs' ? 'tongs' : 'rods';
+        // 兼容旧格式（字符串）和新格式（对象）
+        let equippedId, enhanceLevel;
+        if (typeof equippedData === 'string') {
+            equippedId = equippedData;
+            enhanceLevel = 0;
+        } else if (typeof equippedData === 'object') {
+            equippedId = equippedData.id;
+            enhanceLevel = equippedData.enhanceLevel || 0;
+        } else {
+            return 0;
+        }
         
+        // 查找工具配置 - 使用 getToolsKey 方法
+        const toolsKey = this.getToolsKey(equipSlot);
         const tool = CONFIG.tools[toolsKey]?.find(t => t.id === equippedId);
-        return tool?.speedBonus || 0;
+        const baseBonus = tool?.speedBonus || 0;
+        
+        // 计算强化加成
+        if (enhanceLevel > 0 && CONFIG.enhanceConfig?.bonusTable) {
+            const enhanceBonus = CONFIG.enhanceConfig.bonusTable[enhanceLevel] || 0;
+            return baseBonus * (1 + enhanceBonus);
+        }
+        
+        return baseBonus;
     }
     
     /**
@@ -571,6 +587,16 @@ class GameEngine {
                 if (queueItem.type === 'FORGING') {
                     // 锻造行动使用 startForgeAction
                     startResult = this.startForgeAction(queueItem.toolType, queueItem.toolIndex, queueItem.count);
+                } else if (queueItem.type === 'ENHANCE') {
+                    // 强化行动使用 startEnhanceAction
+                    startResult = this.startEnhanceAction(
+                        queueItem.toolType,
+                        queueItem.toolIndex,
+                        queueItem.targetLevel,
+                        queueItem.count,
+                        queueItem.protection,
+                        queueItem.protectionStartLevel
+                    );
                 } else {
                     startResult = this.startAction(queueItem.type, queueItem.id, queueItem.count, { itemId: queueItem.itemId });
                 }
@@ -587,8 +613,15 @@ class GameEngine {
             };
         }
         
-        // 还有剩余次数（或无限模式），重置开始时间
+        // 还有剩余次数（或无限模式），重置开始时间并重新计算装备加成
         this.state.actionStartTime = Date.now();
+        
+        // 实时更新装备加成：重新计算行动时长
+        const currentActionType = ACTION_TYPES[action.type];
+        if (currentActionType) {
+            const newDuration = this.calculateDuration(action.type, action.id);
+            this.state.actionDuration = newDuration;
+        }
         
         return { success: true, rewards: rewards, remaining: action.remaining, isInfinite: action.isInfinite };
     }
@@ -602,6 +635,8 @@ class GameEngine {
         }
         
         const action = this.state.activeAction;
+        console.log(`🛑 取消行动: ${action.id}`);
+        
         this.state.activeAction = null;
         this.state.actionStartTime = null;
         this.state.actionDuration = null;
@@ -610,13 +645,28 @@ class GameEngine {
         
         // 检查队列，自动开始第一个
         let nextAction = null;
+        console.log(`📋 队列长度: ${this.state.actionQueue.length}`);
+        
         if (this.state.actionQueue.length > 0) {
             const queueItem = this.state.actionQueue.shift();
+            console.log(`📤 从队列取出:`, queueItem);
             
-            // 区分锻造工具和其他行动
+            // 区分锻造工具、强化和其他行动
             if (queueItem.type === 'FORGING' && queueItem.toolType !== undefined) {
+                console.log(`🔨 开始锻造工具: ${queueItem.toolType} ${queueItem.toolIndex}`);
                 this.startForgeAction(queueItem.toolType, queueItem.toolIndex, queueItem.count);
+            } else if (queueItem.type === 'ENHANCE') {
+                console.log(`⬆️ 开始强化: ${queueItem.toolType} ${queueItem.toolIndex}`);
+                this.startEnhanceAction(
+                    queueItem.toolType,
+                    queueItem.toolIndex,
+                    queueItem.targetLevel,
+                    queueItem.count,
+                    queueItem.protection,
+                    queueItem.protectionStartLevel
+                );
             } else {
+                console.log(`▶️ 开始行动: ${queueItem.type} ${queueItem.id}`);
                 this.startAction(queueItem.type, queueItem.id, queueItem.count, { itemId: queueItem.itemId });
             }
             nextAction = queueItem;
@@ -689,18 +739,20 @@ class GameEngine {
         
         // 获取当前行动信息
         const currentAction = this.state.activeAction;
-        const actionType = ACTION_TYPES[currentAction.type];
-        const config = CONFIG[actionType.configKey];
-        const item = config.find(c => c.id === currentAction.id);
         
         // 保存当前行动（剩余次数）
         const savedAction = {
             type: currentAction.type,
             id: currentAction.id,
-            count: currentAction.remaining,
+            toolType: currentAction.toolType,
+            toolIndex: currentAction.toolIndex,
+            toolId: currentAction.toolId,
+            targetLevel: currentAction.targetLevel,
+            count: currentAction.remaining || currentAction.count,
             remaining: currentAction.remaining,
-            name: item?.name || currentAction.id,
-            icon: item?.icon || '🔧'
+            protection: currentAction.protection,
+            protectionStartLevel: currentAction.protectionStartLevel,
+            name: currentAction.name || '当前行动'
         };
         
         // 获取要执行的队列项
@@ -712,11 +764,27 @@ class GameEngine {
         // 当前行动放到队列第一位
         queue.unshift(savedAction);
         
-        // 关键：先清除当前行动，这样 startAction 才会直接开始
+        // 关键：先清除当前行动，这样 start 才会直接开始
         this.state.activeAction = null;
         
-        // 开始新的行动
-        return this.startAction(queueItem.type, queueItem.id, queueItem.count);
+        // 根据队列项类型开始新的行动
+        if (queueItem.type === 'ENHANCE') {
+            // 强化行动
+            return this.startEnhanceAction(
+                queueItem.toolType,
+                queueItem.toolIndex,
+                queueItem.targetLevel,
+                queueItem.count,
+                queueItem.protection,
+                queueItem.protectionStartLevel
+            );
+        } else if (queueItem.type === 'FORGING' && queueItem.toolType !== undefined) {
+            // 锻造工具
+            return this.startForgeAction(queueItem.toolType, queueItem.toolIndex, queueItem.count);
+        } else {
+            // 普通行动
+            return this.startAction(queueItem.type, queueItem.id, queueItem.count, { itemId: queueItem.itemId });
+        }
     }
     
     /**
@@ -761,17 +829,36 @@ class GameEngine {
     /**
      * 装备工具
      */
-    equipTool(slotType, toolId) {
+    equipTool(slotType, toolId, toolIndex) {
         // 检查是否拥有该工具
         const toolsKey = this.getToolsKey(slotType);
         const inventory = this.state.toolsInventory[toolsKey] || [];
         
-        if (!inventory.includes(toolId)) {
-            return { success: false, reason: '没有该工具' };
+        // 如果提供了 toolIndex，使用索引查找
+        let toolData = null;
+        let idx = -1;
+        
+        if (toolIndex !== undefined && toolIndex >= 0 && toolIndex < inventory.length) {
+            idx = toolIndex;
+            toolData = inventory[idx];
+        } else {
+            // 兼容旧的 toolId 参数
+            idx = inventory.findIndex(t => {
+                const id = typeof t === 'string' ? t : t.id;
+                return id === toolId;
+            });
+            if (idx === -1) {
+                return { success: false, reason: '没有该工具' };
+            }
+            toolData = inventory[idx];
         }
         
+        // 获取工具ID和强化等级
+        const actualToolId = typeof toolData === 'string' ? toolData : toolData.id;
+        const enhanceLevel = typeof toolData === 'object' && toolData ? (toolData.enhanceLevel || 0) : 0;
+        
         // 检查装备等级需求
-        const tool = CONFIG.tools[toolsKey]?.find(t => t.id === toolId);
+        const tool = CONFIG.tools[toolsKey]?.find(t => t.id === actualToolId);
         if (tool && tool.reqEquipLevel) {
             const skillKey = this.getSkillKeyFromSlot(slotType);
             const skillLevel = this.getSkillLevel(skillKey);
@@ -782,37 +869,39 @@ class GameEngine {
         
         // 如果已装备其他工具，先卸下
         const currentEquipped = this.state.equipment[slotType];
-        if (currentEquipped && currentEquipped !== toolId) {
+        if (currentEquipped) {
             // 将原装备放回背包
             inventory.push(currentEquipped);
         }
         
-        // 装备新工具
-        this.state.equipment[slotType] = toolId;
-        
-        // 从背包移除
-        const idx = inventory.indexOf(toolId);
-        if (idx > -1) {
-            inventory.splice(idx, 1);
+        // 装备新工具（保存完整数据，包括强化等级）
+        if (enhanceLevel > 0) {
+            this.state.equipment[slotType] = { id: actualToolId, enhanceLevel };
+        } else {
+            this.state.equipment[slotType] = actualToolId;
         }
         
-        return { success: true, equipped: toolId, slot: slotType };
+        // 从背包移除
+        inventory.splice(idx, 1);
+        
+        return { success: true, equipped: actualToolId, slot: slotType, enhanceLevel };
     }
     
     /**
      * 卸下装备
      */
     unequipTool(slotType) {
-        const equippedId = this.state.equipment[slotType];
-        if (!equippedId) {
+        const equippedData = this.state.equipment[slotType];
+        if (!equippedData) {
             return { success: false, reason: '该槽位没有装备' };
         }
         
         const toolsKey = this.getToolsKey(slotType);
-        this.state.toolsInventory[toolsKey].push(equippedId);
+        // 将装备放回背包（保持原有格式）
+        this.state.toolsInventory[toolsKey].push(equippedData);
         this.state.equipment[slotType] = null;
         
-        return { success: true, unequipped: equippedId };
+        return { success: true, unequipped: equippedData };
     }
     
     /**
@@ -1010,11 +1099,44 @@ class GameEngine {
         // 检查是否完成
         if (action.remaining <= 0) {
             this.state.activeAction = null;
+            this.state.actionStartTime = null;
+            this.state.actionDuration = null;
+            this.state.actionRemaining = 0;
+            this.state.actionCount = 0;
+            
+            // 检查队列，自动开始下一个
+            let nextAction = null;
+            if (this.state.actionQueue.length > 0) {
+                const queueItem = this.state.actionQueue.shift();
+                // 自动开始队列中的下一个行动
+                if (queueItem.type === 'FORGING' && queueItem.toolType !== undefined) {
+                    // 锻造工具
+                    this.startForgeAction(queueItem.toolType, queueItem.toolIndex, queueItem.count);
+                    nextAction = queueItem;
+                } else if (queueItem.type === 'ENHANCE') {
+                    // 强化行动
+                    this.startEnhanceAction(
+                        queueItem.toolType,
+                        queueItem.toolIndex,
+                        queueItem.targetLevel,
+                        queueItem.count,
+                        queueItem.protection,
+                        queueItem.protectionStartLevel
+                    );
+                    nextAction = queueItem;
+                } else {
+                    // 其他行动
+                    this.startAction(queueItem.type, queueItem.id, queueItem.count, { itemId: queueItem.itemId });
+                    nextAction = queueItem;
+                }
+            }
+            
             return { 
                 success: true, 
                 tool: tool, 
                 exp: exp,
-                completed: true 
+                completed: true,
+                nextAction: nextAction
             };
         }
         
@@ -1586,6 +1708,555 @@ class GameEngine {
             },
             cost: cost
         };
+    }
+    
+    /**
+     * ==================== 强化系统方法 ====================
+     */
+    
+    /**
+     * 获取工具的品质等级（T1-T8）
+     */
+    getToolTier(toolId) {
+        if (!CONFIG.toolTierMap) return 1;
+        for (const [prefix, tier] of Object.entries(CONFIG.toolTierMap)) {
+            if (toolId.startsWith(prefix)) return tier;
+        }
+        return 1;
+    }
+    
+    /**
+     * 获取工具配置
+     */
+    getToolConfig(toolType, toolId) {
+        const toolsKey = this.getToolsKey(toolType);
+        const tools = CONFIG.tools[toolsKey];
+        return tools?.find(t => t.id === toolId);
+    }
+    
+    /**
+     * 获取工具的强化等级
+     * @param {string} toolType - 工具类型 (axe, pickaxe 等)
+     * @param {number} toolIndex - 工具在背包中的索引
+     */
+    getToolEnhanceLevel(toolType, toolIndex) {
+        const toolsKey = this.getToolsKey(toolType);
+        const tools = this.state.toolsInventory[toolsKey] || [];
+        if (toolIndex < 0 || toolIndex >= tools.length) return 0;
+        
+        const tool = tools[toolIndex];
+        // 兼容旧数据格式（字符串）和新格式（对象）
+        if (typeof tool === 'string') return 0;
+        if (typeof tool === 'object' && tool !== null) return tool.enhanceLevel || 0;
+        return 0;
+    }
+    
+    /**
+     * 计算强化成功率
+     */
+    getEnhanceSuccessRate(currentLevel) {
+        const rates = CONFIG.enhanceConfig.successRate;
+        if (currentLevel === 0) return rates[1];
+        if (currentLevel >= 1 && currentLevel <= 3) return rates['2-3'];
+        if (currentLevel >= 4 && currentLevel <= 6) return rates['4-6'];
+        if (currentLevel >= 7 && currentLevel <= 10) return rates['7-10'];
+        return rates['11-20'];
+    }
+    
+    /**
+     * 计算破碎概率
+     */
+    getBreakRate(currentLevel) {
+        if (currentLevel < 13) return 0;
+        return CONFIG.enhanceConfig.breakRate[currentLevel] || 0;
+    }
+    
+    /**
+     * 计算强化经验
+     */
+    calculateEnhanceExp(toolId, currentLevel) {
+        const tier = this.getToolTier(toolId);
+        const qualityMult = CONFIG.enhanceConfig.qualityMultiplier[tier] || 1;
+        
+        let levelMult = 1;
+        if (currentLevel >= 16) levelMult = 8;
+        else if (currentLevel >= 11) levelMult = 4;
+        else if (currentLevel >= 6) levelMult = 2;
+        
+        return CONFIG.enhanceConfig.expBase * qualityMult * levelMult;
+    }
+    
+    /**
+     * 计算强化消耗
+     */
+    calculateEnhanceCost(toolId, toolType) {
+        const tier = this.getToolTier(toolId);
+        const goldCost = CONFIG.enhanceConfig.goldCost[tier] || 20;
+        
+        // 锤子使用矿锭，其他工具使用矿石+木板
+        const isHammer = toolType === 'hammer';
+        
+        if (isHammer) {
+            const materialCost = CONFIG.enhanceConfig.hammerMaterialCost[tier] || { ingot: 2 };
+            const ingotId = CONFIG.ingotIdMapping[tier - 1] || 'cyan_ingot';
+            return {
+                gold: goldCost,
+                ingot: ingotId,
+                ingotCount: materialCost.ingot
+            };
+        } else {
+            const materialCost = CONFIG.enhanceConfig.materialCost[tier] || { ore: 2, plank: 2 };
+            const oreId = CONFIG.oreIdMapping[tier - 1] || 'cyan_ore';
+            const plankId = CONFIG.plankIdMapping[tier - 1] || 'pine_plank';
+            return {
+                gold: goldCost,
+                ore: oreId,
+                oreCount: materialCost.ore,
+                plank: plankId,
+                plankCount: materialCost.plank
+            };
+        }
+    }
+    
+    /**
+     * 检查强化材料是否足够
+     */
+    checkEnhanceMaterials(toolId, toolType) {
+        const cost = this.calculateEnhanceCost(toolId, toolType);
+        const missing = [];
+        
+        // 检查金币
+        if ((this.state.gold || 0) < cost.gold) {
+            missing.push({ type: 'gold', need: cost.gold, have: this.state.gold || 0 });
+        }
+        
+        if (cost.ingot) {
+            // 锤子用矿锭
+            const ingots = this.state.ingotsInventory || {};
+            const have = ingots[cost.ingot] || 0;
+            if (have < cost.ingotCount) {
+                missing.push({ type: 'ingot', id: cost.ingot, need: cost.ingotCount, have });
+            }
+        } else {
+            // 其他工具用矿石+木板
+            const mining = this.state.miningInventory || {};
+            const planks = this.state.planksInventory || {};
+            
+            const oreHave = mining[cost.ore] || 0;
+            if (oreHave < cost.oreCount) {
+                missing.push({ type: 'ore', id: cost.ore, need: cost.oreCount, have: oreHave });
+            }
+            
+            const plankHave = planks[cost.plank] || 0;
+            if (plankHave < cost.plankCount) {
+                missing.push({ type: 'plank', id: cost.plank, need: cost.plankCount, have: plankHave });
+            }
+        }
+        
+        return { canEnhance: missing.length === 0, missing, cost };
+    }
+    
+    /**
+     * 消耗强化材料
+     */
+    consumeEnhanceMaterials(toolId, toolType) {
+        const cost = this.calculateEnhanceCost(toolId, toolType);
+        
+        // 消耗金币
+        this.state.gold = (this.state.gold || 0) - cost.gold;
+        
+        if (cost.ingot) {
+            // 锤子用矿锭
+            const ingots = this.state.ingotsInventory || {};
+            ingots[cost.ingot] = (ingots[cost.ingot] || 0) - cost.ingotCount;
+            if (ingots[cost.ingot] <= 0) delete ingots[cost.ingot];
+        } else {
+            // 其他工具用矿石+木板
+            const mining = this.state.miningInventory || {};
+            const planks = this.state.planksInventory || {};
+            
+            mining[cost.ore] = (mining[cost.ore] || 0) - cost.oreCount;
+            if (mining[cost.ore] <= 0) delete mining[cost.ore];
+            
+            planks[cost.plank] = (planks[cost.plank] || 0) - cost.plankCount;
+            if (planks[cost.plank] <= 0) delete planks[cost.plank];
+        }
+    }
+    
+    /**
+     * 获取背包中所有同名工具（用于保护垫选择）
+     * 保护垫只需要同名工具，不需要同等级
+     */
+    getSameToolsForProtection(toolType, toolId, enhanceLevel, excludeIndex) {
+        const toolsKey = this.getToolsKey(toolType);
+        const tools = this.state.toolsInventory[toolsKey] || [];
+        
+        return tools
+            .map((tool, index) => {
+                if (index === excludeIndex) return null;
+                const id = typeof tool === 'string' ? tool : tool.id;
+                const level = typeof tool === 'object' && tool ? (tool.enhanceLevel || 0) : 0;
+                // 只检查同名，不检查等级
+                if (id === toolId) {
+                    return { index, id, enhanceLevel: level };
+                }
+                return null;
+            })
+            .filter(t => t !== null);
+    }
+    
+    /**
+     * 计算最大强化次数（基于材料）
+     */
+    calculateMaxEnhanceCount(toolId, toolType) {
+        const cost = this.calculateEnhanceCost(toolId, toolType);
+        
+        // 计算基于金币的次数
+        const gold = this.state.gold || 0;
+        const goldCount = Math.floor(gold / cost.gold);
+        
+        if (cost.ingot) {
+            // 锤子用矿锭
+            const ingots = this.state.ingotsInventory || {};
+            const have = ingots[cost.ingot] || 0;
+            const materialCount = Math.floor(have / cost.ingotCount);
+            return Math.min(goldCount, materialCount);
+        } else {
+            // 其他工具用矿石+木板
+            const mining = this.state.miningInventory || {};
+            const planks = this.state.planksInventory || {};
+            
+            const oreHave = mining[cost.ore] || 0;
+            const plankHave = planks[cost.plank] || 0;
+            
+            const oreCount = Math.floor(oreHave / cost.oreCount);
+            const plankCount = Math.floor(plankHave / cost.plankCount);
+            
+            return Math.min(goldCount, oreCount, plankCount);
+        }
+    }
+    
+    /**
+     * 开始强化行动
+     */
+    startEnhanceAction(toolType, toolIndex, targetLevel, count = 1, protection = null, protectionStartLevel = 2) {
+        // 验证参数
+        const toolsKey = this.getToolsKey(toolType);
+        const tools = this.state.toolsInventory[toolsKey] || [];
+        
+        if (toolIndex < 0 || toolIndex >= tools.length) {
+            return { success: false, reason: '工具不存在' };
+        }
+        
+        const tool = tools[toolIndex];
+        const toolId = typeof tool === 'string' ? tool : tool.id;
+        const currentLevel = typeof tool === 'object' && tool ? (tool.enhanceLevel || 0) : 0;
+        
+        // 检查目标等级
+        if (targetLevel <= currentLevel) {
+            return { success: false, reason: '目标等级必须大于当前等级' };
+        }
+        if (targetLevel > 20) {
+            return { success: false, reason: '最高强化等级为+20' };
+        }
+        if (currentLevel >= 20) {
+            return { success: false, reason: '已达到最高强化等级' };
+        }
+        
+        // 检查材料
+        const materialCheck = this.checkEnhanceMaterials(toolId, toolType);
+        if (!materialCheck.canEnhance) {
+            return { success: false, reason: '材料不足', missing: materialCheck.missing };
+        }
+        
+        // 检查保护垫
+        let protectionTool = null;
+        if (protection !== null && protection >= 0) {
+            const sameTools = this.getSameToolsForProtection(toolType, toolId, currentLevel, toolIndex);
+            const protTool = sameTools.find(t => t.index === protection);
+            if (!protTool) {
+                return { success: false, reason: '保护垫必须是同名工具' };
+            }
+            protectionTool = protTool;
+        }
+        
+        // 检查是否有行动在进行中
+        if (this.state.activeAction) {
+            // 不自动加入队列，返回错误让前端处理
+            return { 
+                success: false, 
+                reason: '有行动正在进行中',
+                hasActiveAction: true,
+                currentAction: {
+                    type: this.state.activeAction.type,
+                    id: this.state.activeAction.id
+                }
+            };
+        }
+        
+        // 处理无限模式：计算实际最大次数
+        let actualCount = count;
+        if (count === -1 || count === Infinity) {
+            actualCount = this.calculateMaxEnhanceCount(toolId, toolType);
+            if (actualCount <= 0) {
+                return { success: false, reason: '材料不足以进行强化' };
+            }
+        }
+        
+        // 设置行动状态
+        this.state.activeAction = {
+            type: 'ENHANCE',
+            toolType,
+            toolIndex,
+            toolId,
+            currentLevel,
+            targetLevel,
+            count: actualCount,
+            remaining: actualCount,
+            protection: protectionTool ? protectionTool.index : null,
+            protectionStartLevel,
+            isInfinite: false, // 无限模式已转换为实际次数
+            id: `enhance_${toolType}_${toolIndex}`
+        };
+        
+        this.state.actionStartTime = Date.now();
+        this.state.actionDuration = CONFIG.enhanceConfig.duration;
+        
+        return {
+            success: true,
+            action: {
+                type: 'ENHANCE',
+                toolId,
+                toolType,
+                currentLevel,
+                targetLevel: currentLevel + 1,
+                duration: CONFIG.enhanceConfig.duration,
+                count
+            }
+        };
+    }
+    
+    /**
+     * 完成一次强化
+     */
+    completeEnhanceOnce() {
+        const action = this.state.activeAction;
+        if (!action || action.type !== 'ENHANCE') {
+            return { success: false, reason: '没有进行中的强化行动' };
+        }
+        
+        const { toolType, toolIndex, protection, protectionStartLevel } = action;
+        const toolsKey = this.getToolsKey(toolType);
+        const tools = this.state.toolsInventory[toolsKey] || [];
+        
+        // 再次验证工具存在
+        if (toolIndex < 0 || toolIndex >= tools.length) {
+            this.state.activeAction = null;
+            return { success: false, reason: '工具不存在', stopped: true };
+        }
+        
+        const tool = tools[toolIndex];
+        const toolId = typeof tool === 'string' ? tool : tool.id;
+        const currentLevel = typeof tool === 'object' && tool ? (tool.enhanceLevel || 0) : 0;
+        
+        // 检查材料
+        const materialCheck = this.checkEnhanceMaterials(toolId, toolType);
+        if (!materialCheck.canEnhance) {
+            this.state.activeAction = null;
+            return { success: false, reason: '材料不足', stopped: true, missing: materialCheck.missing };
+        }
+        
+        // 消耗材料
+        this.consumeEnhanceMaterials(toolId, toolType);
+        
+        // 计算成功率并判定
+        const successRate = this.getEnhanceSuccessRate(currentLevel);
+        const isSuccess = Math.random() < successRate;
+        
+        // 获取工具配置
+        const toolConfig = this.getToolConfig(toolType, toolId);
+        const toolName = toolConfig?.name || toolId;
+        const toolIcon = toolConfig?.icon || '🔧';
+        
+        let result = {
+            success: true,
+            toolId,
+            toolName,
+            toolIcon,
+            previousLevel: currentLevel
+        };
+        
+        if (isSuccess) {
+            // 强化成功
+            const newLevel = currentLevel + 1;
+            
+            // 更新工具数据（转换为对象格式）
+            if (typeof tools[toolIndex] === 'string') {
+                tools[toolIndex] = { id: toolId, enhanceLevel: newLevel };
+            } else {
+                tools[toolIndex].enhanceLevel = newLevel;
+            }
+            
+            // 更新 action 中的 currentLevel
+            action.currentLevel = newLevel;
+            
+            result.enhanceSuccess = true;
+            result.newLevel = newLevel;
+            result.exp = this.calculateEnhanceExp(toolId, currentLevel);
+            
+            // 添加经验
+            this.addSkillExp('forgingLevel', result.exp);
+            
+            // 检查是否达到目标等级
+            if (newLevel >= action.targetLevel) {
+                result.completed = true;
+                result.message = `${toolIcon} ${toolName} +${newLevel}`;
+                // 达到目标等级，停止强化
+                this.state.activeAction = null;
+                this.state.actionStartTime = null;
+                this.state.actionDuration = null;
+                this.state.actionRemaining = 0;
+                this.state.actionCount = 0;
+                result.allCompleted = true;
+            } else {
+                result.message = `${toolIcon} ${toolName} +${newLevel}`;
+            }
+        } else {
+            // 强化失败
+            result.enhanceSuccess = false;
+            
+            // 判定是否破碎（+13~+20）
+            const breakRate = this.getBreakRate(currentLevel);
+            const isBroken = breakRate > 0 && Math.random() < breakRate;
+            
+            if (isBroken) {
+                // 装备破碎，从背包移除
+                tools.splice(toolIndex, 1);
+                result.broken = true;
+                result.message = `${toolIcon} ${toolName} 破碎了！`;
+                
+                // 停止强化
+                this.state.activeAction = null;
+                result.stopped = true;
+            } else {
+                // 未破碎，处理等级惩罚
+                const hasProtection = protection !== null && protection >= 0;
+                const useProtection = hasProtection && currentLevel >= protectionStartLevel;
+                
+                let newLevel = currentLevel;
+                
+                if (useProtection) {
+                    // 有保护垫
+                    if (currentLevel >= 9) {
+                        newLevel = currentLevel - 1;
+                    }
+                    // +1~+8 有保护垫等级不变
+                    
+                    // 消耗保护垫
+                    const protTools = this.state.toolsInventory[toolsKey] || [];
+                    if (protection < protTools.length) {
+                        protTools.splice(protection, 1);
+                    }
+                    result.protectionUsed = true;
+                } else {
+                    // 无保护垫
+                    if (currentLevel >= 9) {
+                        newLevel = 5;
+                    } else {
+                        newLevel = Math.max(0, currentLevel - 1);
+                    }
+                }
+                
+                // 更新工具等级
+                if (typeof tools[toolIndex] === 'string') {
+                    tools[toolIndex] = { id: toolId, enhanceLevel: newLevel };
+                } else {
+                    tools[toolIndex].enhanceLevel = newLevel;
+                }
+                
+                // 更新 action 中的 currentLevel
+                action.currentLevel = newLevel;
+                
+                result.newLevel = newLevel;
+                result.exp = this.calculateEnhanceExp(toolId, currentLevel);
+                
+                // 添加经验（失败也给经验）
+                this.addSkillExp('forgingLevel', result.exp);
+                
+                result.message = `${toolIcon} ${toolName} 强化失败 → +${newLevel}`;
+            }
+        }
+        
+        // 更新剩余次数
+        if (!action.isInfinite) {
+            action.remaining--;
+            this.state.actionRemaining = action.remaining;
+        }
+        
+        // 检查是否完成所有次数
+        if (!action.isInfinite && action.remaining <= 0) {
+            this.state.activeAction = null;
+            this.state.actionStartTime = null;
+            this.state.actionDuration = null;
+            this.state.actionRemaining = 0;
+            this.state.actionCount = 0;
+            result.allCompleted = true;
+        }
+        
+        // 检查是否需要停止（材料不足、保护垫耗尽等）
+        if (!result.stopped && !result.allCompleted) {
+            const nextCheck = this.checkEnhanceMaterials(toolId, toolType);
+            if (!nextCheck.canEnhance) {
+                this.state.activeAction = null;
+                result.stopped = true;
+                result.stopReason = '材料不足';
+            }
+        }
+        
+        // 检查队列，自动开始下一个行动
+        if (!this.state.activeAction && this.state.actionQueue.length > 0) {
+            const queueItem = this.state.actionQueue.shift();
+            if (queueItem.type === 'ENHANCE') {
+                // 队列中的强化行动
+                this.startEnhanceAction(
+                    queueItem.toolType,
+                    queueItem.toolIndex,
+                    queueItem.targetLevel,
+                    queueItem.count,
+                    queueItem.protection,
+                    queueItem.protectionStartLevel
+                );
+            } else {
+                // 其他行动
+                this.startAction(queueItem.type, queueItem.id, queueItem.count, { itemId: queueItem.itemId });
+            }
+            result.nextAction = queueItem;
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 获取强化后的属性加成
+     */
+    getEnhancedBonus(toolId, enhanceLevel) {
+        if (enhanceLevel <= 0) return 0;
+        const toolConfig = CONFIG.tools;
+        let baseBonus = 0;
+        
+        // 找到工具的基础加成
+        for (const toolsKey of Object.keys(toolConfig)) {
+            const tool = toolConfig[toolsKey]?.find(t => t.id === toolId);
+            if (tool) {
+                baseBonus = tool.speedBonus || 0;
+                break;
+            }
+        }
+        
+        // 计算强化加成
+        const enhanceBonus = CONFIG.enhanceConfig.bonusTable[enhanceLevel] || 0;
+        
+        return baseBonus * (1 + enhanceBonus);
     }
 }
 

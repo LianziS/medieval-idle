@@ -520,6 +520,18 @@ const CONFIG = {
         }
     ],
     
+    // 代币配置
+    tokens: [
+        { id: 'wood_token', name: '伐木代币', icon: '🪙' },
+        { id: 'mining_token', name: '挖矿代币', icon: '🪙' },
+        { id: 'gathering_token', name: '采集代币', icon: '🪙' },
+        { id: 'crafting_token', name: '制作代币', icon: '🪙' },
+        { id: 'forging_token', name: '锻造代币', icon: '🪙' },
+        { id: 'tailoring_token', name: '缝制代币', icon: '🪙' },
+        { id: 'alchemy_token', name: '炼金代币', icon: '🪙' },
+        { id: 'brewing_token', name: '酿造代币', icon: '🪙' }
+    ],
+    
     // 代币获取概率配置
     tokenDropRates: {
         standard: [0.017, 0.024, 0.037, 0.053, 0.071, 0.092, 0.149, 0.210],
@@ -642,6 +654,193 @@ const ACTION_TYPES = {
         materialType: 'GATHERING',
         needsMaterials: true
     }
+};
+
+// 强化系统配置（添加到 CONFIG）
+CONFIG.enhanceConfig = {
+    // 强化时间（毫秒）
+    duration: 12000,
+    
+    // 强化加成表（总加成百分比）
+    bonusTable: {
+        1: 0.020,   // +1: 2.0%
+        2: 0.042,   // +2: 4.2%
+        3: 0.066,   // +3: 6.6%
+        4: 0.092,   // +4: 9.2%
+        5: 0.120,   // +5: 12.0%
+        6: 0.150,   // +6: 15.0%
+        7: 0.182,   // +7: 18.2%
+        8: 0.216,   // +8: 21.6%
+        9: 0.252,   // +9: 25.2%
+        10: 0.290,  // +10: 29.0%
+        11: 0.334,  // +11: 33.4%
+        12: 0.384,  // +12: 38.4%
+        13: 0.440,  // +13: 44.0%
+        14: 0.502,  // +14: 50.2%
+        15: 0.570,  // +15: 57.0%
+        16: 0.644,  // +16: 64.4%
+        17: 0.724,  // +17: 72.4%
+        18: 0.810,  // +18: 81.0%
+        19: 0.902,  // +19: 90.2%
+        20: 1.000   // +20: 100.0%
+    },
+    
+    // 金币消耗（按品质等级）
+    goldCost: {
+        1: 20,     // T1 青闪
+        2: 50,     // T2 赤铁
+        3: 120,    // T3 轻羽
+        4: 300,    // T4 白银
+        5: 700,    // T5 狱炎
+        6: 1500,   // T6 雷鸣
+        7: 2200,   // T7 璀璨
+        8: 3000    // T8 星辉
+    },
+    
+    // 强化材料消耗（按品质等级，非锤子）
+    materialCost: {
+        1: { ore: 2, plank: 2 },    // T1
+        2: { ore: 4, plank: 2 },    // T2
+        3: { ore: 5, plank: 3 },    // T3
+        4: { ore: 7, plank: 5 },    // T4
+        5: { ore: 9, plank: 6 },    // T5
+        6: { ore: 11, plank: 8 },   // T6
+        7: { ore: 12, plank: 8 },   // T7
+        8: { ore: 12, plank: 8 }    // T8
+    },
+    
+    // 锤子强化材料消耗（矿锭）
+    hammerMaterialCost: {
+        1: { ingot: 2 },
+        2: { ingot: 3 },
+        3: { ingot: 4 },
+        4: { ingot: 6 },
+        5: { ingot: 9 },
+        6: { ingot: 13 },
+        7: { ingot: 18 },
+        8: { ingot: 18 }
+    },
+    
+    // 成功率
+    successRate: {
+        1: 0.50,        // +1: 50%
+        '2-3': 0.45,    // +2~+3: 45%
+        '4-6': 0.40,    // +4~+6: 40%
+        '7-10': 0.35,   // +7~+10: 35%
+        '11-20': 0.30   // +11~+20: 30%
+    },
+    
+    // 破碎概率（仅+13~+20失败时触发）
+    breakRate: {
+        13: 0.03,
+        14: 0.05,
+        15: 0.08,
+        16: 0.12,
+        17: 0.16,
+        18: 0.22,
+        19: 0.30,
+        20: 0.40
+    },
+    
+    // 经验计算
+    expBase: 15,
+    qualityMultiplier: {
+        1: 1,    // T1
+        2: 2,    // T2
+        3: 4,    // T3
+        4: 8,    // T4
+            5: 16,   // T5
+        6: 32,   // T6
+        7: 64,   // T7
+        8: 128   // T8
+    },
+    levelMultiplier: {
+        '1-5': 1,
+        '6-10': 2,
+        '11-15': 4,
+        '16-20': 8
+    }
+};
+
+// 工具品质等级映射（根据工具ID前缀判断）
+CONFIG.toolTierMap = {
+    'cyan': 1,      // 青闪 -> T1
+    'red': 2,       // 赤铁 -> T2
+    'feather': 3,   // 轻羽 -> T3
+    'white': 4,     // 白银 -> T4
+    'hell': 5,      // 狱炎 -> T5
+    'thunder': 6,   // 雷鸣 -> T6
+    'brilliant': 7, // 璀璨 -> T7
+    'star': 8       // 星辉 -> T8
+};
+
+// 矿锭ID映射（用于锤子强化消耗）
+CONFIG.ingotIdMapping = {
+    0: 'cyan_ingot',
+    1: 'red_copper_ingot',
+    2: 'feather_ingot',
+    3: 'white_silver_ingot',
+    4: 'hell_steel_ingot',
+    5: 'thunder_steel_ingot',
+    6: 'brilliant_crystal',
+    7: 'star_crystal'
+};
+
+// 木板ID映射
+CONFIG.plankIdMapping = {
+    0: 'pine_plank',
+    1: 'iron_birch_plank',
+    2: 'wind_tree_plank',
+    3: 'flame_tree_plank',
+    4: 'frost_maple_plank',
+    5: 'thunder_tree_plank',
+    6: 'ancient_oak_plank',
+    7: 'world_tree_plank'
+};
+
+// 矿石ID映射
+CONFIG.oreIdMapping = {
+    0: 'cyan_ore',
+    1: 'red_iron',
+    2: 'feather_ore',
+    3: 'hell_ore',
+    4: 'white_ore',
+    5: 'thunder_ore',
+    6: 'brilliant',
+    7: 'star_ore'
+};
+
+// 材料中文名称映射
+CONFIG.materialNames = {
+    // 矿锭
+    'cyan_ingot': '青闪锭',
+    'red_copper_ingot': '赤铜锭',
+    'feather_ingot': '羽铁锭',
+    'white_silver_ingot': '白银锭',
+    'hell_steel_ingot': '狱炎钢锭',
+    'thunder_steel_ingot': '雷鸣钢锭',
+    'brilliant_crystal': '璀璨晶',
+    'star_crystal': '星辉晶',
+    
+    // 矿石
+    'cyan_ore': '青闪矿',
+    'red_iron': '赤铁矿',
+    'feather_ore': '羽石矿',
+    'hell_ore': '白鸠矿',
+    'white_ore': '狱炎矿',
+    'thunder_ore': '雷鸣矿',
+    'brilliant': '璀璨矿',
+    'star_ore': '星辉矿',
+    
+    // 木板
+    'pine_plank': '青杉木板',
+    'iron_birch_plank': '铁桦木板',
+    'wind_tree_plank': '风啸木板',
+    'flame_tree_plank': '焰心木板',
+    'frost_maple_plank': '霜叶枫木板',
+    'thunder_tree_plank': '雷鸣木板',
+    'ancient_oak_plank': '古橡木板',
+    'world_tree_plank': '世界树木板'
 };
 
 module.exports = { CONFIG, ITEM_TYPES, ACTION_TYPES };
