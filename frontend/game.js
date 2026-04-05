@@ -4151,9 +4151,11 @@ function renderEnhance() {
     // 问号符点击弹出卡片
     const helpIcon = document.getElementById('enhance-protection-help');
     if (helpIcon) {
-        helpIcon.onclick = () => {
+        // 使用addEventListener并阻止事件冒泡
+        helpIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
             showProtectionHelpPopover(helpIcon);
-        };
+        });
     }
     
     // 开始强化按钮
@@ -4308,9 +4310,6 @@ function autoSelectEnhanceTool() {
 }
 
 function openEnhanceToolModal() {
-    const modal = document.createElement('div');
-    modal.className = 'enhance-tool-modal';
-    
     // 获取所有可强化的工具
     const allTools = [];
     const toolTypes = ['axe', 'pickaxe', 'chisel', 'needle', 'scythe', 'hammer', 'tongs', 'rod'];
@@ -4336,11 +4335,6 @@ function openEnhanceToolModal() {
             }
         });
     });
-    
-    if (allTools.length === 0) {
-        showToast('没有可强化的装备');
-        return;
-    }
     
     // 堆叠相同ID和等级的工具
     const stackedTools = {};
@@ -4374,7 +4368,7 @@ function openEnhanceToolModal() {
     
     // 检查是否已装备了工具，如果有则优先选中已装备的
     const equippedTool = gameState.equipment;
-    if (equippedTool) {
+    if (equippedTool && displayTools.length > 0) {
         // 遍历所有装备槽，找到已装备的工具
         const equipSlots = ['axe', 'pickaxe', 'chisel', 'needle', 'scythe', 'hammer', 'tongs', 'rod'];
         for (const slot of equipSlots) {
@@ -4395,18 +4389,26 @@ function openEnhanceToolModal() {
         }
     }
     
+    // 创建弹窗（即使没有工具也显示）
+    const modal = document.createElement('div');
+    modal.className = 'enhance-tool-modal';
+    
+    const gridContent = displayTools.length > 0 
+        ? displayTools.map(tool => `
+            <div class="enhance-tool-item" data-type="${tool.toolType}" data-index="${tool.indices[0]}" data-indices="${tool.indices.join(',')}">
+                <div class="enhance-tool-item-icon">${tool.icon}${tool.count > 1 ? `<span class="tool-count-badge">${tool.count}</span>` : ''}</div>
+                <div class="enhance-tool-item-name">${tool.name}</div>
+                <div class="enhance-tool-item-level">+${tool.enhanceLevel}</div>
+                <div class="enhance-tool-item-tier">${getToolTier(tool.toolId)}阶</div>
+            </div>
+        `).join('')
+        : '<div style="color: #6B7A8A; text-align: center; padding: 40px; grid-column: 1 / -1;">没有可强化的装备</div>';
+    
     modal.innerHTML = `
         <div class="enhance-tool-modal-content">
             <h3 class="enhance-tool-modal-title">选择要强化的装备</h3>
             <div class="enhance-tool-grid">
-                ${displayTools.map(tool => `
-                    <div class="enhance-tool-item" data-type="${tool.toolType}" data-index="${tool.indices[0]}" data-indices="${tool.indices.join(',')}">
-                        <div class="enhance-tool-item-icon">${tool.icon}${tool.count > 1 ? `<span class="tool-count-badge">${tool.count}</span>` : ''}</div>
-                        <div class="enhance-tool-item-name">${tool.name}</div>
-                        <div class="enhance-tool-item-level">+${tool.enhanceLevel}</div>
-                        <div class="enhance-tool-item-tier">${getToolTier(tool.toolId)}阶</div>
-                    </div>
-                `).join('')}
+                ${gridContent}
             </div>
         </div>
     `;
