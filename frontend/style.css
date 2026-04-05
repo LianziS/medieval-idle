@@ -5130,14 +5130,6 @@ body::after {
     margin: 0;
 }
 
-/* 桌面端强化页面靠左 */
-@media (min-width: 769px) {
-    #page-enhance.page {
-        display: flex;
-        justify-content: flex-start;
-    }
-}
-
 /* 经验条 */
 .skill-exp-bar {
     height: 6px;
