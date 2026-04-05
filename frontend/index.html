@@ -8,7 +8,7 @@
     <meta name="format-detection" content="telephone=no">
     <title>中世纪雇佣兵 - 放置游戏</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="style.css?v=202604051805">
+    <link rel="stylesheet" href="style.css?v=202604051835">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#1B2A3A;color:#A0B2C0;min-height:100vh;padding:0;font-size:14px;overflow-x:hidden}
@@ -594,6 +594,14 @@
                 </div>
                 <div class="skill-divider"></div>
                 
+                <!-- 二级菜单 -->
+                <div class="enhance-tabs" id="enhance-tabs">
+                    <button class="enhance-tab active" data-tab="enhance">强化</button>
+                    <button class="enhance-tab" data-tab="current-action">当前行动</button>
+                </div>
+                
+                <!-- 强化子页面 -->
+                <div class="enhance-subpage active" id="enhance-subpage-enhance">
                 <!-- 第一行：装备选择 + 费用 -->
                 <div class="enhance-top-row">
                     <!-- 装备选择框（正方形） -->
@@ -684,6 +692,76 @@
                 <div class="action-buttons">
                     <button class="btn btn-queue" id="enhance-queue-btn" disabled>添加到队列</button>
                     <button class="btn btn-start" id="enhance-start-btn" disabled>开始强化</button>
+                </div>
+                </div>
+                
+                <!-- 当前行动子页面 -->
+                <div class="enhance-subpage" id="enhance-subpage-current-action">
+                    <div class="current-action-empty" id="current-action-empty">
+                        <span class="empty-icon">💤</span>
+                        <span class="empty-text">暂无强化行动</span>
+                    </div>
+                    <div class="current-action-content" id="current-action-content" style="display:none;">
+                        <!-- 第一行：装备选择 + 费用 -->
+                        <div class="enhance-top-row">
+                            <!-- 装备显示框 -->
+                            <div class="enhance-tool-square" id="current-tool-display">
+                                <span class="tool-level-badge" id="current-tool-level-badge"></span>
+                                <span class="tool-icon-wrap" id="current-tool-icon"></span>
+                            </div>
+                            
+                            <!-- 费用区块 -->
+                            <div class="fees-section">
+                                <div class="section-title">费用</div>
+                                <div class="fees-list" id="current-fees-list">
+                                    <div class="fee-item">
+                                        <span class="fee-icon">🪙</span>
+                                        <span class="fee-name">金币</span>
+                                        <span class="fee-count" id="current-gold-cost">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 第二行：信息 + 产出预览 -->
+                        <div class="enhance-info-inline">
+                            <div class="info-col">
+                                <div class="info-row">
+                                    <span class="info-label">目标等级</span>
+                                    <span class="info-value" id="current-target-level">--</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">剩余次数</span>
+                                    <span class="info-value" id="current-remaining">--</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">成功率</span>
+                                    <span class="info-value rate" id="current-success-rate">--%</span>
+                                </div>
+                            </div>
+                            <div class="output-section">
+                                <span class="section-title">产出预览</span>
+                                <div class="output-box" id="current-output">
+                                    <span class="output-badge" id="current-output-badge" style="display:none;"></span>
+                                    <span class="output-icon" id="current-output-icon">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 进度条 -->
+                        <div class="current-progress-section">
+                            <div class="progress-label">强化进度</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="current-progress-fill"></div>
+                            </div>
+                            <div class="progress-time" id="current-progress-time">0s</div>
+                        </div>
+                        
+                        <!-- 停止按钮 -->
+                        <div class="action-buttons">
+                            <button class="btn btn-stop" id="current-stop-btn">停止</button>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
@@ -983,7 +1061,7 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="game.js?v=202604051810"></script>
+    <script src="game.js?v=202604051835"></script>
     <script>
         // 登录验证
         (function() {

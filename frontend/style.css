@@ -5130,6 +5130,110 @@ body::after {
     margin: 0;
 }
 
+/* 强化二级菜单 */
+.enhance-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 16px;
+    border-bottom: 2px solid rgba(107, 79, 60, 0.3);
+}
+
+.enhance-tab {
+    padding: 8px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #A0B2C0;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: -2px;
+}
+
+.enhance-tab:hover {
+    color: #D4A574;
+}
+
+.enhance-tab.active {
+    color: #D4A574;
+    border-bottom-color: #D4A574;
+}
+
+/* 强化子页面 */
+.enhance-subpage {
+    display: none;
+}
+
+.enhance-subpage.active {
+    display: block;
+}
+
+/* 当前行动：空状态 */
+.current-action-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: #6B7A8A;
+}
+
+.current-action-empty .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.current-action-empty .empty-text {
+    font-size: 16px;
+}
+
+/* 当前行动：进度条 */
+.current-progress-section {
+    margin-top: 16px;
+    padding: 12px;
+    background: rgba(27, 42, 58, 0.35);
+    border-radius: 8px;
+}
+
+.progress-label {
+    font-size: 12px;
+    color: #A0B2C0;
+    margin-bottom: 8px;
+}
+
+.progress-bar {
+    height: 8px;
+    background: rgba(107, 79, 60, 0.3);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #E8A33C, #F0C060);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.progress-time {
+    font-size: 11px;
+    color: #6B7A8A;
+    text-align: right;
+    margin-top: 4px;
+}
+
+/* 停止按钮 */
+.btn-stop {
+    background: linear-gradient(180deg, #E57373 0%, #C62828 100%);
+    color: white;
+}
+
+.btn-stop:hover:not(:disabled) {
+    background: linear-gradient(180deg, #EF5350 0%, #D32F2F 100%);
+}
+
 /* 经验条 */
 .skill-exp-bar {
     height: 6px;

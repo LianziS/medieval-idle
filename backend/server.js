@@ -749,6 +749,25 @@ io.on('connection', (socket) => {
         socket.emit('game_state_update', gameEngine.getFullState());
     });
     
+    // 停止强化
+    socket.on('stop_enhance', () => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const action = gameEngine.state.activeAction;
+        if (!action || action.type !== 'ENHANCE') {
+            return socket.emit('error', { message: '没有进行中的强化行动' });
+        }
+        
+        // 停止强化行动
+        gameEngine.state.activeAction = null;
+        gameEngine.state.actionStartTime = null;
+        gameEngine.state.actionDuration = null;
+        gameEngine.state.actionRemaining = 0;
+        
+        socket.emit('stop_enhance_result', { success: true, message: '已停止强化' });
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
     // 获取强化预览信息
     socket.on('get_enhance_preview', (data) => {
         if (!gameEngine) return socket.emit('error', { message: '未认证' });

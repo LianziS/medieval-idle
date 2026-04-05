@@ -234,6 +234,8 @@ function setupSocket() {
                 const queueLength = state?.actionQueue?.length || 0;
                 queueBtn.textContent = queueLength > 0 ? `添加到队列 #${queueLength + 1}` : '添加到队列';
             }
+            // 更新当前行动页
+            updateCurrentActionPage();
         }
         
         // 如果队列面板打开，检查队列状态
@@ -615,6 +617,18 @@ function setupSocket() {
         if (enhanceState.selectedTool) {
             updateEnhanceToolDisplay();
             updateEnhancePreview();
+        }
+        
+        // 更新当前行动页
+        updateCurrentActionPage();
+    });
+    
+    // 停止强化结果
+    socket.on('stop_enhance_result', (result) => {
+        if (result.success) {
+            showToast(`🛑 ${result.message}`);
+        } else {
+            showToast(`❌ ${result.message || '停止失败'}`);
         }
     });
     
@@ -4127,6 +4141,11 @@ function hideOutputTooltip() {
 function gameLoop() {
     if (gameState?.activeAction) {
         updateActionStatusBar();
+        // 更新当前行动页进度
+        const currentSubpage = document.getElementById('enhance-subpage-current-action');
+        if (currentSubpage && currentSubpage.classList.contains('active')) {
+            updateCurrentActionProgress();
+        }
     }
     requestAnimationFrame(gameLoop);
 }
@@ -4152,6 +4171,9 @@ function renderEnhance() {
     
     // 更新锻造经验条（强化使用锻造技能）
     updateEnhanceForgingExp();
+    
+    // 初始化二级菜单
+    initEnhanceTabs();
     
     // 自动选择装备逻辑（如果还没有选中）
     if (!enhanceState.selectedTool) {
@@ -4260,6 +4282,245 @@ function renderEnhance() {
         updateEnhanceToolDisplay();
         updateEnhancePreview();
     }
+    
+    // 更新当前行动页面
+    updateCurrentActionPage();
+    
+    // 停止按钮
+    const stopBtn = document.getElementById('current-stop-btn');
+    if (stopBtn) {
+        stopBtn.onclick = () => stopEnhance();
+    }
+}
+
+/**
+ * 初始化强化二级菜单
+ */
+function initEnhanceTabs() {
+    const tabs = document.querySelectorAll('.enhance-tab');
+    tabs.forEach(tab => {
+        tab.onclick = () => {
+            // 切换标签激活状态
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // 切换子页面
+            const tabName = tab.dataset.tab;
+            document.querySelectorAll('.enhance-subpage').forEach(page => {
+                page.classList.remove('active');
+            });
+            const subpage = document.getElementById(`enhance-subpage-${tabName}`);
+            if (subpage) {
+                subpage.classList.add('active');
+            }
+            
+            // 如果切换到当前行动页，更新内容
+            if (tabName === 'current-action') {
+                updateCurrentActionPage();
+            }
+        };
+    });
+}
+
+/**
+ * 更新当前行动页面
+ */
+function updateCurrentActionPage() {
+    const emptyEl = document.getElementById('current-action-empty');
+    const contentEl = document.getElementById('current-action-content');
+    
+    if (!emptyEl || !contentEl) return;
+    
+    const activeAction = gameState?.activeAction;
+    
+    if (!activeAction || activeAction.type !== 'ENHANCE') {
+        // 没有强化行动
+        emptyEl.style.display = 'flex';
+        contentEl.style.display = 'none';
+        return;
+    }
+    
+    // 有强化行动，显示详细信息
+    emptyEl.style.display = 'none';
+    contentEl.style.display = 'block';
+    
+    // 获取工具信息
+    const toolType = activeAction.toolType;
+    const toolIndex = activeAction.toolIndex;
+    const toolsKey = getToolsKey(toolType);
+    const tools = gameState.toolsInventory?.[toolsKey] || [];
+    
+    if (toolIndex >= 0 && toolIndex < tools.length) {
+        const tool = tools[toolIndex];
+        const toolId = typeof tool === 'string' ? tool : tool.id;
+        const enhanceLevel = typeof tool === 'object' && tool ? (tool.enhanceLevel || 0) : 0;
+        const toolConfig = CONFIG.tools[toolsKey]?.find(t => t.id === toolId);
+        
+        // 显示工具图标和等级
+        const iconEl = document.getElementById('current-tool-icon');
+        const badgeEl = document.getElementById('current-tool-level-badge');
+        if (iconEl) {
+            iconEl.textContent = toolConfig?.icon || '🔧';
+            iconEl.style.display = 'flex';
+        }
+        if (badgeEl) {
+            badgeEl.textContent = enhanceLevel > 0 ? `+${enhanceLevel}` : '';
+            badgeEl.style.display = enhanceLevel > 0 ? 'block' : 'none';
+        }
+    }
+    
+    // 目标等级
+    const targetLevelEl = document.getElementById('current-target-level');
+    if (targetLevelEl) {
+        targetLevelEl.textContent = activeAction.targetLevel ? `+${activeAction.targetLevel}` : '--';
+    }
+    
+    // 剩余次数
+    const remainingEl = document.getElementById('current-remaining');
+    if (remainingEl) {
+        const remaining = activeAction.remaining || activeAction.count || 1;
+        const isInfinite = activeAction.isInfinite || remaining < 0;
+        remainingEl.textContent = isInfinite ? '∞' : remaining;
+    }
+    
+    // 成功率
+    const rateEl = document.getElementById('current-success-rate');
+    if (rateEl) {
+        const currentLevel = typeof tools[toolIndex] === 'object' ? (tools[toolIndex].enhanceLevel || 0) : 0;
+        const successRate = getEnhanceSuccessRate(currentLevel);
+        rateEl.textContent = `${(successRate * 100).toFixed(0)}%`;
+        
+        // 设置颜色
+        rateEl.classList.remove('rate-low', 'rate-medium', 'rate-high');
+        const ratePercent = successRate * 100;
+        if (ratePercent < 30) {
+            rateEl.classList.add('rate-low');
+        } else if (ratePercent <= 60) {
+            rateEl.classList.add('rate-medium');
+        } else {
+            rateEl.classList.add('rate-high');
+        }
+    }
+    
+    // 产出预览
+    const outputIconEl = document.getElementById('current-output-icon');
+    const outputBadgeEl = document.getElementById('current-output-badge');
+    if (outputIconEl && toolIndex >= 0 && toolIndex < tools.length) {
+        const tool = tools[toolIndex];
+        const toolId = typeof tool === 'string' ? tool : tool.id;
+        const toolConfig = CONFIG.tools[toolsKey]?.find(t => t.id === toolId);
+        outputIconEl.textContent = toolConfig?.icon || '-';
+    }
+    if (outputBadgeEl) {
+        const targetLevel = activeAction.targetLevel || 0;
+        if (targetLevel > 0) {
+            outputBadgeEl.style.display = 'block';
+            outputBadgeEl.textContent = `+${targetLevel}`;
+        } else {
+            outputBadgeEl.style.display = 'none';
+        }
+    }
+    
+    // 更新进度条
+    updateCurrentActionProgress();
+}
+
+/**
+ * 更新当前行动进度
+ */
+function updateCurrentActionProgress() {
+    const progressFill = document.getElementById('current-progress-fill');
+    const progressTime = document.getElementById('current-progress-time');
+    
+    if (!progressFill || !progressTime) return;
+    
+    const activeAction = gameState?.activeAction;
+    if (!activeAction || activeAction.type !== 'ENHANCE') return;
+    
+    const startTime = gameState.actionStartTime;
+    const duration = gameState.actionDuration;
+    
+    if (startTime && duration) {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, duration - elapsed);
+        const progress = Math.min(100, (elapsed / duration) * 100);
+        
+        progressFill.style.width = `${progress}%`;
+        progressTime.textContent = `${(remaining / 1000).toFixed(1)}s`;
+    }
+}
+
+/**
+ * 停止强化
+ */
+function stopEnhance() {
+    if (!gameState?.activeAction || gameState.activeAction.type !== 'ENHANCE') {
+        return;
+    }
+    
+    // 发送停止请求
+    socket.emit('stop_enhance');
+}
+
+/**
+ * 获取强化成功率（前端计算用）
+ */
+function getEnhanceSuccessRate(level) {
+    const rates = {
+        0: 0.95, 1: 0.90, 2: 0.85, 3: 0.80, 4: 0.75,
+        5: 0.70, 6: 0.65, 7: 0.60, 8: 0.55, 9: 0.50,
+        10: 0.45, 11: 0.40, 12: 0.35, 13: 0.30, 14: 0.25,
+        15: 0.20, 16: 0.15, 17: 0.12, 18: 0.10, 19: 0.08
+    };
+    return rates[level] || 0.05;
+}
+
+/**
+ * 重置强化页面状态
+ */
+function resetEnhanceState() {
+    enhanceState.selectedTool = null;
+    enhanceState.toolType = null;
+    enhanceState.toolIndex = null;
+    enhanceState.protection = null;
+    enhanceState.protectionIcon = null;
+    enhanceState.protectionStartLevel = 2;
+    
+    // 重置UI显示
+    const placeholder = document.getElementById('enhance-tool-placeholder');
+    const badge = document.getElementById('enhance-tool-level-badge');
+    const iconWrap = document.getElementById('enhance-tool-icon-wrap');
+    
+    if (placeholder) placeholder.style.display = 'flex';
+    if (badge) badge.style.display = 'none';
+    if (iconWrap) iconWrap.style.display = 'none';
+    
+    // 重置输入框
+    const targetInput = document.getElementById('enhance-target-level');
+    const countInput = document.getElementById('enhance-count');
+    const protectionStart = document.getElementById('enhance-protection-start');
+    
+    if (targetInput) targetInput.value = 1;
+    if (countInput) {
+        countInput.value = '∞';
+        updateCountButtonsState('∞');
+    }
+    if (protectionStart) {
+        protectionStart.value = 2;
+        protectionStart.disabled = true;
+    }
+    
+    // 重置保护垫槽
+    const protectionSlot = document.getElementById('enhance-protection-slot');
+    if (protectionSlot) {
+        protectionSlot.innerHTML = '<span class="ph-icon">+</span>';
+    }
+    
+    // 禁用按钮
+    const startBtn = document.getElementById('enhance-start-btn');
+    const queueBtn = document.getElementById('enhance-queue-btn');
+    if (startBtn) startBtn.disabled = true;
+    if (queueBtn) queueBtn.disabled = true;
 }
 
 /**
@@ -4396,11 +4657,21 @@ function openEnhanceToolModal() {
     const allTools = [];
     const toolTypes = ['axe', 'pickaxe', 'chisel', 'needle', 'scythe', 'hammer', 'tongs', 'rod'];
     
+    // 获取正在强化的工具信息
+    const activeAction = gameState?.activeAction;
+    const enhancingToolType = activeAction?.type === 'ENHANCE' ? activeAction.toolType : null;
+    const enhancingToolIndex = activeAction?.type === 'ENHANCE' ? activeAction.toolIndex : null;
+    
     toolTypes.forEach(toolType => {
         const toolsKey = getToolsKey(toolType);
         const tools = gameState.toolsInventory?.[toolsKey] || [];
         
         tools.forEach((tool, index) => {
+            // 排除正在强化的工具
+            if (enhancingToolType === toolType && enhancingToolIndex === index) {
+                return;
+            }
+            
             const toolId = typeof tool === 'string' ? tool : tool.id;
             const enhanceLevel = typeof tool === 'object' && tool ? (tool.enhanceLevel || 0) : 0;
             
@@ -5003,6 +5274,9 @@ function doStartEnhance() {
         protection: enhanceState.protection,
         protectionStartLevel: enhanceState.protectionStartLevel
     });
+    
+    // 开始强化后重置强化页状态
+    resetEnhanceState();
 }
 
 /**
