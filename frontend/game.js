@@ -497,8 +497,27 @@ function setupSocket() {
         }
         
         // 更新产出预览
+        const outputBox = document.getElementById('enhance-output');
         const outputIconEl = document.getElementById('enhance-output-icon');
         const outputBadgeEl = document.getElementById('enhance-output-badge');
+        
+        // 存储工具信息用于 tooltip
+        if (outputBox) {
+            outputBox.dataset.toolId = data.toolId || '';
+            outputBox.dataset.toolName = data.toolName || '';
+            outputBox.dataset.toolIcon = data.toolIcon || '';
+            outputBox.dataset.targetLevel = data.targetLevel || 0;
+            outputBox.dataset.tier = data.tier || 1;
+            
+            // 添加悬浮和点击事件（只绑定一次）
+            if (!outputBox.dataset.initialized) {
+                outputBox.dataset.initialized = 'true';
+                outputBox.addEventListener('mouseenter', showOutputTooltip);
+                outputBox.addEventListener('mouseleave', hideOutputTooltip);
+                outputBox.addEventListener('click', showOutputTooltip);
+            }
+        }
+        
         if (outputIconEl) {
             outputIconEl.textContent = data.toolIcon || '-';
         }
@@ -551,6 +570,14 @@ function setupSocket() {
             }
         } else {
             showToast(`❌ ${result.reason || '未知错误'}`);
+        }
+    });
+    
+    // 监听队列下一个行动
+    socket.on('queue_next', (data) => {
+        console.log('📋 队列下一个行动:', data);
+        if (data.type === 'ENHANCE') {
+            showToast('⬆️ 开始队列中的强化任务');
         }
     });
     
@@ -4746,11 +4773,14 @@ function openProtectionSelectModal() {
     // 创建小型弹窗
     const modal = document.createElement('div');
     modal.className = 'protection-select-modal';
+    modal.style.position = 'fixed';
+    modal.style.visibility = 'hidden';
+    
     modal.innerHTML = Object.values(levelGroups).map(group => `
         <div class="protection-select-item" data-index="${group.indices[0]}">
             <span class="protection-select-icon">${toolIcon}</span>
             <div>
-                <div class="protection-select-name">${toolName} ${group.level > 0 ? '+' + group.level : ''}</div>
+                <div class="protection-select-name">${toolName}${group.level > 0 ? ' +' + group.level : ''}</div>
                 <div class="protection-select-count">×${group.count}</div>
             </div>
         </div>
@@ -4762,9 +4792,11 @@ function openProtectionSelectModal() {
     const slot = document.getElementById('enhance-protection-slot');
     if (slot) {
         const rect = slot.getBoundingClientRect();
-        modal.style.left = `${rect.left + rect.width / 2 - modal.offsetWidth / 2}px`;
-        modal.style.top = `${rect.top - modal.offsetHeight - 8}px`;
+        const modalRect = modal.getBoundingClientRect();
+        modal.style.left = `${rect.left + rect.width / 2 - modalRect.width / 2}px`;
+        modal.style.top = `${rect.top - modalRect.height - 8}px`;
     }
+    modal.style.visibility = 'visible';
     
     // 绑定点击事件
     modal.querySelectorAll('.protection-select-item').forEach(item => {

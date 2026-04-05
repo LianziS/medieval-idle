@@ -2226,11 +2226,13 @@ class GameEngine {
                     queueItem.protection,
                     queueItem.protectionStartLevel
                 );
+                result.nextAction = queueItem;
+                result.queueStarted = true;
             } else {
                 // 其他行动
                 this.startAction(queueItem.type, queueItem.id, queueItem.count, { itemId: queueItem.itemId });
+                result.nextAction = queueItem;
             }
-            result.nextAction = queueItem;
         }
         
         return result;
