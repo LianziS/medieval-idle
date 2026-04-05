@@ -2201,6 +2201,10 @@ class GameEngine {
             this.state.actionRemaining = 0;
             this.state.actionCount = 0;
             result.allCompleted = true;
+        } else if (!result.stopped && !result.allCompleted) {
+            // 还没完成所有次数，重置开始时间，等待下一次强化
+            this.state.actionStartTime = Date.now();
+            this.state.actionDuration = CONFIG.enhanceConfig.duration;
         }
         
         // 检查是否需要停止（材料不足、保护垫耗尽等）
