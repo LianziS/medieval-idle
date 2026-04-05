@@ -550,103 +550,106 @@
         <!-- 强化页 -->
         <main class="page" id="page-enhance">
             <section class="panel enhance-panel">
-                <div class="skill-header">
-                    <h2 class="panel-title">⬆️ 装备强化 <span class="skill-level" id="enhance-forging-level">Lv.1</span></h2>
-                    <div class="skill-exp-bar">
-                        <div class="skill-exp-bg">
-                            <div class="skill-exp-fill" id="enhance-forging-exp-fill"></div>
-                        </div>
-                    </div>
-                    <div class="skill-exp-info" id="enhance-forging-exp-info">[0/100]</div>
+                <!-- 标题 & 经验条 -->
+                <div class="panel-header">
+                    <span class="panel-title">⬆️ 装备强化</span>
+                    <span class="skill-level" id="enhance-forging-level">Lv.1</span>
                 </div>
-                <div class="skill-divider"></div>
+                <div class="skill-exp-bar">
+                    <div class="skill-exp-fill" id="enhance-forging-exp-fill"></div>
+                </div>
+                <div class="skill-exp-info" id="enhance-forging-exp-info">[0/100]</div>
                 
-                <!-- 上半部分：装备选择 + 信息 -->
+                <!-- 第一行：装备选择 + 费用 -->
                 <div class="enhance-top-row">
                     <!-- 装备选择框（正方形） -->
                     <div class="enhance-tool-square" id="enhance-tool-select">
-                        <div class="enhance-tool-display" id="enhance-tool-display">
-                            <div class="enhance-tool-placeholder">
-                                <span class="enhance-tool-icon">🔧</span>
-                                <span class="enhance-tool-text">选择装备</span>
+                        <div class="tool-placeholder" id="enhance-tool-placeholder">
+                            <span class="ph-icon">🔧</span>
+                            <span class="ph-text">选择装备</span>
+                        </div>
+                        <span class="tool-level-badge" id="enhance-tool-level-badge" style="display:none;"></span>
+                        <span class="tool-icon-wrap" id="enhance-tool-icon-wrap" style="display:none;"></span>
+                    </div>
+                    
+                    <!-- 费用区块 -->
+                    <div class="fees-section">
+                        <div class="section-title">费用</div>
+                        <div class="fees-list" id="enhance-fees-list">
+                            <div class="fee-item">
+                                <span class="fee-icon">🪙</span>
+                                <span class="fee-name">金币</span>
+                                <span class="fee-count" id="enhance-gold-cost">0 / 0</span>
                             </div>
                         </div>
-                        <div class="enhance-tool-info" id="enhance-tool-info" style="display:none;">
-                            <div class="enhance-tool-icon-large" id="enhance-tool-icon"></div>
-                            <div class="enhance-tool-details">
-                                <div class="enhance-tool-name" id="enhance-tool-name"></div>
-                                <div class="enhance-tool-level" id="enhance-tool-level"></div>
-                            </div>
+                    </div>
+                </div>
+                
+                <!-- 第二行：信息 + 产出预览 -->
+                <div class="enhance-info-inline">
+                    <div class="info-col">
+                        <div class="info-row">
+                            <span class="info-label">经验</span>
+                            <span class="info-value" id="enhance-exp">--</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">持续时间</span>
+                            <span class="info-value">12s</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">成功率</span>
+                            <span class="info-value rate" id="enhance-success-rate">--%</span>
+                        </div>
+                    </div>
+                    <div class="output-section">
+                        <span class="section-title">产出预览</span>
+                        <div class="output-box" id="enhance-output">
+                            <span class="output-badge" id="enhance-output-badge" style="display:none;"></span>
+                            <span class="output-icon" id="enhance-output-icon">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 保护 + 强化次数 合并框 -->
+                <div class="protection-count-box">
+                    <!-- 保护行 -->
+                    <div class="box-row">
+                        <span class="row-label">保护<span class="label-tip" id="enhance-protection-help" title="强化保护：可选择保护道具，必须是同类型物品，强化失败时消耗一个以避免降级或跌至+5。不可防止装备破碎。">?</span></span>
+                        <div class="protection-slot" id="enhance-protection-slot">
+                            <span class="ph-icon">+</span>
                         </div>
                     </div>
                     
-                    <!-- 右侧信息（无外框） -->
-                    <div class="enhance-info-inline">
-                        <div class="enhance-info-item">
-                            <span class="enhance-info-label">目标等级</span>
-                            <input type="number" class="enhance-input-small" id="enhance-target-level" min="1" max="20" value="1">
-                        </div>
-                        <div class="enhance-info-item" id="enhance-exp-display">
-                            <span class="enhance-info-label">经验</span>
-                            <span class="enhance-info-value" id="enhance-exp">--</span>
-                        </div>
-                        <div class="enhance-info-item">
-                            <span class="enhance-info-label">持续时间</span>
-                            <span class="enhance-info-value">12s</span>
-                        </div>
-                        <div class="enhance-info-item">
-                            <span class="enhance-info-label">成功率</span>
-                            <span class="enhance-info-value" id="enhance-success-rate">--%</span>
+                    <!-- 目标等级行 -->
+                    <div class="box-row">
+                        <span class="row-label">目标等级</span>
+                        <input type="number" class="level-input" id="enhance-target-level" min="1" max="20" value="1">
+                    </div>
+                    
+                    <!-- 保护起始等级行 -->
+                    <div class="box-row">
+                        <span class="row-label">保护起始等级</span>
+                        <input type="number" class="input-small" id="enhance-protection-start" min="2" max="20" value="2" disabled>
+                        <span class="hint">必须≥2才有效</span>
+                    </div>
+                    
+                    <!-- 强化次数行 -->
+                    <div class="box-row">
+                        <span class="row-label">强化次数</span>
+                        <input type="text" class="count-input" id="enhance-count" value="∞" placeholder="∞">
+                        <div class="count-btns">
+                            <button class="count-btn" data-val="1">1</button>
+                            <button class="count-btn" data-val="5">5</button>
+                            <button class="count-btn" data-val="10">10</button>
+                            <button class="count-btn selected is-inf" data-val="inf">∞</button>
                         </div>
                     </div>
-                </div>
-                
-                <!-- 费用和产出预览 -->
-                <div class="enhance-middle-row">
-                    <div class="enhance-fees">
-                        <h4 class="enhance-section-title">费用</h4>
-                        <div class="enhance-materials-list" id="enhance-materials-list">
-                            <div class="enhance-material-item">
-                                <span class="material-icon">💰</span>
-                                <span class="material-name">金币</span>
-                                <span class="material-count" id="enhance-gold-cost">0 / 0</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="enhance-output-section">
-                        <h4 class="enhance-section-title">产出预览</h4>
-                        <div class="enhance-output" id="enhance-output" style="cursor: pointer;">
-                            <span class="enhance-output-icon">-</span>
-                            <span class="enhance-output-name">-</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 保护垫区域 -->
-                <div class="enhance-protection-section">
-                    <div class="enhance-protection-row">
-                        <span class="enhance-protection-label">保护</span>
-                        <span class="enhance-help-icon" id="enhance-protection-help" title="强化保护：可选择保护道具，必须是同类型物品，强化失败时消耗一个以避免降级或跌至+5。不可防止装备破碎。">?</span>
-                        <div class="enhance-protection-slot" id="enhance-protection-slot"></div>
-                    </div>
-                    <div class="enhance-protection-start-row">
-                        <label class="enhance-label">保护起始等级</label>
-                        <input type="number" class="enhance-input-small" id="enhance-protection-start" min="2" max="20" value="2" disabled>
-                        <span class="enhance-hint">必须≥2才有效</span>
-                    </div>
-                </div>
-                
-                <!-- 强化次数 -->
-                <div class="enhance-count-row">
-                    <label class="enhance-label">强化次数</label>
-                    <input type="number" class="enhance-input" id="enhance-count" min="1" value="1" placeholder="输入次数或∞">
-                    <button class="enhance-infinite-btn" id="enhance-infinite-btn" title="最大次数">∞</button>
                 </div>
                 
                 <!-- 操作按钮 -->
-                <div class="enhance-buttons">
-                    <button class="enhance-btn enhance-btn-queue" id="enhance-queue-btn" disabled>添加到队列</button>
-                    <button class="enhance-btn enhance-btn-start" id="enhance-start-btn" disabled>开始强化</button>
+                <div class="action-buttons">
+                    <button class="btn btn-queue" id="enhance-queue-btn" disabled>添加到队列</button>
+                    <button class="btn btn-start" id="enhance-start-btn" disabled>开始强化</button>
                 </div>
             </section>
         </main>

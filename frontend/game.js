@@ -405,9 +405,9 @@ function setupSocket() {
             expEl.textContent = `${data.exp || 0} exp`;
         }
         
-        // 更新材料列表
-        const materialsEl = document.getElementById('enhance-materials-list');
-        if (materialsEl && data.materials) {
+        // 更新费用列表
+        const feesListEl = document.getElementById('enhance-fees-list');
+        if (feesListEl && data.materials) {
             const m = data.materials;
             const goldHave = gameState.gold || 0;
             
@@ -425,10 +425,10 @@ function setupSocket() {
             };
             
             let html = `
-                <div class="enhance-material-item" data-material="gold" data-count="${goldHave}">
-                    <span class="material-icon">💰</span>
-                    <span class="material-name">金币</span>
-                    <span class="material-count ${goldHave < m.gold ? 'insufficient' : ''}">${goldHave} / ${m.gold}</span>
+                <div class="fee-item" data-material="gold" data-count="${goldHave}">
+                    <span class="fee-icon">🪙</span>
+                    <span class="fee-name">金币</span>
+                    <span class="fee-count ${goldHave < m.gold ? 'insufficient' : ''}">${goldHave} / ${m.gold}</span>
                 </div>
             `;
             
@@ -436,10 +436,10 @@ function setupSocket() {
                 const have = gameState.ingotsInventory?.[m.ingot] || 0;
                 const name = materialNames[m.ingot] || m.ingot;
                 html += `
-                    <div class="enhance-material-item clickable" data-material="${m.ingot}" data-count="${have}" data-type="ingot">
-                        <span class="material-icon">🔨</span>
-                        <span class="material-name">${name}</span>
-                        <span class="material-count ${have < m.ingotCount ? 'insufficient' : ''}">${have} / ${m.ingotCount}</span>
+                    <div class="fee-item clickable" data-material="${m.ingot}" data-count="${have}" data-type="ingot">
+                        <span class="fee-icon">🔩</span>
+                        <span class="fee-name">${name}</span>
+                        <span class="fee-count ${have < m.ingotCount ? 'insufficient' : ''}">${have} / ${m.ingotCount}</span>
                     </div>
                 `;
             }
@@ -448,10 +448,10 @@ function setupSocket() {
                 const have = gameState.miningInventory?.[m.ore] || 0;
                 const name = materialNames[m.ore] || m.ore;
                 html += `
-                    <div class="enhance-material-item clickable" data-material="${m.ore}" data-count="${have}" data-type="ore">
-                        <span class="material-icon">⛏️</span>
-                        <span class="material-name">${name}</span>
-                        <span class="material-count ${have < m.oreCount ? 'insufficient' : ''}">${have} / ${m.oreCount}</span>
+                    <div class="fee-item clickable" data-material="${m.ore}" data-count="${have}" data-type="ore">
+                        <span class="fee-icon">💎</span>
+                        <span class="fee-name">${name}</span>
+                        <span class="fee-count ${have < m.oreCount ? 'insufficient' : ''}">${have} / ${m.oreCount}</span>
                     </div>
                 `;
             }
@@ -460,18 +460,18 @@ function setupSocket() {
                 const have = gameState.planksInventory?.[m.plank] || 0;
                 const name = materialNames[m.plank] || m.plank;
                 html += `
-                    <div class="enhance-material-item clickable" data-material="${m.plank}" data-count="${have}" data-type="plank">
-                        <span class="material-icon">🪵</span>
-                        <span class="material-name">${name}</span>
-                        <span class="material-count ${have < m.plankCount ? 'insufficient' : ''}">${have} / ${m.plankCount}</span>
+                    <div class="fee-item clickable" data-material="${m.plank}" data-count="${have}" data-type="plank">
+                        <span class="fee-icon">🪵</span>
+                        <span class="fee-name">${name}</span>
+                        <span class="fee-count ${have < m.plankCount ? 'insufficient' : ''}">${have} / ${m.plankCount}</span>
                     </div>
                 `;
             }
             
-            materialsEl.innerHTML = html;
+            feesListEl.innerHTML = html;
             
             // 添加点击事件显示物品详情卡片
-            materialsEl.querySelectorAll('.enhance-material-item.clickable').forEach(item => {
+            feesListEl.querySelectorAll('.fee-item.clickable').forEach(item => {
                 item.onclick = (e) => {
                     e.stopPropagation();
                     showMaterialPopover(item);
@@ -480,30 +480,17 @@ function setupSocket() {
         }
         
         // 更新产出预览
-        const outputEl = document.getElementById('enhance-output');
-        if (outputEl) {
-            const displayName = data.toolName + (data.targetLevel > 0 ? ` +${data.targetLevel}` : '');
-            outputEl.innerHTML = `
-                <span class="enhance-output-icon">${data.toolIcon}</span>
-                <span class="enhance-output-name">${displayName}</span>
-            `;
-            
-            // 存储工具信息用于 tooltip
-            outputEl.dataset.toolId = data.toolId || '';
-            outputEl.dataset.toolName = data.toolName || '';
-            outputEl.dataset.toolIcon = data.toolIcon || '';
-            outputEl.dataset.targetLevel = data.targetLevel || 0;
-            outputEl.dataset.tier = data.tier || 1;
-            
-            // 添加悬浮和点击事件
-            if (!outputEl.dataset.initialized) {
-                outputEl.dataset.initialized = 'true';
-                outputEl.addEventListener('mouseenter', showOutputTooltip);
-                outputEl.addEventListener('mouseleave', hideOutputTooltip);
-                outputEl.addEventListener('click', () => {
-                    // 点击也可以显示 tooltip
-                    showOutputTooltip({ target: outputEl, type: 'click' });
-                });
+        const outputIconEl = document.getElementById('enhance-output-icon');
+        const outputBadgeEl = document.getElementById('enhance-output-badge');
+        if (outputIconEl) {
+            outputIconEl.textContent = data.toolIcon || '-';
+        }
+        if (outputBadgeEl) {
+            if (data.targetLevel > 0) {
+                outputBadgeEl.style.display = 'block';
+                outputBadgeEl.textContent = `+${data.targetLevel}`;
+            } else {
+                outputBadgeEl.style.display = 'none';
             }
         }
         
@@ -511,24 +498,15 @@ function setupSocket() {
         const protectionSlot = document.getElementById('enhance-protection-slot');
         const protectionStartInput = document.getElementById('enhance-protection-start');
         
-        if (data.protectionTools && data.protectionTools.length > 0) {
-            if (protectionSlot) {
-                protectionSlot.innerHTML = `
-                    <div class="enhance-protection-selected">
-                        <span>可选 ${data.protectionTools.length} 个保护垫</span>
-                    </div>
-                `;
+        if (protectionSlot) {
+            if (enhanceState.protection) {
+                protectionSlot.innerHTML = `<span class="selected-icon">${enhanceState.protection.icon}</span>`;
+            } else {
+                protectionSlot.innerHTML = `<span class="ph-icon">+</span>`;
             }
-            if (protectionStartInput) {
-                protectionStartInput.disabled = false;
-            }
-        } else {
-            if (protectionSlot) {
-                protectionSlot.innerHTML = `<span class="enhance-protection-placeholder"></span>`;
-            }
-            if (protectionStartInput) {
-                protectionStartInput.disabled = true;
-            }
+        }
+        if (protectionStartInput) {
+            protectionStartInput.disabled = !(data.protectionTools && data.protectionTools.length > 0);
         }
         
         // 更新按钮状态
@@ -4102,9 +4080,7 @@ let enhanceState = {
  * 渲染强化页面
  */
 function renderEnhance() {
-    const toolSelect = document.getElementById('enhance-tool-select') || document.getElementById('enhance-tool-square');
-    const toolInfo = document.getElementById('enhance-tool-info');
-    const toolDisplay = document.getElementById('enhance-tool-display');
+    const toolSelect = document.getElementById('enhance-tool-square');
     
     if (!toolSelect) return;
     
@@ -4123,34 +4099,37 @@ function renderEnhance() {
     const targetInput = document.getElementById('enhance-target-level');
     if (targetInput) {
         targetInput.oninput = () => updateEnhancePreview();
+        // 点击时全选
+        targetInput.onfocus = () => targetInput.select();
     }
     
     // 强化次数输入
     const countInput = document.getElementById('enhance-count');
     if (countInput) {
-        countInput.oninput = () => validateEnhanceButtons();
-    }
-    
-    // 无限符号按钮
-    const infiniteBtn = document.getElementById('enhance-infinite-btn');
-    if (infiniteBtn) {
-        infiniteBtn.onclick = () => {
-            if (infiniteBtn.classList.contains('active')) {
-                // 取消无限模式
-                infiniteBtn.classList.remove('active');
-                countInput.value = 1;
-                countInput.placeholder = '输入次数或∞';
-                countInput.removeAttribute('readonly');
-            } else {
-                // 开启无限模式
-                infiniteBtn.classList.add('active');
-                countInput.value = '';
-                countInput.placeholder = '∞';
-                countInput.setAttribute('readonly', 'true');
-            }
+        countInput.oninput = () => {
+            // 更新快捷按钮状态
+            updateCountButtonsState(countInput.value);
             validateEnhanceButtons();
         };
+        // 点击时全选
+        countInput.onfocus = () => countInput.select();
     }
+    
+    // 强化次数快捷按钮
+    const countBtns = document.querySelectorAll('.count-btn');
+    countBtns.forEach(btn => {
+        btn.onclick = () => {
+            const val = btn.dataset.val;
+            // 清除所有选中状态
+            countBtns.forEach(b => b.classList.remove('selected', 'is-inf'));
+            // 设置当前选中
+            btn.classList.add('selected');
+            if (val === 'inf') btn.classList.add('is-inf');
+            // 更新输入框值
+            countInput.value = (val === 'inf') ? '∞' : val;
+            validateEnhanceButtons();
+        };
+    });
     
     // 保护起始等级输入
     const protectionStartInput = document.getElementById('enhance-protection-start');
@@ -4159,6 +4138,8 @@ function renderEnhance() {
             enhanceState.protectionStartLevel = parseInt(protectionStartInput.value) || 2;
             validateEnhanceButtons();
         };
+        // 点击时全选
+        protectionStartInput.onfocus = () => protectionStartInput.select();
     }
     
     // 保护垫选择
@@ -4195,6 +4176,22 @@ function renderEnhance() {
         updateEnhanceToolDisplay();
         updateEnhancePreview();
     }
+}
+
+/**
+ * 更新强化次数快捷按钮状态
+ */
+function updateCountButtonsState(value) {
+    const countBtns = document.querySelectorAll('.count-btn');
+    countBtns.forEach(btn => {
+        btn.classList.remove('selected', 'is-inf');
+        const val = btn.dataset.val;
+        if (val === 'inf' && (value === '∞' || value === '')) {
+            btn.classList.add('selected', 'is-inf');
+        } else if (val === value) {
+            btn.classList.add('selected');
+        }
+    });
 }
 
 /**
@@ -4454,13 +4451,14 @@ function getToolTier(toolId) {
  * 更新装备显示
  */
 function updateEnhanceToolDisplay() {
-    const toolDisplay = document.getElementById('enhance-tool-display');
-    const toolInfo = document.getElementById('enhance-tool-info');
-    const toolSelect = document.getElementById('enhance-tool-select');
+    const placeholderEl = document.getElementById('enhance-tool-placeholder');
+    const badgeEl = document.getElementById('enhance-tool-level-badge');
+    const iconWrapEl = document.getElementById('enhance-tool-icon-wrap');
     
     if (!enhanceState.selectedTool) {
-        if (toolDisplay) toolDisplay.style.display = 'block';
-        if (toolInfo) toolInfo.style.display = 'none';
+        if (placeholderEl) placeholderEl.style.display = 'flex';
+        if (badgeEl) badgeEl.style.display = 'none';
+        if (iconWrapEl) iconWrapEl.style.display = 'none';
         return;
     }
     
@@ -4477,16 +4475,16 @@ function updateEnhanceToolDisplay() {
     
     if (!toolConfig) return;
     
-    if (toolDisplay) toolDisplay.style.display = 'none';
-    if (toolInfo) toolInfo.style.display = 'flex';
-    
-    const iconEl = document.getElementById('enhance-tool-icon');
-    const nameEl = document.getElementById('enhance-tool-name');
-    const levelEl = document.getElementById('enhance-tool-level');
-    
-    if (iconEl) iconEl.textContent = toolConfig.icon;
-    if (nameEl) nameEl.textContent = toolConfig.name;
-    if (levelEl) levelEl.textContent = enhanceLevel > 0 ? `+${enhanceLevel}` : '';
+    // 隐藏占位符，显示图标和等级徽章
+    if (placeholderEl) placeholderEl.style.display = 'none';
+    if (badgeEl) {
+        badgeEl.style.display = 'block';
+        badgeEl.textContent = enhanceLevel > 0 ? `+${enhanceLevel}` : '';
+    }
+    if (iconWrapEl) {
+        iconWrapEl.style.display = 'flex';
+        iconWrapEl.textContent = toolConfig.icon;
+    }
     
     // 更新目标等级默认值
     const targetInput = document.getElementById('enhance-target-level');
@@ -4576,7 +4574,7 @@ function showMaterialPopover(triggerElement) {
 
 function closeMaterialPopoverOnOutsideClick(e) {
     const popover = document.getElementById('material-popover');
-    if (popover && !popover.contains(e.target) && !e.target.closest('.enhance-material-item.clickable')) {
+    if (popover && !popover.contains(e.target) && !e.target.closest('.fee-item.clickable')) {
         popover.remove();
     }
 }
