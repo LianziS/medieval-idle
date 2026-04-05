@@ -54,6 +54,23 @@ async function init() {
     setupSocket();
     setupEventListeners();
     setupNavigation();
+    setVersionTime();
+}
+
+/**
+ * 设置版本更新时间
+ */
+function setVersionTime() {
+    const versionEl = document.getElementById('version-value');
+    if (versionEl) {
+        // 使用当前时间作为版本号（格式：MMDD HH:MM）
+        const now = new Date();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hour = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        versionEl.textContent = `${month}${day} ${hour}:${min}`;
+    }
 }
 
 /**
