@@ -5191,9 +5191,6 @@ body::after {
 /* 当前行动：进度条 */
 .current-progress-section {
     margin-top: 16px;
-    padding: 12px;
-    background: rgba(27, 42, 58, 0.35);
-    border-radius: 8px;
 }
 
 .progress-label {
@@ -5203,25 +5200,30 @@ body::after {
 }
 
 .progress-bar {
-    height: 8px;
+    height: 28px;
     background: rgba(107, 79, 60, 0.3);
-    border-radius: 4px;
+    border-radius: 6px;
     overflow: hidden;
+    position: relative;
 }
 
 .progress-fill {
     height: 100%;
     width: 0%;
     background: linear-gradient(90deg, #E8A33C, #F0C060);
-    border-radius: 4px;
-    transition: width 0.3s ease;
+    border-radius: 6px;
+    transition: width 0.1s linear;
 }
 
 .progress-time {
-    font-size: 11px;
-    color: #6B7A8A;
-    text-align: right;
-    margin-top: 4px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 13px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 /* 停止按钮 */
