@@ -3721,7 +3721,9 @@ function openGMPanel() {
         { label: '加伐木经验 1000', command: 'add_exp', args: { skill: 'woodcutting', amount: 1000 } },
         { label: '伐木等级 50', command: 'set_level', args: { skill: 'woodcutting', level: 50 } },
         { label: '加青杉木 100', command: 'add_item', args: { itemType: 'WOOD', itemId: 'pine', count: 100 } },
+        { label: '加青杉木板 100', command: 'add_item', args: { itemType: 'PLANK', itemId: 'pine_plank', count: 100 } },
         { label: '加青闪矿 100', command: 'add_item', args: { itemType: 'ORE', itemId: 'cyan_ore', count: 100 } },
+        { label: '加青闪锭 100', command: 'add_item', args: { itemType: 'INGOT', itemId: 'cyan_ingot', count: 100 } },
         { label: '加青闪斧', command: 'add_tool', args: { toolType: 'axes', toolId: 'cyan_axe' } },
         { label: '加青闪镐', command: 'add_tool', args: { toolType: 'pickaxes', toolId: 'cyan_pickaxe' } },
         { label: '加全部技能等级', command: 'multi', args: {
@@ -4097,7 +4099,7 @@ let enhanceState = {
  * 渲染强化页面
  */
 function renderEnhance() {
-    const toolSelect = document.getElementById('enhance-tool-square');
+    const toolSelect = document.getElementById('enhance-tool-select');
     
     if (!toolSelect) return;
     
@@ -4638,13 +4640,24 @@ function showProtectionHelpPopover(triggerElement, isHover = false) {
         </div>
     `;
     
+    // 先设置样式让元素可测量
+    popover.style.visibility = 'hidden';
+    popover.style.position = 'fixed';
+    
     // 添加到页面
     document.body.appendChild(popover);
     
-    // 定位弹出卡片（在问号右边）
+    // 定位弹出卡片（在问号符上方）
     const triggerRect = triggerElement.getBoundingClientRect();
-    popover.style.left = `${triggerRect.right + 8}px`;
-    popover.style.top = `${triggerRect.top - popover.offsetHeight / 2 + triggerRect.height / 2}px`;
+    const popoverRect = popover.getBoundingClientRect();
+    
+    // 计算位置：在问号符上方，居中对齐
+    const left = triggerRect.left + triggerRect.width / 2 - popoverRect.width / 2;
+    const top = triggerRect.top - popoverRect.height - 8;
+    
+    popover.style.left = `${Math.max(8, left)}px`;
+    popover.style.top = `${Math.max(8, top)}px`;
+    popover.style.visibility = 'visible';
     
     if (isHover) {
         // hover模式：鼠标离开弹出卡片时关闭

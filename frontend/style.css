@@ -21,16 +21,17 @@ body {
     position: fixed;
     top: 8px;
     right: 12px;
-    z-index: 1000;
-    background: rgba(27, 42, 58, 0.8);
-    border: 1px solid rgba(107, 79, 60, 0.4);
+    z-index: 2000;
+    background: rgba(27, 42, 58, 0.9);
+    border: 1px solid rgba(107, 79, 60, 0.5);
     border-radius: 4px;
-    padding: 4px 8px;
-    font-size: 11px;
-    color: #6B7A8A;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: #8BC34A;
     display: flex;
     align-items: center;
     gap: 2px;
+    font-weight: bold;
 }
 
 .version-label {
