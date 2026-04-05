@@ -4350,11 +4350,15 @@ function updateCurrentActionPage() {
     const toolsKey = getToolsKey(toolType);
     const tools = gameState.toolsInventory?.[toolsKey] || [];
     
+    let toolConfig = null;
+    let currentLevel = 0;
+    let toolId = null;
+    
     if (toolIndex >= 0 && toolIndex < tools.length) {
         const tool = tools[toolIndex];
-        const toolId = typeof tool === 'string' ? tool : tool.id;
-        const enhanceLevel = typeof tool === 'object' && tool ? (tool.enhanceLevel || 0) : 0;
-        const toolConfig = CONFIG.tools[toolsKey]?.find(t => t.id === toolId);
+        toolId = typeof tool === 'string' ? tool : tool.id;
+        currentLevel = typeof tool === 'object' && tool ? (tool.enhanceLevel || 0) : 0;
+        toolConfig = CONFIG.tools[toolsKey]?.find(t => t.id === toolId);
         
         // 显示工具图标和等级
         const iconEl = document.getElementById('current-tool-icon');
@@ -4364,12 +4368,12 @@ function updateCurrentActionPage() {
             iconEl.style.display = 'flex';
         }
         if (badgeEl) {
-            badgeEl.textContent = enhanceLevel > 0 ? `+${enhanceLevel}` : '';
-            badgeEl.style.display = enhanceLevel > 0 ? 'block' : 'none';
+            badgeEl.textContent = currentLevel > 0 ? `+${currentLevel}` : '';
+            badgeEl.style.display = currentLevel > 0 ? 'block' : 'none';
         }
     }
     
-    // 目标等级
+    // 目标等级（显示当前目标等级，即当前等级+1）
     const targetLevelEl = document.getElementById('current-target-level');
     if (targetLevelEl) {
         targetLevelEl.textContent = activeAction.targetLevel ? `+${activeAction.targetLevel}` : '--';
@@ -4383,10 +4387,9 @@ function updateCurrentActionPage() {
         remainingEl.textContent = isInfinite ? '∞' : remaining;
     }
     
-    // 成功率
+    // 成功率（使用当前等级计算）
     const rateEl = document.getElementById('current-success-rate');
     if (rateEl) {
-        const currentLevel = typeof tools[toolIndex] === 'object' ? (tools[toolIndex].enhanceLevel || 0) : 0;
         const successRate = getEnhanceSuccessRate(currentLevel);
         rateEl.textContent = `${(successRate * 100).toFixed(0)}%`;
         
@@ -4402,27 +4405,102 @@ function updateCurrentActionPage() {
         }
     }
     
-    // 产出预览
+    // 产出预览（显示当前等级+1）
     const outputIconEl = document.getElementById('current-output-icon');
     const outputBadgeEl = document.getElementById('current-output-badge');
-    if (outputIconEl && toolIndex >= 0 && toolIndex < tools.length) {
-        const tool = tools[toolIndex];
-        const toolId = typeof tool === 'string' ? tool : tool.id;
-        const toolConfig = CONFIG.tools[toolsKey]?.find(t => t.id === toolId);
-        outputIconEl.textContent = toolConfig?.icon || '-';
+    if (outputIconEl && toolConfig) {
+        outputIconEl.textContent = toolConfig.icon || '-';
     }
     if (outputBadgeEl) {
-        const targetLevel = activeAction.targetLevel || 0;
-        if (targetLevel > 0) {
-            outputBadgeEl.style.display = 'block';
-            outputBadgeEl.textContent = `+${targetLevel}`;
-        } else {
-            outputBadgeEl.style.display = 'none';
-        }
+        // 产出预览显示当前等级+1
+        const nextLevel = currentLevel + 1;
+        outputBadgeEl.style.display = 'block';
+        outputBadgeEl.textContent = `+${nextLevel}`;
     }
+    
+    // 更新费用显示
+    updateCurrentFees(toolId, toolType);
     
     // 更新进度条
     updateCurrentActionProgress();
+}
+
+/**
+ * 更新当前行动的费用显示
+ */
+function updateCurrentFees(toolId, toolType) {
+    const feesListEl = document.getElementById('current-fees-list');
+    if (!feesListEl || !toolId) return;
+    
+    // 获取强化配置
+    const enhanceConfig = CONFIG.enhanceConfig || {};
+    const tier = getToolTier(toolId);
+    
+    // 计算金币消耗
+    const goldCost = enhanceConfig.goldBase + (tier - 1) * enhanceConfig.goldPerTier;
+    const goldHave = gameState.gold || 0;
+    
+    // 构建费用列表
+    let html = `
+        <div class="fee-item">
+            <span class="fee-icon">🪙</span>
+            <span class="fee-name">金币</span>
+            <span class="fee-count">${goldCost}</span>
+        </div>
+    `;
+    
+    // 检查是否需要材料
+    const materialTiers = enhanceConfig.materialTiers || {};
+    const tierConfig = materialTiers[tier] || materialTiers[Object.keys(materialTiers).find(t => t <= tier)] || null;
+    
+    if (tierConfig) {
+        // 材料中文名称映射
+        const materialNames = {
+            'cyan_ingot': '青闪锭', 'red_copper_ingot': '赤铜锭', 'feather_ingot': '羽铁锭',
+            'white_silver_ingot': '白银锭', 'hell_steel_ingot': '狱炎钢锭', 'thunder_steel_ingot': '雷鸣钢锭',
+            'brilliant_crystal': '璀璨晶', 'star_crystal': '星辉晶',
+            'cyan_ore': '青闪矿', 'red_iron': '赤铁矿', 'feather_ore': '羽石矿',
+            'pine_plank': '青杉木板', 'iron_birch_plank': '铁桦木板', 'wind_tree_plank': '风啸木板'
+        };
+        
+        if (tierConfig.ingot) {
+            const have = gameState.ingotsInventory?.[tierConfig.ingot] || 0;
+            const name = materialNames[tierConfig.ingot] || tierConfig.ingot;
+            html += `
+                <div class="fee-item">
+                    <span class="fee-icon">🔩</span>
+                    <span class="fee-name">${name}</span>
+                    <span class="fee-count">${tierConfig.ingotCount || 1}</span>
+                </div>
+            `;
+        }
+        
+        if (tierConfig.ore) {
+            const have = gameState.miningInventory?.[tierConfig.ore] || 0;
+            const name = materialNames[tierConfig.ore] || tierConfig.ore;
+            html += `
+                <div class="fee-item">
+                    <span class="fee-icon">💎</span>
+                    <span class="fee-name">${name}</span>
+                    <span class="fee-count">${tierConfig.oreCount || 1}</span>
+                </div>
+            `;
+        }
+        
+        if (tierConfig.plank) {
+            const have = gameState.planksInventory?.[tierConfig.plank] || 0;
+            const name = materialNames[tierConfig.plank] || tierConfig.plank;
+            html += `
+                <div class="fee-item">
+                    <span class="fee-icon">🪵</span>
+                    <span class="fee-name">${name}</span>
+                    <span class="fee-count">${tierConfig.plankCount || 1}</span>
+                </div>
+            `;
+        }
+    }
+    
+    feesListEl.innerHTML = html;
 }
 
 /**
