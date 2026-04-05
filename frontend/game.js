@@ -4148,13 +4148,29 @@ function renderEnhance() {
         protectionSlot.onclick = () => openProtectionSelectModal();
     }
     
-    // 问号符点击弹出卡片
+    // 问号符点击和悬停弹出卡片
     const helpIcon = document.getElementById('enhance-protection-help');
     if (helpIcon) {
-        // 使用addEventListener并阻止事件冒泡
+        // 鼠标悬停显示
+        helpIcon.addEventListener('mouseenter', (e) => {
+            showProtectionHelpPopover(helpIcon, true);
+        });
+        // 鼠标离开时关闭（如果是hover模式）
+        helpIcon.addEventListener('mouseleave', (e) => {
+            const popover = document.getElementById('protection-help-popover');
+            if (popover && popover.dataset.mode === 'hover') {
+                // 延迟关闭，给用户时间移动到弹出卡片上
+                setTimeout(() => {
+                    if (!helpIcon.matches(':hover') && !popover.matches(':hover')) {
+                        popover.remove();
+                    }
+                }, 100);
+            }
+        });
+        // 点击显示（点击后需要再点击关闭）
         helpIcon.addEventListener('click', (e) => {
             e.stopPropagation();
-            showProtectionHelpPopover(helpIcon);
+            showProtectionHelpPopover(helpIcon, false);
         });
     }
     
@@ -4584,18 +4600,19 @@ function closeMaterialPopoverOnOutsideClick(e) {
 /**
  * 显示强化保护帮助弹出卡片
  */
-function showProtectionHelpPopover(triggerElement) {
+function showProtectionHelpPopover(triggerElement, isHover = false) {
     // 移除已有的弹出卡片
     const existingPopover = document.getElementById('protection-help-popover');
     if (existingPopover) {
         existingPopover.remove();
-        return;
+        if (!isHover) return; // 点击模式再次点击则关闭
     }
     
     // 创建弹出卡片
     const popover = document.createElement('div');
     popover.id = 'protection-help-popover';
     popover.className = 'protection-help-popover';
+    popover.dataset.mode = isHover ? 'hover' : 'click';
     popover.innerHTML = `
         <div class="popover-header">强化保护</div>
         <div class="popover-content">
@@ -4607,15 +4624,26 @@ function showProtectionHelpPopover(triggerElement) {
     // 添加到页面
     document.body.appendChild(popover);
     
-    // 定位弹出卡片
+    // 定位弹出卡片（在问号右边）
     const triggerRect = triggerElement.getBoundingClientRect();
     popover.style.left = `${triggerRect.right + 8}px`;
     popover.style.top = `${triggerRect.top - popover.offsetHeight / 2 + triggerRect.height / 2}px`;
     
-    // 点击其他地方关闭
-    setTimeout(() => {
-        document.addEventListener('click', closePopoverOnOutsideClick, { once: true });
-    }, 10);
+    if (isHover) {
+        // hover模式：鼠标离开弹出卡片时关闭
+        popover.addEventListener('mouseleave', () => {
+            setTimeout(() => {
+                if (!triggerElement.matches(':hover') && !popover.matches(':hover')) {
+                    popover.remove();
+                }
+            }, 100);
+        });
+    } else {
+        // click模式：点击其他地方关闭
+        setTimeout(() => {
+            document.addEventListener('click', closePopoverOnOutsideClick, { once: true });
+        }, 10);
+    }
 }
 
 function closePopoverOnOutsideClick(e) {
