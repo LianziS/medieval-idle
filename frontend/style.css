@@ -5234,6 +5234,15 @@ body::after {
     background: linear-gradient(180deg, #EF5350 0%, #D32F2F 100%);
 }
 
+/* 单按钮样式：宽度等于进度条 */
+.action-buttons.single-btn {
+    display: block;
+}
+
+.action-buttons.single-btn .btn {
+    width: 100%;
+}
+
 /* 经验条 */
 .skill-exp-bar {
     height: 6px;

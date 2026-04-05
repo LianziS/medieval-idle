@@ -4436,15 +4436,21 @@ function updateCurrentFees(toolId, toolType) {
     const enhanceConfig = CONFIG?.enhanceConfig || {};
     const tier = getToolTier(toolId);
     
+    // 获取剩余次数
+    const activeAction = gameState?.activeAction;
+    const remaining = activeAction?.remaining || 1;
+    const isInfinite = activeAction?.isInfinite || remaining < 0;
+    
     // 计算金币消耗（使用goldCost配置）
-    const goldCost = enhanceConfig.goldCost?.[tier] || 20;
+    const goldCostPerAction = enhanceConfig.goldCost?.[tier] || 20;
+    const goldCostTotal = isInfinite ? goldCostPerAction : goldCostPerAction * remaining;
     
     // 构建费用列表
     let html = `
         <div class="fee-item">
             <span class="fee-icon">🪙</span>
             <span class="fee-name">金币</span>
-            <span class="fee-count">${goldCost}</span>
+            <span class="fee-count">${isInfinite ? goldCostPerAction : `${goldCostTotal} / ${goldCostPerAction}`}</span>
         </div>
     `;
     
@@ -4459,11 +4465,6 @@ function updateCurrentFees(toolId, toolType) {
         'pine_plank': '青杉木板', 'iron_birch_plank': '铁桦木板', 'wind_tree_plank': '风啸木板'
     };
     
-    // 材料图标映射
-    const materialIcons = {
-        'ingot': '🔩', 'ore': '💎', 'plank': '🪵'
-    };
-    
     if (isHammer) {
         // 锤子使用矿锭
         const hammerCost = enhanceConfig.hammerMaterialCost?.[tier];
@@ -4476,11 +4477,13 @@ function updateCurrentFees(toolId, toolType) {
             };
             const ingotType = ingotTypes[tier] || 'cyan_ingot';
             const name = materialNames[ingotType] || ingotType;
+            const costPer = hammerCost.ingot;
+            const costTotal = isInfinite ? costPer : costPer * remaining;
             html += `
                 <div class="fee-item">
                     <span class="fee-icon">🔩</span>
                     <span class="fee-name">${name}</span>
-                    <span class="fee-count">${hammerCost.ingot}</span>
+                    <span class="fee-count">${isInfinite ? costPer : `${costTotal} / ${costPer}`}</span>
                 </div>
             `;
         }
@@ -4498,11 +4501,13 @@ function updateCurrentFees(toolId, toolType) {
                 };
                 const oreType = oreTypes[tier] || 'cyan_ore';
                 const name = materialNames[oreType] || oreType;
+                const costPer = materialCost.ore;
+                const costTotal = isInfinite ? costPer : costPer * remaining;
                 html += `
                     <div class="fee-item">
                         <span class="fee-icon">💎</span>
                         <span class="fee-name">${name}</span>
-                        <span class="fee-count">${materialCost.ore}</span>
+                        <span class="fee-count">${isInfinite ? costPer : `${costTotal} / ${costPer}`}</span>
                     </div>
                 `;
             }
@@ -4516,11 +4521,13 @@ function updateCurrentFees(toolId, toolType) {
                 };
                 const plankType = plankTypes[tier] || 'pine_plank';
                 const name = materialNames[plankType] || plankType;
+                const costPer = materialCost.plank;
+                const costTotal = isInfinite ? costPer : costPer * remaining;
                 html += `
                     <div class="fee-item">
                         <span class="fee-icon">🪵</span>
                         <span class="fee-name">${name}</span>
-                        <span class="fee-count">${materialCost.plank}</span>
+                        <span class="fee-count">${isInfinite ? costPer : `${costTotal} / ${costPer}`}</span>
                     </div>
                 `;
             }
@@ -4529,6 +4536,8 @@ function updateCurrentFees(toolId, toolType) {
     
     feesListEl.innerHTML = html;
 }
+
+let lastProgressStartTime = 0;
 
 /**
  * 更新当前行动进度
@@ -4544,6 +4553,16 @@ function updateCurrentActionProgress() {
     
     const startTime = parseInt(gameState.actionStartTime) || 0;
     const duration = parseInt(gameState.actionDuration) || 12000;
+    
+    // 检测是否是新的强化周期（startTime变化了）
+    if (startTime !== lastProgressStartTime) {
+        lastProgressStartTime = startTime;
+        progressFill.style.transition = 'none';
+        progressFill.style.width = '0%';
+        // 强制重绘
+        void progressFill.offsetWidth;
+        progressFill.style.transition = 'width 0.3s ease';
+    }
     
     if (startTime > 0 && duration > 0) {
         const now = Date.now();
