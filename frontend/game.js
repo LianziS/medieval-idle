@@ -535,8 +535,8 @@ function setupSocket() {
         const protectionStartInput = document.getElementById('enhance-protection-start');
         
         if (protectionSlot) {
-            if (enhanceState.protection) {
-                protectionSlot.innerHTML = `<span class="selected-icon">${enhanceState.protection.icon}</span>`;
+            if (enhanceState.protection !== null && enhanceState.protectionIcon) {
+                protectionSlot.innerHTML = `<span class="selected-icon">${enhanceState.protectionIcon}</span>`;
             } else {
                 protectionSlot.innerHTML = `<span class="ph-icon">+</span>`;
             }
@@ -3998,7 +3998,10 @@ let outputTooltipTimeout = null;
 
 function showOutputTooltip(event) {
     const outputEl = event.target.closest('#enhance-output');
-    if (!outputEl || !outputEl.dataset.toolId) return;
+    if (!outputEl) return;
+    
+    const toolId = outputEl.dataset.toolId;
+    if (!toolId || toolId === '') return;  // 没有选中工具则不显示
     
     clearTimeout(outputTooltipTimeout);
     
@@ -4119,6 +4122,7 @@ let enhanceState = {
     toolType: null,
     toolIndex: null,
     protection: null,
+    protectionIcon: null,  // 保护垫图标
     protectionStartLevel: 2
 };
 
@@ -4803,9 +4807,9 @@ function openProtectionSelectModal() {
         item.addEventListener('click', () => {
             const idx = parseInt(item.dataset.index);
             enhanceState.protection = idx;
+            enhanceState.protectionIcon = toolIcon;  // 存储图标
             
             // 更新保护垫选择框显示（只显示图标）
-            const selectedTool = protectionTools.find(t => t.index === idx);
             const protectionSlot = document.getElementById('enhance-protection-slot');
             if (protectionSlot) {
                 protectionSlot.innerHTML = `<span class="selected-icon">${toolIcon}</span>`;
