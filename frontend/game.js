@@ -4714,9 +4714,10 @@ function openProtectionSelectModal() {
             
             // 更新保护垫选择框显示（只显示图标）
             const selectedTool = protectionTools.find(t => t.index === idx);
-            document.getElementById('enhance-protection-slot').innerHTML = `
-                <div class="enhance-protection-selected">${toolIcon}</div>
-            `;
+            const protectionSlot = document.getElementById('enhance-protection-slot');
+            if (protectionSlot) {
+                protectionSlot.innerHTML = `<span class="selected-icon">${toolIcon}</span>`;
+            }
             
             modal.remove();
         });
@@ -4868,16 +4869,15 @@ function startEnhance() {
 function doStartEnhance() {
     const targetLevel = parseInt(document.getElementById('enhance-target-level').value) || 1;
     const countInput = document.getElementById('enhance-count');
-    const infiniteBtn = document.getElementById('enhance-infinite-btn');
     
     let count;
-    const isInfinite = infiniteBtn && infiniteBtn.classList.contains('active');
+    const inputVal = countInput?.value?.trim();
     
-    if (isInfinite) {
+    // 判断是否无限模式
+    if (inputVal === '∞' || inputVal === '' || inputVal === '-1') {
         count = -1; // -1 表示无限（实际执行时计算最大值）
     } else {
-        const inputVal = countInput?.value;
-        count = inputVal === '∞' ? -1 : (parseInt(inputVal) || 1);
+        count = parseInt(inputVal) || 1;
     }
     
     socket.emit('enhance_start', {
@@ -4901,16 +4901,15 @@ function addToEnhanceQueue() {
     
     const targetLevel = parseInt(document.getElementById('enhance-target-level').value) || 1;
     const countInput = document.getElementById('enhance-count');
-    const infiniteBtn = document.getElementById('enhance-infinite-btn');
     
     let count;
-    const isInfinite = infiniteBtn && infiniteBtn.classList.contains('active');
+    const inputVal = countInput?.value?.trim();
     
-    if (isInfinite) {
+    // 判断是否无限模式
+    if (inputVal === '∞' || inputVal === '' || inputVal === '-1') {
         count = -1; // -1 表示无限
     } else {
-        const inputVal = countInput?.value;
-        count = inputVal === '∞' ? -1 : (parseInt(inputVal) || 1);
+        count = parseInt(inputVal) || 1;
     }
     
     // 直接加入队列，不检查当前行动
