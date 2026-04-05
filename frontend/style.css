@@ -5449,6 +5449,7 @@ body::after {
     justify-content: center;
     transition: all 0.2s;
     flex-shrink: 0;
+    position: relative;
 }
 
 .protection-slot:hover {
@@ -5464,6 +5465,20 @@ body::after {
 
 .protection-slot .selected-icon {
     font-size: 20px;
+}
+
+/* 保护垫数量显示在右下角 */
+.protection-slot .protection-count {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    color: #6b4f3c;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 0 3px;
+    border-radius: 3px;
+    line-height: 1.2;
 }
 
 /* 输入框 */

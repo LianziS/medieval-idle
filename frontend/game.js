@@ -544,12 +544,19 @@ function setupSocket() {
         // 更新保护垫选项
         const protectionSlot = document.getElementById('enhance-protection-slot');
         const protectionStartInput = document.getElementById('enhance-protection-start');
+        const protectionCount = data.protectionTools ? data.protectionTools.length : 0;
         
         if (protectionSlot) {
             if (enhanceState.protection !== null && enhanceState.protectionIcon) {
-                protectionSlot.innerHTML = `<span class="selected-icon">${enhanceState.protectionIcon}</span>`;
+                protectionSlot.innerHTML = `
+                    <span class="selected-icon">${enhanceState.protectionIcon}</span>
+                    <span class="protection-count">${protectionCount}</span>
+                `;
             } else {
-                protectionSlot.innerHTML = `<span class="ph-icon">+</span>`;
+                protectionSlot.innerHTML = `
+                    <span class="ph-icon">+</span>
+                    ${protectionCount > 0 ? `<span class="protection-count">${protectionCount}</span>` : ''}
+                `;
             }
         }
         if (protectionStartInput) {
