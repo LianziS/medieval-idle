@@ -4433,12 +4433,11 @@ function updateCurrentFees(toolId, toolType) {
     if (!feesListEl || !toolId) return;
     
     // 获取强化配置
-    const enhanceConfig = CONFIG.enhanceConfig || {};
+    const enhanceConfig = CONFIG?.enhanceConfig || {};
     const tier = getToolTier(toolId);
     
-    // 计算金币消耗
-    const goldCost = enhanceConfig.goldBase + (tier - 1) * enhanceConfig.goldPerTier;
-    const goldHave = gameState.gold || 0;
+    // 计算金币消耗（使用goldCost配置）
+    const goldCost = enhanceConfig.goldCost?.[tier] || 20;
     
     // 构建费用列表
     let html = `
@@ -4449,54 +4448,82 @@ function updateCurrentFees(toolId, toolType) {
         </div>
     `;
     
-    // 检查是否需要材料
-    const materialTiers = enhanceConfig.materialTiers || {};
-    const tierConfig = materialTiers[tier] || materialTiers[Object.keys(materialTiers).find(t => t <= tier)] || null;
+    // 检查是否是锤子（hammer/tongs使用矿锭）
+    const isHammer = toolType === 'hammer' || toolType === 'tongs';
     
-    if (tierConfig) {
-        // 材料中文名称映射
-        const materialNames = {
-            'cyan_ingot': '青闪锭', 'red_copper_ingot': '赤铜锭', 'feather_ingot': '羽铁锭',
-            'white_silver_ingot': '白银锭', 'hell_steel_ingot': '狱炎钢锭', 'thunder_steel_ingot': '雷鸣钢锭',
-            'brilliant_crystal': '璀璨晶', 'star_crystal': '星辉晶',
-            'cyan_ore': '青闪矿', 'red_iron': '赤铁矿', 'feather_ore': '羽石矿',
-            'pine_plank': '青杉木板', 'iron_birch_plank': '铁桦木板', 'wind_tree_plank': '风啸木板'
-        };
-        
-        if (tierConfig.ingot) {
-            const have = gameState.ingotsInventory?.[tierConfig.ingot] || 0;
-            const name = materialNames[tierConfig.ingot] || tierConfig.ingot;
+    // 材料中文名称映射
+    const materialNames = {
+        'cyan_ingot': '青闪锭', 'red_copper_ingot': '赤铜锭', 'feather_ingot': '羽铁锭',
+        'white_silver_ingot': '白银锭', 'hell_steel_ingot': '狱炎钢锭', 'thunder_steel_ingot': '雷鸣钢锭',
+        'cyan_ore': '青闪矿', 'red_iron': '赤铁矿', 'feather_ore': '羽石矿',
+        'pine_plank': '青杉木板', 'iron_birch_plank': '铁桦木板', 'wind_tree_plank': '风啸木板'
+    };
+    
+    // 材料图标映射
+    const materialIcons = {
+        'ingot': '🔩', 'ore': '💎', 'plank': '🪵'
+    };
+    
+    if (isHammer) {
+        // 锤子使用矿锭
+        const hammerCost = enhanceConfig.hammerMaterialCost?.[tier];
+        if (hammerCost?.ingot) {
+            // 根据tier确定矿锭类型
+            const ingotTypes = {
+                1: 'cyan_ingot', 2: 'red_copper_ingot', 3: 'feather_ingot',
+                4: 'white_silver_ingot', 5: 'hell_steel_ingot', 6: 'thunder_steel_ingot',
+                7: 'brilliant_crystal', 8: 'star_crystal'
+            };
+            const ingotType = ingotTypes[tier] || 'cyan_ingot';
+            const name = materialNames[ingotType] || ingotType;
             html += `
                 <div class="fee-item">
                     <span class="fee-icon">🔩</span>
                     <span class="fee-name">${name}</span>
-                    <span class="fee-count">${tierConfig.ingotCount || 1}</span>
+                    <span class="fee-count">${hammerCost.ingot}</span>
                 </div>
             `;
         }
-        
-        if (tierConfig.ore) {
-            const have = gameState.miningInventory?.[tierConfig.ore] || 0;
-            const name = materialNames[tierConfig.ore] || tierConfig.ore;
-            html += `
-                <div class="fee-item">
-                    <span class="fee-icon">💎</span>
-                    <span class="fee-name">${name}</span>
-                    <span class="fee-count">${tierConfig.oreCount || 1}</span>
-                </div>
-            `;
-        }
-        
-        if (tierConfig.plank) {
-            const have = gameState.planksInventory?.[tierConfig.plank] || 0;
-            const name = materialNames[tierConfig.plank] || tierConfig.plank;
-            html += `
-                <div class="fee-item">
-                    <span class="fee-icon">🪵</span>
-                    <span class="fee-name">${name}</span>
-                    <span class="fee-count">${tierConfig.plankCount || 1}</span>
-                </div>
-            `;
+    } else {
+        // 非锤子使用矿石和木板
+        const materialCost = enhanceConfig.materialCost?.[tier];
+        if (materialCost) {
+            // 矿石
+            if (materialCost.ore) {
+                // 根据tier确定矿石类型
+                const oreTypes = {
+                    1: 'cyan_ore', 2: 'red_iron', 3: 'feather_ore',
+                    4: 'white_ore', 5: 'hell_ore', 6: 'thunder_ore',
+                    7: 'brilliant', 8: 'star_ore'
+                };
+                const oreType = oreTypes[tier] || 'cyan_ore';
+                const name = materialNames[oreType] || oreType;
+                html += `
+                    <div class="fee-item">
+                        <span class="fee-icon">💎</span>
+                        <span class="fee-name">${name}</span>
+                        <span class="fee-count">${materialCost.ore}</span>
+                    </div>
+                `;
+            }
+            // 木板
+            if (materialCost.plank) {
+                // 根据tier确定木板类型
+                const plankTypes = {
+                    1: 'pine_plank', 2: 'iron_birch_plank', 3: 'wind_tree_plank',
+                    4: 'flame_tree_plank', 5: 'frost_maple_plank', 6: 'thunder_tree_plank',
+                    7: 'ancient_oak_plank', 8: 'world_tree_plank'
+                };
+                const plankType = plankTypes[tier] || 'pine_plank';
+                const name = materialNames[plankType] || plankType;
+                html += `
+                    <div class="fee-item">
+                        <span class="fee-icon">🪵</span>
+                        <span class="fee-name">${name}</span>
+                        <span class="fee-count">${materialCost.plank}</span>
+                    </div>
+                `;
+            }
         }
     }
     
@@ -4515,16 +4542,20 @@ function updateCurrentActionProgress() {
     const activeAction = gameState?.activeAction;
     if (!activeAction || activeAction.type !== 'ENHANCE') return;
     
-    const startTime = gameState.actionStartTime;
-    const duration = gameState.actionDuration;
+    const startTime = parseInt(gameState.actionStartTime) || 0;
+    const duration = parseInt(gameState.actionDuration) || 12000;
     
-    if (startTime && duration) {
-        const elapsed = Date.now() - startTime;
+    if (startTime > 0 && duration > 0) {
+        const now = Date.now();
+        const elapsed = now - startTime;
         const remaining = Math.max(0, duration - elapsed);
-        const progress = Math.min(100, (elapsed / duration) * 100);
+        const progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
         
         progressFill.style.width = `${progress}%`;
         progressTime.textContent = `${(remaining / 1000).toFixed(1)}s`;
+    } else {
+        progressFill.style.width = '0%';
+        progressTime.textContent = '0s';
     }
 }
 
@@ -4541,16 +4572,23 @@ function stopEnhance() {
 }
 
 /**
- * 获取强化成功率（前端计算用）
+ * 获取强化成功率（前端计算用，匹配后端配置）
  */
 function getEnhanceSuccessRate(level) {
-    const rates = {
-        0: 0.95, 1: 0.90, 2: 0.85, 3: 0.80, 4: 0.75,
-        5: 0.70, 6: 0.65, 7: 0.60, 8: 0.55, 9: 0.50,
-        10: 0.45, 11: 0.40, 12: 0.35, 13: 0.30, 14: 0.25,
-        15: 0.20, 16: 0.15, 17: 0.12, 18: 0.10, 19: 0.08
-    };
-    return rates[level] || 0.05;
+    const config = CONFIG?.enhanceConfig?.successRate;
+    if (!config) {
+        // 默认值
+        return 0.5;
+    }
+    
+    // 检查区间
+    if (level <= 1) return config[1] || 0.5;
+    if (level >= 2 && level <= 3) return config['2-3'] || 0.45;
+    if (level >= 4 && level <= 6) return config['4-6'] || 0.40;
+    if (level >= 7 && level <= 10) return config['7-10'] || 0.35;
+    if (level >= 11 && level <= 20) return config['11-20'] || 0.30;
+    
+    return 0.3;
 }
 
 /**
