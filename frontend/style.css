@@ -5127,7 +5127,15 @@ body::after {
 /* ============ 强化页面 ============ */
 .enhance-panel {
     max-width: 560px;
-    margin: 0 auto;
+    margin: 0;
+}
+
+/* 桌面端强化页面靠左 */
+@media (min-width: 769px) {
+    #page-enhance.page {
+        display: flex;
+        justify-content: flex-start;
+    }
 }
 
 /* 经验条 */
