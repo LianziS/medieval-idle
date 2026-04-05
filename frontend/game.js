@@ -548,15 +548,14 @@ function setupSocket() {
         
         if (protectionSlot) {
             if (enhanceState.protection !== null && enhanceState.protectionIcon) {
+                // 选中了保护垫，显示图标和数量
                 protectionSlot.innerHTML = `
                     <span class="selected-icon">${enhanceState.protectionIcon}</span>
                     <span class="protection-count">${protectionCount}</span>
                 `;
             } else {
-                protectionSlot.innerHTML = `
-                    <span class="ph-icon">+</span>
-                    ${protectionCount > 0 ? `<span class="protection-count">${protectionCount}</span>` : ''}
-                `;
+                // 未选择保护垫，只显示+号，不显示数量
+                protectionSlot.innerHTML = `<span class="ph-icon">+</span>`;
             }
         }
         if (protectionStartInput) {
@@ -4826,10 +4825,13 @@ function openProtectionSelectModal() {
             enhanceState.protection = idx;
             enhanceState.protectionIcon = toolIcon;  // 存储图标
             
-            // 更新保护垫选择框显示（只显示图标）
+            // 更新保护垫选择框显示（图标 + 数量）
             const protectionSlot = document.getElementById('enhance-protection-slot');
             if (protectionSlot) {
-                protectionSlot.innerHTML = `<span class="selected-icon">${toolIcon}</span>`;
+                protectionSlot.innerHTML = `
+                    <span class="selected-icon">${toolIcon}</span>
+                    <span class="protection-count">${protectionTools.length}</span>
+                `;
             }
             
             modal.remove();
