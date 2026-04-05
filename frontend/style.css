@@ -5363,8 +5363,21 @@ body::after {
 
 .info-value.rate {
     font-size: 20px;
-    color: #8BC34A;
     font-weight: bold;
+    color: #8BC34A;  /* 默认绿色 */
+}
+
+/* 成功率颜色 */
+.info-value.rate.rate-low {
+    color: #E57373;  /* 红色：< 30% */
+}
+
+.info-value.rate.rate-medium {
+    color: #FFB74D;  /* 橙色：30% - 60% */
+}
+
+.info-value.rate.rate-high {
+    color: #8BC34A;  /* 绿色：> 60% */
 }
 
 /* ========== 保护 + 强化次数 合并框 ========== */

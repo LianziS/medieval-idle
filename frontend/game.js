@@ -413,7 +413,18 @@ function setupSocket() {
         // 更新成功率
         const rateEl = document.getElementById('enhance-success-rate');
         if (rateEl) {
-            rateEl.textContent = `${(data.successRate * 100).toFixed(0)}%`;
+            const ratePercent = data.successRate * 100;
+            rateEl.textContent = `${ratePercent.toFixed(0)}%`;
+            
+            // 根据成功率设置颜色类
+            rateEl.classList.remove('rate-low', 'rate-medium', 'rate-high');
+            if (ratePercent < 30) {
+                rateEl.classList.add('rate-low');
+            } else if (ratePercent <= 60) {
+                rateEl.classList.add('rate-medium');
+            } else {
+                rateEl.classList.add('rate-high');
+            }
         }
         
         // 更新经验
