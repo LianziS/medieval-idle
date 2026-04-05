@@ -8,7 +8,7 @@
     <meta name="format-detection" content="telephone=no">
     <title>中世纪雇佣兵 - 放置游戏</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="style.css?v=202604051510">
+    <link rel="stylesheet" href="style.css?v=202604051720">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#1B2A3A;color:#A0B2C0;min-height:100vh;padding:0;font-size:14px;overflow-x:hidden}
@@ -556,15 +556,17 @@
         <!-- 强化页 -->
         <main class="page" id="page-enhance">
             <section class="panel enhance-panel">
-                <!-- 标题 & 经验条 -->
-                <div class="panel-header">
-                    <span class="panel-title">⬆️ 装备强化</span>
+                <div class="skill-header">
+                    <h2 class="panel-title">⬆️ 装备强化</h2>
                     <span class="skill-level" id="enhance-forging-level">Lv.1</span>
                 </div>
                 <div class="skill-exp-bar">
-                    <div class="skill-exp-fill" id="enhance-forging-exp-fill"></div>
+                    <div class="skill-exp-bg">
+                        <div class="skill-exp-fill" id="enhance-forging-exp-fill"></div>
+                    </div>
                 </div>
                 <div class="skill-exp-info" id="enhance-forging-exp-info">[0/100]</div>
+                <div class="skill-divider"></div>
                 
                 <!-- 第一行：装备选择 + 费用 -->
                 <div class="enhance-top-row">
