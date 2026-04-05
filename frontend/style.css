@@ -5158,6 +5158,7 @@ body::after {
     display: flex;
     gap: 16px;
     align-items: flex-start;
+    margin-top: 16px;
 }
 
 /* 装备选择框（正方形） */
@@ -5225,7 +5226,6 @@ body::after {
     min-width: 0;
     display: flex;
     flex-direction: column;
-    margin-top: -21px;
 }
 
 .section-title {
