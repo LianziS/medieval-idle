@@ -399,10 +399,13 @@ io.on('connection', (socket) => {
                 const oldSockets = userSockets.get(decoded.userId);
                 console.log(`检测到用户 ${decoded.username} 有 ${oldSockets.length} 个旧连接，正在断开...`);
                 oldSockets.forEach(oldSocketId => {
-                    if (oldSocketId !== socket.id && io.sockets.sockets.has(oldSocketId)) {
+                    if (oldSocketId !== socket.id) {
+                        // Socket.io v4.x: 直接使用 get()，返回 undefined 表示不存在
                         const oldSocket = io.sockets.sockets.get(oldSocketId);
-                        oldSocket.emit('error', { message: '您的账号在其他地方登录，连接已断开' });
-                        oldSocket.disconnect(true);
+                        if (oldSocket) {
+                            oldSocket.emit('error', { message: '您的账号在其他地方登录，连接已断开' });
+                            oldSocket.disconnect(true);
+                        }
                     }
                 });
             }
