@@ -702,24 +702,42 @@ io.on('connection', (socket) => {
             return socket.emit('enhance_result', { success: false, reason: '队列已满' });
         }
         
-        // 添加到队列
-        gameEngine.state.actionQueue.push({
-            type: 'ENHANCE',
-            toolType: data.toolType,
-            toolIndex: data.toolIndex,
-            targetLevel: data.targetLevel,
-            count: data.count || 1,
-            protection: data.protection,
-            protectionStartLevel: data.protectionStartLevel || 2,
-            name: '强化'
-        });
-        
-        socket.emit('enhance_result', { 
-            success: true, 
-            queued: true, 
-            queueLength: queueLength + 1 
-        });
-        socket.emit('game_state_update', gameEngine.getFullState());
+        // 检查是否有正在进行的行动
+        if (!gameEngine.state.activeAction) {
+            // 没有正在进行的行动，直接开始强化
+            const result = gameEngine.startEnhanceAction(
+                data.toolType,
+                data.toolIndex,
+                data.targetLevel,
+                data.count || 1,
+                data.protection,
+                data.protectionStartLevel || 2
+            );
+            
+            socket.emit('enhance_result', result);
+            if (result.success) {
+                socket.emit('game_state_update', gameEngine.getFullState());
+            }
+        } else {
+            // 有正在进行的行动，添加到队列
+            gameEngine.state.actionQueue.push({
+                type: 'ENHANCE',
+                toolType: data.toolType,
+                toolIndex: data.toolIndex,
+                targetLevel: data.targetLevel,
+                count: data.count || 1,
+                protection: data.protection,
+                protectionStartLevel: data.protectionStartLevel || 2,
+                name: '强化'
+            });
+            
+            socket.emit('enhance_result', { 
+                success: true, 
+                queued: true, 
+                queueLength: gameEngine.state.actionQueue.length 
+            });
+            socket.emit('game_state_update', gameEngine.getFullState());
+        }
     });
     
     // 完成强化
