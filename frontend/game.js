@@ -4005,7 +4005,6 @@ function showOutputTooltip(event) {
     
     clearTimeout(outputTooltipTimeout);
     
-    const toolId = outputEl.dataset.toolId;
     const toolName = outputEl.dataset.toolName;
     const toolIcon = outputEl.dataset.toolIcon;
     const targetLevel = parseInt(outputEl.dataset.targetLevel) || 0;
