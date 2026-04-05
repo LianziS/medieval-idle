@@ -1603,7 +1603,10 @@ function hideQueuePopover() {
 function renderBuildings() {
     if (!elements.buildingsList || !gameState) return;
     
-    elements.buildingsList.innerHTML = CONFIG.buildings.map(b => {
+    // 过滤掉不需要显示的建筑（伐木场、矿洞、草药园）
+    const hiddenBuildings = ['lumber', 'mine', 'farm'];
+    
+    elements.buildingsList.innerHTML = CONFIG.buildings.filter(b => !hiddenBuildings.includes(b.id)).map(b => {
         const building = gameState.buildings?.[b.id] || { level: 0 };
         const level = building.level;
         const isMaxLevel = b.maxLevel && level >= b.maxLevel;
@@ -4175,6 +4178,36 @@ function renderEnhance() {
     // 初始化二级菜单
     initEnhanceTabs();
     
+    // 如果没有选中工具，清空显示
+    if (!enhanceState.selectedTool) {
+        // 清空费用列表
+        const feesListEl = document.getElementById('enhance-fees-list');
+        if (feesListEl) {
+            feesListEl.innerHTML = `
+                <div class="fee-item">
+                    <span class="fee-icon">🪙</span>
+                    <span class="fee-name">金币</span>
+                    <span class="fee-count">--</span>
+                </div>
+            `;
+        }
+        
+        // 清空经验和成功率
+        const expEl = document.getElementById('enhance-exp');
+        const rateEl = document.getElementById('enhance-success-rate');
+        if (expEl) expEl.textContent = '--';
+        if (rateEl) {
+            rateEl.textContent = '--%';
+            rateEl.classList.remove('rate-low', 'rate-medium', 'rate-high');
+        }
+        
+        // 清空产出预览
+        const outputIconEl = document.getElementById('enhance-output-icon');
+        const outputBadgeEl = document.getElementById('enhance-output-badge');
+        if (outputIconEl) outputIconEl.textContent = '-';
+        if (outputBadgeEl) outputBadgeEl.style.display = 'none';
+    }
+    
     // 自动选择装备逻辑（如果还没有选中）
     if (!enhanceState.selectedTool) {
         autoSelectEnhanceTool();
@@ -4629,6 +4662,33 @@ function resetEnhanceState() {
     if (placeholder) placeholder.style.display = 'flex';
     if (badge) badge.style.display = 'none';
     if (iconWrap) iconWrap.style.display = 'none';
+    
+    // 清空费用列表
+    const feesListEl = document.getElementById('enhance-fees-list');
+    if (feesListEl) {
+        feesListEl.innerHTML = `
+            <div class="fee-item">
+                <span class="fee-icon">🪙</span>
+                <span class="fee-name">金币</span>
+                <span class="fee-count">--</span>
+            </div>
+        `;
+    }
+    
+    // 清空经验和成功率
+    const expEl = document.getElementById('enhance-exp');
+    const rateEl = document.getElementById('enhance-success-rate');
+    if (expEl) expEl.textContent = '--';
+    if (rateEl) {
+        rateEl.textContent = '--%';
+        rateEl.classList.remove('rate-low', 'rate-medium', 'rate-high');
+    }
+    
+    // 清空产出预览
+    const outputIconEl = document.getElementById('enhance-output-icon');
+    const outputBadgeEl = document.getElementById('enhance-output-badge');
+    if (outputIconEl) outputIconEl.textContent = '-';
+    if (outputBadgeEl) outputBadgeEl.style.display = 'none';
     
     // 重置输入框
     const targetInput = document.getElementById('enhance-target-level');
