@@ -2304,6 +2304,12 @@ body::after {
     position: relative;
     box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3);
     padding: 4px;
+    cursor: pointer;
+}
+
+.preview-card:hover {
+    border-color: #e53e3e;
+    background: linear-gradient(145deg, #3d4a5c 0%, #2d3748 100%);
 }
 
 .preview-icon {
@@ -2313,6 +2319,110 @@ body::after {
 .preview-count {
     font-size: 8px;
     color: #e2e8f0;
+}
+
+.preview-empty {
+    color: #718096;
+    font-size: 10px;
+    text-align: center;
+    padding: 8px;
+}
+
+/* 物品出售弹出卡片 */
+.item-sell-popup {
+    position: absolute;
+    width: 160px;
+    background: linear-gradient(145deg, #2d3748 0%, #1a202c 100%);
+    border: 2px solid #4a5568;
+    border-radius: 6px;
+    padding: 12px;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.popup-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.popup-icon {
+    font-size: 24px;
+}
+
+.popup-name {
+    font-size: 12px;
+    color: #e2e8f0;
+    font-weight: bold;
+}
+
+.popup-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 10px;
+    color: #a0aec0;
+}
+
+.popup-count {
+    color: #68d391;
+}
+
+.popup-price {
+    color: #ffd700;
+}
+
+.popup-input-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.popup-input {
+    flex: 1;
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #4a5568;
+    border-radius: 4px;
+    color: #e2e8f0;
+    font-size: 12px;
+    width: 60px;
+}
+
+.popup-input:focus {
+    border-color: #63b3ed;
+    outline: none;
+}
+
+.popup-all-btn {
+    padding: 6px 10px;
+    background: rgba(107, 79, 60, 0.5);
+    border: 1px solid #8B4513;
+    border-radius: 4px;
+    color: #E8C57F;
+    font-size: 10px;
+    cursor: pointer;
+}
+
+.popup-all-btn:hover {
+    background: rgba(107, 79, 60, 0.7);
+}
+
+.popup-sell-btn {
+    width: 100%;
+    padding: 8px;
+    background: linear-gradient(145deg, #4a7c59 0%, #3d6b4a 100%);
+    border: 1px solid #5a8c69;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.popup-sell-btn:hover {
+    background: linear-gradient(145deg, #5a8c69 0%, #4a7c59 100%);
 }
 
 .preview-remove {

@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0406 18:20';
+        versionEl.textContent = '0406 18:40';
     }
 }
 
@@ -2857,8 +2857,9 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade') {
         Object.entries(inventory).forEach(([itemId, count]) => {
             if (count > 0) {
                 const configItem = config.find(c => c[idField] === itemId) || { name: itemId, icon: '❓' };
+                const price = Math.floor((CONFIG.resourcePrices?.[type.toLowerCase()] || 1) * 2);
                 myItemsHtml += `
-                    <div class="inventory-card" data-item-type="${type}" data-item-id="${itemId}" data-count="${count}">
+                    <div class="inventory-card" data-item-type="${type}" data-item-id="${itemId}" data-count="${count}" data-name="${configItem.name}" data-icon="${configItem.icon}" data-price="${price}">
                         <span class="inventory-icon">${configItem.icon}</span>
                         <span class="inventory-count">${count}</span>
                     </div>
@@ -3036,16 +3037,158 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade') {
         });
     });
     
-    // 出售按钮
-    modal.querySelectorAll('.sell-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const card = btn.closest('.item-card');
+    // 物品卡片点击事件 - 显示出售弹窗
+    const sellPopupCards = new Map(); // 存储当前显示的弹窗
+    
+    // 待售列表数据
+    const pendingSellItems = [];
+    
+    // 更新待售列表显示
+    const updateSellPreview = () => {
+        const previewGrid = modal.querySelector('#sell-preview-grid');
+        if (!previewGrid) return;
+        
+        previewGrid.innerHTML = pendingSellItems.map(item => `
+            <div class="preview-card" data-item-type="${item.type}" data-item-id="${item.id}">
+                <span class="preview-icon">${item.icon}</span>
+                <span class="preview-count">${item.sellCount}</span>
+            </div>
+        `).join('') || '<div class="preview-empty">点击物品添加到待售</div>';
+        
+        // 更新总计
+        const totalGold = pendingSellItems.reduce((sum, item) => sum + item.price * item.sellCount, 0);
+        const totalEl = modal.querySelector('#merchant-sell-total');
+        if (totalEl) {
+            totalEl.textContent = `💰 ${totalGold}`;
+        }
+        
+        // 绑定待售卡片点击事件（移除）
+        previewGrid.querySelectorAll('.preview-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const itemType = card.dataset.itemType;
+                const itemId = card.dataset.itemId;
+                const index = pendingSellItems.findIndex(i => i.type === itemType && i.id === itemId);
+                if (index > -1) {
+                    pendingSellItems.splice(index, 1);
+                    updateSellPreview();
+                }
+            });
+        });
+    };
+    
+    // 确认出售按钮
+    const sellConfirmBtn = modal.querySelector('#merchant-sell-btn');
+    if (sellConfirmBtn) {
+        sellConfirmBtn.addEventListener('click', () => {
+            if (pendingSellItems.length === 0) {
+                showToast('⚠️ 请先选择要出售的物品');
+                return;
+            }
+            // 执行出售
+            pendingSellItems.forEach(item => {
+                socket.emit('sell_item', { itemType: item.type, itemId: item.id, count: item.sellCount });
+            });
+            pendingSellItems.length = 0;
+            updateSellPreview();
+            showToast('✅ 已添加到待售列表');
+        });
+    }
+    
+    // 物品卡片点击
+    modal.querySelectorAll('.inventory-card:not(.empty-slot)').forEach(card => {
+        card.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            // 关闭其他弹窗
+            sellPopupCards.forEach(popup => popup.remove());
+            sellPopupCards.clear();
+            
             const itemType = card.dataset.itemType;
             const itemId = card.dataset.itemId;
             const count = parseInt(card.dataset.count) || 1;
-            socket.emit('sell_item', { itemType, itemId, count });
+            const name = card.dataset.name || itemId;
+            const icon = card.dataset.icon || '❓';
+            const price = parseInt(card.dataset.price) || 1;
+            
+            // 创建弹出卡片
+            const popup = document.createElement('div');
+            popup.className = 'item-sell-popup';
+            popup.innerHTML = `
+                <div class="popup-header">
+                    <span class="popup-icon">${icon}</span>
+                    <span class="popup-name">${name}</span>
+                </div>
+                <div class="popup-info">
+                    <span class="popup-count">持有: ${count}</span>
+                    <span class="popup-price">单价: 💰${price}</span>
+                </div>
+                <div class="popup-input-row">
+                    <input type="number" class="popup-input" min="1" max="${count}" value="1" placeholder="数量">
+                    <button class="popup-all-btn">全部</button>
+                </div>
+                <button class="popup-sell-btn">加入待售</button>
+            `;
+            
+            // 定位弹窗在卡片上方
+            const rect = card.getBoundingClientRect();
+            const modalRect = modal.querySelector('.merchant-modal-panel').getBoundingClientRect();
+            popup.style.position = 'absolute';
+            popup.style.left = `${rect.left - modalRect.left}px`;
+            popup.style.bottom = `${modalRect.height - (rect.top - modalRect.top) + 5}px`;
+            
+            modal.querySelector('.merchant-modal-panel').appendChild(popup);
+            sellPopupCards.set(itemId, popup);
+            
+            // 全部按钮
+            popup.querySelector('.popup-all-btn').addEventListener('click', () => {
+                popup.querySelector('.popup-input').value = count;
+            });
+            
+            // 加入待售按钮
+            popup.querySelector('.popup-sell-btn').addEventListener('click', () => {
+                const sellCount = parseInt(popup.querySelector('.popup-input').value) || 1;
+                if (sellCount <= 0 || sellCount > count) {
+                    showToast('⚠️ 数量无效');
+                    return;
+                }
+                
+                // 检查是否已在待售列表
+                const existing = pendingSellItems.find(i => i.type === itemType && i.id === itemId);
+                if (existing) {
+                    existing.sellCount = Math.min(existing.sellCount + sellCount, count);
+                } else {
+                    pendingSellItems.push({
+                        type: itemType,
+                        id: itemId,
+                        name,
+                        icon,
+                        price,
+                        sellCount
+                    });
+                }
+                
+                updateSellPreview();
+                popup.remove();
+                sellPopupCards.delete(itemId);
+            });
+            
+            // 点击其他地方关闭弹窗
+            setTimeout(() => {
+                document.addEventListener('click', closePopupHandler);
+            }, 10);
+            
+            const closePopupHandler = (ev) => {
+                if (!popup.contains(ev.target) && !card.contains(ev.target)) {
+                    popup.remove();
+                    sellPopupCards.delete(itemId);
+                    document.removeEventListener('click', closePopupHandler);
+                }
+            };
         });
     });
+    
+    // 初始化待售列表
+    updateSellPreview();
 }
 
 /**
