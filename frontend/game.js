@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0406 21:30';
+        versionEl.textContent = '0406 21:55';
     }
 }
 
@@ -3273,6 +3273,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                     <button class="popup-all-btn">全部</button>
                 </div>
                 <button class="popup-sell-btn">加入待售</button>
+                <button class="popup-direct-sell-btn" id="popup-direct-sell">出售</button>
             `;
 
             // 定位弹窗在卡片上方
@@ -3317,6 +3318,31 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                 popup.remove();
                 sellPopupCards.delete(itemId);
                 card.classList.remove('selected'); // 移除选中标记
+            });
+
+            // 直接出售按钮（两次确认）
+            const directSellBtn = popup.querySelector('#popup-direct-sell');
+            let directSellConfirm = false;
+            directSellBtn.addEventListener('click', () => {
+                const sellCount = parseInt(popup.querySelector('.popup-input').value) || 1;
+                if (sellCount <= 0 || sellCount > count) {
+                    showToast('⚠️ 数量无效');
+                    return;
+                }
+
+                if (!directSellConfirm) {
+                    // 第一次点击：变成确认状态
+                    directSellConfirm = true;
+                    directSellBtn.classList.add('confirm-ready');
+                    directSellBtn.textContent = '再次出售';
+                } else {
+                    // 第二次点击：执行出售
+                    socket.emit('sell_item', { itemType, itemId, count: sellCount });
+                    popup.remove();
+                    sellPopupCards.delete(itemId);
+                    card.classList.remove('selected');
+                }
+            });
             });
 
             // 点击其他地方关闭弹窗

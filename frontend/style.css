@@ -2440,10 +2440,37 @@ body::after {
     font-size: 12px;
     cursor: pointer;
     font-weight: bold;
+    margin-top: 6px;
 }
 
 .popup-sell-btn:hover {
     background: linear-gradient(145deg, #5a8c69 0%, #4a7c59 100%);
+}
+
+.popup-direct-sell-btn {
+    width: 100%;
+    padding: 8px;
+    background: linear-gradient(145deg, #8B4513 0%, #6B3510 100%);
+    border: 1px solid #A0522D;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 6px;
+}
+
+.popup-direct-sell-btn:hover {
+    background: linear-gradient(145deg, #A0522D 0%, #8B4513 100%);
+}
+
+.popup-direct-sell-btn.confirm-ready {
+    background: linear-gradient(145deg, #c53030 0%, #9b2c2c 100%);
+    border-color: #e53e3e;
+}
+
+.popup-direct-sell-btn.confirm-ready:hover {
+    background: linear-gradient(145deg, #e53e3e 0%, #c53030 100%);
 }
 
 .preview-remove {
