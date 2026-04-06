@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0406 21:10';
+        versionEl.textContent = '0406 21:25';
     }
 }
 
@@ -363,7 +363,8 @@ function setupSocket() {
         let savedPendingSellItems = [];
         let savedPopupItem = null; // 保存当前打开的弹出卡片
         let savedPopupInputValue = 1;
-
+        let savedConfirmState = false; // 保存确认状态
+        
         if (oldModal) {
             const activeTabEl = oldModal.querySelector('.merchant-tab.active');
             if (activeTabEl) {
@@ -381,12 +382,10 @@ function setupSocket() {
                     });
                 });
             }
-            // 保存当前打开的弹出卡片
+            // 保存当前打开的弹出卡片（找.selected标记的卡片）
             const openPopup = oldModal.querySelector('.item-sell-popup');
             if (openPopup) {
-                // 找到对应的物品卡片
-                const inventoryCard = oldModal.querySelector('.inventory-card.selected') ||
-                    oldModal.querySelector('.inventory-card[data-item-id]');
+                const inventoryCard = oldModal.querySelector('.inventory-card.selected');
                 if (inventoryCard) {
                     savedPopupItem = {
                         type: inventoryCard.dataset.itemType,
@@ -403,10 +402,15 @@ function setupSocket() {
                     }
                 }
             }
+            // 保存确认按钮状态
+            const sellBtn = oldModal.querySelector('#merchant-sell-btn');
+            if (sellBtn && sellBtn.classList.contains('confirm-ready')) {
+                savedConfirmState = true;
+            }
             oldModal.remove();
         }
-
-        renderMerchantPanel(data.merchantId, data.data, activeTab, savedPendingSellItems, savedPopupItem, savedPopupInputValue);
+        
+        renderMerchantPanel(data.merchantId, data.data, activeTab, savedPendingSellItems, savedPopupItem, savedPopupInputValue, savedConfirmState);
     });
 
     socket.on('buy_result', (result) => {
@@ -2873,7 +2877,7 @@ function openMerchantPanel(merchantId) {
 /**
  * 渲染商人面板
  */
-function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', savedPendingSellItems = [], savedPopupItem = null, savedPopupInputValue = 1) {
+function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', savedPendingSellItems = [], savedPopupItem = null, savedPopupInputValue = 1, savedConfirmState = false) {
     if (!merchantData) return;
 
     // 构建我的物品列表（网格显示）
@@ -2924,7 +2928,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
     if (myItemsHtml) {
         inventorySlots.push(myItemsHtml);
     }
-    
+
     modal.innerHTML = `
         <div class="merchant-modal-overlay"></div>
         <div class="merchant-modal-panel">
@@ -3117,7 +3121,12 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
     // 确认出售按钮
     const sellConfirmBtn = modal.querySelector('#merchant-sell-btn');
     if (sellConfirmBtn) {
-        let confirmState = false; // 是否处于确认状态
+        // 使用dataset存储确认状态，这样恢复时可以正确设置
+        sellConfirmBtn.dataset.confirmState = savedConfirmState ? 'true' : 'false';
+        if (savedConfirmState) {
+            sellConfirmBtn.classList.add('confirm-ready');
+            sellConfirmBtn.textContent = '确认出售';
+        }
 
         sellConfirmBtn.addEventListener('click', () => {
             if (pendingSellItems.length === 0) {
@@ -3125,9 +3134,11 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                 return;
             }
 
-            if (!confirmState) {
+            const currentState = sellConfirmBtn.dataset.confirmState === 'true';
+
+            if (!currentState) {
                 // 第一次点击：变成确认状态
-                confirmState = true;
+                sellConfirmBtn.dataset.confirmState = 'true';
                 sellConfirmBtn.classList.add('confirm-ready');
                 sellConfirmBtn.textContent = '确认出售';
             } else {
@@ -3137,7 +3148,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                 });
                 pendingSellItems.length = 0;
                 updateSellPreview();
-                confirmState = false;
+                sellConfirmBtn.dataset.confirmState = 'false';
                 sellConfirmBtn.classList.remove('confirm-ready');
                 sellConfirmBtn.textContent = '出售';
                 showToast('✅ 出售成功');
@@ -3146,8 +3157,8 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
 
         // 点击其他地方取消确认状态
         modal.addEventListener('click', (e) => {
-            if (!e.target.closest('#merchant-sell-btn') && confirmState) {
-                confirmState = false;
+            if (!e.target.closest('#merchant-sell-btn') && sellConfirmBtn.dataset.confirmState === 'true') {
+                sellConfirmBtn.dataset.confirmState = 'false';
                 sellConfirmBtn.classList.remove('confirm-ready');
                 sellConfirmBtn.textContent = '出售';
             }
@@ -3158,6 +3169,10 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
     modal.querySelectorAll('.inventory-card:not(.empty-slot)').forEach(card => {
         card.addEventListener('click', (e) => {
             e.stopPropagation();
+
+            // 移除其他卡片的selected标记，添加当前卡片的selected标记
+            modal.querySelectorAll('.inventory-card.selected').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
 
             // 关闭其他弹窗
             sellPopupCards.forEach(popup => popup.remove());
@@ -3230,6 +3245,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                 updateSellPreview();
                 popup.remove();
                 sellPopupCards.delete(itemId);
+                card.classList.remove('selected'); // 移除选中标记
             });
 
             // 点击其他地方关闭弹窗
@@ -3241,6 +3257,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                 if (!popup.contains(ev.target) && !card.contains(ev.target)) {
                     popup.remove();
                     sellPopupCards.delete(itemId);
+                    card.classList.remove('selected'); // 移除选中标记
                     document.removeEventListener('click', closePopupHandler);
                 }
             };
@@ -3254,6 +3271,8 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
     if (savedPopupItem) {
         const targetCard = modal.querySelector(`.inventory-card[data-item-id="${savedPopupItem.id}"]`);
         if (targetCard) {
+            // 添加选中标记
+            targetCard.classList.add('selected');
             // 触发点击事件来显示弹出卡片
             setTimeout(() => {
                 targetCard.click();
