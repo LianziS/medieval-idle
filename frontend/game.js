@@ -63,13 +63,9 @@ async function init() {
 function setVersionTime() {
     const versionEl = document.getElementById('version-value');
     if (versionEl) {
-        // 使用当前时间作为版本号（格式：MMDD HH:MM）
-        const now = new Date();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const hour = String(now.getHours()).padStart(2, '0');
-        const min = String(now.getMinutes()).padStart(2, '0');
-        versionEl.textContent = `${month}${day} ${hour}:${min}`;
+        // 使用固定的版本号（与 CSS/JS 文件版本号同步）
+        // 格式：MMDD HH:MM
+        versionEl.textContent = '0406 16:25';
     }
 }
 
