@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0406 23:40';
+        versionEl.textContent = '0406 23:50';
     }
 }
 
@@ -2078,16 +2078,16 @@ function renderWoodcutting() {
 
         return `
             <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
-                 data-action="woodcutting" data-id="${tree.id}">
+                 data-action="woodcutting" data-id="${tree.id}" data-unlocked="${unlocked}">
                 <div class="card-name">${tree.name}</div>
                 <div class="card-icon">${tree.icon}</div>
-                ${!unlocked ? `<div class="locked-badge">🔒Lv.${tree.reqLevel}</div>` : ''}
+                ${!unlocked ? `<div class="locked-badge">Lv.${tree.reqLevel}</div>` : ''}
             </div>
         `;
     }).join('');
 
-    // 绑定点击事件
-    elements.woodcuttingList.querySelectorAll('.action-card-square:not(.locked)').forEach(card => {
+    // 绑定点击事件（所有卡片都可以点击）
+    elements.woodcuttingList.querySelectorAll('.action-card-square').forEach(card => {
         card.addEventListener('click', () => {
             const treeId = card.dataset.id;
             openActionModal('WOODCUTTING', treeId);
@@ -4014,6 +4014,21 @@ function showActionModal(config) {
     const queueAvailable = currentQueue.length < maxQueueSize;
     const queuePosition = currentQueue.length + 1;
 
+    // 检查等级是否足够
+    const levelKey = {
+        WOODCUTTING: 'woodcuttingLevel',
+        MINING: 'miningLevel',
+        GATHERING: 'gatheringLevel',
+        CRAFTING: 'craftingLevel',
+        FORGING: 'forgingLevel',
+        TAILORING: 'tailoringLevel',
+        ALCHEMY: 'alchemyLevel',
+        BREWING: 'brewingLevel',
+        ESSENCE: 'alchemyLevel'
+    }[pendingAction?.type] || 'woodcuttingLevel';
+    const currentLevel = gameState?.[levelKey] || 1;
+    const levelEnough = currentLevel >= (config.reqLevel || 1);
+
     // 获取行动类型信息
     const typeInfo = {
         WOODCUTTING: { icon: '🪓', name: '伐木' },
@@ -4049,7 +4064,8 @@ function showActionModal(config) {
                 <div class="popup-info-row">
                     <div class="popup-info-label"><span class="lbl-icon">🔓</span>需要</div>
                     <div class="popup-info-val">
-                        <span class="popup-badge level">Lv.${config.reqLevel} ${actionType.icon}</span>
+                        <span class="popup-badge level ${levelEnough ? '' : 'insufficient'}">Lv.${config.reqLevel} ${actionType.icon}</span>
+                        ${!levelEnough ? `<span class="level-warning">（当前 Lv.${currentLevel}）</span>` : ''}
                     </div>
                 </div>
                 ` : ''}
@@ -4122,7 +4138,9 @@ function showActionModal(config) {
                 ${queueAvailable ?
                     `<button class="popup-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` :
                     `<button class="popup-btn queue disabled" id="action-queue" disabled>队列已满</button>`}
-                <button class="popup-btn start" id="action-start">立即开始</button>
+                ${levelEnough ?
+                    `<button class="popup-btn start" id="action-start">立即开始</button>` :
+                    `<button class="popup-btn start disabled" id="action-start" disabled>等级不足</button>`}
             </div>
         </div>
     `;

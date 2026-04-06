@@ -4206,13 +4206,14 @@ body::after {
 }
 
 .action-card-square.locked {
-    opacity: 0.5;
-    cursor: not-allowed;
+    opacity: 0.7;
+    cursor: pointer;
 }
 
 .action-card-square.locked:hover {
-    transform: none;
-    border-color: #4a5568;
+    transform: translateY(-2px);
+    border-color: #c53030;
+    background: linear-gradient(145deg, #3d2a2a 0%, #2d1f1f 100%);
 }
 
 .action-card-square .card-name {
@@ -4350,6 +4351,8 @@ body::after {
 }
 
 .popup-badge.level { background: rgba(232, 162, 74, 0.12); border-color: rgba(232, 162, 74, 0.3); color: #e8a24a; }
+.popup-badge.level.insufficient { background: rgba(200, 80, 80, 0.15); border-color: rgba(200, 80, 80, 0.4); color: #e06060; }
+.level-warning { color: #e06060; font-size: 11px; margin-left: 4px; }
 .popup-badge.drop { background: rgba(100, 200, 100, 0.1); border-color: rgba(100, 200, 100, 0.3); color: #80d880; }
 .popup-badge.token { background: rgba(80, 160, 240, 0.1); border-color: rgba(80, 160, 240, 0.3); color: #70b8f0; }
 .popup-badge.material { background: rgba(160, 140, 120, 0.1); border-color: rgba(160, 140, 120, 0.3); color: #c0a080; }
@@ -4449,6 +4452,8 @@ body::after {
 }
 
 .popup-btn.start:hover { background: linear-gradient(135deg, #7a2020, #b03030); }
+.popup-btn.start.disabled { background: #3a3a3a; border-color: #4a4a4a; color: #666; cursor: not-allowed; }
+.popup-btn.start.disabled:hover { background: #3a3a3a; }
 
 .action-card .locked-overlay {
     position: absolute;
