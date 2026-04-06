@@ -2853,68 +2853,116 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade') {
     const modal = document.createElement('div');
     modal.className = 'merchant-modal active';
     modal.dataset.merchantId = merchantId;
+    
+    // 好感度百分比
+    const favorPercent = Math.floor((merchantData.favorability || 0) * 100);
+    
+    // 生成商人出售区空格子（21个格子，暂不售出任何东西）
+    const goodsSlots = [];
+    for (let i = 0; i < 21; i++) {
+        goodsSlots.push('<div class="goods-card empty-slot"></div>');
+    }
+    
+    // 生成我的物品区（有物品显示物品，没有显示空格子）
+    const inventorySlots = [];
+    if (myItemsHtml) {
+        inventorySlots.push(myItemsHtml);
+    }
+    // 补充空格子到最小21个
+    const existingItems = merchantData.myItems?.length || 0;
+    for (let i = existingItems; i < 21; i++) {
+        inventorySlots.push('<div class="inventory-card empty-slot"></div>');
+    }
+    
     modal.innerHTML = `
         <div class="merchant-modal-overlay"></div>
         <div class="merchant-modal-panel">
-            <div class="merchant-modal-header">
-                <span class="merchant-modal-avatar">${merchantData.avatar}</span>
-                <div class="merchant-modal-info">
-                    <h3>${merchantData.name}</h3>
-                    <p class="merchant-modal-title">${merchantData.title}</p>
-                    <p class="merchant-favor">好感度: ${Math.floor((merchantData.favorability || 0) * 100)}%</p>
+            <!-- 头部：商人信息 -->
+            <div class="merchant-header">
+                <div class="merchant-avatar">${merchantData.avatar}</div>
+                <div class="merchant-info">
+                    <div class="merchant-name">${merchantData.name}</div>
+                    <div class="merchant-title">${merchantData.title}</div>
+                    <div class="reputation-bar">
+                        <span class="reputation-label">好感度</span>
+                        <div class="reputation-track">
+                            <div class="reputation-fill" style="width: ${favorPercent}%;"></div>
+                        </div>
+                        <span class="reputation-value">${favorPercent}%</span>
+                    </div>
                 </div>
-                <button class="merchant-modal-close">&times;</button>
+                <button class="merchant-close-btn">×</button>
             </div>
+            
+            <!-- 标签切换 -->
             <div class="merchant-tabs">
-                <button class="merchant-tab ${activeTab === 'trade' ? 'active' : ''}" data-tab="trade">交易</button>
-                <button class="merchant-tab ${activeTab === 'quest' ? 'active' : ''}" data-tab="quest">任务</button>
+                <button class="merchant-tab ${activeTab === 'trade' ? 'active' : ''}" data-tab="trade">⚖ 交易</button>
+                <button class="merchant-tab ${activeTab === 'quest' ? 'active' : ''}" data-tab="quest">📜 任务</button>
             </div>
-            <div class="merchant-modal-body">
-                <div class="merchant-tab-content ${activeTab === 'trade' ? 'active' : ''}" id="merchant-tab-trade">
-                    <div class="merchant-section">
-                        <h4>商品</h4>
-                        <div class="goods-grid">
-                            ${merchantData.goods?.map(goods => `
-                                <div class="goods-card" data-goods-id="${goods.id}">
-                                    <span class="goods-icon">${goods.icon}</span>
-                                    <span class="goods-name">${goods.name}</span>
-                                    <span class="goods-price">${goods.price} ${goods.currency === 'gold' ? '💰' : '🪙'}</span>
-                                    <button class="buy-btn" data-goods-id="${goods.id}">购买</button>
-                                </div>
-                            `).join('') || '<div class="empty">暂无商品</div>'}
-                        </div>
+            
+            <!-- 内容区域 -->
+            <div class="merchant-content-area" id="merchant-trade-panel" style="display: ${activeTab === 'trade' ? 'flex' : 'none'};">
+                <!-- 商人出售区 -->
+                <div class="merchant-goods-section">
+                    <div class="goods-grid">
+                        ${goodsSlots.join('')}
                     </div>
-                    <div class="merchant-section">
-                        <h4>我的物品</h4>
-                        <div class="my-items-grid">
-                            ${myItemsHtml || '<div class="empty">暂无可出售物品</div>'}
+                </div>
+                
+                <!-- 待售预览区 -->
+                <div class="sell-preview-section" id="sell-preview-section">
+                    <div class="section-header">
+                        <span class="section-icon">📤</span>
+                        <span class="section-title">待售</span>
+                        <div class="section-divider"></div>
+                    </div>
+                    <div class="preview-grid" id="sell-preview-grid">
+                        <!-- 待售物品 -->
+                    </div>
+                    <div class="sell-actions">
+                        <button class="btn-select" id="merchant-select-btn">选择</button>
+                        <button class="btn-sell-confirm" id="merchant-sell-btn">出售</button>
+                        <div class="sell-total">
+                            获得：<span class="sell-total-value" id="merchant-sell-total">🪙 0</span>
                         </div>
                     </div>
                 </div>
-                <div class="merchant-tab-content ${activeTab === 'quest' ? 'active' : ''}" id="merchant-tab-quest">
-                    <div class="quest-list">
-                        ${merchantData.quests?.map(quest => {
-                            const completed = merchantData.completedQuests?.includes(quest.id);
-                            const accepted = merchantData.acceptedQuests?.includes(quest.id);
-                            return `
-                                <div class="quest-card ${completed ? 'completed' : ''}" data-quest-id="${quest.id}">
-                                    <div class="quest-header">
-                                        <span class="quest-name">${quest.name}</span>
-                                        ${completed ? '<span class="quest-badge completed">✓ 已完成</span>' : 
-                                          accepted ? '<span class="quest-badge accepted">进行中</span>' : ''}
-                                    </div>
-                                    <div class="quest-desc">${quest.desc}</div>
-                                    <div class="quest-reward">奖励: ${quest.reward.gold}💰 ${quest.reward.favorability ? `+${Math.floor(quest.reward.favorability * 100)}%好感` : ''}</div>
-                                    <div class="quest-actions">
-                                        ${completed ? '' : 
-                                          accepted ? `<button class="submit-quest-btn" data-quest-id="${quest.id}">提交</button>` :
-                                          `<button class="accept-quest-btn" data-quest-id="${quest.id}">领取</button>`}
-                                    </div>
-                                </div>
-                            `;
-                        }).join('') || '<div class="empty">暂无任务</div>'}
+                
+                <!-- 我的物品 -->
+                <div class="merchant-inventory-section">
+                    <div class="section-header">
+                        <span class="section-icon">🎒</span>
+                        <span class="section-title">我的物品</span>
+                        <div class="section-divider"></div>
+                    </div>
+                    <div class="inventory-grid" id="merchant-inventory-grid">
+                        ${inventorySlots.join('')}
                     </div>
                 </div>
+            </div>
+            
+            <!-- 任务面板 -->
+            <div class="merchant-quest-panel" id="merchant-quest-panel" style="display: ${activeTab === 'quest' ? 'block' : 'none'};">
+                ${merchantData.quests?.map(quest => {
+                    const completed = merchantData.completedQuests?.includes(quest.id);
+                    const accepted = merchantData.acceptedQuests?.includes(quest.id);
+                    return `
+                        <div class="quest-card ${completed ? 'completed' : ''}" data-quest-id="${quest.id}">
+                            <div class="quest-header">
+                                <span class="quest-name">${quest.name}</span>
+                                ${completed ? '<span class="quest-badge completed">✓ 已完成</span>' : 
+                                  accepted ? '<span class="quest-badge accepted">进行中</span>' : ''}
+                            </div>
+                            <div class="quest-desc">${quest.desc}</div>
+                            <div class="quest-reward">奖励: ${quest.reward.gold}💰 ${quest.reward.favorability ? `+${Math.floor(quest.reward.favorability * 100)}%好感` : ''}</div>
+                            <div class="quest-actions">
+                                ${completed ? '' : 
+                                  accepted ? `<button class="submit-quest-btn" data-quest-id="${quest.id}">提交</button>` :
+                                  `<button class="accept-quest-btn" data-quest-id="${quest.id}">领取</button>`}
+                            </div>
+                        </div>
+                    `;
+                }).join('') || '<div class="quest-empty"><span class="quest-icon">📜</span><span class="quest-text">暂无任务</span></div>'}
             </div>
         </div>
     `;
@@ -2928,17 +2976,22 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade') {
     };
     
     // 绑定事件
-    modal.querySelector('.merchant-modal-close').addEventListener('click', closeModal);
+    modal.querySelector('.merchant-close-btn').addEventListener('click', closeModal);
     modal.querySelector('.merchant-modal-overlay').addEventListener('click', closeModal);
     
     // 标签切换
     modal.querySelectorAll('.merchant-tab').forEach(tab => {
         tab.addEventListener('click', () => {
             modal.querySelectorAll('.merchant-tab').forEach(t => t.classList.remove('active'));
-            modal.querySelectorAll('.merchant-tab-content').forEach(c => c.classList.remove('active'));
             tab.classList.add('active');
             const tabId = tab.dataset.tab;
-            modal.querySelector(`#merchant-tab-${tabId}`)?.classList.add('active');
+            // 切换显示交易/任务面板
+            const tradePanel = modal.querySelector('#merchant-trade-panel');
+            const questPanel = modal.querySelector('#merchant-quest-panel');
+            if (tradePanel && questPanel) {
+                tradePanel.style.display = tabId === 'trade' ? 'flex' : 'none';
+                questPanel.style.display = tabId === 'quest' ? 'block' : 'none';
+            }
         });
     });
     
