@@ -2623,9 +2623,6 @@ body::after {
     bottom: 2px;
     font-size: 9px;
     color: #e2e8f0;
-    background: rgba(0, 0, 0, 0.5);
-    padding: 1px 3px;
-    border-radius: 2px;
 }
 
 /* 品质边框 */

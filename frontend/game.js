@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0406 22:00';
+        versionEl.textContent = '0406 22:10';
     }
 }
 
@@ -3216,6 +3216,22 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                 // 第二次点击：执行出售
                 pendingSellItems.forEach(item => {
                     socket.emit('sell_item', { itemType: item.type, itemId: item.id, count: item.sellCount });
+                    
+                    // 更新对应物品卡片的数量
+                    const card = modal.querySelector(`.inventory-card[data-item-id="${item.id}"]`);
+                    if (card) {
+                        const currentCount = parseInt(card.dataset.count) || 0;
+                        const newCount = currentCount - item.sellCount;
+                        card.dataset.count = newCount;
+                        const countEl = card.querySelector('.inventory-count');
+                        if (countEl) {
+                            countEl.textContent = newCount;
+                        }
+                        // 如果数量为0，移除卡片
+                        if (newCount <= 0) {
+                            card.remove();
+                        }
+                    }
                 });
                 pendingSellItems.length = 0;
                 updateSellPreview();
