@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0406 23:50';
+        versionEl.textContent = '0406 23:55';
     }
 }
 
@@ -1868,21 +1868,51 @@ function openUpgradeModal(buildingId) {
 }
 
 /**
- * 获取代币掉落概率（基础概率，最低等级代币）
+ * 获取代币掉落概率（根据当前等级计算）
  */
 function getTokenChance(actionType) {
     // 代币概率表（来自后端配置）
-    const tokenRates = {
-        WOODCUTTING: 1.7,  // standard表第一项
-        MINING: 1.7,
-        GATHERING: 1.7,
-        CRAFTING: 1.7,
-        FORGING: 1.7,      // tool表第一项（锻造工具）
-        TAILORING: 1.7,    // tailoring表第一项
-        ALCHEMY: 1.7,
-        BREWING: 2.2       // brewing表第一项
+    const tokenDropRates = {
+        standard: [0.017, 0.024, 0.037, 0.053, 0.071, 0.092, 0.149, 0.210],
+        tool: [0.017, 0.033, 0.061, 0.110, 0.196, 0.343, 0.590, 0.990],
+        tailoring: [0.017, 0.032, 0.053, 0.078, 0.126, 0.195],
+        brewing: [0.022, 0.023, 0.024, 0.028, 0.029, 0.033, 0.033, 0.033]
     };
-    return tokenRates[actionType] || 1.7;
+    
+    // 行动类型到概率表的映射
+    const rateTableMap = {
+        WOODCUTTING: 'standard',
+        MINING: 'standard',
+        GATHERING: 'standard',
+        CRAFTING: 'standard',
+        FORGING: 'standard',  // 锻造矿锭用standard
+        TAILORING: 'tailoring',
+        ALCHEMY: 'standard',
+        BREWING: 'brewing'
+    };
+    
+    // 行动类型到等级字段的映射
+    const levelKeyMap = {
+        WOODCUTTING: 'woodcuttingLevel',
+        MINING: 'miningLevel',
+        GATHERING: 'gatheringLevel',
+        CRAFTING: 'craftingLevel',
+        FORGING: 'forgingLevel',
+        TAILORING: 'tailoringLevel',
+        ALCHEMY: 'alchemyLevel',
+        BREWING: 'brewingLevel'
+    };
+    
+    const rateTable = tokenDropRates[rateTableMap[actionType]] || tokenDropRates.standard;
+    const levelKey = levelKeyMap[actionType];
+    const level = gameState?.[levelKey] || 1;
+    
+    // 根据等级获取概率（每10级一个区间）
+    const levelIndex = Math.min(Math.floor((level - 1) / 10), rateTable.length - 1);
+    const dropRate = rateTable[levelIndex];
+    
+    // 转换为百分比显示
+    return (dropRate * 100).toFixed(1);
 }
 
 /**
@@ -2081,7 +2111,6 @@ function renderWoodcutting() {
                  data-action="woodcutting" data-id="${tree.id}" data-unlocked="${unlocked}">
                 <div class="card-name">${tree.name}</div>
                 <div class="card-icon">${tree.icon}</div>
-                ${!unlocked ? `<div class="locked-badge">Lv.${tree.reqLevel}</div>` : ''}
             </div>
         `;
     }).join('');
