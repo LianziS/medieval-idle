@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0406 23:30';
+        versionEl.textContent = '0406 23:40';
     }
 }
 
@@ -1865,6 +1865,24 @@ function openUpgradeModal(buildingId) {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.remove();
     });
+}
+
+/**
+ * 获取代币掉落概率（基础概率，最低等级代币）
+ */
+function getTokenChance(actionType) {
+    // 代币概率表（来自后端配置）
+    const tokenRates = {
+        WOODCUTTING: 1.7,  // standard表第一项
+        MINING: 1.7,
+        GATHERING: 1.7,
+        CRAFTING: 1.7,
+        FORGING: 1.7,      // tool表第一项（锻造工具）
+        TAILORING: 1.7,    // tailoring表第一项
+        ALCHEMY: 1.7,
+        BREWING: 2.2       // brewing表第一项
+    };
+    return tokenRates[actionType] || 1.7;
 }
 
 /**
@@ -4061,13 +4079,13 @@ function showActionModal(config) {
                     </div>
                 </div>
                 
-                ${config.tokenChance ? `
+                ${['WOODCUTTING', 'MINING', 'GATHERING', 'CRAFTING', 'FORGING', 'TAILORING', 'ALCHEMY', 'BREWING'].includes(pendingAction?.type) ? `
                 <div class="popup-info-row">
                     <div class="popup-info-label"><span class="lbl-icon">🪙</span>代币</div>
                     <div class="popup-info-val">
                         <span class="popup-token-prefix">1</span> 
                         <span class="popup-badge token">${actionType.icon} ${actionType.name}代币</span>
-                        <span class="popup-token-prob">~${config.tokenChance}%</span>
+                        <span class="popup-token-prob">~${getTokenChance(pendingAction?.type)}%</span>
                     </div>
                 </div>
                 ` : ''}
