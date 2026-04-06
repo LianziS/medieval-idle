@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0406 21:55';
+        versionEl.textContent = '0406 21:56';
     }
 }
 
@@ -3342,7 +3342,6 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                     sellPopupCards.delete(itemId);
                     card.classList.remove('selected');
                 }
-            });
             });
 
             // 点击其他地方关闭弹窗
