@@ -2388,12 +2388,11 @@ body::after {
     border: 1px solid #4a5568;
     border-radius: 3px;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.15s;
-    padding: 4px;
+    position: relative;
 }
 
 .inventory-card:hover {
@@ -2418,12 +2417,18 @@ body::after {
 }
 
 .inventory-icon {
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .inventory-count {
-    font-size: 8px;
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    font-size: 9px;
     color: #e2e8f0;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 1px 3px;
+    border-radius: 2px;
 }
 
 /* 品质边框 */

@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0406 16:28';
+        versionEl.textContent = '0406 18:14';
     }
 }
 
@@ -2857,14 +2857,10 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade') {
         Object.entries(inventory).forEach(([itemId, count]) => {
             if (count > 0) {
                 const configItem = config.find(c => c[idField] === itemId) || { name: itemId, icon: '❓' };
-                const price = Math.floor((CONFIG.resourcePrices?.[type.toLowerCase()] || 1) * 2);
                 myItemsHtml += `
-                    <div class="item-card" data-item-type="${type}" data-item-id="${itemId}" data-count="${count}">
-                        <span class="item-icon">${configItem.icon}</span>
-                        <span class="item-name">${configItem.name}</span>
-                        <span class="item-count">×${count}</span>
-                        <span class="item-price">${price}💰</span>
-                        <button class="sell-btn">出售</button>
+                    <div class="inventory-card" data-item-type="${type}" data-item-id="${itemId}" data-count="${count}">
+                        <span class="inventory-icon">${configItem.icon}</span>
+                        <span class="inventory-count">${count}</span>
                     </div>
                 `;
             }
