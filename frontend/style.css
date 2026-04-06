@@ -1341,8 +1341,8 @@ body::after {
 /* ============ 伐木场 ============ */
 .woodcutting-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 8px;
 }
 
 .tree-card {
@@ -1435,8 +1435,8 @@ body::after {
 /* ============ 矿洞 ============ */
 .mining-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 8px;
 }
 
 .ore-card {
@@ -4235,6 +4235,21 @@ body::after {
     padding: 2px 4px;
     border-radius: 3px;
     color: #a0aec0;
+}
+
+/* 行动卡片网格响应式 */
+@media (max-width: 768px) {
+    .woodcutting-list,
+    .mining-list {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (min-width: 769px) {
+    .woodcutting-list,
+    .mining-list {
+        grid-template-columns: repeat(5, 1fr);
+    }
 }
 
 /* ============ 行动详情弹出卡片样式 ============ */
