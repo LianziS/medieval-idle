@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0406 22:10';
+        versionEl.textContent = '0406 23:15';
     }
 }
 
@@ -2059,23 +2059,17 @@ function renderWoodcutting() {
         const isActive = gameState.activeAction?.type === 'WOODCUTTING' && gameState.activeAction?.id === tree.id;
 
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
+            <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
                  data-action="woodcutting" data-id="${tree.id}">
-                <div class="action-icon">${tree.icon}</div>
-                <div class="action-info">
-                    <div class="action-name">${tree.name}</div>
-                    <div class="action-details">
-                        <span>⏱️ ${formatTime(tree.duration)}</span>
-                        <span>✨ ${tree.exp}</span>
-                    </div>
-                </div>
-                ${!unlocked ? `<div class="locked-overlay">🔒 Lv.${tree.reqLevel}</div>` : ''}
+                <div class="card-name">${tree.name}</div>
+                <div class="card-icon">${tree.icon}</div>
+                ${!unlocked ? `<div class="locked-badge">🔒Lv.${tree.reqLevel}</div>` : ''}
             </div>
         `;
     }).join('');
 
     // 绑定点击事件
-    elements.woodcuttingList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
+    elements.woodcuttingList.querySelectorAll('.action-card-square:not(.locked)').forEach(card => {
         card.addEventListener('click', () => {
             const treeId = card.dataset.id;
             openActionModal('WOODCUTTING', treeId);
@@ -3992,7 +3986,7 @@ function openActionModal(type, id) {
 }
 
 /**
- * 显示行动选择模态框
+ * 显示行动选择模态框（新样式）
  */
 function showActionModal(config) {
     // 检查队列状态
@@ -4002,87 +3996,168 @@ function showActionModal(config) {
     const queueAvailable = currentQueue.length < maxQueueSize;
     const queuePosition = currentQueue.length + 1;
 
+    // 获取行动类型信息
+    const typeInfo = {
+        WOODCUTTING: { icon: '🪓', name: '伐木' },
+        MINING: { icon: '⛏️', name: '挖矿' },
+        GATHERING: { icon: '🌿', name: '采集' },
+        CRAFTING: { icon: '🪵', name: '制作' },
+        FORGING: { icon: '🔨', name: '锻造' },
+        TAILORING: { icon: '🧵', name: '缝制' },
+        BREWING: { icon: '⚗️', name: '酿造' },
+        ALCHEMY: { icon: '🔮', name: '炼金' },
+        ESSENCE: { icon: '✨', name: '提炼' }
+    };
+    const actionType = typeInfo[pendingAction?.type] || { icon: '⚔️', name: '行动' };
+
     // 创建模态框
     const modal = document.createElement('div');
-    modal.className = 'action-modal-overlay';
+    modal.className = 'action-detail-overlay';
     modal.innerHTML = `
-        <div class="action-modal">
-            <div class="action-modal-header">
-                <span class="action-modal-icon">${config.icon}</span>
-                <span class="action-modal-title">${config.name}</span>
-                <button class="action-modal-close">&times;</button>
+        <div class="action-detail-popup">
+            <button class="popup-close-btn">✕</button>
+            
+            <!-- 标题行 -->
+            <div class="popup-header-row">
+                <div class="popup-icon-large">${config.icon}</div>
+                <div class="popup-name-large">${config.name}</div>
             </div>
-            <div class="action-modal-body">
-                <div class="action-modal-info">
-                    ${config.duration ? `<span>⏱️ ${formatTime(config.duration)}</span>` : ''}
-                    ${config.exp ? `<span>✨ ${config.exp} 经验</span>` : ''}
-                    ${config.reqLevel ? `<span>📋 需要 Lv.${config.reqLevel}</span>` : ''}
+            
+            <div class="popup-divider"></div>
+            
+            <!-- 信息区 -->
+            <div class="popup-info-rows">
+                ${config.reqLevel ? `
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">🔓</span>需要</div>
+                    <div class="popup-info-val">
+                        <span class="popup-badge level">Lv.${config.reqLevel} ${actionType.icon}</span>
+                    </div>
                 </div>
+                ` : ''}
+                
                 ${config.materials ? `
-                <div class="action-modal-materials">
-                    <h4>所需材料</h4>
-                    <div class="materials-list">
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">📦</span>材料</div>
+                    <div class="popup-info-val">
                         ${Object.entries(config.materials).map(([matId, amount]) => {
                             const matName = getResourceName(matId);
                             const have = getResourceCount(matId);
                             const enough = have >= amount;
-                            return `<span class="material-item ${enough ? '' : 'insufficient'}">${matName} ×${amount} (${have})</span>`;
-                        }).join('')}
+                            return `<span class="popup-badge material ${enough ? '' : 'insufficient'}">${matName} ×${amount}</span>`;
+                        }).join(' ')}
                     </div>
                 </div>
                 ` : ''}
-                <div class="action-modal-counts">
-                    <button class="count-btn" data-count="1">1次</button>
-                    <button class="count-btn" data-count="5">5次</button>
-                    <button class="count-btn" data-count="10">10次</button>
-                    <button class="count-btn" data-count="50">50次</button>
-                    <button class="count-btn infinity" data-count="infinity">∞</button>
+                
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">📦</span>产出</div>
+                    <div class="popup-info-val">
+                        ${config.exp ? `<span class="popup-exp-val">${config.exp} exp</span>` : ''}
+                        ${config.dropId ? `
+                        <br><span class="popup-drop-prefix">1-${config.dropMax || 3}</span> 
+                        <span class="popup-badge drop">${config.dropIcon || '📦'} ${getResourceName(config.dropId)}</span>
+                        ` : ''}
+                    </div>
                 </div>
-                <div class="action-modal-custom">
-                    <input type="text" id="custom-count" placeholder="自定义次数">
+                
+                ${config.tokenChance ? `
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">🪙</span>代币</div>
+                    <div class="popup-info-val">
+                        <span class="popup-token-prefix">1</span> 
+                        <span class="popup-badge token">${actionType.icon} ${actionType.name}代币</span>
+                        <span class="popup-token-prob">~${config.tokenChance}%</span>
+                    </div>
+                </div>
+                ` : ''}
+                
+                ${config.duration ? `
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">⏱️</span>持续时间</div>
+                    <div class="popup-info-val">
+                        <span class="popup-highlight">${formatTime(config.duration)}</span>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+            
+            <div class="popup-divider"></div>
+            
+            <!-- 次数选择 -->
+            <div class="popup-count-section">
+                <div class="popup-count-label">${actionType.icon} ${actionType.name}</div>
+                <div class="popup-count-row">
+                    <input class="popup-count-input" type="text" value="∞" placeholder="次数">
+                    <div class="popup-count-btns">
+                        <button class="popup-count-btn" data-count="1">1</button>
+                        <button class="popup-count-btn" data-count="10">10</button>
+                        <button class="popup-count-btn" data-count="100">100</button>
+                        <button class="popup-count-btn inf selected" data-count="infinity">∞</button>
+                    </div>
                 </div>
             </div>
-            <div class="action-modal-footer">
-                <button class="action-btn secondary" id="action-cancel">取消</button>
+            
+            <!-- 操作按钮 -->
+            <div class="popup-actions-row">
+                <button class="popup-btn cancel" id="action-cancel">取消</button>
                 ${queueAvailable ?
-                    `<button class="action-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` :
-                    `<button class="action-btn queue disabled" id="action-queue" disabled>队列已满</button>`}
-                <button class="action-btn primary" id="action-start">立即开始</button>
+                    `<button class="popup-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` :
+                    `<button class="popup-btn queue disabled" id="action-queue" disabled>队列已满</button>`}
+                <button class="popup-btn start" id="action-start">立即开始</button>
             </div>
         </div>
     `;
 
     document.body.appendChild(modal);
 
-    // 绑定事件
-    modal.querySelector('.action-modal-close').addEventListener('click', () => {
+    // 关闭函数
+    const closeModal = () => {
         modal.remove();
         pendingAction = null;
+    };
+
+    // 绑定关闭事件
+    modal.querySelector('.popup-close-btn').addEventListener('click', closeModal);
+    modal.querySelector('#action-cancel').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
     });
 
-    modal.querySelector('#action-cancel').addEventListener('click', () => {
-        modal.remove();
-        pendingAction = null;
-    });
-
-    // 快捷次数按钮
-    modal.querySelectorAll('.count-btn').forEach(btn => {
+    // 次数选择按钮
+    modal.querySelectorAll('.popup-count-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            modal.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            modal.querySelectorAll('.popup-count-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
             const countVal = btn.dataset.count;
+            const input = modal.querySelector('.popup-count-input');
             if (countVal === 'infinity') {
-                modal.querySelector('#custom-count').value = '∞';
+                input.value = '∞';
             } else {
-                modal.querySelector('#custom-count').value = countVal;
+                input.value = countVal;
             }
         });
     });
 
+    // 输入框事件
+    const countInput = modal.querySelector('.popup-count-input');
+    countInput.addEventListener('input', () => {
+        const val = countInput.value;
+        modal.querySelectorAll('.popup-count-btn').forEach(b => b.classList.remove('selected'));
+        if (val === '∞') {
+            modal.querySelector('.popup-count-btn[data-count="infinity"]').classList.add('selected');
+        } else {
+            const num = parseInt(val);
+            if ([1, 10, 100].includes(num)) {
+                modal.querySelector(`.popup-count-btn[data-count="${num}"]`)?.classList.add('selected');
+            }
+        }
+    });
+
     // 获取次数
     const getCount = () => {
-        const val = modal.querySelector('#custom-count').value;
-        if (val === '∞' || val === '-1') return -1; // -1 表示无限模式
+        const val = countInput.value;
+        if (val === '∞' || val === '-1' || val === '') return -1;
         return parseInt(val) || 1;
     };
 
@@ -4097,8 +4172,7 @@ function showActionModal(config) {
                     count: getCount()
                 });
             }
-            modal.remove();
-            pendingAction = null;
+            closeModal();
         });
     }
 
@@ -4119,22 +4193,9 @@ function showActionModal(config) {
                     count: count
                 });
             }
-            modal.remove();
-            pendingAction = null;
+            closeModal();
         }
     });
-
-    // 点击背景关闭
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.remove();
-            pendingAction = null;
-        }
-    });
-
-    // 默认选中1次
-    modal.querySelector('.count-btn[data-count="1"]').classList.add('active');
-    modal.querySelector('#custom-count').value = 1;
 }
 
 /**

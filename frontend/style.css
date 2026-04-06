@@ -4176,6 +4176,264 @@ body::after {
     font-size: 0.85rem;
 }
 
+/* ============ 正方形行动卡片样式 ============ */
+.action-card-square {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    background: linear-gradient(145deg, #2d3748 0%, #1a202c 100%);
+    border: 1px solid #4a5568;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    padding: 8px;
+}
+
+.action-card-square:hover {
+    border-color: #63b3ed;
+    background: linear-gradient(145deg, #3d4a5c 0%, #2d3748 100%);
+    transform: translateY(-2px);
+}
+
+.action-card-square.active {
+    border-color: #8B2C2D;
+    background: linear-gradient(145deg, #3d2a2a 0%, #2d1f1f 100%);
+    box-shadow: 0 0 8px rgba(139, 44, 45, 0.3);
+}
+
+.action-card-square.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.action-card-square.locked:hover {
+    transform: none;
+    border-color: #4a5568;
+}
+
+.action-card-square .card-name {
+    font-size: 10px;
+    color: #e2e8f0;
+    text-align: center;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.action-card-square .card-icon {
+    font-size: 24px;
+}
+
+.action-card-square .locked-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    font-size: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: #a0aec0;
+}
+
+/* ============ 行动详情弹出卡片样式 ============ */
+.action-detail-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-detail-popup {
+    background: #1a2535;
+    border: 1px solid #3a5070;
+    border-radius: 14px;
+    width: 320px;
+    max-width: 94vw;
+    padding: 10px 16px 14px;
+    position: relative;
+}
+
+.popup-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #7a8fa8;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.popup-close-btn:hover { color: #c8d0d8; }
+
+.popup-header-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    padding-right: 20px;
+}
+
+.popup-icon-large { font-size: 30px; flex-shrink: 0; }
+.popup-name-large { font-size: 18px; font-weight: 700; color: #e8d8b0; }
+
+.popup-divider {
+    height: 1px;
+    background: #2a3f5f;
+    margin: 6px 0;
+}
+
+.popup-info-rows { display: flex; flex-direction: column; gap: 6px; }
+
+.popup-info-row {
+    display: flex;
+    align-items: flex-start;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.popup-info-label {
+    color: #7a8fa8;
+    min-width: 72px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    padding-top: 2px;
+}
+
+.popup-info-label .lbl-icon { font-size: 13px; }
+
+.popup-info-val { color: #c8d0d8; flex: 1; }
+
+.popup-highlight { color: #7fc3ff; font-weight: 600; }
+.popup-exp-val { color: #f0c060; font-weight: 600; }
+.popup-drop-prefix, .popup-token-prefix { color: #a0b0c0; font-size: 12px; margin-right: 2px; }
+.popup-token-prob { color: #7a8fa8; font-size: 11px; margin-left: 3px; }
+
+.popup-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(232, 162, 74, 0.12);
+    border: 1px solid rgba(232, 162, 74, 0.3);
+    border-radius: 5px;
+    padding: 1px 6px;
+    color: #e8a24a;
+    font-size: 12px;
+    font-weight: 600;
+    margin: 2px 0;
+}
+
+.popup-badge.level { background: rgba(232, 162, 74, 0.12); border-color: rgba(232, 162, 74, 0.3); color: #e8a24a; }
+.popup-badge.drop { background: rgba(100, 200, 100, 0.1); border-color: rgba(100, 200, 100, 0.3); color: #80d880; }
+.popup-badge.token { background: rgba(80, 160, 240, 0.1); border-color: rgba(80, 160, 240, 0.3); color: #70b8f0; }
+.popup-badge.material { background: rgba(160, 140, 120, 0.1); border-color: rgba(160, 140, 120, 0.3); color: #c0a080; }
+.popup-badge.material.insufficient { background: rgba(200, 80, 80, 0.1); border-color: rgba(200, 80, 80, 0.3); color: #e06060; }
+
+.popup-count-section { margin-top: 14px; }
+
+.popup-count-label {
+    font-size: 11px;
+    color: #7a8fa8;
+    margin-bottom: 7px;
+}
+
+.popup-count-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.popup-count-input {
+    width: 72px;
+    background: #243040;
+    border: 1px solid #3a5068;
+    border-radius: 7px;
+    color: #c8d0d8;
+    font-size: 14px;
+    padding: 7px 10px;
+    outline: none;
+    text-align: center;
+}
+
+.popup-count-input:focus { border-color: #4a8fd8; }
+
+.popup-count-btns {
+    display: flex;
+    gap: 4px;
+}
+
+.popup-count-btn {
+    min-width: 36px;
+    padding: 7px 0;
+    background: #0f1923;
+    border: 1px solid #2a3f5f;
+    border-radius: 7px;
+    color: #a0b8d0;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+}
+
+.popup-count-btn:hover { border-color: #4a8fd8; color: #7fc3ff; background: #162030; }
+.popup-count-btn.selected { background: #8c2828; border-color: #c05050; color: #fff; }
+.popup-count-btn.inf { font-size: 16px; }
+.popup-count-btn.inf.selected { background: #1e5090; border-color: #4a8fd8; }
+
+.popup-actions-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.popup-btn {
+    flex: 1;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.popup-btn.cancel {
+    background: #1a2535;
+    border: 1px solid #2a3f5f;
+    color: #7a8fa8;
+}
+
+.popup-btn.cancel:hover { border-color: #3a5070; color: #a0b8d0; }
+
+.popup-btn.queue {
+    flex: 2;
+    background: linear-gradient(135deg, #9a6e10, #c8960c);
+    border: 1px solid #d8a030;
+    color: #fff;
+}
+
+.popup-btn.queue:hover { background: linear-gradient(135deg, #b07e18, #d8a820); }
+.popup-btn.queue.disabled { opacity: 0.5; cursor: not-allowed; }
+
+.popup-btn.start {
+    flex: 2;
+    background: linear-gradient(135deg, #6a1818, #a02828);
+    border: 1px solid #c04040;
+    color: #fff;
+}
+
+.popup-btn.start:hover { background: linear-gradient(135deg, #7a2020, #b03030); }
+
 .action-card .locked-overlay {
     position: absolute;
     top: 0;
