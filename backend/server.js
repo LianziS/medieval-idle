@@ -395,15 +395,15 @@ io.on('connection', (socket) => {
             console.log(`用户认证成功: ${decoded.username} (userId: ${decoded.userId}, socket: ${socket.id})`);
             
             // 断开该用户之前的 socket 连接（防止重复登录导致存档混乱）
+            // 但不显示警告消息（刷新页面/网络波动是正常行为）
             if (userSockets.has(decoded.userId)) {
                 const oldSockets = userSockets.get(decoded.userId);
-                console.log(`检测到用户 ${decoded.username} 有 ${oldSockets.length} 个旧连接，正在断开...`);
+                console.log(`检测到用户 ${decoded.username} 有 ${oldSockets.length} 个旧连接，正在清理...`);
                 oldSockets.forEach(oldSocketId => {
                     if (oldSocketId !== socket.id) {
-                        // Socket.io v4.x: 直接使用 get()，返回 undefined 表示不存在
                         const oldSocket = io.sockets.sockets.get(oldSocketId);
                         if (oldSocket) {
-                            oldSocket.emit('error', { message: '您的账号在其他地方登录，连接已断开' });
+                            // 静默断开，不显示警告消息（避免刷新页面时的误报）
                             oldSocket.disconnect(true);
                         }
                     }
