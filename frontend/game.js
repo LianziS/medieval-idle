@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0406 16:25';
+        versionEl.textContent = '0406 16:28';
     }
 }
 
@@ -131,6 +131,31 @@ function cacheElements() {
  */
 function setupSocket() {
     socket = io();
+    
+    // 连接错误处理
+    socket.on('connect_error', (error) => {
+        console.error('连接失败:', error);
+        showToast('⚠️ 网络连接失败，正在重新连接...');
+    });
+    
+    // 断开连接处理
+    socket.on('disconnect', (reason) => {
+        console.log('连接断开:', reason);
+        if (reason === 'transport error' || reason === 'ping timeout') {
+            showToast('⚠️ 网络不稳定，正在重新连接...');
+        }
+    });
+    
+    // 重连成功
+    socket.on('connect', () => {
+        console.log('已连接到服务器');
+        showToast('✅ 已重新连接服务器');
+        // 重新认证
+        const token = localStorage.getItem('medieval_token');
+        if (token) {
+            socket.emit('auth', { token });
+        }
+    });
     
     // 设置超时：5秒后强制隐藏 loading
     setTimeout(() => {
