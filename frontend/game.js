@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0407 00:05';
+        versionEl.textContent = '0407 00:15';
     }
 }
 
@@ -1868,9 +1868,9 @@ function openUpgradeModal(buildingId) {
 }
 
 /**
- * 获取代币掉落概率（根据当前等级计算）
+ * 获取代币掉落概率（根据物品所需等级计算）
  */
-function getTokenChance(actionType) {
+function getTokenChance(actionType, reqLevel) {
     // 从后端配置获取概率表
     const tokenDropRates = CONFIG?.tokenDropRates || {
         standard: [0.017, 0.024, 0.037, 0.053, 0.071, 0.092, 0.149, 0.210],
@@ -1891,27 +1891,14 @@ function getTokenChance(actionType) {
         BREWING: 'brewing'
     };
     
-    // 行动类型到等级字段的映射
-    const levelKeyMap = {
-        WOODCUTTING: 'woodcuttingLevel',
-        MINING: 'miningLevel',
-        GATHERING: 'gatheringLevel',
-        CRAFTING: 'craftingLevel',
-        FORGING: 'forgingLevel',
-        TAILORING: 'tailoringLevel',
-        ALCHEMY: 'alchemyLevel',
-        BREWING: 'brewingLevel'
-    };
-    
     const rateTable = tokenDropRates[rateTableMap[actionType]] || tokenDropRates.standard;
-    const levelKey = levelKeyMap[actionType];
-    const level = gameState?.[levelKey] || 1;
     
-    // 根据等级获取概率（每10级一个区间）
-    const levelIndex = Math.min(Math.floor((level - 1) / 10), rateTable.length - 1);
+    // 根据物品所需等级获取概率（每10级一个区间）
+    const itemReqLevel = reqLevel || 1;
+    const levelIndex = Math.min(Math.floor((itemReqLevel - 1) / 10), rateTable.length - 1);
     const dropRate = rateTable[levelIndex];
     
-    // 转换为百分比显示（去掉末尾多余的0）
+    // 转换为百分比显示
     return Math.round(dropRate * 1000) / 10;
 }
 
@@ -4130,7 +4117,7 @@ function showActionModal(config) {
                     <div class="popup-info-val">
                         <span class="popup-token-prefix">1</span> 
                         <span class="popup-badge token">${actionType.icon} ${actionType.name}代币</span>
-                        <span class="popup-token-prob">~${getTokenChance(pendingAction?.type)}%</span>
+                        <span class="popup-token-prob">~${getTokenChance(pendingAction?.type, config.reqLevel)}%</span>
                     </div>
                 </div>
                 ` : ''}
