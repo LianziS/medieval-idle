@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0406 18:40';
+        versionEl.textContent = '0406 18:50';
     }
 }
 
@@ -357,18 +357,32 @@ function setupSocket() {
     
     // 商人系统事件
     socket.on('merchant_data', (data) => {
-        // 记住当前选中的tab
+        // 记住当前选中的tab和待售列表
         const oldModal = document.querySelector('.merchant-modal.active');
         let activeTab = 'trade'; // 默认交易tab
+        let savedPendingSellItems = [];
+        
         if (oldModal) {
             const activeTabEl = oldModal.querySelector('.merchant-tab.active');
             if (activeTabEl) {
                 activeTab = activeTabEl.dataset.tab;
             }
+            // 保存待售列表数据（从DOM中读取）
+            const previewGrid = oldModal.querySelector('#sell-preview-grid');
+            if (previewGrid) {
+                previewGrid.querySelectorAll('.preview-card').forEach(card => {
+                    savedPendingSellItems.push({
+                        type: card.dataset.itemType,
+                        id: card.dataset.itemId,
+                        icon: card.querySelector('.preview-icon')?.textContent || '❓',
+                        count: parseInt(card.querySelector('.preview-count')?.textContent) || 1
+                    });
+                });
+            }
             oldModal.remove();
         }
         
-        renderMerchantPanel(data.merchantId, data.data, activeTab);
+        renderMerchantPanel(data.merchantId, data.data, activeTab, savedPendingSellItems);
     });
     
     socket.on('buy_result', (result) => {
@@ -2835,7 +2849,7 @@ function openMerchantPanel(merchantId) {
 /**
  * 渲染商人面板
  */
-function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade') {
+function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', savedPendingSellItems = []) {
     if (!merchantData) return;
     
     // 构建我的物品列表（网格显示）
@@ -2938,7 +2952,6 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade') {
                         <!-- 待售物品 -->
                     </div>
                     <div class="sell-actions">
-                        <button class="btn-select" id="merchant-select-btn">选择</button>
                         <button class="btn-sell-confirm" id="merchant-sell-btn">出售</button>
                         <div class="sell-total">
                             获得：<span class="sell-total-value" id="merchant-sell-total">🪙 0</span>
@@ -3040,8 +3053,14 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade') {
     // 物品卡片点击事件 - 显示出售弹窗
     const sellPopupCards = new Map(); // 存储当前显示的弹窗
     
-    // 待售列表数据
-    const pendingSellItems = [];
+    // 待售列表数据（恢复之前保存的数据）
+    const pendingSellItems = savedPendingSellItems.map(item => {
+        // 从当前库存中获取价格信息
+        const card = modal.querySelector(`.inventory-card[data-item-id="${item.id}"]`);
+        const price = card ? parseInt(card.dataset.price) || 1 : 1;
+        const name = card ? card.dataset.name || item.id : item.id;
+        return { ...item, price, name, sellCount: item.count };
+    });
     
     // 更新待售列表显示
     const updateSellPreview = () => {
@@ -3079,18 +3098,40 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade') {
     // 确认出售按钮
     const sellConfirmBtn = modal.querySelector('#merchant-sell-btn');
     if (sellConfirmBtn) {
+        let confirmState = false; // 是否处于确认状态
+        
         sellConfirmBtn.addEventListener('click', () => {
             if (pendingSellItems.length === 0) {
                 showToast('⚠️ 请先选择要出售的物品');
                 return;
             }
-            // 执行出售
-            pendingSellItems.forEach(item => {
-                socket.emit('sell_item', { itemType: item.type, itemId: item.id, count: item.sellCount });
-            });
-            pendingSellItems.length = 0;
-            updateSellPreview();
-            showToast('✅ 已添加到待售列表');
+            
+            if (!confirmState) {
+                // 第一次点击：变成确认状态
+                confirmState = true;
+                sellConfirmBtn.classList.add('confirm-ready');
+                sellConfirmBtn.textContent = '确认出售';
+            } else {
+                // 第二次点击：执行出售
+                pendingSellItems.forEach(item => {
+                    socket.emit('sell_item', { itemType: item.type, itemId: item.id, count: item.sellCount });
+                });
+                pendingSellItems.length = 0;
+                updateSellPreview();
+                confirmState = false;
+                sellConfirmBtn.classList.remove('confirm-ready');
+                sellConfirmBtn.textContent = '出售';
+                showToast('✅ 出售成功');
+            }
+        });
+        
+        // 点击其他地方取消确认状态
+        modal.addEventListener('click', (e) => {
+            if (!e.target.closest('#merchant-sell-btn') && confirmState) {
+                confirmState = false;
+                sellConfirmBtn.classList.remove('confirm-ready');
+                sellConfirmBtn.textContent = '出售';
+            }
         });
     }
     

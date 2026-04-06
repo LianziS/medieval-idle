@@ -1786,8 +1786,8 @@ body::after {
     }
     
     .merchant-modal-panel {
-        width: 100vw !important;
-        max-width: 100vw !important;
+        width: 85vw !important;
+        max-width: 85vw !important;
         height: 100vh !important;
         max-height: 100vh !important;
         border-radius: 0 !important;
@@ -2322,10 +2322,24 @@ body::after {
 }
 
 .preview-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
     color: #718096;
     font-size: 10px;
-    text-align: center;
     padding: 8px;
+}
+
+/* 出售按钮确认状态 */
+.btn-sell-confirm.confirm-ready {
+    background: linear-gradient(145deg, #c53030 0%, #9b2c2c 100%);
+    border-color: #e53e3e;
+    color: #fff;
+}
+
+.btn-sell-confirm.confirm-ready:hover {
+    background: linear-gradient(145deg, #e53e3e 0%, #c53030 100%);
 }
 
 /* 物品出售弹出卡片 */
@@ -2695,8 +2709,8 @@ body::after {
     }
     
     .merchant-modal-panel {
-        width: 100vw !important;
-        max-width: 100vw !important;
+        width: 85vw !important;
+        max-width: 85vw !important;
         height: 100vh !important;
     }
     
