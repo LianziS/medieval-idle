@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0406 21:56';
+        versionEl.textContent = '0406 22:00';
     }
 }
 
@@ -3294,7 +3294,8 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
             // 加入待售按钮
             popup.querySelector('.popup-sell-btn').addEventListener('click', () => {
                 const sellCount = parseInt(popup.querySelector('.popup-input').value) || 1;
-                if (sellCount <= 0 || sellCount > count) {
+                const currentCount = parseInt(card.dataset.count) || 0;
+                if (sellCount <= 0 || sellCount > currentCount) {
                     showToast('⚠️ 数量无效');
                     return;
                 }
@@ -3302,7 +3303,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                 // 检查是否已在待售列表
                 const existing = pendingSellItems.find(i => i.type === itemType && i.id === itemId);
                 if (existing) {
-                    existing.sellCount = Math.min(existing.sellCount + sellCount, count);
+                    existing.sellCount = Math.min(existing.sellCount + sellCount, currentCount);
                 } else {
                     pendingSellItems.push({
                         type: itemType,
@@ -3325,7 +3326,8 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
             let directSellConfirm = false;
             directSellBtn.addEventListener('click', () => {
                 const sellCount = parseInt(popup.querySelector('.popup-input').value) || 1;
-                if (sellCount <= 0 || sellCount > count) {
+                const currentCount = parseInt(card.dataset.count) || 0;
+                if (sellCount <= 0 || sellCount > currentCount) {
                     showToast('⚠️ 数量无效');
                     return;
                 }
@@ -3338,9 +3340,24 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                 } else {
                     // 第二次点击：执行出售
                     socket.emit('sell_item', { itemType, itemId, count: sellCount });
+                    
+                    // 更新卡片数量
+                    const newCount = currentCount - sellCount;
+                    card.dataset.count = newCount;
+                    const countEl = card.querySelector('.inventory-count');
+                    if (countEl) {
+                        countEl.textContent = newCount;
+                    }
+                    
+                    // 如果数量为0，移除卡片
+                    if (newCount <= 0) {
+                        card.remove();
+                    }
+                    
                     popup.remove();
                     sellPopupCards.delete(itemId);
                     card.classList.remove('selected');
+                    showToast(`✅ 出售成功: +${sellCount * price}💰`);
                 }
             });
 
