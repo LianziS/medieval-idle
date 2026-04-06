@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0406 21:25';
+        versionEl.textContent = '0406 21:30';
     }
 }
 
@@ -357,20 +357,92 @@ function setupSocket() {
 
     // 商人系统事件
     socket.on('merchant_data', (data) => {
-        // 记住当前选中的tab和待售列表
         const oldModal = document.querySelector('.merchant-modal.active');
-        let activeTab = 'trade'; // 默认交易tab
+        
+        // 如果已有弹窗且是同一个商人，只更新数据，不重新渲染
+        if (oldModal && oldModal.dataset.merchantId === data.merchantId) {
+            // 更新库存卡片数据
+            const inventoryGrid = oldModal.querySelector('#merchant-inventory-grid');
+            if (inventoryGrid) {
+                // 构建新的物品列表
+                const itemTypes = [
+                    { key: 'woodcuttingInventory', type: 'WOOD', config: CONFIG.trees, idField: 'dropId' },
+                    { key: 'miningInventory', type: 'ORE', config: CONFIG.ores, idField: 'dropId' },
+                    { key: 'gatheringInventory', type: 'GATHERING', config: CONFIG.gatheringLocations?.flatMap(l => l.items || []) || [], idField: 'id' },
+                    { key: 'planksInventory', type: 'PLANK', config: CONFIG.woodPlanks, idField: 'id' },
+                    { key: 'ingotsInventory', type: 'INGOT', config: CONFIG.ingots, idField: 'id' },
+                    { key: 'fabricsInventory', type: 'FABRIC', config: CONFIG.fabrics || [], idField: 'id' },
+                    { key: 'potionsInventory', type: 'POTION', config: CONFIG.potions || [], idField: 'id' },
+                    { key: 'brewsInventory', type: 'BREW', config: CONFIG.brews || [], idField: 'id' },
+                    { key: 'essencesInventory', type: 'ESSENCE', config: CONFIG.essences || [], idField: 'id' }
+                ];
+                
+                // 更新每个物品卡片的数据
+                itemTypes.forEach(({ key, type, config, idField }) => {
+                    const inventory = data.data[key] || {};
+                    Object.entries(inventory).forEach(([itemId, count]) => {
+                        if (count > 0) {
+                            const card = inventoryGrid.querySelector(`.inventory-card[data-item-id="${itemId}"]`);
+                            if (card) {
+                                // 更新数量显示和数据
+                                card.dataset.count = count;
+                                const countEl = card.querySelector('.inventory-count');
+                                if (countEl) {
+                                    countEl.textContent = count;
+                                }
+                                // 如果是当前选中的卡片，也要更新弹出卡片的数据
+                                if (card.classList.contains('selected')) {
+                                    const popup = oldModal.querySelector('.item-sell-popup');
+                                    if (popup) {
+                                        const popupCountEl = popup.querySelector('.popup-count');
+                                        if (popupCountEl) {
+                                            popupCountEl.textContent = `持有: ${count}`;
+                                        }
+                                        // 更新输入框最大值
+                                        const inputEl = popup.querySelector('.popup-input');
+                                        if (inputEl) {
+                                            inputEl.max = count;
+                                            // 如果当前值超过最大值，调整
+                                            if (parseInt(inputEl.value) > count) {
+                                                inputEl.value = count;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+            }
+            
+            // 更新好感度
+            const favorPercent = Math.floor((data.data.favorability || 0) * 100);
+            const fillEl = oldModal.querySelector('.reputation-fill');
+            if (fillEl) {
+                fillEl.style.width = `${favorPercent}%`;
+            }
+            const valueEl = oldModal.querySelector('.reputation-value');
+            if (valueEl) {
+                valueEl.textContent = `${favorPercent}%`;
+            }
+            
+            // 不重新渲染，直接返回
+            return;
+        }
+        
+        // 不同商人或没有弹窗，重新渲染
+        let activeTab = 'trade';
         let savedPendingSellItems = [];
-        let savedPopupItem = null; // 保存当前打开的弹出卡片
+        let savedPopupItem = null;
         let savedPopupInputValue = 1;
-        let savedConfirmState = false; // 保存确认状态
+        let savedConfirmState = false;
         
         if (oldModal) {
             const activeTabEl = oldModal.querySelector('.merchant-tab.active');
             if (activeTabEl) {
                 activeTab = activeTabEl.dataset.tab;
             }
-            // 保存待售列表数据（从DOM中读取）
+            // 保存待售列表数据
             const previewGrid = oldModal.querySelector('#sell-preview-grid');
             if (previewGrid) {
                 previewGrid.querySelectorAll('.preview-card').forEach(card => {
@@ -382,7 +454,7 @@ function setupSocket() {
                     });
                 });
             }
-            // 保存当前打开的弹出卡片（找.selected标记的卡片）
+            // 保存弹出卡片
             const openPopup = oldModal.querySelector('.item-sell-popup');
             if (openPopup) {
                 const inventoryCard = oldModal.querySelector('.inventory-card.selected');
@@ -395,14 +467,13 @@ function setupSocket() {
                         icon: inventoryCard.dataset.icon,
                         price: parseInt(inventoryCard.dataset.price) || 1
                     };
-                    // 保存输入框数值
                     const inputEl = openPopup.querySelector('.popup-input');
                     if (inputEl) {
                         savedPopupInputValue = parseInt(inputEl.value) || 1;
                     }
                 }
             }
-            // 保存确认按钮状态
+            // 保存确认状态
             const sellBtn = oldModal.querySelector('#merchant-sell-btn');
             if (sellBtn && sellBtn.classList.contains('confirm-ready')) {
                 savedConfirmState = true;
