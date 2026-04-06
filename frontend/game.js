@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0406 23:55';
+        versionEl.textContent = '0407 00:05';
     }
 }
 
@@ -1871,8 +1871,8 @@ function openUpgradeModal(buildingId) {
  * 获取代币掉落概率（根据当前等级计算）
  */
 function getTokenChance(actionType) {
-    // 代币概率表（来自后端配置）
-    const tokenDropRates = {
+    // 从后端配置获取概率表
+    const tokenDropRates = CONFIG?.tokenDropRates || {
         standard: [0.017, 0.024, 0.037, 0.053, 0.071, 0.092, 0.149, 0.210],
         tool: [0.017, 0.033, 0.061, 0.110, 0.196, 0.343, 0.590, 0.990],
         tailoring: [0.017, 0.032, 0.053, 0.078, 0.126, 0.195],
@@ -1885,7 +1885,7 @@ function getTokenChance(actionType) {
         MINING: 'standard',
         GATHERING: 'standard',
         CRAFTING: 'standard',
-        FORGING: 'standard',  // 锻造矿锭用standard
+        FORGING: 'standard',
         TAILORING: 'tailoring',
         ALCHEMY: 'standard',
         BREWING: 'brewing'
@@ -1911,8 +1911,8 @@ function getTokenChance(actionType) {
     const levelIndex = Math.min(Math.floor((level - 1) / 10), rateTable.length - 1);
     const dropRate = rateTable[levelIndex];
     
-    // 转换为百分比显示
-    return (dropRate * 100).toFixed(1);
+    // 转换为百分比显示（去掉末尾多余的0）
+    return Math.round(dropRate * 1000) / 10;
 }
 
 /**
@@ -4151,7 +4151,7 @@ function showActionModal(config) {
             <div class="popup-count-section">
                 <div class="popup-count-label">${actionType.icon} ${actionType.name}</div>
                 <div class="popup-count-row">
-                    <input class="popup-count-input" type="text" value="∞" placeholder="次数">
+                    <input class="popup-count-input" type="text" value="∞" placeholder="次数" onclick="this.select();">
                     <div class="popup-count-btns">
                         <button class="popup-count-btn" data-count="1">1</button>
                         <button class="popup-count-btn" data-count="10">10</button>
@@ -4207,7 +4207,15 @@ function showActionModal(config) {
     // 输入框事件
     const countInput = modal.querySelector('.popup-count-input');
     countInput.addEventListener('input', () => {
-        const val = countInput.value;
+        let val = countInput.value;
+        
+        // 只允许数字和∞
+        if (val !== '∞' && val !== '') {
+            // 移除非数字字符
+            val = val.replace(/[^0-9]/g, '');
+            countInput.value = val;
+        }
+        
         modal.querySelectorAll('.popup-count-btn').forEach(b => b.classList.remove('selected'));
         if (val === '∞') {
             modal.querySelector('.popup-count-btn[data-count="infinity"]').classList.add('selected');
