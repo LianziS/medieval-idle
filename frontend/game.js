@@ -1,12 +1,12 @@
 /**
  * 中世纪雇佣兵 - 前端客户端
- * 
+ *
  * 职责：
  * - UI 渲染和动画
  * - 用户交互事件处理
  * - 通过 Socket.io 与后端通信
  * - 显示后端返回的游戏状态
- * 
+ *
  * 注意：所有游戏逻辑都在后端执行，前端只负责显示
  */
 
@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0406 18:50';
+        versionEl.textContent = '0406 21:10';
     }
 }
 
@@ -90,11 +90,11 @@ function cacheElements() {
     elements.sidebar = document.getElementById('sidebar');
     elements.navItems = document.querySelectorAll('.nav-item');
     elements.pages = document.querySelectorAll('.page');
-    
+
     // 状态显示
     elements.level = document.getElementById('level');
     elements.storageGold = document.getElementById('storage-gold');
-    
+
     // 行动状态栏
     elements.actionStatusBar = document.getElementById('action-status-bar');
     elements.actionStatusIcon = document.getElementById('action-status-icon');
@@ -105,7 +105,7 @@ function cacheElements() {
     elements.actionCancelBtn = document.getElementById('action-cancel-btn');
     elements.actionQueueBtn = document.getElementById('action-queue-btn');
     elements.actionRewards = document.getElementById('action-rewards');
-    
+
     // 列表容器
     elements.buildingsList = document.getElementById('buildings-list');
     elements.woodcuttingList = document.getElementById('woodcutting-list');
@@ -117,7 +117,7 @@ function cacheElements() {
     elements.alchemyList = document.getElementById('alchemy-potions-list');
     elements.brewingList = document.getElementById('brewing-brews-list');
     elements.essenceList = document.getElementById('alchemy-essences-list');
-    
+
     // 库存显示
     elements.storageWoodcuttingItems = document.getElementById('storage-woodcutting-items');
     elements.storageMiningItems = document.getElementById('storage-mining-items');
@@ -131,13 +131,13 @@ function cacheElements() {
  */
 function setupSocket() {
     socket = io();
-    
+
     // 连接错误处理
     socket.on('connect_error', (error) => {
         console.error('连接失败:', error);
         showToast('⚠️ 网络连接失败，正在重新连接...');
     });
-    
+
     // 断开连接处理
     socket.on('disconnect', (reason) => {
         console.log('连接断开:', reason);
@@ -145,7 +145,7 @@ function setupSocket() {
             showToast('⚠️ 网络不稳定，正在重新连接...');
         }
     });
-    
+
     // 重连成功
     socket.on('connect', () => {
         console.log('已连接到服务器');
@@ -156,7 +156,7 @@ function setupSocket() {
             socket.emit('auth', { token });
         }
     });
-    
+
     // 设置超时：5秒后强制隐藏 loading
     setTimeout(() => {
         const loadingEl = document.getElementById('loading');
@@ -165,7 +165,7 @@ function setupSocket() {
             console.log('Loading 元素已移除');
         }
     }, 5000);
-    
+
     // 认证
     const token = localStorage.getItem('medieval_token');
     if (token) {
@@ -174,7 +174,7 @@ function setupSocket() {
         // 没有 token，直接跳转登录页
         window.location.href = '/login';
     }
-    
+
     // 强制移除 loading（3秒超时）
     setTimeout(() => {
         const loadingEl = document.getElementById('loading');
@@ -183,7 +183,7 @@ function setupSocket() {
             console.log('Loading 超时移除');
         }
     }, 3000);
-    
+
     // 认证结果
     socket.on('auth_result', (data) => {
         if (data.success) {
@@ -197,27 +197,27 @@ function setupSocket() {
             window.location.href = '/login';
         }
     });
-    
+
     // 接收游戏状态
     socket.on('game_state', (state) => {
         gameState = state;
         lastActionStartTime = Date.now(); // 初始化时间戳
         renderAll();
         console.log('游戏状态已同步');
-        
+
         // 移除 loading 元素
         const loadingEl = document.getElementById('loading');
         if (loadingEl) {
             loadingEl.remove();
         }
     });
-    
+
     // 状态更新
     socket.on('game_state_update', (state) => {
         const prevAction = gameState?.activeAction;
         const prevStartTime = gameState?.actionStartTime;
         gameState = state;
-        
+
         // 如果收到更新时 action 已完成，重置标志
         if (!state.activeAction) {
             completingAction = false;
@@ -226,25 +226,25 @@ function setupSocket() {
                 actionCompleteTimeout = null;
             }
         }
-        
+
         // 检测新行动开始：id 变化 或 startTime 变化（队列自动开始同类型行动）
         if (state.activeAction) {
             const newStartTime = state.actionStartTime;
-            const isNewAction = !prevAction || 
-                                prevAction.id !== state.activeAction.id || 
+            const isNewAction = !prevAction ||
+                                prevAction.id !== state.activeAction.id ||
                                 (prevStartTime && newStartTime && prevStartTime !== newStartTime);
-            
+
             if (isNewAction) {
                 lastActionStartTime = Date.now();
                 completingAction = false;
                 console.log(`🔄 新行动开始: ${state.activeAction.id}`);
             }
         }
-        
+
         updateUI();
         renderEquipmentSlots(); // 实时更新装备栏
         renderInventories(); // 实时更新物品栏
-        
+
         // 如果强化页面打开，更新锻造经验条
         const enhancePage = document.getElementById('page-enhance');
         if (enhancePage && enhancePage.classList.contains('active')) {
@@ -258,7 +258,7 @@ function setupSocket() {
             // 更新当前行动页
             updateCurrentActionPage();
         }
-        
+
         // 如果队列面板打开，检查队列状态
         const popover = document.getElementById('queue-popover');
         if (popover && popover.style.display === 'block') {
@@ -271,7 +271,7 @@ function setupSocket() {
                 showQueuePopover();
             }
         }
-        
+
         // 如果商人面板打开，刷新任务列表
         const merchantModal = document.querySelector('.merchant-modal.active');
         if (merchantModal) {
@@ -282,7 +282,7 @@ function setupSocket() {
             }
         }
     });
-    
+
     // 行动结果
     socket.on('action_result', (result) => {
         if (result.success) {
@@ -298,7 +298,7 @@ function setupSocket() {
             showToast(`❌ ${result.reason}`);
         }
     });
-    
+
     // 行动完成结果
     socket.on('action_complete_result', (result) => {
         // 检查 result 是否存在
@@ -306,32 +306,32 @@ function setupSocket() {
             console.warn('⚠️ action_complete_result 收到 null');
             return;
         }
-        
+
         console.log(`📥 action_complete_result:`, result.success ? '成功' : result.reason);
-        
+
         // 清除超时定时器
         if (actionCompleteTimeout) {
             clearTimeout(actionCompleteTimeout);
             actionCompleteTimeout = null;
         }
-        
+
         if (result.success) {
             completingAction = false;
-            
+
             // 处理锻造结果
             if (result.tool) {
                 showToast(`✅ 锻造成功: ${result.tool.name}`);
             } else if (result.rewards) {
                 showRewards(result.rewards);
             }
-            
+
             // 只有在行动全部完成或有下一个行动时才显示提示
             if (result.completed && !result.nextAction) {
                 showToast('✅ 行动全部完成');
             } else if (result.completed && result.nextAction) {
                 showToast(`📋 自动开始队列行动: ${result.nextAction.name}`);
             }
-            
+
             // 还有剩余次数时重置时间戳（开始下一次进度）
             // 行动全部完成且有队列时，由 game_state_update 检测新行动并重置
             // 行动全部完成且没有队列时，不重置（进入休息状态）
@@ -345,7 +345,7 @@ function setupSocket() {
             }
         }
     });
-    
+
     // 锻造结果
     socket.on('forge_result', (result) => {
         if (result.success) {
@@ -354,14 +354,16 @@ function setupSocket() {
             showToast(`❌ ${result.reason}`);
         }
     });
-    
+
     // 商人系统事件
     socket.on('merchant_data', (data) => {
         // 记住当前选中的tab和待售列表
         const oldModal = document.querySelector('.merchant-modal.active');
         let activeTab = 'trade'; // 默认交易tab
         let savedPendingSellItems = [];
-        
+        let savedPopupItem = null; // 保存当前打开的弹出卡片
+        let savedPopupInputValue = 1;
+
         if (oldModal) {
             const activeTabEl = oldModal.querySelector('.merchant-tab.active');
             if (activeTabEl) {
@@ -379,12 +381,34 @@ function setupSocket() {
                     });
                 });
             }
+            // 保存当前打开的弹出卡片
+            const openPopup = oldModal.querySelector('.item-sell-popup');
+            if (openPopup) {
+                // 找到对应的物品卡片
+                const inventoryCard = oldModal.querySelector('.inventory-card.selected') ||
+                    oldModal.querySelector('.inventory-card[data-item-id]');
+                if (inventoryCard) {
+                    savedPopupItem = {
+                        type: inventoryCard.dataset.itemType,
+                        id: inventoryCard.dataset.itemId,
+                        count: parseInt(inventoryCard.dataset.count) || 1,
+                        name: inventoryCard.dataset.name,
+                        icon: inventoryCard.dataset.icon,
+                        price: parseInt(inventoryCard.dataset.price) || 1
+                    };
+                    // 保存输入框数值
+                    const inputEl = openPopup.querySelector('.popup-input');
+                    if (inputEl) {
+                        savedPopupInputValue = parseInt(inputEl.value) || 1;
+                    }
+                }
+            }
             oldModal.remove();
         }
-        
-        renderMerchantPanel(data.merchantId, data.data, activeTab, savedPendingSellItems);
+
+        renderMerchantPanel(data.merchantId, data.data, activeTab, savedPendingSellItems, savedPopupItem, savedPopupInputValue);
     });
-    
+
     socket.on('buy_result', (result) => {
         if (result.success) {
             showToast(`✅ 购买成功: ${result.goods.name}`);
@@ -392,7 +416,7 @@ function setupSocket() {
             showToast(`❌ ${result.reason}`);
         }
     });
-    
+
     socket.on('quest_result', (result) => {
         if (result.success) {
             showToast(`✅ 任务完成: +${result.reward.gold}金币`);
@@ -400,7 +424,7 @@ function setupSocket() {
             showToast(`❌ ${result.reason}`);
         }
     });
-    
+
     socket.on('sell_result', (result) => {
         if (result.success) {
             showToast(`✅ 出售成功: +${result.gold}金币`);
@@ -408,7 +432,7 @@ function setupSocket() {
             showToast(`❌ ${result.reason}`);
         }
     });
-    
+
     // 建筑升级结果
     socket.on('upgrade_result', (result) => {
         if (result.success) {
@@ -418,7 +442,7 @@ function setupSocket() {
             showToast(`❌ ${result.reason}`);
         }
     });
-    
+
     // 装备结果
     socket.on('equip_result', (result) => {
         if (result.success) {
@@ -428,7 +452,7 @@ function setupSocket() {
             showToast(`❌ ${result.reason}`);
         }
     });
-    
+
     // 卸下装备结果
     socket.on('unequip_result', (result) => {
         if (result.success) {
@@ -438,21 +462,21 @@ function setupSocket() {
             showToast(`❌ ${result.reason}`);
         }
     });
-    
+
     // ============ 强化系统事件 ============
-    
+
     socket.on('enhance_preview', (data) => {
         if (!data.success) {
             showToast(data.reason || '获取预览失败');
             return;
         }
-        
+
         // 更新成功率
         const rateEl = document.getElementById('enhance-success-rate');
         if (rateEl) {
             const ratePercent = data.successRate * 100;
             rateEl.textContent = `${ratePercent.toFixed(0)}%`;
-            
+
             // 根据成功率设置颜色类
             rateEl.classList.remove('rate-low', 'rate-medium', 'rate-high');
             if (ratePercent < 30) {
@@ -463,19 +487,19 @@ function setupSocket() {
                 rateEl.classList.add('rate-high');
             }
         }
-        
+
         // 更新经验
         const expEl = document.getElementById('enhance-exp');
         if (expEl) {
             expEl.textContent = `${data.exp || 0} exp`;
         }
-        
+
         // 更新费用列表
         const feesListEl = document.getElementById('enhance-fees-list');
         if (feesListEl && data.materials) {
             const m = data.materials;
             const goldHave = gameState.gold || 0;
-            
+
             // 材料中文名称映射
             const materialNames = {
                 'cyan_ingot': '青闪锭', 'red_copper_ingot': '赤铜锭', 'feather_ingot': '羽铁锭',
@@ -488,7 +512,7 @@ function setupSocket() {
                 'flame_tree_plank': '焰心木板', 'frost_maple_plank': '霜叶枫木板', 'thunder_tree_plank': '雷鸣木板',
                 'ancient_oak_plank': '古橡木板', 'world_tree_plank': '世界树木板'
             };
-            
+
             let html = `
                 <div class="fee-item" data-material="gold" data-count="${goldHave}">
                     <span class="fee-icon">🪙</span>
@@ -496,7 +520,7 @@ function setupSocket() {
                     <span class="fee-count ${goldHave < m.gold ? 'insufficient' : ''}">${goldHave} / ${m.gold}</span>
                 </div>
             `;
-            
+
             if (m.ingot) {
                 const have = gameState.ingotsInventory?.[m.ingot] || 0;
                 const name = materialNames[m.ingot] || m.ingot;
@@ -508,7 +532,7 @@ function setupSocket() {
                     </div>
                 `;
             }
-            
+
             if (m.ore) {
                 const have = gameState.miningInventory?.[m.ore] || 0;
                 const name = materialNames[m.ore] || m.ore;
@@ -520,7 +544,7 @@ function setupSocket() {
                     </div>
                 `;
             }
-            
+
             if (m.plank) {
                 const have = gameState.planksInventory?.[m.plank] || 0;
                 const name = materialNames[m.plank] || m.plank;
@@ -532,9 +556,9 @@ function setupSocket() {
                     </div>
                 `;
             }
-            
+
             feesListEl.innerHTML = html;
-            
+
             // 添加点击事件显示物品详情卡片
             feesListEl.querySelectorAll('.fee-item.clickable').forEach(item => {
                 item.onclick = (e) => {
@@ -543,12 +567,12 @@ function setupSocket() {
                 };
             });
         }
-        
+
         // 更新产出预览
         const outputBox = document.getElementById('enhance-output');
         const outputIconEl = document.getElementById('enhance-output-icon');
         const outputBadgeEl = document.getElementById('enhance-output-badge');
-        
+
         // 存储工具信息用于 tooltip
         if (outputBox) {
             outputBox.dataset.toolId = data.toolId || '';
@@ -556,7 +580,7 @@ function setupSocket() {
             outputBox.dataset.toolIcon = data.toolIcon || '';
             outputBox.dataset.targetLevel = data.targetLevel || 0;
             outputBox.dataset.tier = data.tier || 1;
-            
+
             // 添加悬浮和点击事件（只绑定一次）
             if (!outputBox.dataset.initialized) {
                 outputBox.dataset.initialized = 'true';
@@ -565,7 +589,7 @@ function setupSocket() {
                 outputBox.addEventListener('click', showOutputTooltip);
             }
         }
-        
+
         if (outputIconEl) {
             outputIconEl.textContent = data.toolIcon || '-';
         }
@@ -577,12 +601,12 @@ function setupSocket() {
                 outputBadgeEl.style.display = 'none';
             }
         }
-        
+
         // 更新保护垫选项
         const protectionSlot = document.getElementById('enhance-protection-slot');
         const protectionStartInput = document.getElementById('enhance-protection-start');
         const protectionCount = data.protectionTools ? data.protectionTools.length : 0;
-        
+
         if (protectionSlot) {
             if (enhanceState.protection !== null && enhanceState.protectionIcon) {
                 // 选中了保护垫，显示图标和数量
@@ -598,16 +622,16 @@ function setupSocket() {
         if (protectionStartInput) {
             protectionStartInput.disabled = !(data.protectionTools && data.protectionTools.length > 0);
         }
-        
+
         // 更新按钮状态
         const startBtn = document.getElementById('enhance-start-btn');
         const queueBtn = document.getElementById('enhance-queue-btn');
         const canEnhance = data.canEnhance && data.currentLevel < 20;
-        
+
         if (startBtn) startBtn.disabled = !canEnhance;
         if (queueBtn) queueBtn.disabled = !canEnhance;
     });
-    
+
     socket.on('enhance_result', (result) => {
         console.log('📥 enhance_result:', result);
         if (result.success) {
@@ -626,7 +650,7 @@ function setupSocket() {
             showToast(`❌ ${result.reason || '未知错误'}`);
         }
     });
-    
+
     // 监听队列下一个行动
     socket.on('queue_next', (data) => {
         console.log('📋 队列下一个行动:', data);
@@ -634,7 +658,7 @@ function setupSocket() {
             showToast('⬆️ 开始队列中的强化任务');
         }
     });
-    
+
     socket.on('enhance_complete_result', (result) => {
         if (result.enhanceSuccess) {
             showToast(`✅ ${result.message}`);
@@ -647,17 +671,17 @@ function setupSocket() {
         } else {
             showToast(`⚠️ ${result.message}`);
         }
-        
+
         // 更新装备显示
         if (enhanceState.selectedTool) {
             updateEnhanceToolDisplay();
             updateEnhancePreview();
         }
-        
+
         // 更新当前行动页
         updateCurrentActionPage();
     });
-    
+
     // 停止强化结果
     socket.on('stop_enhance_result', (result) => {
         if (result.success) {
@@ -666,7 +690,7 @@ function setupSocket() {
             showToast(`❌ ${result.message || '停止失败'}`);
         }
     });
-    
+
     // 错误处理
     socket.on('error', (data) => {
         showToast(`❌ ${data.message}`);
@@ -703,13 +727,13 @@ function setupEventListeners() {
                 sidebar.classList.remove('expanded');
             }
         };
-        
+
         // 初始化
         updateSidebarByWidth();
-        
+
         // 监听窗口大小变化
         window.addEventListener('resize', updateSidebarByWidth);
-        
+
         // 点击切换
         sidebarToggle.addEventListener('click', () => {
             sidebar.classList.toggle('expanded');
@@ -719,13 +743,13 @@ function setupEventListeners() {
             }
         });
     }
-    
+
     // 取消行动按钮
     if (elements.actionCancelBtn) {
         elements.actionCancelBtn.addEventListener('click', () => {
             const currentAction = gameState?.activeAction;
             const queue = gameState?.actionQueue || [];
-            
+
             if (currentAction) {
                 // 有行动进行中，停止并开始队列第一项
                 socket.emit('action_cancel');
@@ -733,14 +757,14 @@ function setupEventListeners() {
             // 没有行动时按钮显示"休息中"，点击无效果
         });
     }
-    
+
     // 队列按钮
     if (elements.actionQueueBtn) {
         elements.actionQueueBtn.addEventListener('click', () => {
             showQueuePopover();
         });
     }
-    
+
     // 队列面板关闭按钮
     const queuePopoverClose = document.getElementById('queue-popover-close');
     if (queuePopoverClose) {
@@ -748,7 +772,7 @@ function setupEventListeners() {
             hideQueuePopover();
         });
     }
-    
+
     // 清空队列按钮
     const queueClearBtn = document.getElementById('queue-clear-btn');
     if (queueClearBtn) {
@@ -778,19 +802,19 @@ function showClearQueueConfirm() {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     modal.querySelector('#clear-cancel').addEventListener('click', () => {
         modal.remove();
     });
-    
+
     modal.querySelector('#clear-confirm').addEventListener('click', () => {
         socket.emit('queue_clear');
         modal.remove();
         hideQueuePopover();
     });
-    
+
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.remove();
@@ -808,16 +832,16 @@ function setupNavigation() {
             switchPage(page);
         });
     });
-    
+
     // 我的物品/装备栏 切换
     document.querySelectorAll('.storage-tab').forEach(tab => {
         tab.addEventListener('click', () => {
             const tabName = tab.dataset.tab;
-            
+
             // 切换 tab 激活状态
             document.querySelectorAll('.storage-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
-            
+
             // 切换内容
             document.querySelectorAll('.storage-tab-content').forEach(content => {
                 content.classList.remove('active');
@@ -826,7 +850,7 @@ function setupNavigation() {
             if (targetContent) {
                 targetContent.classList.add('active');
             }
-            
+
             // 如果是装备栏，渲染装备
             if (tabName === 'equipment') {
                 renderEquipmentSlots();
@@ -845,7 +869,7 @@ function switchPage(pageId) {
     elements.pages.forEach(page => {
         page.classList.toggle('active', page.id === `page-${pageId}`);
     });
-    
+
     // 根据页面重新渲染对应内容
     if (gameState && CONFIG) {
         switch(pageId) {
@@ -875,7 +899,7 @@ function switchPage(pageId) {
                 break;
         }
     }
-    
+
     // 移动端点击导航后自动收起侧边栏
     const sidebar = document.getElementById('sidebar');
     if (sidebar) {
@@ -902,7 +926,7 @@ function renderSettings() {
             }
         }
     }
-    
+
     // 退出登录按钮
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
@@ -911,12 +935,12 @@ function renderSettings() {
                 // 清除本地存储
                 localStorage.removeItem('medieval_token');
                 localStorage.removeItem('medieval_auto_login');
-                
+
                 // 断开socket连接
                 if (socket) {
                     socket.disconnect();
                 }
-                
+
                 // 跳转到登录页
                 window.location.href = '/login';
             }
@@ -929,7 +953,7 @@ function renderSettings() {
  */
 function renderAll() {
     if (!gameState) return;
-    
+
     renderBuildings();
     renderWoodcutting();
     renderMining();
@@ -952,7 +976,7 @@ function renderAll() {
  */
 function renderEquipmentSlots() {
     if (!gameState || !gameState.equipment) return;
-    
+
     const slots = CONFIG.equipmentSlots || [
         { id: 'axe', name: '斧头', icon: '🪓' },
         { id: 'pickaxe', name: '镐子', icon: '⛏️' },
@@ -963,20 +987,20 @@ function renderEquipmentSlots() {
         { id: 'tongs', name: '小桶', icon: '🪣' },
         { id: 'rod', name: '搅拌棒', icon: '🥄' }
     ];
-    
+
     slots.forEach(slot => {
         const slotEl = document.getElementById(`equipment-slot-${slot.id}`);
         const nameEl = document.getElementById(`equipment-slot-${slot.id}-name`);
         const cardEl = slotEl?.closest('.equipment-slot');
-        
+
         if (!slotEl || !nameEl) return;
-        
+
         // 清除旧事件
         if (cardEl) {
             cardEl.onclick = null;
             cardEl.style.cursor = 'pointer';
         }
-        
+
         const equippedData = gameState.equipment[slot.id];
         if (equippedData && CONFIG.tools) {
             // 兼容旧格式（字符串）和新格式（对象）
@@ -988,17 +1012,17 @@ function renderEquipmentSlots() {
                 equippedId = equippedData.id;
                 enhanceLevel = equippedData.enhanceLevel || 0;
             }
-            
+
             const toolType = getToolsKey(slot.id);
             const tools = CONFIG.tools[toolType] || [];
             const tool = tools.find(t => t.id === equippedId);
-            
+
             if (tool) {
                 slotEl.innerHTML = tool.icon;
                 // 显示名称，强化工具显示 +X
                 nameEl.textContent = enhanceLevel > 0 ? `${tool.name} +${enhanceLevel}` : tool.name;
                 cardEl?.classList.add('equipped');
-                
+
                 // 点击卸下装备 - 使用弹出式卡片
                 if (cardEl) {
                     const displayName = enhanceLevel > 0 ? `${tool.name} +${enhanceLevel}` : tool.name;
@@ -1013,7 +1037,7 @@ function renderEquipmentSlots() {
             slotEl.innerHTML = slot.icon;
             nameEl.textContent = '空';
             cardEl?.classList.remove('equipped');
-            
+
             // 点击选择装备
             if (cardEl) {
                 cardEl.onclick = () => openEquipModal(slot.id);
@@ -1042,9 +1066,9 @@ function showUnequipConfirm(slotId, toolName) {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     modal.querySelector('#unequip-cancel').addEventListener('click', () => modal.remove());
     modal.querySelector('#unequip-confirm').addEventListener('click', () => {
         socket.emit('unequip_tool', { slotType: slotId });
@@ -1062,21 +1086,21 @@ function openEquipModal(slotType) {
     const toolType = getToolsKey(slotType);
     const tools = CONFIG.tools?.[toolType] || [];
     const inventory = gameState?.toolsInventory?.[toolType] || [];
-    
+
     if (inventory.length === 0) {
         showToast('背包中没有可装备的工具');
         return;
     }
-    
+
     // 堆叠相同ID和等级的工具
     const stackedItems = [];
     const stackMap = {};
-    
+
     inventory.forEach((tool, index) => {
         const toolId = typeof tool === 'string' ? tool : tool.id;
         const enhanceLevel = typeof tool === 'object' && tool ? (tool.enhanceLevel || 0) : 0;
         const stackKey = `${toolId}_${enhanceLevel}`;
-        
+
         if (!stackMap[stackKey]) {
             stackMap[stackKey] = {
                 toolId,
@@ -1089,9 +1113,9 @@ function openEquipModal(slotType) {
             stackMap[stackKey].count++;
         }
     });
-    
+
     Object.values(stackMap).forEach(item => stackedItems.push(item));
-    
+
     const modal = document.createElement('div');
     modal.className = 'action-modal-overlay';
     modal.innerHTML = `
@@ -1105,14 +1129,14 @@ function openEquipModal(slotType) {
                     ${stackedItems.map(item => {
                         const tool = tools.find(t => t.id === item.toolId);
                         if (!tool) return '';
-                        
+
                         const baseBonus = tool.speedBonus || 0;
-                        const enhanceBonus = item.enhanceLevel > 0 && CONFIG.enhanceConfig?.bonusTable 
-                            ? CONFIG.enhanceConfig.bonusTable[item.enhanceLevel] || 0 
+                        const enhanceBonus = item.enhanceLevel > 0 && CONFIG.enhanceConfig?.bonusTable
+                            ? CONFIG.enhanceConfig.bonusTable[item.enhanceLevel] || 0
                             : 0;
                         const totalBonus = baseBonus * (1 + enhanceBonus);
                         const displayName = item.enhanceLevel > 0 ? `${tool.name} +${item.enhanceLevel}` : tool.name;
-                        
+
                         return `
                             <div class="equip-item" data-tool-id="${item.toolId}" data-tool-index="${item.indices[0]}" data-enhance="${item.enhanceLevel}">
                                 <span class="equip-icon">${tool.icon}</span>
@@ -1128,12 +1152,12 @@ function openEquipModal(slotType) {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     modal.querySelector('.action-modal-close').addEventListener('click', () => modal.remove());
     modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
-    
+
     modal.querySelectorAll('.equip-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const item = btn.closest('.equip-item');
@@ -1150,20 +1174,20 @@ function openEquipModal(slotType) {
  */
 function updateUI() {
     if (!gameState) return;
-    
+
     // 更新等级显示
     if (elements.level) {
         elements.level.textContent = gameState.level || 1;
     }
-    
+
     // 更新金币显示
     if (elements.storageGold) {
         elements.storageGold.textContent = formatNumber(gameState.gold || 0);
     }
-    
+
     // 更新技能等级显示（如果有）
     updateSkillDisplay();
-    
+
     // 更新行动状态栏
     updateActionStatusBar();
 }
@@ -1183,7 +1207,7 @@ function updateSkillDisplay() {
         { key: 'brewingLevel', expKey: 'brewingExp', element: 'brewing-level', expInfo: 'brewing-exp-info', expFill: 'brewing-exp-fill' },
         { key: 'alchemyLevel', expKey: 'alchemyExp', element: 'alchemy-level', expInfo: 'alchemy-exp-info', expFill: 'alchemy-exp-fill' }
     ];
-    
+
     // 计算升级所需经验（与后端一致）
     // 使用更合理的经验曲线，避免高级别经验过高
     // 公式：100 * level * (1 + 0.3 * (level - 1))
@@ -1193,35 +1217,35 @@ function updateSkillDisplay() {
         const exp = baseExp * level * (1 + 0.3 * Math.max(0, level - 1));
         return Math.floor(exp);
     }
-    
+
     skills.forEach(skill => {
         const levelEl = document.getElementById(skill.element);
         const expInfoEl = document.getElementById(skill.expInfo);
         const expFillEl = document.getElementById(skill.expFill);
-        
+
         const level = gameState[skill.key] || 1;
         const exp = gameState[skill.expKey] || 0;
-        
+
         // 升级所需经验
         const expForCurrentLevel = getExpForLevel(level);  // 当前等级升到下一级需要的经验
-        
+
         // 更新等级显示
         if (levelEl) {
             levelEl.textContent = `Lv.${level}`;
         }
-        
+
         // 更新经验值信息 [当前/升级所需]
         if (expInfoEl) {
             expInfoEl.textContent = `[${Math.floor(exp)}/${expForCurrentLevel}]`;
         }
-        
+
         // 更新经验条
         if (expFillEl) {
             const progress = Math.min(100, Math.max(0, (exp / expForCurrentLevel) * 100));
             expFillEl.style.width = `${progress}%`;
         }
     });
-    
+
     // 侧边栏技能等级显示
     const sidebarSkills = [
         { key: 'woodcuttingLevel', element: 'nav-woodcutting-lvl' },
@@ -1234,7 +1258,7 @@ function updateSkillDisplay() {
         { key: 'brewingLevel', element: 'nav-brewing-lvl' },
         { key: 'forgingLevel', element: 'nav-enhance-lvl' } // 强化使用锻造等级
     ];
-    
+
     sidebarSkills.forEach(skill => {
         const el = document.getElementById(skill.element);
         if (el) {
@@ -1242,7 +1266,7 @@ function updateSkillDisplay() {
             el.textContent = `lv ${level}`;
         }
     });
-    
+
     // 顶部等级显示：所有技能等级之和
     const topLevelEl = document.getElementById('top-level');
     if (topLevelEl) {
@@ -1251,7 +1275,7 @@ function updateSkillDisplay() {
         }, 0);
         topLevelEl.textContent = totalLevel;
     }
-    
+
     // 更新侧边栏经验条
     updateSidebarExpBars();
 }
@@ -1268,7 +1292,7 @@ function updateSidebarExpBars() {
         const exp = baseExp * level * (1 + 0.3 * Math.max(0, level - 1));
         return Math.floor(exp);
     }
-    
+
     const skills = [
         { key: 'woodcuttingExp', levelKey: 'woodcuttingLevel', element: 'nav-woodcutting-exp' },
         { key: 'miningExp', levelKey: 'miningLevel', element: 'nav-mining-exp' },
@@ -1280,7 +1304,7 @@ function updateSidebarExpBars() {
         { key: 'brewingExp', levelKey: 'brewingLevel', element: 'nav-brewing-exp' },
         { key: 'forgingExp', levelKey: 'forgingLevel', element: 'nav-enhance-exp' } // 强化使用锻造经验
     ];
-    
+
     skills.forEach(skill => {
         const el = document.getElementById(skill.element);
         if (el) {
@@ -1298,7 +1322,7 @@ function updateSidebarExpBars() {
  */
 function updateActionStatusBar() {
     if (!gameState) return;
-    
+
     if (!gameState.activeAction) {
         // 没有行动进行中
         if (elements.actionStatusIcon) elements.actionStatusIcon.textContent = '💤';
@@ -1306,30 +1330,30 @@ function updateActionStatusBar() {
         if (elements.actionStatusCount) elements.actionStatusCount.textContent = '';
         if (elements.actionProgressFill) elements.actionProgressFill.style.width = '0%';
         if (elements.actionProgressTime) elements.actionProgressTime.textContent = '-';
-        
+
         // 隐藏停止按钮
         if (elements.actionCancelBtn) {
             elements.actionCancelBtn.style.display = 'none';
         }
         return;
     }
-    
+
     // 有行动，显示停止按钮
     if (elements.actionCancelBtn) {
         elements.actionCancelBtn.style.display = '';
     }
-    
+
     const action = gameState.activeAction;
     const isInfinite = action.isInfinite || action.count === Infinity;
     const totalCount = isInfinite ? Infinity : (action.count || gameState.actionCount || 1);
     const remaining = action.remaining || 0;
     const current = isInfinite ? 0 : (totalCount - remaining + 1); // 当前是第几次（无限模式不显示）
-    
+
     // 获取行动信息
     const actionType = action.type;
     const actionId = action.id;
     const config = getActionConfig(actionType, actionId);
-    
+
     // 显示图标 + 行动名 + [当前/总数]
     if (elements.actionStatusIcon) {
         elements.actionStatusIcon.textContent = config?.icon || '🔧';
@@ -1344,19 +1368,19 @@ function updateActionStatusBar() {
             elements.actionStatusCount.textContent = `[${current}/${totalCount}]`;
         }
     }
-    
+
     // 更新停止按钮
     if (elements.actionCancelBtn) {
         elements.actionCancelBtn.textContent = '停止';
         elements.actionCancelBtn.classList.remove('idle');
         elements.actionCancelBtn.disabled = false;
     }
-    
+
     // 计算进度（使用前端记录的开始时间，确保从0%开始）
     const elapsed = Date.now() - (lastActionStartTime || Date.now());
     const duration = gameState.actionDuration || 5000;
     const progress = Math.min(Math.max(elapsed / duration, 0), 1); // 限制在0-1之间
-    
+
     if (elements.actionProgressFill) {
         elements.actionProgressFill.style.width = `${progress * 100}%`;
     }
@@ -1365,11 +1389,11 @@ function updateActionStatusBar() {
         const totalSeconds = (duration / 1000).toFixed(1);
         elements.actionProgressTime.textContent = `${totalSeconds}s`;
     }
-    
+
     // 进度完成时不发送完成事件（由后端定时器处理）
     // 后端每500ms检查一次，完成时自动发送 action_complete_result
     // 前端只负责显示进度，不主动触发完成
-    
+
     // 更新队列按钮
     updateQueueButton();
 }
@@ -1404,7 +1428,7 @@ function getActionConfig(actionType, actionId) {
         const ingot = CONFIG.ingots?.find(c => c.id === actionId);
         return ingot || null;
     }
-    
+
     // 特殊处理强化行动
     if (actionType === 'ENHANCE') {
         // 从 action 对象获取工具信息
@@ -1432,7 +1456,7 @@ function getActionConfig(actionType, actionId) {
             duration: 12000
         };
     }
-    
+
     const configMaps = {
         WOODCUTTING: CONFIG.trees,
         MINING: CONFIG.ores,
@@ -1453,7 +1477,7 @@ function getActionConfig(actionType, actionId) {
  */
 function updateQueueButton() {
     if (!elements.actionQueueBtn) return;
-    
+
     const queue = gameState?.actionQueue || [];
     if (queue.length > 0) {
         elements.actionQueueBtn.style.display = 'inline-block';
@@ -1469,17 +1493,17 @@ function updateQueueButton() {
 function showQueuePopover() {
     const popover = document.getElementById('queue-popover');
     const queueList = document.getElementById('queue-list');
-    
+
     if (!popover || !queueList) return;
-    
+
     const queue = gameState?.actionQueue || [];
     const queueLength = queue.length;
-    
+
     queueList.innerHTML = queue.map((item, index) => {
         // 获取行动名称和图标
         let name = item.name || '行动';
         let icon = item.icon || '🔧';
-        
+
         // 处理强化行动
         if (item.type === 'ENHANCE') {
             const toolsKey = getToolsKey(item.toolType);
@@ -1487,7 +1511,7 @@ function showQueuePopover() {
             name = toolConfig?.name ? `强化 ${toolConfig.name}` : '强化';
             icon = toolConfig?.icon || '⬆️';
         }
-        
+
         return `
             <div class="queue-item" data-index="${index}">
                 <span class="queue-item-icon">${icon}</span>
@@ -1503,39 +1527,39 @@ function showQueuePopover() {
             </div>
         `;
     }).join('') || '<div class="queue-empty">队列为空</div>';
-    
+
     // 定位在队列按钮下方居中
     const btn = elements.actionQueueBtn;
     if (btn) {
         const btnRect = btn.getBoundingClientRect();
         const popoverWidth = 320;
         const popoverHeight = popover.offsetHeight || 200;
-        
+
         // 水平居中于按钮
         let left = btnRect.left + btnRect.width / 2 - popoverWidth / 2;
         // 确保不超出屏幕
         left = Math.max(10, Math.min(left, window.innerWidth - popoverWidth - 10));
-        
+
         // 垂直位置在按钮上方
         let top = btnRect.top - popoverHeight - 10;
         // 如果上方空间不够，则显示在下方
         if (top < 10) {
             top = btnRect.bottom + 10;
         }
-        
+
         popover.style.left = `${left}px`;
         popover.style.top = `${top}px`;
     }
-    
+
     popover.style.display = 'block';
-    
+
     // 绑定操作事件
     queueList.querySelectorAll('.queue-item-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const index = parseInt(btn.dataset.index);
             const action = btn.dataset.action;
-            
+
             // 第一个项点击上移（替换按钮），或第二项上移到第一位
             if ((action === 'up' && index === 0) || (action === 'up' && index === 1) || (action === 'top' && index > 0)) {
                 const currentAction = gameState?.activeAction;
@@ -1544,11 +1568,11 @@ function showQueuePopover() {
                     return;
                 }
             }
-            
+
             socket.emit('queue_move', { index, action });
         });
     });
-    
+
     // 绑定移除事件
     queueList.querySelectorAll('.queue-item-remove').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -1557,7 +1581,7 @@ function showQueuePopover() {
             socket.emit('queue_remove', { index });
         });
     });
-    
+
     // 点击其他地方关闭
     const closePopover = (e) => {
         if (!popover.contains(e.target) && !elements.actionQueueBtn?.contains(e.target)) {
@@ -1576,11 +1600,11 @@ function showQueuePopover() {
 function showReplaceActionConfirm(index, action, queueItem) {
     const currentAction = gameState?.activeAction;
     if (!currentAction) return;
-    
+
     const actionConfig = getActionConfig(currentAction.type, currentAction.id);
     const currentName = actionConfig?.name || '当前行动';
     const replaceName = queueItem?.name || '新行动';
-    
+
     const modal = document.createElement('div');
     modal.className = 'action-modal-overlay';
     modal.innerHTML = `
@@ -1605,18 +1629,18 @@ function showReplaceActionConfirm(index, action, queueItem) {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     modal.querySelector('#replace-cancel').addEventListener('click', () => {
         modal.remove();
     });
-    
+
     modal.querySelector('#replace-confirm').addEventListener('click', () => {
         socket.emit('queue_replace_current', { index });
         modal.remove();
     });
-    
+
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.remove();
@@ -1637,16 +1661,16 @@ function hideQueuePopover() {
  */
 function renderBuildings() {
     if (!elements.buildingsList || !gameState) return;
-    
+
     // 过滤掉不需要显示的建筑（伐木场、矿洞、草药园）
     const hiddenBuildings = ['lumber', 'mine', 'farm'];
-    
+
     elements.buildingsList.innerHTML = CONFIG.buildings.filter(b => !hiddenBuildings.includes(b.id)).map(b => {
         const building = gameState.buildings?.[b.id] || { level: 0 };
         const level = building.level;
         const isMaxLevel = b.maxLevel && level >= b.maxLevel;
         const displayName = b.levelNames && b.levelNames[level] ? b.levelNames[level] : b.name;
-        
+
         // 计算升级费用
         const costMultiplier = level + 1;
         const cost = {};
@@ -1655,27 +1679,27 @@ function renderBuildings() {
                 cost[resource] = amount * costMultiplier;
             }
         }
-        
+
         // 检查是否可以升级
         const tentLevel = gameState.buildings?.tent?.level || 0;
         const isUnlocked = !b.unlockReq || !b.unlockReq.tentLevel || tentLevel >= b.unlockReq.tentLevel;
-        
+
         // 检查资源是否足够
         let canUpgrade = isUnlocked && !isMaxLevel;
         const costText = formatCost(cost, ' ');
-        
+
         return `
             <div class="building-card ${isUnlocked ? '' : 'locked'}" data-id="${b.id}">
                 <div class="building-icon">${b.icon}</div>
                 <div class="building-name">${displayName}</div>
                 ${level > 0 ? `<div class="building-level">LV.${level}</div>` : '<div class="building-level">未建造</div>'}
-                ${isMaxLevel ? '<div class="building-cost">已满级</div>' : 
-                  isUnlocked ? `<div class="building-cost">${costText}</div>` : 
+                ${isMaxLevel ? '<div class="building-cost">已满级</div>' :
+                  isUnlocked ? `<div class="building-cost">${costText}</div>` :
                   `<div class="building-cost">需要帐篷 Lv.${b.unlockReq?.tentLevel || 1}</div>`}
             </div>
         `;
     }).join('');
-    
+
     // 绑定点击事件
     elements.buildingsList.querySelectorAll('.building-card:not(.locked)').forEach(card => {
         card.addEventListener('click', () => {
@@ -1691,16 +1715,16 @@ function renderBuildings() {
 function openUpgradeModal(buildingId) {
     const buildingConfig = CONFIG.buildings.find(b => b.id === buildingId);
     if (!buildingConfig) return;
-    
+
     const building = gameState.buildings?.[buildingId] || { level: 0 };
     const level = building.level;
     const isMaxLevel = buildingConfig.maxLevel && level >= buildingConfig.maxLevel;
-    
+
     if (isMaxLevel) {
         showToast('✅ 已达最大等级');
         return;
     }
-    
+
     // 计算升级费用
     const costMultiplier = level + 1;
     const cost = {};
@@ -1709,9 +1733,9 @@ function openUpgradeModal(buildingId) {
             cost[resource] = amount * costMultiplier;
         }
     }
-    
+
     const nextLevelName = buildingConfig.levelNames?.[level + 1] || `${buildingConfig.name} Lv.${level + 1}`;
-    
+
     // 使用自定义弹窗
     const modal = document.createElement('div');
     modal.className = 'action-modal-overlay';
@@ -1753,9 +1777,9 @@ function openUpgradeModal(buildingId) {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     // 绑定事件
     modal.querySelector('.action-modal-close').addEventListener('click', () => modal.remove());
     modal.querySelector('#upgrade-cancel').addEventListener('click', () => modal.remove());
@@ -1775,7 +1799,7 @@ function getResourceName(resourceId) {
     const names = {
         // 金币
         'gold': '金币',
-        
+
         // 木材类
         'pine': '青杉木',
         'iron_birch': '铁桦木',
@@ -1785,7 +1809,7 @@ function getResourceName(resourceId) {
         'thunder_tree': '雷鸣木',
         'ancient_oak': '古橡木',
         'world_tree': '世界树枝',
-        
+
         // 木板类
         'pine_plank': '青杉木板',
         'iron_birch_plank': '铁桦木板',
@@ -1795,7 +1819,7 @@ function getResourceName(resourceId) {
         'thunder_tree_plank': '雷鸣木板',
         'ancient_oak_plank': '古橡木板',
         'world_tree_plank': '世界树木板',
-        
+
         // 矿石类
         'cyan_ore': '青闪石',
         'red_iron': '赤铁石',
@@ -1805,7 +1829,7 @@ function getResourceName(resourceId) {
         'thunder_ore': '雷鸣石',
         'brilliant': '璀璨原石',
         'star_ore': '星辉原石',
-        
+
         // 矿锭类
         'cyan_ingot': '青闪锭',
         'red_copper_ingot': '赤铜锭',
@@ -1815,7 +1839,7 @@ function getResourceName(resourceId) {
         'thunder_steel_ingot': '雷鸣钢锭',
         'brilliant_crystal': '璀璨水晶',
         'star_crystal': '星辉水晶',
-        
+
         // 布料类
         'jute_cloth': '黄麻布料',
         'linen_cloth': '亚麻布料',
@@ -1823,7 +1847,7 @@ function getResourceName(resourceId) {
         'silk_cloth': '丝绸布料',
         'wind_silk': '风丝绸',
         'dream_cloth': '梦幻布料',
-        
+
         // 采集物类
         'sweet_berry': '甜浆果',
         'wild_mint': '野薄荷',
@@ -1846,7 +1870,7 @@ function getResourceName(resourceId) {
         'wool': '羊毛',
         'falcon_tail_feather': '隼尾羽',
         'silk': '丝绸原料',
-        
+
         // 药水类
         'hp_potion_1': '小型生命药水',
         'mp_potion_1': '小型魔力药水',
@@ -1856,7 +1880,7 @@ function getResourceName(resourceId) {
         'mp_potion_3': '大型魔力药水',
         'hp_potion_4': '超级生命药水',
         'mp_potion_4': '超级魔力药水',
-        
+
         // 代币类
         'wood_token': '伐木代币',
         'mining_token': '挖矿代币',
@@ -1866,7 +1890,7 @@ function getResourceName(resourceId) {
         'tailoring_token': '缝制代币',
         'alchemy_token': '炼金代币',
         'brewing_token': '酿造代币',
-        
+
         // 精华类
         'mint_essence': '薄荷精华',
         'pine_essence': '松木精华',
@@ -1888,9 +1912,9 @@ function getResourceCount(resourceId) {
     const fabricTypes = ['jute_cloth', 'linen_cloth', 'wool_cloth', 'silk_cloth', 'wind_silk', 'shadow_cloth', 'dragon_silk', 'celestial_cloth'];
     // 定义采集物类型
     const gatheringTypes = ['sweet_berry', 'wild_mint', 'honey', 'blood_rose', 'jute', 'flax', 'wool', 'silk', 'wind_silk_raw', 'shadow_thread', 'dragon_fiber', 'celestial_lotus'];
-    
+
     let count = 0;
-    
+
     // 检查木材
     if (woodTypes.includes(resourceId)) {
         count = gameState.woodcuttingInventory?.[resourceId] || 0;
@@ -1933,17 +1957,17 @@ function getResourceCount(resourceId) {
     }
     // 默认：尝试从所有库存查找
     else {
-        count = gameState.woodcuttingInventory?.[resourceId] || 
-               gameState.miningInventory?.[resourceId] || 
-               gameState.gatheringInventory?.[resourceId] || 
-               gameState.planksInventory?.[resourceId] || 
-               gameState.ingotsInventory?.[resourceId] || 
-               gameState.fabricsInventory?.[resourceId] || 
+        count = gameState.woodcuttingInventory?.[resourceId] ||
+               gameState.miningInventory?.[resourceId] ||
+               gameState.gatheringInventory?.[resourceId] ||
+               gameState.planksInventory?.[resourceId] ||
+               gameState.ingotsInventory?.[resourceId] ||
+               gameState.fabricsInventory?.[resourceId] ||
                gameState.potionsInventory?.[resourceId] ||
                gameState.tokensInventory?.[resourceId] ||
                gameState.essencesInventory?.[resourceId] || 0;
     }
-    
+
     return count;
 }
 
@@ -1952,15 +1976,15 @@ function getResourceCount(resourceId) {
  */
 function renderWoodcutting() {
     if (!elements.woodcuttingList || !gameState) return;
-    
+
     const level = gameState.woodcuttingLevel || 1;
-    
+
     elements.woodcuttingList.innerHTML = CONFIG.trees.map(tree => {
         const unlocked = level >= tree.reqLevel;
         const isActive = gameState.activeAction?.type === 'WOODCUTTING' && gameState.activeAction?.id === tree.id;
-        
+
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}" 
+            <div class="action-card ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
                  data-action="woodcutting" data-id="${tree.id}">
                 <div class="action-icon">${tree.icon}</div>
                 <div class="action-info">
@@ -1974,7 +1998,7 @@ function renderWoodcutting() {
             </div>
         `;
     }).join('');
-    
+
     // 绑定点击事件
     elements.woodcuttingList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
         card.addEventListener('click', () => {
@@ -1989,15 +2013,15 @@ function renderWoodcutting() {
  */
 function renderMining() {
     if (!elements.miningList || !gameState) return;
-    
+
     const level = gameState.miningLevel || 1;
-    
+
     elements.miningList.innerHTML = CONFIG.ores.map(ore => {
         const unlocked = level >= ore.reqLevel;
         const isActive = gameState.activeAction?.type === 'MINING' && gameState.activeAction?.id === ore.id;
-        
+
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}" 
+            <div class="action-card ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
                  data-action="mining" data-id="${ore.id}">
                 <div class="action-icon">${ore.icon}</div>
                 <div class="action-info">
@@ -2011,7 +2035,7 @@ function renderMining() {
             </div>
         `;
     }).join('');
-    
+
     elements.miningList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
         card.addEventListener('click', () => {
             const oreId = card.dataset.id;
@@ -2029,27 +2053,27 @@ function renderGathering() {
         console.warn('renderGathering: CONFIG.gatheringLocations 未加载');
         return;
     }
-    
+
     const level = gameState.gatheringLevel || 1;
     const tabsContainer = document.getElementById('gathering-tabs');
     const contentContainer = document.getElementById('gathering-items-list');
-    
+
     if (!tabsContainer || !contentContainer) return;
-    
+
     // 生成标签页
     const tabs = CONFIG.gatheringLocations.map((loc, index) => `
         <button class="gathering-tab ${index === 0 ? 'active' : ''}" data-loc-id="${loc.id}">
             ${loc.name}
         </button>
     `).join('');
-    
+
     tabsContainer.innerHTML = tabs;
-    
+
     // 默认显示第一个区域
     if (CONFIG.gatheringLocations.length > 0) {
         renderGatheringLocation(CONFIG.gatheringLocations[0].id, level);
     }
-    
+
     // 绑定标签点击事件
     tabsContainer.querySelectorAll('.gathering-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -2066,13 +2090,13 @@ function renderGathering() {
 function renderGatheringLocation(locId, level) {
     const container = document.getElementById('gathering-items-list');
     if (!container) return;
-    
+
     const loc = CONFIG.gatheringLocations.find(l => l.id === locId);
     if (!loc) return;
-    
+
     const unlocked = level >= loc.reqLevel;
     const items = loc.items || [];
-    
+
     // 生成采集品卡片
     const itemCards = items.map(item => `
         <div class="gathering-item-card ${unlocked ? '' : 'locked'}" data-loc-id="${loc.id}" data-item-id="${item.id}">
@@ -2087,7 +2111,7 @@ function renderGatheringLocation(locId, level) {
             ${!unlocked ? `<div class="locked-overlay">🔒 Lv.${loc.reqLevel}</div>` : ''}
         </div>
     `).join('');
-    
+
     // 区域采集点卡片
     const regionCard = `
         <div class="gathering-region-action-card ${unlocked ? '' : 'locked'}" data-loc-id="${loc.id}">
@@ -2103,7 +2127,7 @@ function renderGatheringLocation(locId, level) {
             ${!unlocked ? `<div class="locked-overlay">🔒 Lv.${loc.reqLevel}</div>` : ''}
         </div>
     `;
-    
+
     container.innerHTML = `
         <div class="gathering-items-grid">
             ${itemCards}
@@ -2113,7 +2137,7 @@ function renderGatheringLocation(locId, level) {
         </div>
         ${regionCard}
     `;
-    
+
     // 绑定采集品点击事件
     container.querySelectorAll('.gathering-item-card:not(.locked)').forEach(card => {
         card.addEventListener('click', () => {
@@ -2122,7 +2146,7 @@ function renderGatheringLocation(locId, level) {
             openGatheringItemModal(locId, itemId);
         });
     });
-    
+
     // 绑定区域采集点击事件
     container.querySelectorAll('.gathering-region-action-card:not(.locked)').forEach(card => {
         card.addEventListener('click', () => {
@@ -2138,16 +2162,16 @@ function openGatheringItemModal(locId, itemId) {
     const loc = CONFIG.gatheringLocations.find(l => l.id === locId);
     const item = loc?.items?.find(i => i.id === itemId);
     if (!loc || !item) return;
-    
+
     pendingAction = { type: 'GATHERING', id: locId, name: `${loc.name} - ${item.name}`, icon: item.icon, itemId: itemId };
-    
+
     // 检查队列状态
     const currentQueue = gameState?.actionQueue || [];
     const maxQueueSize = 2;
     const currentAction = gameState?.activeAction;
     const queueAvailable = currentQueue.length < maxQueueSize;
     const queuePosition = currentQueue.length + 1;
-    
+
     const modal = document.createElement('div');
     modal.className = 'action-modal-overlay';
     modal.innerHTML = `
@@ -2176,26 +2200,26 @@ function openGatheringItemModal(locId, itemId) {
             </div>
             <div class="action-modal-footer">
                 <button class="action-btn secondary" id="action-cancel">取消</button>
-                ${queueAvailable ? 
-                    `<button class="action-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` : 
+                ${queueAvailable ?
+                    `<button class="action-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` :
                     `<button class="action-btn queue disabled" id="action-queue" disabled>队列已满</button>`}
                 <button class="action-btn primary" id="action-start">立即开始</button>
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     modal.querySelector('.action-modal-close').addEventListener('click', () => {
         modal.remove();
         pendingAction = null;
     });
-    
+
     modal.querySelector('#action-cancel').addEventListener('click', () => {
         modal.remove();
         pendingAction = null;
     });
-    
+
     modal.querySelectorAll('.count-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             modal.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
@@ -2208,13 +2232,13 @@ function openGatheringItemModal(locId, itemId) {
             }
         });
     });
-    
-    const getCount = () => { 
-        const val = modal.querySelector('#custom-count').value; 
+
+    const getCount = () => {
+        const val = modal.querySelector('#custom-count').value;
         if (val === '∞' || val === '-1') return -1; // -1 表示无限模式
-        return parseInt(val) || 1; 
+        return parseInt(val) || 1;
     };
-    
+
     const queueBtn = modal.querySelector('#action-queue');
     if (queueBtn && !queueBtn.disabled) {
         queueBtn.addEventListener('click', () => {
@@ -2230,7 +2254,7 @@ function openGatheringItemModal(locId, itemId) {
             pendingAction = null;
         });
     }
-    
+
     modal.querySelector('#action-start').addEventListener('click', () => {
         const count = getCount();
         if (currentAction) {
@@ -2248,14 +2272,14 @@ function openGatheringItemModal(locId, itemId) {
             pendingAction = null;
         }
     });
-    
+
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.remove();
             pendingAction = null;
         }
     });
-    
+
     modal.querySelector('.count-btn[data-count="1"]').classList.add('active');
     modal.querySelector('#custom-count').value = 1;
 }
@@ -2269,14 +2293,14 @@ function renderCrafting() {
         console.warn('renderCrafting: CONFIG.woodPlanks 未加载');
         return;
     }
-    
+
     const level = gameState.craftingLevel || 1;
-    
+
     elements.craftingList.innerHTML = CONFIG.woodPlanks.map(plank => {
         const unlocked = level >= plank.reqLevel;
-        
+
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'}" 
+            <div class="action-card ${unlocked ? '' : 'locked'}"
                  data-action="crafting" data-id="${plank.id}">
                 <div class="action-icon">${plank.icon}</div>
                 <div class="action-info">
@@ -2290,7 +2314,7 @@ function renderCrafting() {
             </div>
         `;
     }).join('');
-    
+
     elements.craftingList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
         card.addEventListener('click', () => {
             const plankId = card.dataset.id;
@@ -2304,14 +2328,14 @@ function renderCrafting() {
  */
 function renderForging() {
     if (!elements.forgingList || !gameState) return;
-    
+
     const level = gameState.forgingLevel || 1;
-    
+
     elements.forgingList.innerHTML = CONFIG.ingots.map(ingot => {
         const unlocked = level >= ingot.reqLevel;
-        
+
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'}" 
+            <div class="action-card ${unlocked ? '' : 'locked'}"
                  data-action="forging" data-id="${ingot.id}">
                 <div class="action-icon">${ingot.icon}</div>
                 <div class="action-info">
@@ -2325,14 +2349,14 @@ function renderForging() {
             </div>
         `;
     }).join('');
-    
+
     elements.forgingList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
         card.addEventListener('click', () => {
             const ingotId = card.dataset.id;
             openActionModal('FORGING', ingotId);
         });
     });
-    
+
     // 初始化锻造标签切换
     initForgingTabs();
 }
@@ -2343,22 +2367,22 @@ function renderForging() {
 function initForgingTabs() {
     const tabsContainer = document.getElementById('forging-tabs');
     if (!tabsContainer) return;
-    
+
     const tabs = tabsContainer.querySelectorAll('.gathering-tab');
     const ingotsList = document.getElementById('forging-ingots-list');
     const toolsList = document.getElementById('forging-tools-list');
-    
+
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
-            
+
             const tabName = tab.dataset.tab;
-            
+
             // 切换显示
             if (ingotsList) ingotsList.classList.remove('active');
             if (toolsList) toolsList.classList.remove('active');
-            
+
             if (tabName === 'ingots' && ingotsList) {
                 ingotsList.classList.add('active');
             } else if (tabName === 'tools' && toolsList) {
@@ -2378,14 +2402,14 @@ function renderTailoring() {
         console.warn('renderTailoring: CONFIG.fabrics 未加载');
         return;
     }
-    
+
     const level = gameState.tailoringLevel || 1;
-    
+
     elements.tailoringList.innerHTML = CONFIG.fabrics.map(fabric => {
         const unlocked = level >= fabric.reqLevel;
-        
+
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'}" 
+            <div class="action-card ${unlocked ? '' : 'locked'}"
                  data-action="tailoring" data-id="${fabric.id}">
                 <div class="action-icon">${fabric.icon}</div>
                 <div class="action-info">
@@ -2399,7 +2423,7 @@ function renderTailoring() {
             </div>
         `;
     }).join('');
-    
+
     elements.tailoringList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
         card.addEventListener('click', () => {
             const fabricId = card.dataset.id;
@@ -2413,14 +2437,14 @@ function renderTailoring() {
  */
 function renderBrewing() {
     if (!elements.brewingList || !gameState || !CONFIG.brews) return;
-    
+
     const level = gameState.brewingLevel || 1;
-    
+
     elements.brewingList.innerHTML = CONFIG.brews.map(brew => {
         const unlocked = level >= brew.reqLevel;
-        
+
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'}" 
+            <div class="action-card ${unlocked ? '' : 'locked'}"
                  data-action="brewing" data-id="${brew.id}">
                 <div class="action-icon">${brew.icon}</div>
                 <div class="action-info">
@@ -2434,7 +2458,7 @@ function renderBrewing() {
             </div>
         `;
     }).join('');
-    
+
     elements.brewingList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
         card.addEventListener('click', () => {
             const brewId = card.dataset.id;
@@ -2448,14 +2472,14 @@ function renderBrewing() {
  */
 function renderAlchemy() {
     if (!elements.alchemyList || !gameState || !CONFIG.potions) return;
-    
+
     const level = gameState.alchemyLevel || 1;
-    
+
     elements.alchemyList.innerHTML = CONFIG.potions.map(potion => {
         const unlocked = level >= potion.reqLevel;
-        
+
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'}" 
+            <div class="action-card ${unlocked ? '' : 'locked'}"
                  data-action="alchemy" data-id="${potion.id}">
                 <div class="action-icon">${potion.icon}</div>
                 <div class="action-info">
@@ -2469,17 +2493,17 @@ function renderAlchemy() {
             </div>
         `;
     }).join('');
-    
+
     elements.alchemyList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
         card.addEventListener('click', () => {
             const potionId = card.dataset.id;
             openActionModal('ALCHEMY', potionId);
         });
     });
-    
+
     // 渲染提炼列表
     renderAlchemyEssences();
-    
+
     // 绑定炼金标签切换
     const alchemyTabs = document.getElementById('alchemy-tabs');
     if (alchemyTabs) {
@@ -2488,12 +2512,12 @@ function renderAlchemy() {
                 // 切换标签激活状态
                 alchemyTabs.querySelectorAll('.gathering-tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
-                
+
                 // 切换列表显示
                 const tabName = tab.dataset.tab;
                 const potionsList = document.getElementById('alchemy-potions-list');
                 const essencesList = document.getElementById('alchemy-essences-list');
-                
+
                 if (potionsList) potionsList.classList.toggle('active', tabName === 'potions');
                 if (essencesList) essencesList.classList.toggle('active', tabName === 'essences');
             });
@@ -2506,15 +2530,15 @@ function renderAlchemy() {
  */
 function renderAlchemyEssences() {
     if (!elements.essenceList || !gameState || !CONFIG.essences) return;
-    
+
     // 提炼使用采集等级
     const level = gameState.gatheringLevel || 1;
-    
+
     elements.essenceList.innerHTML = CONFIG.essences.map(essence => {
         const unlocked = level >= essence.reqLevel;
-        
+
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'}" 
+            <div class="action-card ${unlocked ? '' : 'locked'}"
                  data-action="ESSENCE" data-id="${essence.id}">
                 <div class="action-icon">${essence.icon}</div>
                 <div class="action-info">
@@ -2528,7 +2552,7 @@ function renderAlchemyEssences() {
             </div>
         `;
     }).join('');
-    
+
     elements.essenceList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
         card.addEventListener('click', () => {
             const essenceId = card.dataset.id;
@@ -2543,9 +2567,9 @@ function renderAlchemyEssences() {
 function renderToolForge() {
     const container = document.getElementById('forging-tools-list');
     if (!container || !gameState || !CONFIG.tools) return;
-    
+
     const forgingLevel = gameState.forgingLevel || 1;
-    
+
     // 系列名称和颜色
     const seriesNames = [
         { name: '青闪系列', color: '#4ECDC4', level: 2 },
@@ -2557,14 +2581,14 @@ function renderToolForge() {
         { name: '璀璨系列', color: '#FFD700', level: 82 },
         { name: '星辉系列', color: '#E6E6FA', level: 97 }
     ];
-    
+
     let html = '';
-    
+
     // 按系列（等级索引）分组
     for (let seriesIndex = 0; seriesIndex < 8; seriesIndex++) {
         const series = seriesNames[seriesIndex];
         const seriesTools = [];
-        
+
         // 收集该系列的所有工具
         Object.entries(CONFIG.tools).forEach(([toolType, tools]) => {
             if (tools[seriesIndex]) {
@@ -2575,11 +2599,11 @@ function renderToolForge() {
                 });
             }
         });
-        
+
         if (seriesTools.length === 0) continue;
-        
+
         const unlocked = forgingLevel >= series.level;
-        
+
         html += `
             <div class="tool-series-section ${unlocked ? '' : 'locked'}">
                 <div class="tool-series-header" style="border-left: 3px solid ${series.color};">
@@ -2589,9 +2613,9 @@ function renderToolForge() {
                 <div class="tool-series-grid">
                     ${seriesTools.map(({ tool, toolType, toolIndex }) => {
                         const owned = (gameState.toolsInventory?.[toolType] || []).includes(tool.id);
-                        
+
                         return `
-                            <div class="tool-card" 
+                            <div class="tool-card"
                                  data-tool-type="${toolType}" data-tool-index="${toolIndex}">
                                 <div class="tool-icon">${tool.icon}</div>
                                 <div class="tool-info">
@@ -2608,9 +2632,9 @@ function renderToolForge() {
             </div>
         `;
     }
-    
+
     container.innerHTML = html;
-    
+
     // 绑定工具卡片点击事件
     container.querySelectorAll('.tool-card:not(.locked)').forEach(card => {
         card.addEventListener('click', () => {
@@ -2628,37 +2652,37 @@ function openToolForgeModal(toolType, toolIndex) {
     const tools = CONFIG.tools[toolType];
     const tool = tools[toolIndex];
     const materials = CONFIG.toolCraftingMaterials?.[toolType]?.[toolIndex];
-    
+
     if (!tool || !materials) return;
-    
+
     // 检查队列状态
     const currentQueue = gameState?.actionQueue || [];
     const maxQueueSize = 2;
     const currentAction = gameState?.activeAction;
     const queueAvailable = currentQueue.length < maxQueueSize;
     const queuePosition = currentQueue.length + 1;
-    
+
     // 根据 toolIndex 确定具体材料
     const ingotId = CONFIG.ingotIdMapping?.[toolIndex];
     const plankId = CONFIG.plankIdMapping?.[toolIndex];
     const oreId = CONFIG.ingotOreMapping?.[ingotId];
-    
+
     // 获取材料名称
     const ore = CONFIG.ores?.find(o => o.id === oreId);
     const ingot = CONFIG.ingots?.find(i => i.id === ingotId);
     const plank = CONFIG.woodPlanks?.find(p => p.id === plankId);
     const prevTool = materials.prevTool ? CONFIG.tools[toolType].find(t => t.id === materials.prevTool) : null;
-    
+
     // 获取库存数量
     const miningInv = gameState.miningInventory || {};
     const ingotsInv = gameState.ingotsInventory || {};
     const planksInv = gameState.planksInventory || {};
-    
+
     const oreCount = miningInv[oreId] || 0;
     const ingotCount = ingotsInv[ingotId] || 0;
     const plankCount = planksInv[plankId] || 0;
     const prevToolCount = materials.prevTool ? (gameState.toolsInventory?.[toolType] || []).filter(id => id === materials.prevTool).length : 0;
-    
+
     // 计算最大可锻造次数
     let maxByOre = Infinity, maxByIngot = Infinity, maxByPlank = Infinity, maxByPrevTool = Infinity;
     if (materials.ore) maxByOre = Math.floor(oreCount / materials.ore);
@@ -2666,9 +2690,9 @@ function openToolForgeModal(toolType, toolIndex) {
     if (materials.plank) maxByPlank = Math.floor(plankCount / materials.plank);
     if (materials.prevTool) maxByPrevTool = prevToolCount;
     const maxForgeCount = Math.min(maxByOre, maxByIngot, maxByPlank, maxByPrevTool);
-    
+
     const canForge = maxForgeCount > 0;
-    
+
     // 创建模态框
     const modal = document.createElement('div');
     modal.className = 'action-modal-overlay';
@@ -2705,20 +2729,20 @@ function openToolForgeModal(toolType, toolIndex) {
             </div>
             <div class="action-modal-footer">
                 <button class="action-btn secondary" id="action-cancel">取消</button>
-                ${currentAction && queueAvailable ? 
-                    `<button class="action-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` : 
+                ${currentAction && queueAvailable ?
+                    `<button class="action-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` :
                     (!currentAction ? '' : `<button class="action-btn queue disabled" disabled>队列已满</button>`)}
                 <button class="action-btn primary ${canForge ? '' : 'disabled'}" id="action-start" ${canForge ? '' : 'disabled'}>开始锻造</button>
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     // 绑定事件
     modal.querySelector('.action-modal-close').addEventListener('click', () => modal.remove());
     modal.querySelector('#action-cancel').addEventListener('click', () => modal.remove());
-    
+
     // 快捷次数按钮
     modal.querySelectorAll('.count-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -2727,23 +2751,23 @@ function openToolForgeModal(toolType, toolIndex) {
             modal.querySelector('#custom-count').value = btn.dataset.count;
         });
     });
-    
+
     // 获取次数
-    const getCount = () => { 
-        const val = modal.querySelector('#custom-count').value; 
+    const getCount = () => {
+        const val = modal.querySelector('#custom-count').value;
         const num = parseInt(val) || 1;
         return Math.min(num, maxForgeCount);
     };
-    
+
     // 开始锻造
     modal.querySelector('#action-start').addEventListener('click', () => {
         const count = getCount();
         if (count <= 0) return;
-        
+
         // 转换 toolType: axes -> axe, chisels -> chisel, tongs -> tongs (保持不变), rods -> rod
-        const singularType = toolType === 'tongs' ? 'tongs' : 
+        const singularType = toolType === 'tongs' ? 'tongs' :
                             toolType.endsWith('s') ? toolType.slice(0, -1) : toolType;
-        
+
         // 检查是否有行动进行中
         if (currentAction) {
             showForgeImmediatelyConfirm(toolType, toolIndex, tool, count, modal);
@@ -2756,14 +2780,14 @@ function openToolForgeModal(toolType, toolIndex) {
             modal.remove();
         }
     });
-    
+
     // 加入队列
     const queueBtn = modal.querySelector('#action-queue');
     if (queueBtn && !queueBtn.disabled) {
         queueBtn.addEventListener('click', () => {
             const count = getCount();
             if (count <= 0) return;
-            const singularType = toolType === 'tongs' ? 'tongs' : 
+            const singularType = toolType === 'tongs' ? 'tongs' :
                                 toolType.endsWith('s') ? toolType.slice(0, -1) : toolType;
             socket.emit('forge_tool', {
                 toolType: singularType,
@@ -2773,11 +2797,11 @@ function openToolForgeModal(toolType, toolIndex) {
             modal.remove();
         });
     }
-    
+
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.remove();
     });
-    
+
     // 默认选中1次
     modal.querySelector('.count-btn[data-count="1"]').classList.add('active');
     modal.querySelector('#custom-count').value = 1;
@@ -2789,10 +2813,10 @@ function openToolForgeModal(toolType, toolIndex) {
 function showForgeImmediatelyConfirm(toolType, toolIndex, tool, count, parentModal) {
     const currentAction = gameState?.activeAction;
     if (!currentAction) return;
-    
+
     const actionConfig = getActionConfig(currentAction.type, currentAction.id);
     const currentName = actionConfig?.name || '当前行动';
-    
+
     const modal = document.createElement('div');
     modal.className = 'action-modal-overlay';
     modal.innerHTML = `
@@ -2817,13 +2841,13 @@ function showForgeImmediatelyConfirm(toolType, toolIndex, tool, count, parentMod
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     modal.querySelector('#forge-cancel').addEventListener('click', () => modal.remove());
-    
+
     modal.querySelector('#forge-confirm').addEventListener('click', () => {
-        const singularType = toolType === 'tongs' ? 'tongs' : 
+        const singularType = toolType === 'tongs' ? 'tongs' :
                             toolType.endsWith('s') ? toolType.slice(0, -1) : toolType;
         socket.emit('forge_tool_immediately', {
             toolType: singularType,
@@ -2833,7 +2857,7 @@ function showForgeImmediatelyConfirm(toolType, toolIndex, tool, count, parentMod
         modal.remove();
         parentModal.remove();
     });
-    
+
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.remove();
     });
@@ -2849,9 +2873,9 @@ function openMerchantPanel(merchantId) {
 /**
  * 渲染商人面板
  */
-function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', savedPendingSellItems = []) {
+function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', savedPendingSellItems = [], savedPopupItem = null, savedPopupInputValue = 1) {
     if (!merchantData) return;
-    
+
     // 构建我的物品列表（网格显示）
     let myItemsHtml = '';
     const itemTypes = [
@@ -2865,7 +2889,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
         { key: 'brewsInventory', type: 'BREW', config: CONFIG.brews || [], idField: 'id' },
         { key: 'essencesInventory', type: 'ESSENCE', config: CONFIG.essences || [], idField: 'id' }
     ];
-    
+
     itemTypes.forEach(({ key, type, config, idField }) => {
         const inventory = gameState[key] || {};
         Object.entries(inventory).forEach(([itemId, count]) => {
@@ -2881,29 +2905,24 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
             }
         });
     });
-    
+
     const modal = document.createElement('div');
     modal.className = 'merchant-modal active';
     modal.dataset.merchantId = merchantId;
-    
+
     // 好感度百分比
     const favorPercent = Math.floor((merchantData.favorability || 0) * 100);
-    
+
     // 生成商人出售区空格子（21个格子，暂不售出任何东西）
     const goodsSlots = [];
     for (let i = 0; i < 21; i++) {
         goodsSlots.push('<div class="goods-card empty-slot"></div>');
     }
-    
-    // 生成我的物品区（有物品显示物品，没有显示空格子）
+
+    // 生成我的物品区（只显示有物品的格子）
     const inventorySlots = [];
     if (myItemsHtml) {
         inventorySlots.push(myItemsHtml);
-    }
-    // 补充空格子到最小21个
-    const existingItems = merchantData.myItems?.length || 0;
-    for (let i = existingItems; i < 21; i++) {
-        inventorySlots.push('<div class="inventory-card empty-slot"></div>');
     }
     
     modal.innerHTML = `
@@ -2925,13 +2944,13 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                 </div>
                 <button class="merchant-close-btn">×</button>
             </div>
-            
+
             <!-- 标签切换 -->
             <div class="merchant-tabs">
                 <button class="merchant-tab ${activeTab === 'trade' ? 'active' : ''}" data-tab="trade">⚖ 交易</button>
                 <button class="merchant-tab ${activeTab === 'quest' ? 'active' : ''}" data-tab="quest">📜 任务</button>
             </div>
-            
+
             <!-- 内容区域 -->
             <div class="merchant-content-area" id="merchant-trade-panel" style="display: ${activeTab === 'trade' ? 'flex' : 'none'};">
                 <!-- 商人出售区 -->
@@ -2940,7 +2959,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                         ${goodsSlots.join('')}
                     </div>
                 </div>
-                
+
                 <!-- 待售预览区 -->
                 <div class="sell-preview-section" id="sell-preview-section">
                     <div class="section-header">
@@ -2958,7 +2977,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- 我的物品 -->
                 <div class="merchant-inventory-section">
                     <div class="section-header">
@@ -2971,7 +2990,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                     </div>
                 </div>
             </div>
-            
+
             <!-- 任务面板 -->
             <div class="merchant-quest-panel" id="merchant-quest-panel" style="display: ${activeTab === 'quest' ? 'block' : 'none'};">
                 ${merchantData.quests?.map(quest => {
@@ -2981,13 +3000,13 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                         <div class="quest-card ${completed ? 'completed' : ''}" data-quest-id="${quest.id}">
                             <div class="quest-header">
                                 <span class="quest-name">${quest.name}</span>
-                                ${completed ? '<span class="quest-badge completed">✓ 已完成</span>' : 
+                                ${completed ? '<span class="quest-badge completed">✓ 已完成</span>' :
                                   accepted ? '<span class="quest-badge accepted">进行中</span>' : ''}
                             </div>
                             <div class="quest-desc">${quest.desc}</div>
                             <div class="quest-reward">奖励: ${quest.reward.gold}💰 ${quest.reward.favorability ? `+${Math.floor(quest.reward.favorability * 100)}%好感` : ''}</div>
                             <div class="quest-actions">
-                                ${completed ? '' : 
+                                ${completed ? '' :
                                   accepted ? `<button class="submit-quest-btn" data-quest-id="${quest.id}">提交</button>` :
                                   `<button class="accept-quest-btn" data-quest-id="${quest.id}">领取</button>`}
                             </div>
@@ -2997,19 +3016,19 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     // 关闭函数（带动画）
     const closeModal = () => {
         modal.classList.remove('active');
         setTimeout(() => modal.remove(), 300);
     };
-    
+
     // 绑定事件
     modal.querySelector('.merchant-close-btn').addEventListener('click', closeModal);
     modal.querySelector('.merchant-modal-overlay').addEventListener('click', closeModal);
-    
+
     // 标签切换
     modal.querySelectorAll('.merchant-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -3025,7 +3044,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
             }
         });
     });
-    
+
     // 购买按钮
     modal.querySelectorAll('.buy-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -3033,7 +3052,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
             socket.emit('buy_goods', { merchantId, goodsId, count: 1 });
         });
     });
-    
+
     // 领取任务按钮
     modal.querySelectorAll('.accept-quest-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -3041,7 +3060,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
             socket.emit('accept_quest', { merchantId, questId });
         });
     });
-    
+
     // 提交任务按钮
     modal.querySelectorAll('.submit-quest-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -3049,10 +3068,10 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
             socket.emit('submit_quest', { merchantId, questId });
         });
     });
-    
+
     // 物品卡片点击事件 - 显示出售弹窗
     const sellPopupCards = new Map(); // 存储当前显示的弹窗
-    
+
     // 待售列表数据（恢复之前保存的数据）
     const pendingSellItems = savedPendingSellItems.map(item => {
         // 从当前库存中获取价格信息
@@ -3061,26 +3080,26 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
         const name = card ? card.dataset.name || item.id : item.id;
         return { ...item, price, name, sellCount: item.count };
     });
-    
+
     // 更新待售列表显示
     const updateSellPreview = () => {
         const previewGrid = modal.querySelector('#sell-preview-grid');
         if (!previewGrid) return;
-        
+
         previewGrid.innerHTML = pendingSellItems.map(item => `
             <div class="preview-card" data-item-type="${item.type}" data-item-id="${item.id}">
                 <span class="preview-icon">${item.icon}</span>
                 <span class="preview-count">${item.sellCount}</span>
             </div>
         `).join('') || '<div class="preview-empty">点击物品添加到待售</div>';
-        
+
         // 更新总计
         const totalGold = pendingSellItems.reduce((sum, item) => sum + item.price * item.sellCount, 0);
         const totalEl = modal.querySelector('#merchant-sell-total');
         if (totalEl) {
             totalEl.textContent = `💰 ${totalGold}`;
         }
-        
+
         // 绑定待售卡片点击事件（移除）
         previewGrid.querySelectorAll('.preview-card').forEach(card => {
             card.addEventListener('click', () => {
@@ -3094,18 +3113,18 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
             });
         });
     };
-    
+
     // 确认出售按钮
     const sellConfirmBtn = modal.querySelector('#merchant-sell-btn');
     if (sellConfirmBtn) {
         let confirmState = false; // 是否处于确认状态
-        
+
         sellConfirmBtn.addEventListener('click', () => {
             if (pendingSellItems.length === 0) {
                 showToast('⚠️ 请先选择要出售的物品');
                 return;
             }
-            
+
             if (!confirmState) {
                 // 第一次点击：变成确认状态
                 confirmState = true;
@@ -3124,7 +3143,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                 showToast('✅ 出售成功');
             }
         });
-        
+
         // 点击其他地方取消确认状态
         modal.addEventListener('click', (e) => {
             if (!e.target.closest('#merchant-sell-btn') && confirmState) {
@@ -3134,23 +3153,23 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
             }
         });
     }
-    
+
     // 物品卡片点击
     modal.querySelectorAll('.inventory-card:not(.empty-slot)').forEach(card => {
         card.addEventListener('click', (e) => {
             e.stopPropagation();
-            
+
             // 关闭其他弹窗
             sellPopupCards.forEach(popup => popup.remove());
             sellPopupCards.clear();
-            
+
             const itemType = card.dataset.itemType;
             const itemId = card.dataset.itemId;
             const count = parseInt(card.dataset.count) || 1;
             const name = card.dataset.name || itemId;
             const icon = card.dataset.icon || '❓';
             const price = parseInt(card.dataset.price) || 1;
-            
+
             // 创建弹出卡片
             const popup = document.createElement('div');
             popup.className = 'item-sell-popup';
@@ -3169,22 +3188,22 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                 </div>
                 <button class="popup-sell-btn">加入待售</button>
             `;
-            
+
             // 定位弹窗在卡片上方
             const rect = card.getBoundingClientRect();
             const modalRect = modal.querySelector('.merchant-modal-panel').getBoundingClientRect();
             popup.style.position = 'absolute';
             popup.style.left = `${rect.left - modalRect.left}px`;
             popup.style.bottom = `${modalRect.height - (rect.top - modalRect.top) + 5}px`;
-            
+
             modal.querySelector('.merchant-modal-panel').appendChild(popup);
             sellPopupCards.set(itemId, popup);
-            
+
             // 全部按钮
             popup.querySelector('.popup-all-btn').addEventListener('click', () => {
                 popup.querySelector('.popup-input').value = count;
             });
-            
+
             // 加入待售按钮
             popup.querySelector('.popup-sell-btn').addEventListener('click', () => {
                 const sellCount = parseInt(popup.querySelector('.popup-input').value) || 1;
@@ -3192,7 +3211,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                     showToast('⚠️ 数量无效');
                     return;
                 }
-                
+
                 // 检查是否已在待售列表
                 const existing = pendingSellItems.find(i => i.type === itemType && i.id === itemId);
                 if (existing) {
@@ -3207,17 +3226,17 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
                         sellCount
                     });
                 }
-                
+
                 updateSellPreview();
                 popup.remove();
                 sellPopupCards.delete(itemId);
             });
-            
+
             // 点击其他地方关闭弹窗
             setTimeout(() => {
                 document.addEventListener('click', closePopupHandler);
             }, 10);
-            
+
             const closePopupHandler = (ev) => {
                 if (!popup.contains(ev.target) && !card.contains(ev.target)) {
                     popup.remove();
@@ -3227,9 +3246,30 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
             };
         });
     });
-    
+
     // 初始化待售列表
     updateSellPreview();
+
+    // 恢复弹出卡片（如果有保存的）
+    if (savedPopupItem) {
+        const targetCard = modal.querySelector(`.inventory-card[data-item-id="${savedPopupItem.id}"]`);
+        if (targetCard) {
+            // 触发点击事件来显示弹出卡片
+            setTimeout(() => {
+                targetCard.click();
+                // 设置输入框值
+                setTimeout(() => {
+                    const popup = modal.querySelector('.item-sell-popup');
+                    if (popup) {
+                        const inputEl = popup.querySelector('.popup-input');
+                        if (inputEl) {
+                            inputEl.value = savedPopupInputValue;
+                        }
+                    }
+                }, 50);
+            }, 100);
+        }
+    }
 }
 
 /**
@@ -3237,34 +3277,34 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
  */
 function renderInventories() {
     if (!gameState) return;
-    
+
     // 伐木物品
     renderInventoryGrid('storage-woodcutting-items', gameState.woodcuttingInventory, CONFIG.trees, 'dropId');
-    
+
     // 挖矿物品
     renderInventoryGrid('storage-mining-items', gameState.miningInventory, CONFIG.ores, 'dropId');
-    
+
     // 采集物品
     if (CONFIG.gatheringLocations) {
         const allGatherItems = CONFIG.gatheringLocations.flatMap(loc => loc.items || []);
         renderInventoryGrid('storage-gathering-items', gameState.gatheringInventory, allGatherItems);
     }
-    
+
     // 木板
     renderInventoryGrid('storage-planks-items', gameState.planksInventory, CONFIG.woodPlanks);
-    
+
     // 矿锭
     renderInventoryGrid('storage-ingots-items', gameState.ingotsInventory, CONFIG.ingots);
-    
+
     // 布料
     if (CONFIG.fabrics) {
         renderInventoryGrid('storage-fabrics-items', gameState.fabricsInventory, CONFIG.fabrics);
     }
-    
+
     // 锻造工具 - 显示所有工具（已装备的 + 背包中的）
     const allToolItems = [];
     const toolTypes = ['axes', 'pickaxes', 'chisels', 'needles', 'scythes', 'hammers', 'tongs', 'rods'];
-    
+
     // 工具类型到槽位ID的映射
     const toolTypeToSlot = {
         'axes': 'axe',
@@ -3276,7 +3316,7 @@ function renderInventories() {
         'tongs': 'tongs',  // 小桶槽位ID是 tongs，不是 tong
         'rods': 'rod'
     };
-    
+
     // 先添加已装备的工具（装备时会从背包移除，所以这里只显示已装备的）
     if (gameState.equipment) {
         toolTypes.forEach(toolType => {
@@ -3291,7 +3331,7 @@ function renderInventories() {
             }
         });
     }
-    
+
     // 统计背包中的工具数量（装备时已从背包移除，所以这些都是未装备的）
     // 注意：工具可能是字符串（旧格式）或对象（新格式，包含 id 和 enhanceLevel）
     // 同ID同等级的工具堆叠显示
@@ -3304,17 +3344,17 @@ function renderInventories() {
             const toolId = typeof tool === 'string' ? tool : tool.id;
             const enhanceLevel = typeof tool === 'object' && tool ? (tool.enhanceLevel || 0) : 0;
             const toolConfig = tools.find(t => t.id === toolId);
-            
+
             // 使用 id+level 作为堆叠键
             const stackKey = `${toolId}_${enhanceLevel}`;
-            
+
             if (!unequippedCounts[stackKey]) {
                 const displayName = toolConfig?.name || toolId;
-                unequippedCounts[stackKey] = { 
+                unequippedCounts[stackKey] = {
                     id: toolId,
-                    count: 0, 
-                    name: displayName, 
-                    icon: toolConfig?.icon || '❓', 
+                    count: 0,
+                    name: displayName,
+                    icon: toolConfig?.icon || '❓',
                     isEquipped: false,
                     enhanceLevel,
                     displayName: enhanceLevel > 0 ? `${displayName} +${enhanceLevel}` : displayName
@@ -3323,12 +3363,12 @@ function renderInventories() {
             unequippedCounts[stackKey].count++;
         });
     });
-    
+
     // 添加未装备工具（同ID同等级堆叠）
     Object.values(unequippedCounts).forEach(data => {
         allToolItems.push(data);
     });
-    
+
     // 渲染工具网格（已装备独立显示，未装备单独显示每个工具）
     const toolsElement = document.getElementById('storage-tools-items');
     if (toolsElement && allToolItems.length > 0) {
@@ -3338,10 +3378,10 @@ function renderInventories() {
             const displayName = tool.displayName || tool.name;
             const enhanceLevel = tool.enhanceLevel || 0;
             return `
-                <div class="inventory-item ${tool.isEquipped ? 'equipped' : ''}" 
-                     data-id="${tool.id}" 
-                     data-name="${tool.name}" 
-                     data-count="${tool.count || 1}" 
+                <div class="inventory-item ${tool.isEquipped ? 'equipped' : ''}"
+                     data-id="${tool.id}"
+                     data-name="${tool.name}"
+                     data-count="${tool.count || 1}"
                      data-price="${price}"
                      data-desc="${desc}"
                      data-icon="${tool.icon}"
@@ -3354,7 +3394,7 @@ function renderInventories() {
             `;
         }).join('');
         toolsElement.innerHTML = items;
-        
+
         // 绑定点击事件
         toolsElement.querySelectorAll('.inventory-item').forEach(item => {
             item.addEventListener('click', (e) => showItemTooltip(item, e));
@@ -3362,22 +3402,22 @@ function renderInventories() {
     } else if (toolsElement) {
         toolsElement.innerHTML = '';
     }
-    
+
     // 药水
     if (CONFIG.potions) {
         renderInventoryGrid('storage-potions-items', gameState.potionsInventory, CONFIG.potions);
     }
-    
+
     // 酒类
     if (CONFIG.brews) {
         renderInventoryGrid('storage-brews-items', gameState.brewsInventory, CONFIG.brews);
     }
-    
+
     // 精华
     if (CONFIG.essences) {
         renderInventoryGrid('storage-essences-items', gameState.essencesInventory, CONFIG.essences);
     }
-    
+
     // 代币
     const tokenConfig = CONFIG.tokens || [
         { id: 'wood_token', name: '伐木代币', icon: '🪙' },
@@ -3398,11 +3438,11 @@ function renderInventories() {
 function renderMerchants() {
     const merchantList = document.getElementById('merchant-list');
     if (!merchantList || !CONFIG.merchants) return;
-    
+
     merchantList.innerHTML = CONFIG.merchants.map(merchant => {
         const merchantData = gameState.merchantData?.[merchant.id] || { favorability: 0 };
         const favorPercent = Math.floor(merchantData.favorability * 100);
-        
+
         return `
             <div class="merchant-card" data-merchant-id="${merchant.id}">
                 <div class="merchant-avatar">${merchant.avatar}</div>
@@ -3414,7 +3454,7 @@ function renderMerchants() {
             </div>
         `;
     }).join('');
-    
+
     // 绑定点击事件
     merchantList.querySelectorAll('.merchant-card').forEach(card => {
         card.addEventListener('click', () => {
@@ -3533,7 +3573,7 @@ function getItemSellPrice(itemId) {
 function renderInventoryGrid(elementId, inventory, config, idField = 'id') {
     const element = document.getElementById(elementId);
     if (!element || !inventory) return;
-    
+
     const items = Object.entries(inventory)
         .filter(([id, count]) => count > 0)
         .map(([id, count]) => {
@@ -3541,10 +3581,10 @@ function renderInventoryGrid(elementId, inventory, config, idField = 'id') {
             const price = configItem.price || getItemSellPrice(id); // 优先使用配置价格，否则使用 ITEM_VALUES
             const desc = configItem.desc || configItem.description || getItemDescription(id, configItem);
             return `
-                <div class="inventory-item" 
-                     data-id="${id}" 
-                     data-name="${configItem.name}" 
-                     data-count="${count}" 
+                <div class="inventory-item"
+                     data-id="${id}"
+                     data-name="${configItem.name}"
+                     data-count="${count}"
                      data-price="${price}"
                      data-desc="${desc}"
                      data-icon="${configItem.icon}">
@@ -3554,9 +3594,9 @@ function renderInventoryGrid(elementId, inventory, config, idField = 'id') {
                 </div>
             `;
         }).join('');
-    
+
     element.innerHTML = items || ''; // 暂无物品时不显示任何内容
-    
+
     // 绑定点击事件
     element.querySelectorAll('.inventory-item').forEach(item => {
         item.addEventListener('click', (e) => showItemTooltip(item, e));
@@ -3586,7 +3626,7 @@ function getItemDescription(id, configItem) {
 function showItemTooltip(item, event) {
     // 先移除已有的弹出卡片
     document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
-    
+
     const name = item.dataset.name;
     const count = item.dataset.count;
     const price = item.dataset.price;
@@ -3594,15 +3634,15 @@ function showItemTooltip(item, event) {
     const icon = item.dataset.icon;
     const id = item.dataset.id;
     const enhanceLevel = parseInt(item.dataset.enhance) || 0;
-    
+
     // 检查是否是工具
-    const isTool = id && (id.includes('axe') || id.includes('pickaxe') || id.includes('chisel') || 
-                          id.includes('needle') || id.includes('scythe') || id.includes('hammer') || 
+    const isTool = id && (id.includes('axe') || id.includes('pickaxe') || id.includes('chisel') ||
+                          id.includes('needle') || id.includes('scythe') || id.includes('hammer') ||
                           id.includes('tongs') || id.includes('rod'));
-    
+
     // 检查是否已装备（通过 item 的 CSS 类判断，而不是遍历 equipment）
     const isEquipped = item.classList.contains('equipped');
-    
+
     // 获取装备槽位（用于卸下）
     let equipSlot = null;
     if (isEquipped && isTool) {
@@ -3615,7 +3655,7 @@ function showItemTooltip(item, event) {
         else if (id.includes('tongs')) equipSlot = 'tongs';
         else if (id.includes('rod')) equipSlot = 'rod';
     }
-    
+
     // 计算工具效果
     let toolEffect = '';
     if (isTool) {
@@ -3625,12 +3665,12 @@ function showItemTooltip(item, event) {
             if (toolConfig && toolConfig.speedBonus) {
                 const baseBonus = toolConfig.speedBonus;
                 let totalBonus = baseBonus;
-                
+
                 if (enhanceLevel > 0 && CONFIG.enhanceConfig?.bonusTable) {
                     const enhanceBonus = CONFIG.enhanceConfig.bonusTable[enhanceLevel] || 0;
                     totalBonus = baseBonus * (1 + enhanceBonus);
                 }
-                
+
                 toolEffect = `速度 +${Math.round(totalBonus * 100)}%`;
                 if (enhanceLevel > 0) {
                     toolEffect += ` (基础${Math.round(baseBonus * 100)}% + 强化${Math.round((totalBonus - baseBonus) * 100)}%)`;
@@ -3639,10 +3679,10 @@ function showItemTooltip(item, event) {
             }
         }
     }
-    
+
     // 构建显示名称
     const displayName = enhanceLevel > 0 ? `${name} +${enhanceLevel}` : name;
-    
+
     const tooltip = document.createElement('div');
     tooltip.className = 'item-tooltip';
     tooltip.innerHTML = `
@@ -3655,34 +3695,34 @@ function showItemTooltip(item, event) {
         ${isTool && !isEquipped ? `<button class="item-equip-btn" data-id="${id}">装备</button>` : ''}
         ${isEquipped ? `<button class="item-unequip-btn" data-slot="${equipSlot}">卸下</button>` : ''}
     `;
-    
+
     document.body.appendChild(tooltip);
-    
+
     // 计算位置：显示在物品卡片上方
     const rect = item.getBoundingClientRect();
     const tooltipRect = tooltip.getBoundingClientRect();
-    
+
     let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
     let top = rect.top - tooltipRect.height - 8;
-    
+
     // 如果上方空间不足，显示在下方
     if (top < 10) {
         top = rect.bottom + 8;
     }
-    
+
     // 如果左侧超出屏幕
     if (left < 10) {
         left = 10;
     }
-    
+
     // 如果右侧超出屏幕
     if (left + tooltipRect.width > window.innerWidth - 10) {
         left = window.innerWidth - tooltipRect.width - 10;
     }
-    
+
     tooltip.style.left = left + 'px';
     tooltip.style.top = top + 'px';
-    
+
     // 点击其他地方关闭
     const closeTooltip = (e) => {
         if (!tooltip.contains(e.target) && !item.contains(e.target)) {
@@ -3693,7 +3733,7 @@ function showItemTooltip(item, event) {
     setTimeout(() => {
         document.addEventListener('click', closeTooltip);
     }, 10);
-    
+
     // 绑定装备按钮
     const equipBtn = tooltip.querySelector('.item-equip-btn');
     if (equipBtn) {
@@ -3708,7 +3748,7 @@ function showItemTooltip(item, event) {
             else if (id.includes('hammer')) slotType = 'hammer';
             else if (id.includes('tongs')) slotType = 'tongs';
             else if (id.includes('rod')) slotType = 'rod';
-            
+
             if (slotType) {
                 // 关闭提示卡片，打开装备选择弹窗
                 // openEquipModal 已经正确处理工具索引和堆叠
@@ -3717,7 +3757,7 @@ function showItemTooltip(item, event) {
             }
         });
     }
-    
+
     // 绑定卸下按钮
     const unequipBtn = tooltip.querySelector('.item-unequip-btn');
     if (unequipBtn) {
@@ -3753,9 +3793,9 @@ function showEquipReplaceConfirm(slotType, newToolId, newToolName, currentToolNa
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     modal.querySelector('#equip-cancel').addEventListener('click', () => modal.remove());
     modal.querySelector('#equip-confirm').addEventListener('click', () => {
         socket.emit('equip_tool', { slotType, toolId: newToolId });
@@ -3793,12 +3833,12 @@ function openActionModal(type, id) {
         ALCHEMY: CONFIG.potions,
         ESSENCE: CONFIG.essences
     };
-    
+
     const config = configs[type]?.find(c => c.id === id);
     if (!config) return;
-    
+
     pendingAction = { type, id, name: config.name, icon: config.icon };
-    
+
     // 显示行动选择模态框
     showActionModal(config);
 }
@@ -3813,7 +3853,7 @@ function showActionModal(config) {
     const currentAction = gameState?.activeAction;
     const queueAvailable = currentQueue.length < maxQueueSize;
     const queuePosition = currentQueue.length + 1;
-    
+
     // 创建模态框
     const modal = document.createElement('div');
     modal.className = 'action-modal-overlay';
@@ -3856,27 +3896,27 @@ function showActionModal(config) {
             </div>
             <div class="action-modal-footer">
                 <button class="action-btn secondary" id="action-cancel">取消</button>
-                ${queueAvailable ? 
-                    `<button class="action-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` : 
+                ${queueAvailable ?
+                    `<button class="action-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` :
                     `<button class="action-btn queue disabled" id="action-queue" disabled>队列已满</button>`}
                 <button class="action-btn primary" id="action-start">立即开始</button>
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     // 绑定事件
     modal.querySelector('.action-modal-close').addEventListener('click', () => {
         modal.remove();
         pendingAction = null;
     });
-    
+
     modal.querySelector('#action-cancel').addEventListener('click', () => {
         modal.remove();
         pendingAction = null;
     });
-    
+
     // 快捷次数按钮
     modal.querySelectorAll('.count-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -3890,14 +3930,14 @@ function showActionModal(config) {
             }
         });
     });
-    
+
     // 获取次数
-    const getCount = () => { 
-        const val = modal.querySelector('#custom-count').value; 
+    const getCount = () => {
+        const val = modal.querySelector('#custom-count').value;
         if (val === '∞' || val === '-1') return -1; // -1 表示无限模式
-        return parseInt(val) || 1; 
+        return parseInt(val) || 1;
     };
-    
+
     // 加入队列按钮
     const queueBtn = modal.querySelector('#action-queue');
     if (queueBtn && !queueBtn.disabled) {
@@ -3913,11 +3953,11 @@ function showActionModal(config) {
             pendingAction = null;
         });
     }
-    
+
     // 立即开始按钮
     modal.querySelector('#action-start').addEventListener('click', () => {
         const count = getCount();
-        
+
         // 检查是否有正在进行的行动
         if (currentAction) {
             // 显示确认替换卡片
@@ -3935,7 +3975,7 @@ function showActionModal(config) {
             pendingAction = null;
         }
     });
-    
+
     // 点击背景关闭
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
@@ -3943,7 +3983,7 @@ function showActionModal(config) {
             pendingAction = null;
         }
     });
-    
+
     // 默认选中1次
     modal.querySelector('.count-btn[data-count="1"]').classList.add('active');
     modal.querySelector('#custom-count').value = 1;
@@ -3956,12 +3996,12 @@ function showStartImmediatelyConfirm(newAction, count, currentAction, currentQue
     const actionConfig = getActionConfig(currentAction.type, currentAction.id);
     const currentName = actionConfig?.name || '当前行动';
     const newName = newAction?.name || '新行动';
-    
+
     let queueInfo = '';
     if (currentQueue.length > 0) {
         queueInfo = `<p style="color: #A0B2C0; font-size: 0.8rem; margin-top: 10px;">⚠️ 队列中的 ${currentQueue.length} 个行动也将被清空</p>`;
     }
-    
+
     const modal = document.createElement('div');
     modal.className = 'action-modal-overlay';
     modal.innerHTML = `
@@ -3987,13 +4027,13 @@ function showStartImmediatelyConfirm(newAction, count, currentAction, currentQue
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     modal.querySelector('#start-cancel').addEventListener('click', () => {
         modal.remove();
     });
-    
+
     modal.querySelector('#start-confirm').addEventListener('click', () => {
         if (newAction) {
             socket.emit('start_immediately', {
@@ -4008,7 +4048,7 @@ function showStartImmediatelyConfirm(newAction, count, currentAction, currentQue
         if (actionModal) actionModal.remove();
         pendingAction = null;
     });
-    
+
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.remove();
@@ -4021,7 +4061,7 @@ function showStartImmediatelyConfirm(newAction, count, currentAction, currentQue
  */
 function startActionAnimation() {
     lastActionStartTime = Date.now();
-    
+
     // 不需要单独的动画循环，gameLoop 已经在运行
 }
 
@@ -4052,7 +4092,7 @@ function openGMPanel() {
             ]
         }}
     ];
-    
+
     const panel = document.createElement('div');
     panel.className = 'gm-panel';
     panel.innerHTML = `
@@ -4066,11 +4106,11 @@ function openGMPanel() {
         </div>
         <button class="gm-close">关闭</button>
     `;
-    
+
     panel.querySelectorAll('.gm-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const data = JSON.parse(btn.dataset.command);
-            
+
             // 处理 multi 命令
             if (data.command === 'multi' && data.actions) {
                 data.actions.forEach(action => {
@@ -4083,11 +4123,11 @@ function openGMPanel() {
             }
         });
     });
-    
+
     panel.querySelector('.gm-close').addEventListener('click', () => {
         panel.remove();
     });
-    
+
     document.body.appendChild(panel);
 }
 
@@ -4131,7 +4171,7 @@ function formatCost(cost, separator = ' ') {
     const resourceNames = {
         // 金币
         'gold': '金币',
-        
+
         // 木材类
         'pine': '青杉木',
         'iron_birch': '铁桦木',
@@ -4141,7 +4181,7 @@ function formatCost(cost, separator = ' ') {
         'thunder_tree': '雷鸣木',
         'ancient_oak': '古橡木',
         'world_tree': '世界树枝',
-        
+
         // 木板类
         'pine_plank': '青杉木板',
         'iron_birch_plank': '铁桦木板',
@@ -4151,7 +4191,7 @@ function formatCost(cost, separator = ' ') {
         'thunder_tree_plank': '雷鸣木板',
         'ancient_oak_plank': '古橡木板',
         'world_tree_plank': '世界树木板',
-        
+
         // 矿石类
         'cyan_ore': '青闪石',
         'red_iron': '赤铁石',
@@ -4161,7 +4201,7 @@ function formatCost(cost, separator = ' ') {
         'thunder_ore': '雷鸣石',
         'brilliant': '璀璨原石',
         'star_ore': '星辉原石',
-        
+
         // 矿锭类
         'cyan_ingot': '青闪锭',
         'red_copper_ingot': '赤铜锭',
@@ -4171,7 +4211,7 @@ function formatCost(cost, separator = ' ') {
         'thunder_steel_ingot': '雷鸣钢锭',
         'brilliant_crystal': '璀璨水晶',
         'star_crystal': '星辉水晶',
-        
+
         // 布料类
         'jute_cloth': '黄麻布料',
         'linen_cloth': '亚麻布料',
@@ -4179,7 +4219,7 @@ function formatCost(cost, separator = ' ') {
         'silk_cloth': '丝绸布料',
         'wind_silk': '风丝绸',
         'dream_cloth': '梦幻布料',
-        
+
         // 采集物类
         'sweet_berry': '甜浆果',
         'wild_mint': '野薄荷',
@@ -4203,7 +4243,7 @@ function formatCost(cost, separator = ' ') {
         'falcon_tail_feather': '隼尾羽',
         'silk': '丝绸原料'
     };
-    
+
     return Object.entries(cost)
         .map(([res, amount]) => `${resourceNames[res] || res} × ${amount}`)
         .join(separator);
@@ -4217,7 +4257,7 @@ function showToast(message) {
     toast.className = 'toast';
     toast.textContent = message;
     document.body.appendChild(toast);
-    
+
     setTimeout(() => {
         toast.classList.add('fade-out');
         setTimeout(() => toast.remove(), 300);
@@ -4230,15 +4270,15 @@ function showToast(message) {
 function showRewards(rewards) {
     // 过滤掉经验，只显示物品
     const itemRewards = rewards.filter(r => r.type !== 'exp');
-    
+
     if (elements.actionRewards && itemRewards.length > 0) {
         // 显示获取的物品
         const itemsHtml = itemRewards.map(r => {
             return `<span class="action-reward-item">${r.icon} ${r.name} ×${r.count}</span>`;
         }).join('');
-        
+
         elements.actionRewards.innerHTML = itemsHtml;
-        
+
         // 3秒后淡出
         setTimeout(() => {
             if (elements.actionRewards) {
@@ -4246,7 +4286,7 @@ function showRewards(rewards) {
             }
         }, 3000);
     }
-    
+
     // 经验单独显示 toast
     const expRewards = rewards.filter(r => r.type === 'exp');
     if (expRewards.length > 0) {
@@ -4263,7 +4303,7 @@ function showRewards(rewards) {
 function showEnhanceReward(icon, name, level, exp) {
     if (elements.actionRewards) {
         elements.actionRewards.innerHTML = `<span class="action-reward-item">${icon} ${name} +${level}</span>`;
-        
+
         // 3秒后淡出
         setTimeout(() => {
             if (elements.actionRewards) {
@@ -4271,7 +4311,7 @@ function showEnhanceReward(icon, name, level, exp) {
             }
         }, 3000);
     }
-    
+
     // 显示经验
     if (exp) {
         showToast(`✨ +${exp} 锻造经验`);
@@ -4287,22 +4327,22 @@ let outputTooltipTimeout = null;
 function showOutputTooltip(event) {
     const outputEl = event.target.closest('#enhance-output');
     if (!outputEl) return;
-    
+
     const toolId = outputEl.dataset.toolId;
     if (!toolId || toolId === '') return;  // 没有选中工具则不显示
-    
+
     clearTimeout(outputTooltipTimeout);
-    
+
     const toolName = outputEl.dataset.toolName;
     const toolIcon = outputEl.dataset.toolIcon;
     const targetLevel = parseInt(outputEl.dataset.targetLevel) || 0;
     const tier = parseInt(outputEl.dataset.tier) || 1;
-    
+
     // 获取工具配置
     const toolTypes = ['axes', 'pickaxes', 'chisels', 'needles', 'scythes', 'hammers', 'tongs', 'rods'];
     let toolConfig = null;
     let toolType = null;
-    
+
     for (const type of toolTypes) {
         const config = CONFIG.tools?.[type]?.find(t => t.id === toolId);
         if (config) {
@@ -4311,21 +4351,21 @@ function showOutputTooltip(event) {
             break;
         }
     }
-    
+
     if (!toolConfig) return;
-    
+
     // 计算速度加成
     const baseBonus = toolConfig.speedBonus || 0;
     let totalBonus = baseBonus;
-    
+
     if (targetLevel > 0 && CONFIG.enhanceConfig?.bonusTable) {
         const enhanceBonus = CONFIG.enhanceConfig.bonusTable[targetLevel] || 0;
         totalBonus = baseBonus * (1 + enhanceBonus);
     }
-    
+
     // 移除已有的 tooltip
     document.querySelectorAll('.enhance-output-tooltip').forEach(t => t.remove());
-    
+
     // 创建 tooltip
     const tooltip = document.createElement('div');
     tooltip.className = 'enhance-output-tooltip';
@@ -4352,17 +4392,17 @@ function showOutputTooltip(event) {
         </div>
         ` : ''}
     `;
-    
+
     document.body.appendChild(tooltip);
-    
+
     // 定位 tooltip - 在产出预览上方居中
     const rect = outputEl.getBoundingClientRect();
     const tooltipRect = tooltip.getBoundingClientRect();
-    
+
     // 计算居中位置
     let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
     let top = rect.top - tooltipRect.height - 8;
-    
+
     // 边界检查
     if (left < 10) left = 10;
     if (left + tooltipRect.width > window.innerWidth - 10) {
@@ -4372,10 +4412,10 @@ function showOutputTooltip(event) {
         // 上方空间不足，显示在下方
         top = rect.bottom + 8;
     }
-    
+
     tooltip.style.left = `${left}px`;
     tooltip.style.top = `${top}px`;
-    
+
     // 点击事件时，点击其他地方关闭
     if (event.type === 'click') {
         setTimeout(() => {
@@ -4423,15 +4463,15 @@ let enhanceState = {
  */
 function renderEnhance() {
     const toolSelect = document.getElementById('enhance-tool-select');
-    
+
     if (!toolSelect) return;
-    
+
     // 更新锻造经验条（强化使用锻造技能）
     updateEnhanceForgingExp();
-    
+
     // 初始化二级菜单
     initEnhanceTabs();
-    
+
     // 如果没有选中工具，清空显示
     if (!enhanceState.selectedTool) {
         // 清空费用列表
@@ -4445,7 +4485,7 @@ function renderEnhance() {
                 </div>
             `;
         }
-        
+
         // 清空经验和成功率
         const expEl = document.getElementById('enhance-exp');
         const rateEl = document.getElementById('enhance-success-rate');
@@ -4454,22 +4494,22 @@ function renderEnhance() {
             rateEl.textContent = '--%';
             rateEl.classList.remove('rate-low', 'rate-medium', 'rate-high');
         }
-        
+
         // 清空产出预览
         const outputIconEl = document.getElementById('enhance-output-icon');
         const outputBadgeEl = document.getElementById('enhance-output-badge');
         if (outputIconEl) outputIconEl.textContent = '-';
         if (outputBadgeEl) outputBadgeEl.style.display = 'none';
     }
-    
+
     // 自动选择装备逻辑（如果还没有选中）
     if (!enhanceState.selectedTool) {
         autoSelectEnhanceTool();
     }
-    
+
     // 点击选择装备
     toolSelect.onclick = () => openEnhanceToolModal();
-    
+
     // 目标等级输入
     const targetInput = document.getElementById('enhance-target-level');
     if (targetInput) {
@@ -4477,7 +4517,7 @@ function renderEnhance() {
         // 点击时全选
         targetInput.onfocus = () => targetInput.select();
     }
-    
+
     // 强化次数输入
     const countInput = document.getElementById('enhance-count');
     if (countInput) {
@@ -4489,7 +4529,7 @@ function renderEnhance() {
         // 点击时全选
         countInput.onfocus = () => countInput.select();
     }
-    
+
     // 强化次数快捷按钮
     const countBtns = document.querySelectorAll('.count-btn');
     countBtns.forEach(btn => {
@@ -4505,7 +4545,7 @@ function renderEnhance() {
             validateEnhanceButtons();
         };
     });
-    
+
     // 保护起始等级输入
     const protectionStartInput = document.getElementById('enhance-protection-start');
     if (protectionStartInput) {
@@ -4516,13 +4556,13 @@ function renderEnhance() {
         // 点击时全选
         protectionStartInput.onfocus = () => protectionStartInput.select();
     }
-    
+
     // 保护垫选择
     const protectionSlot = document.getElementById('enhance-protection-slot');
     if (protectionSlot) {
         protectionSlot.onclick = () => openProtectionSelectModal();
     }
-    
+
     // 问号符点击和悬停弹出卡片
     const helpIcon = document.getElementById('enhance-protection-help');
     if (helpIcon) {
@@ -4548,13 +4588,13 @@ function renderEnhance() {
             showProtectionHelpPopover(helpIcon, false);
         });
     }
-    
+
     // 开始强化按钮
     const startBtn = document.getElementById('enhance-start-btn');
     if (startBtn) {
         startBtn.onclick = () => startEnhance();
     }
-    
+
     // 添加到队列按钮
     const queueBtn = document.getElementById('enhance-queue-btn');
     if (queueBtn) {
@@ -4563,16 +4603,16 @@ function renderEnhance() {
         const queueLength = gameState?.actionQueue?.length || 0;
         queueBtn.textContent = queueLength > 0 ? `添加到队列 #${queueLength + 1}` : '添加到队列';
     }
-    
+
     // 如果已有选中的工具，更新显示
     if (enhanceState.selectedTool) {
         updateEnhanceToolDisplay();
         updateEnhancePreview();
     }
-    
+
     // 更新当前行动页面
     updateCurrentActionPage();
-    
+
     // 停止按钮
     const stopBtn = document.getElementById('current-stop-btn');
     if (stopBtn) {
@@ -4590,7 +4630,7 @@ function initEnhanceTabs() {
             // 切换标签激活状态
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
-            
+
             // 切换子页面
             const tabName = tab.dataset.tab;
             document.querySelectorAll('.enhance-subpage').forEach(page => {
@@ -4600,7 +4640,7 @@ function initEnhanceTabs() {
             if (subpage) {
                 subpage.classList.add('active');
             }
-            
+
             // 如果切换到当前行动页，更新内容
             if (tabName === 'current-action') {
                 updateCurrentActionPage();
@@ -4615,38 +4655,38 @@ function initEnhanceTabs() {
 function updateCurrentActionPage() {
     const emptyEl = document.getElementById('current-action-empty');
     const contentEl = document.getElementById('current-action-content');
-    
+
     if (!emptyEl || !contentEl) return;
-    
+
     const activeAction = gameState?.activeAction;
-    
+
     if (!activeAction || activeAction.type !== 'ENHANCE') {
         // 没有强化行动
         emptyEl.style.display = 'flex';
         contentEl.style.display = 'none';
         return;
     }
-    
+
     // 有强化行动，显示详细信息
     emptyEl.style.display = 'none';
     contentEl.style.display = 'block';
-    
+
     // 获取工具信息
     const toolType = activeAction.toolType;
     const toolIndex = activeAction.toolIndex;
     const toolsKey = getToolsKey(toolType);
     const tools = gameState.toolsInventory?.[toolsKey] || [];
-    
+
     let toolConfig = null;
     let currentLevel = 0;
     let toolId = null;
-    
+
     if (toolIndex >= 0 && toolIndex < tools.length) {
         const tool = tools[toolIndex];
         toolId = typeof tool === 'string' ? tool : tool.id;
         currentLevel = typeof tool === 'object' && tool ? (tool.enhanceLevel || 0) : 0;
         toolConfig = CONFIG.tools[toolsKey]?.find(t => t.id === toolId);
-        
+
         // 显示工具图标和等级
         const iconEl = document.getElementById('current-tool-icon');
         const badgeEl = document.getElementById('current-tool-level-badge');
@@ -4659,13 +4699,13 @@ function updateCurrentActionPage() {
             badgeEl.style.display = currentLevel > 0 ? 'block' : 'none';
         }
     }
-    
+
     // 目标等级（显示当前目标等级，即当前等级+1）
     const targetLevelEl = document.getElementById('current-target-level');
     if (targetLevelEl) {
         targetLevelEl.textContent = activeAction.targetLevel ? `+${activeAction.targetLevel}` : '--';
     }
-    
+
     // 剩余次数
     const remainingEl = document.getElementById('current-remaining');
     if (remainingEl) {
@@ -4673,13 +4713,13 @@ function updateCurrentActionPage() {
         const isInfinite = activeAction.isInfinite || remaining < 0;
         remainingEl.textContent = isInfinite ? '∞' : remaining;
     }
-    
+
     // 成功率（使用当前等级计算）
     const rateEl = document.getElementById('current-success-rate');
     if (rateEl) {
         const successRate = getEnhanceSuccessRate(currentLevel);
         rateEl.textContent = `${(successRate * 100).toFixed(0)}%`;
-        
+
         // 设置颜色
         rateEl.classList.remove('rate-low', 'rate-medium', 'rate-high');
         const ratePercent = successRate * 100;
@@ -4691,7 +4731,7 @@ function updateCurrentActionPage() {
             rateEl.classList.add('rate-high');
         }
     }
-    
+
     // 产出预览（显示当前等级+1）
     const outputIconEl = document.getElementById('current-output-icon');
     const outputBadgeEl = document.getElementById('current-output-badge');
@@ -4704,10 +4744,10 @@ function updateCurrentActionPage() {
         outputBadgeEl.style.display = 'block';
         outputBadgeEl.textContent = `+${nextLevel}`;
     }
-    
+
     // 更新费用显示
     updateCurrentFees(toolId, toolType);
-    
+
     // 更新进度条
     updateCurrentActionProgress();
 }
@@ -4718,20 +4758,20 @@ function updateCurrentActionPage() {
 function updateCurrentFees(toolId, toolType) {
     const feesListEl = document.getElementById('current-fees-list');
     if (!feesListEl || !toolId) return;
-    
+
     // 获取强化配置
     const enhanceConfig = CONFIG?.enhanceConfig || {};
     const tier = getToolTier(toolId);
-    
+
     // 获取剩余次数
     const activeAction = gameState?.activeAction;
     const remaining = activeAction?.remaining || 1;
     const isInfinite = activeAction?.isInfinite || remaining < 0;
-    
+
     // 计算金币消耗（使用goldCost配置）
     const goldCostPerAction = enhanceConfig.goldCost?.[tier] || 20;
     const goldCostTotal = isInfinite ? goldCostPerAction : goldCostPerAction * remaining;
-    
+
     // 构建费用列表
     let html = `
         <div class="fee-item">
@@ -4740,10 +4780,10 @@ function updateCurrentFees(toolId, toolType) {
             <span class="fee-count">${isInfinite ? goldCostPerAction : `${goldCostTotal} / ${goldCostPerAction}`}</span>
         </div>
     `;
-    
+
     // 检查是否是锤子（hammer/tongs使用矿锭）
     const isHammer = toolType === 'hammer' || toolType === 'tongs';
-    
+
     // 材料中文名称映射
     const materialNames = {
         'cyan_ingot': '青闪锭', 'red_copper_ingot': '赤铜锭', 'feather_ingot': '羽铁锭',
@@ -4751,7 +4791,7 @@ function updateCurrentFees(toolId, toolType) {
         'cyan_ore': '青闪矿', 'red_iron': '赤铁矿', 'feather_ore': '羽石矿',
         'pine_plank': '青杉木板', 'iron_birch_plank': '铁桦木板', 'wind_tree_plank': '风啸木板'
     };
-    
+
     if (isHammer) {
         // 锤子使用矿锭
         const hammerCost = enhanceConfig.hammerMaterialCost?.[tier];
@@ -4820,7 +4860,7 @@ function updateCurrentFees(toolId, toolType) {
             }
         }
     }
-    
+
     feesListEl.innerHTML = html;
 }
 
@@ -4832,15 +4872,15 @@ let lastProgressStartTime = 0;
 function updateCurrentActionProgress() {
     const progressFill = document.getElementById('current-progress-fill');
     const progressTime = document.getElementById('current-progress-time');
-    
+
     if (!progressFill || !progressTime) return;
-    
+
     const activeAction = gameState?.activeAction;
     if (!activeAction || activeAction.type !== 'ENHANCE') return;
-    
+
     const startTime = parseInt(gameState.actionStartTime) || 0;
     const duration = parseInt(gameState.actionDuration) || 12000;
-    
+
     // 检测是否是新的强化周期（startTime变化了）
     if (startTime !== lastProgressStartTime) {
         lastProgressStartTime = startTime;
@@ -4850,13 +4890,13 @@ function updateCurrentActionProgress() {
         void progressFill.offsetWidth;
         progressFill.style.transition = 'width 0.3s ease';
     }
-    
+
     if (startTime > 0 && duration > 0) {
         const now = Date.now();
         const elapsed = now - startTime;
         const remaining = Math.max(0, duration - elapsed);
         const progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
-        
+
         progressFill.style.width = `${progress}%`;
         progressTime.textContent = `${(remaining / 1000).toFixed(1)}s`;
     } else {
@@ -4872,7 +4912,7 @@ function stopEnhance() {
     if (!gameState?.activeAction || gameState.activeAction.type !== 'ENHANCE') {
         return;
     }
-    
+
     // 发送停止请求
     socket.emit('stop_enhance');
 }
@@ -4886,14 +4926,14 @@ function getEnhanceSuccessRate(level) {
         // 默认值
         return 0.5;
     }
-    
+
     // 检查区间
     if (level <= 1) return config[1] || 0.5;
     if (level >= 2 && level <= 3) return config['2-3'] || 0.45;
     if (level >= 4 && level <= 6) return config['4-6'] || 0.40;
     if (level >= 7 && level <= 10) return config['7-10'] || 0.35;
     if (level >= 11 && level <= 20) return config['11-20'] || 0.30;
-    
+
     return 0.3;
 }
 
@@ -4907,16 +4947,16 @@ function resetEnhanceState() {
     enhanceState.protection = null;
     enhanceState.protectionIcon = null;
     enhanceState.protectionStartLevel = 2;
-    
+
     // 重置UI显示
     const placeholder = document.getElementById('enhance-tool-placeholder');
     const badge = document.getElementById('enhance-tool-level-badge');
     const iconWrap = document.getElementById('enhance-tool-icon-wrap');
-    
+
     if (placeholder) placeholder.style.display = 'flex';
     if (badge) badge.style.display = 'none';
     if (iconWrap) iconWrap.style.display = 'none';
-    
+
     // 清空费用列表
     const feesListEl = document.getElementById('enhance-fees-list');
     if (feesListEl) {
@@ -4928,7 +4968,7 @@ function resetEnhanceState() {
             </div>
         `;
     }
-    
+
     // 清空经验和成功率
     const expEl = document.getElementById('enhance-exp');
     const rateEl = document.getElementById('enhance-success-rate');
@@ -4937,18 +4977,18 @@ function resetEnhanceState() {
         rateEl.textContent = '--%';
         rateEl.classList.remove('rate-low', 'rate-medium', 'rate-high');
     }
-    
+
     // 清空产出预览
     const outputIconEl = document.getElementById('enhance-output-icon');
     const outputBadgeEl = document.getElementById('enhance-output-badge');
     if (outputIconEl) outputIconEl.textContent = '-';
     if (outputBadgeEl) outputBadgeEl.style.display = 'none';
-    
+
     // 重置输入框
     const targetInput = document.getElementById('enhance-target-level');
     const countInput = document.getElementById('enhance-count');
     const protectionStart = document.getElementById('enhance-protection-start');
-    
+
     if (targetInput) targetInput.value = 1;
     if (countInput) {
         countInput.value = '∞';
@@ -4958,13 +4998,13 @@ function resetEnhanceState() {
         protectionStart.value = 2;
         protectionStart.disabled = true;
     }
-    
+
     // 重置保护垫槽
     const protectionSlot = document.getElementById('enhance-protection-slot');
     if (protectionSlot) {
         protectionSlot.innerHTML = '<span class="ph-icon">+</span>';
     }
-    
+
     // 禁用按钮
     const startBtn = document.getElementById('enhance-start-btn');
     const queueBtn = document.getElementById('enhance-queue-btn');
@@ -4995,21 +5035,21 @@ function updateEnhanceForgingExp() {
     const levelEl = document.getElementById('enhance-forging-level');
     const expInfoEl = document.getElementById('enhance-forging-exp-info');
     const expFillEl = document.getElementById('enhance-forging-exp-fill');
-    
+
     if (!levelEl || !expInfoEl || !expFillEl) return;
-    
+
     const level = gameState.forgingLevel || 1;
     const exp = gameState.forgingExp || 0;
-    
+
     // 升级所需经验（使用更合理的经验曲线）
     const expForCurrentLevel = Math.floor(100 * level * (1 + 0.3 * Math.max(0, level - 1)));
-    
+
     // 更新等级显示
     levelEl.textContent = `Lv.${level}`;
-    
+
     // 更新经验值信息 [当前/升级所需]
     expInfoEl.textContent = `[${Math.floor(exp)}/${expForCurrentLevel}]`;
-    
+
     // 更新经验条
     const progress = Math.min(100, Math.max(0, (exp / expForCurrentLevel) * 100));
     expFillEl.style.width = `${progress}%`;
@@ -5025,15 +5065,15 @@ function autoSelectEnhanceTool() {
     // 获取所有可强化的工具
     const allTools = [];
     const toolTypes = ['axe', 'pickaxe', 'chisel', 'needle', 'scythe', 'hammer', 'tongs', 'rod'];
-    
+
     toolTypes.forEach(toolType => {
         const toolsKey = getToolsKey(toolType);
         const tools = gameState.toolsInventory?.[toolsKey] || [];
-        
+
         tools.forEach((tool, index) => {
             const toolId = typeof tool === 'string' ? tool : tool.id;
             const enhanceLevel = typeof tool === 'object' && tool ? (tool.enhanceLevel || 0) : 0;
-            
+
             const toolConfig = CONFIG.tools[toolsKey]?.find(t => t.id === toolId);
             if (toolConfig) {
                 allTools.push({
@@ -5046,9 +5086,9 @@ function autoSelectEnhanceTool() {
             }
         });
     });
-    
+
     if (allTools.length === 0) return;
-    
+
     // 堆叠相同ID和等级的工具
     const stackedTools = {};
     allTools.forEach(tool => {
@@ -5064,9 +5104,9 @@ function autoSelectEnhanceTool() {
             stackedTools[key].count++;
         }
     });
-    
+
     const displayTools = Object.values(stackedTools);
-    
+
     // 如果只有一个工具组，自动选中
     if (displayTools.length === 1) {
         const tool = displayTools[0];
@@ -5078,7 +5118,7 @@ function autoSelectEnhanceTool() {
         updateEnhancePreview();
         return;
     }
-    
+
     // 检查是否已装备了工具，优先选中已装备的
     const equippedTool = gameState.equipment;
     if (equippedTool) {
@@ -5105,25 +5145,25 @@ function openEnhanceToolModal() {
     // 获取所有可强化的工具
     const allTools = [];
     const toolTypes = ['axe', 'pickaxe', 'chisel', 'needle', 'scythe', 'hammer', 'tongs', 'rod'];
-    
+
     // 获取正在强化的工具信息
     const activeAction = gameState?.activeAction;
     const enhancingToolType = activeAction?.type === 'ENHANCE' ? activeAction.toolType : null;
     const enhancingToolIndex = activeAction?.type === 'ENHANCE' ? activeAction.toolIndex : null;
-    
+
     toolTypes.forEach(toolType => {
         const toolsKey = getToolsKey(toolType);
         const tools = gameState.toolsInventory?.[toolsKey] || [];
-        
+
         tools.forEach((tool, index) => {
             // 排除正在强化的工具
             if (enhancingToolType === toolType && enhancingToolIndex === index) {
                 return;
             }
-            
+
             const toolId = typeof tool === 'string' ? tool : tool.id;
             const enhanceLevel = typeof tool === 'object' && tool ? (tool.enhanceLevel || 0) : 0;
-            
+
             // 获取工具配置
             const toolConfig = CONFIG.tools[toolsKey]?.find(t => t.id === toolId);
             if (toolConfig) {
@@ -5137,7 +5177,7 @@ function openEnhanceToolModal() {
             }
         });
     });
-    
+
     // 堆叠相同ID和等级的工具
     const stackedTools = {};
     allTools.forEach(tool => {
@@ -5153,9 +5193,9 @@ function openEnhanceToolModal() {
             stackedTools[key].count++;
         }
     });
-    
+
     const displayTools = Object.values(stackedTools);
-    
+
     // 如果只有一个工具组，自动选中
     if (displayTools.length === 1) {
         const tool = displayTools[0];
@@ -5167,7 +5207,7 @@ function openEnhanceToolModal() {
         updateEnhancePreview();
         return;
     }
-    
+
     // 检查是否已装备了工具，如果有则优先选中已装备的
     const equippedTool = gameState.equipment;
     if (equippedTool && displayTools.length > 0) {
@@ -5190,12 +5230,12 @@ function openEnhanceToolModal() {
             }
         }
     }
-    
+
     // 创建弹窗（即使没有工具也显示）
     const modal = document.createElement('div');
     modal.className = 'enhance-tool-modal';
-    
-    const gridContent = displayTools.length > 0 
+
+    const gridContent = displayTools.length > 0
         ? displayTools.map(tool => `
             <div class="enhance-tool-item" data-type="${tool.toolType}" data-index="${tool.indices[0]}" data-indices="${tool.indices.join(',')}">
                 <div class="enhance-tool-item-icon">${tool.icon}${tool.count > 1 ? `<span class="tool-count-badge">${tool.count}</span>` : ''}</div>
@@ -5205,7 +5245,7 @@ function openEnhanceToolModal() {
             </div>
         `).join('')
         : '<div style="color: #6B7A8A; text-align: center; padding: 40px; grid-column: 1 / -1;">没有可强化的装备</div>';
-    
+
     modal.innerHTML = `
         <div class="enhance-tool-modal-content">
             <h3 class="enhance-tool-modal-title">选择要强化的装备</h3>
@@ -5214,9 +5254,9 @@ function openEnhanceToolModal() {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     // 绑定点击事件
     modal.querySelectorAll('.enhance-tool-item').forEach(item => {
         item.onclick = () => {
@@ -5224,13 +5264,13 @@ function openEnhanceToolModal() {
             enhanceState.toolIndex = parseInt(item.dataset.index);
             enhanceState.selectedTool = true;
             enhanceState.protection = null;
-            
+
             updateEnhanceToolDisplay();
             updateEnhancePreview();
             modal.remove();
         };
     });
-    
+
     // 点击背景关闭
     modal.onclick = (e) => {
         if (e.target === modal) modal.remove();
@@ -5258,27 +5298,27 @@ function updateEnhanceToolDisplay() {
     const placeholderEl = document.getElementById('enhance-tool-placeholder');
     const badgeEl = document.getElementById('enhance-tool-level-badge');
     const iconWrapEl = document.getElementById('enhance-tool-icon-wrap');
-    
+
     if (!enhanceState.selectedTool) {
         if (placeholderEl) placeholderEl.style.display = 'flex';
         if (badgeEl) badgeEl.style.display = 'none';
         if (iconWrapEl) iconWrapEl.style.display = 'none';
         return;
     }
-    
+
     const { toolType, toolIndex } = enhanceState;
     const toolsKey = getToolsKey(toolType);
     const tools = gameState.toolsInventory?.[toolsKey] || [];
-    
+
     if (toolIndex < 0 || toolIndex >= tools.length) return;
-    
+
     const tool = tools[toolIndex];
     const toolId = typeof tool === 'string' ? tool : tool.id;
     const enhanceLevel = typeof tool === 'object' && tool ? (tool.enhanceLevel || 0) : 0;
     const toolConfig = CONFIG.tools[toolsKey]?.find(t => t.id === toolId);
-    
+
     if (!toolConfig) return;
-    
+
     // 隐藏占位符，显示图标和等级徽章
     if (placeholderEl) placeholderEl.style.display = 'none';
     if (badgeEl) {
@@ -5289,7 +5329,7 @@ function updateEnhanceToolDisplay() {
         iconWrapEl.style.display = 'flex';
         iconWrapEl.textContent = toolConfig.icon;
     }
-    
+
     // 更新目标等级默认值
     const targetInput = document.getElementById('enhance-target-level');
     if (targetInput) {
@@ -5302,7 +5342,7 @@ function updateEnhanceToolDisplay() {
  */
 function updateEnhancePreview() {
     if (!enhanceState.selectedTool) return;
-    
+
     socket.emit('get_enhance_preview', {
         toolType: enhanceState.toolType,
         toolIndex: enhanceState.toolIndex
@@ -5319,11 +5359,11 @@ function showMaterialPopover(triggerElement) {
         existingPopover.remove();
         return;
     }
-    
+
     const materialId = triggerElement.dataset.material;
     const materialType = triggerElement.dataset.type;
     const count = parseInt(triggerElement.dataset.count) || 0;
-    
+
     // 获取素材信息
     const materialNames = {
         'cyan_ingot': '青闪锭', 'red_copper_ingot': '赤铜锭', 'feather_ingot': '羽铁锭',
@@ -5336,14 +5376,14 @@ function showMaterialPopover(triggerElement) {
         'flame_tree_plank': '焰心木板', 'frost_maple_plank': '霜叶枫木板', 'thunder_tree_plank': '雷鸣木板',
         'ancient_oak_plank': '古橡木板', 'world_tree_plank': '世界树木板'
     };
-    
+
     const materialIcons = {
         'ingot': '🔨', 'ore': '⛏️', 'plank': '🪵'
     };
-    
+
     const name = materialNames[materialId] || materialId;
     const icon = materialIcons[materialType] || '📦';
-    
+
     // 创建弹出卡片
     const popover = document.createElement('div');
     popover.id = 'material-popover';
@@ -5360,16 +5400,16 @@ function showMaterialPopover(triggerElement) {
             </div>
         </div>
     `;
-    
+
     // 添加到页面
     document.body.appendChild(popover);
-    
+
     // 定位弹出卡片在素材上方
     const triggerRect = triggerElement.getBoundingClientRect();
     const popoverHeight = popover.offsetHeight;
     popover.style.left = `${triggerRect.left}px`;
     popover.style.top = `${triggerRect.top - popoverHeight - 8}px`;
-    
+
     // 点击其他地方关闭
     setTimeout(() => {
         document.addEventListener('click', closeMaterialPopoverOnOutsideClick, { once: true });
@@ -5393,7 +5433,7 @@ function showProtectionHelpPopover(triggerElement, isHover = false) {
         existingPopover.remove();
         if (!isHover) return; // 点击模式再次点击则关闭
     }
-    
+
     // 创建弹出卡片
     const popover = document.createElement('div');
     popover.id = 'protection-help-popover';
@@ -5406,26 +5446,26 @@ function showProtectionHelpPopover(triggerElement, isHover = false) {
             <p style="color: #FF6B6B; margin-top: 8px;">⚠️ 不可防止装备破碎。</p>
         </div>
     `;
-    
+
     // 先设置样式让元素可测量
     popover.style.visibility = 'hidden';
     popover.style.position = 'fixed';
-    
+
     // 添加到页面
     document.body.appendChild(popover);
-    
+
     // 定位弹出卡片（在问号符上方）
     const triggerRect = triggerElement.getBoundingClientRect();
     const popoverRect = popover.getBoundingClientRect();
-    
+
     // 计算位置：在问号符上方，居中对齐
     const left = triggerRect.left + triggerRect.width / 2 - popoverRect.width / 2;
     const top = triggerRect.top - popoverRect.height - 8;
-    
+
     popover.style.left = `${Math.max(8, left)}px`;
     popover.style.top = `${Math.max(8, top)}px`;
     popover.style.visibility = 'visible';
-    
+
     if (isHover) {
         // hover模式：鼠标离开弹出卡片时关闭
         popover.addEventListener('mouseleave', () => {
@@ -5458,21 +5498,21 @@ function openProtectionSelectModal() {
         showToast('请先选择要强化的装备');
         return;
     }
-    
+
     const toolType = enhanceState.toolType;
     const toolIndex = enhanceState.toolIndex;
     const toolsKey = getToolsKey(toolType);
     const tools = gameState.toolsInventory?.[toolsKey] || [];
-    
+
     // 获取当前工具信息
     const tool = tools[toolIndex];
     if (!tool) {
         showToast('工具不存在');
         return;
     }
-    
+
     const toolId = typeof tool === 'string' ? tool : tool.id;
-    
+
     // 查找同名工具作为保护垫（不限等级，排除当前正在强化的那个）
     const protectionTools = tools
         .map((t, idx) => {
@@ -5485,17 +5525,17 @@ function openProtectionSelectModal() {
             return null;
         })
         .filter(t => t !== null);
-    
+
     if (protectionTools.length === 0) {
         showToast('没有可用的保护道具');
         return;
     }
-    
+
     // 获取工具配置
     const toolConfig = CONFIG.tools?.[toolsKey]?.find(t => t.id === toolId);
     const toolName = toolConfig?.name || toolId;
     const toolIcon = toolConfig?.icon || '🔧';
-    
+
     // 按等级分组统计
     const levelGroups = {};
     protectionTools.forEach(t => {
@@ -5506,16 +5546,16 @@ function openProtectionSelectModal() {
         levelGroups[level].indices.push(t.index);
         levelGroups[level].count++;
     });
-    
+
     // 移除已有的弹窗
     document.querySelectorAll('.protection-select-modal').forEach(m => m.remove());
-    
+
     // 创建小型弹窗
     const modal = document.createElement('div');
     modal.className = 'protection-select-modal';
     modal.style.position = 'fixed';
     modal.style.visibility = 'hidden';
-    
+
     modal.innerHTML = Object.values(levelGroups).map(group => `
         <div class="protection-select-item" data-index="${group.indices[0]}">
             <span class="protection-select-icon">${toolIcon}</span>
@@ -5525,9 +5565,9 @@ function openProtectionSelectModal() {
             </div>
         </div>
     `).join('');
-    
+
     document.body.appendChild(modal);
-    
+
     // 定位到保护垫选择框上方居中
     const slot = document.getElementById('enhance-protection-slot');
     if (slot) {
@@ -5537,14 +5577,14 @@ function openProtectionSelectModal() {
         modal.style.top = `${rect.top - modalRect.height - 8}px`;
     }
     modal.style.visibility = 'visible';
-    
+
     // 绑定点击事件
     modal.querySelectorAll('.protection-select-item').forEach(item => {
         item.addEventListener('click', () => {
             const idx = parseInt(item.dataset.index);
             enhanceState.protection = idx;
             enhanceState.protectionIcon = toolIcon;  // 存储图标
-            
+
             // 更新保护垫选择框显示（图标 + 数量）
             const protectionSlot = document.getElementById('enhance-protection-slot');
             if (protectionSlot) {
@@ -5553,11 +5593,11 @@ function openProtectionSelectModal() {
                     <span class="protection-count">${protectionTools.length}</span>
                 `;
             }
-            
+
             modal.remove();
         });
     });
-    
+
     // 点击其他地方关闭
     setTimeout(() => {
         document.addEventListener('click', function closeOnOutside(e) {
@@ -5574,10 +5614,10 @@ function openProtectionSelectModal() {
  */
 function showProtectionHelpTooltip(event) {
     const helpIcon = event.target;
-    
+
     // 移除已有的tooltip
     document.querySelectorAll('.protection-help-tooltip').forEach(t => t.remove());
-    
+
     const tooltip = document.createElement('div');
     tooltip.className = 'protection-help-tooltip';
     tooltip.style.cssText = `
@@ -5598,14 +5638,14 @@ function showProtectionHelpTooltip(event) {
         <div>可选择保护道具，必须是同类型物品，强化失败时消耗一个以避免降级或跌至+5。</div>
         <div style="color: #E57373; margin-top: 6px;">⚠️ 不可防止装备破碎</div>
     `;
-    
+
     document.body.appendChild(tooltip);
-    
+
     // 定位在问号右边
     const rect = helpIcon.getBoundingClientRect();
     tooltip.style.left = `${rect.right + 8}px`;
     tooltip.style.top = `${rect.top}px`;
-    
+
     // 点击时点击其他地方关闭
     if (event.type === 'click') {
         setTimeout(() => {
@@ -5633,13 +5673,13 @@ function startEnhance() {
         showToast('请先选择装备');
         return;
     }
-    
+
     // 检查是否有正在进行的行动
     if (gameState?.activeAction) {
         const currentAction = gameState.activeAction;
         const currentConfig = getActionConfig(currentAction.type, currentAction.id);
         const currentName = currentConfig?.name || '当前行动';
-        
+
         // 弹出确认对话框
         const modal = document.createElement('div');
         modal.className = 'action-modal-overlay';
@@ -5663,18 +5703,18 @@ function startEnhance() {
                 </div>
             </div>
         `;
-        
+
         document.body.appendChild(modal);
-        
+
         modal.querySelector('.action-modal-close').addEventListener('click', () => modal.remove());
         modal.querySelector('#cancel-replace').addEventListener('click', () => modal.remove());
         modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
-        
+
         modal.querySelector('#confirm-replace').addEventListener('click', () => {
             // 先取消当前行动
             socket.emit('action_cancel');
             modal.remove();
-            
+
             // 等待取消完成后再开始新行动
             // 监听取消结果
             const onCancelResult = (result) => {
@@ -5690,10 +5730,10 @@ function startEnhance() {
             };
             socket.on('action_cancel_result', onCancelResult);
         });
-        
+
         return;
     }
-    
+
     // 没有正在进行的行动，直接开始
     doStartEnhance();
 }
@@ -5704,17 +5744,17 @@ function startEnhance() {
 function doStartEnhance() {
     const targetLevel = parseInt(document.getElementById('enhance-target-level').value) || 1;
     const countInput = document.getElementById('enhance-count');
-    
+
     let count;
     const inputVal = countInput?.value?.trim();
-    
+
     // 判断是否无限模式
     if (inputVal === '∞' || inputVal === '' || inputVal === '-1') {
         count = -1; // -1 表示无限（实际执行时计算最大值）
     } else {
         count = parseInt(inputVal) || 1;
     }
-    
+
     socket.emit('enhance_start', {
         toolType: enhanceState.toolType,
         toolIndex: enhanceState.toolIndex,
@@ -5723,7 +5763,7 @@ function doStartEnhance() {
         protection: enhanceState.protection,
         protectionStartLevel: enhanceState.protectionStartLevel
     });
-    
+
     // 开始强化后重置强化页状态
     resetEnhanceState();
 }
@@ -5736,20 +5776,20 @@ function addToEnhanceQueue() {
         showToast('请先选择装备');
         return;
     }
-    
+
     const targetLevel = parseInt(document.getElementById('enhance-target-level').value) || 1;
     const countInput = document.getElementById('enhance-count');
-    
+
     let count;
     const inputVal = countInput?.value?.trim();
-    
+
     // 判断是否无限模式
     if (inputVal === '∞' || inputVal === '' || inputVal === '-1') {
         count = -1; // -1 表示无限
     } else {
         count = parseInt(inputVal) || 1;
     }
-    
+
     // 直接加入队列，不检查当前行动
     socket.emit('enhance_queue', {
         toolType: enhanceState.toolType,
@@ -5769,21 +5809,21 @@ function validateEnhanceButtons() {
     const queueBtn = document.getElementById('enhance-queue-btn');
     const targetInput = document.getElementById('enhance-target-level');
     const protectionStartInput = document.getElementById('enhance-protection-start');
-    
+
     let canEnhance = enhanceState.selectedTool !== null;
-    
+
     // 检查目标等级
     if (targetInput) {
         const target = parseInt(targetInput.value) || 1;
         if (target < 1 || target > 20) canEnhance = false;
     }
-    
+
     // 检查保护起始等级
     if (protectionStartInput && !protectionStartInput.disabled) {
         const protStart = parseInt(protectionStartInput.value) || 2;
         if (protStart < 2 || protStart > 20) canEnhance = false;
     }
-    
+
     if (startBtn) startBtn.disabled = !canEnhance;
     if (queueBtn) queueBtn.disabled = !canEnhance;
 }
