@@ -1341,7 +1341,7 @@ body::after {
 /* ============ 伐木场 ============ */
 .woodcutting-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    grid-template-columns: repeat(5, 1fr);
     gap: 8px;
 }
 
@@ -1435,7 +1435,7 @@ body::after {
 /* ============ 矿洞 ============ */
 .mining-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    grid-template-columns: repeat(5, 1fr);
     gap: 8px;
 }
 
