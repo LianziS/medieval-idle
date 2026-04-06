@@ -880,49 +880,75 @@
     <div class="merchant-modal" id="merchant-modal">
         <div class="merchant-modal-overlay" id="merchant-modal-overlay"></div>
         <div class="merchant-modal-panel">
-            <div class="merchant-modal-header">
-                <div class="merchant-modal-title">
-                    <span class="merchant-modal-avatar" id="merchant-modal-avatar">🏪</span>
-                    <div class="merchant-modal-info">
-                        <h3 id="merchant-modal-name">商人名称</h3>
-                        <div class="merchant-favorability">
-                            <span class="favorability-icon">❤️</span>
-                            <span class="favorability-value" id="merchant-modal-favorability">0.00</span>
+            <!-- 头部：商人信息 -->
+            <div class="merchant-header">
+                <div class="merchant-avatar" id="merchant-modal-avatar">🏪</div>
+                <div class="merchant-info">
+                    <div class="merchant-name" id="merchant-modal-name">商人名称</div>
+                    <div class="merchant-title" id="merchant-modal-title">商人称号</div>
+                    <div class="reputation-bar">
+                        <span class="reputation-label">好感度</span>
+                        <div class="reputation-track">
+                            <div class="reputation-fill" id="merchant-modal-favorability-fill" style="width: 0%;"></div>
+                        </div>
+                        <span class="reputation-value" id="merchant-modal-favorability">0%</span>
+                    </div>
+                </div>
+                <button class="merchant-close-btn" id="merchant-modal-close">×</button>
+            </div>
+            
+            <!-- 标签切换 -->
+            <div class="merchant-tabs">
+                <button class="merchant-tab active" data-tab="trade">⚖ 交易</button>
+                <button class="merchant-tab" data-tab="quest">📜 任务</button>
+            </div>
+            
+            <!-- 内容区域 -->
+            <div class="merchant-content-area" id="merchant-trade-panel">
+                <!-- 商人出售区 -->
+                <div class="merchant-goods-section">
+                    <div class="goods-grid" id="merchant-goods-grid">
+                        <!-- 空格子，暂不售出任何东西 -->
+                    </div>
+                </div>
+                
+                <!-- 待售预览区 -->
+                <div class="sell-preview-section" id="sell-preview-section">
+                    <div class="section-header">
+                        <span class="section-icon">📤</span>
+                        <span class="section-title">待售</span>
+                        <div class="section-divider"></div>
+                    </div>
+                    <div class="preview-grid" id="sell-preview-grid">
+                        <!-- 待售物品卡片 -->
+                    </div>
+                    <div class="sell-actions">
+                        <button class="btn-select" id="merchant-select-btn">选择</button>
+                        <button class="btn-sell-confirm" id="merchant-sell-btn">出售</button>
+                        <div class="sell-total">
+                            获得：<span class="sell-total-value" id="merchant-sell-total">🪙 0</span>
                         </div>
                     </div>
                 </div>
-                <button class="merchant-modal-close" id="merchant-modal-close">&times;</button>
-            </div>
-            
-            <!-- 二级菜单 -->
-            <div class="merchant-tabs">
-                <button class="merchant-tab active" data-tab="trade">交易</button>
-                <button class="merchant-tab" data-tab="quest">任务</button>
-            </div>
-            
-            <!-- 内容区域（交易/任务） -->
-            <div class="merchant-content">
-                <!-- 交易栏 -->
-                <div class="merchant-tab-content active" id="merchant-tab-trade">
-                    <div class="merchant-goods-list" id="merchant-goods-list"></div>
-                </div>
                 
-                <!-- 任务栏 -->
-                <div class="merchant-tab-content" id="merchant-tab-quest">
-                    <div class="merchant-quest-list" id="merchant-quest-list"></div>
+                <!-- 我的物品 -->
+                <div class="merchant-inventory-section">
+                    <div class="section-header">
+                        <span class="section-icon">🎒</span>
+                        <span class="section-title">我的物品</span>
+                        <div class="section-divider"></div>
+                    </div>
+                    <div class="inventory-grid" id="merchant-inventory-grid">
+                        <!-- 物品卡片/空格子 -->
+                    </div>
                 </div>
             </div>
             
-            <!-- 我的物品 -->
-            <div class="merchant-warehouse">
-                <div class="merchant-warehouse-header">
-                    <h4>我的物品</h4>
-                    <button class="merchant-select-btn" id="merchant-select-btn">选择</button>
-                </div>
-                <div class="merchant-warehouse-grid" id="merchant-warehouse-grid"></div>
-                <div class="merchant-sell-bar" id="merchant-sell-bar" style="display: none;">
-                    <span class="merchant-sell-total">总计：<span id="merchant-sell-total">0</span> 金币</span>
-                    <button class="merchant-sell-btn" id="merchant-sell-btn">出售</button>
+            <!-- 任务面板 -->
+            <div class="merchant-quest-panel" id="merchant-quest-panel" style="display: none;">
+                <div class="quest-empty">
+                    <span class="quest-icon">📜</span>
+                    <span class="quest-text">暂无任务</span>
                 </div>
             </div>
         </div>

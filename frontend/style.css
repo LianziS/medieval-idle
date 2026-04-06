@@ -1932,7 +1932,7 @@ body::after {
     transition: width 0.3s ease;
 }
 
-/* 商人交易弹窗 */
+/* ============ 商人弹出页新布局 ============ */
 .merchant-modal {
     position: fixed;
     top: 0;
@@ -1941,7 +1941,7 @@ body::after {
     height: 100vh;
     z-index: 2000;
     pointer-events: none;
-    display: flex; /* 改为 flex 以确保子元素正确布局 */
+    display: flex;
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -1960,14 +1960,14 @@ body::after {
     background: rgba(0, 0, 0, 0.35);
     backdrop-filter: blur(4px);
     z-index: 1;
-    pointer-events: none; /* 默认不拦截点击 */
+    pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease;
 }
 
 .merchant-modal.active .merchant-modal-overlay {
     opacity: 1;
-    pointer-events: auto; /* active 时才可点击 */
+    pointer-events: auto;
 }
 
 .merchant-modal-panel {
@@ -1975,14 +1975,14 @@ body::after {
     z-index: 2;
     margin-left: auto;
     width: 100%;
-    max-width: 500px;
+    max-width: 480px;
     height: 100vh;
-    background: linear-gradient(180deg, rgba(45, 63, 82, 0.98) 0%, rgba(27, 42, 58, 0.98) 100%);
-    border-left: 2px solid rgba(255, 255, 255, 0.3);
+    background: linear-gradient(135deg, #252535 0%, #1e1e2e 50%, #181825 100%);
+    border: 2px solid #4a5568;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: -5px 0 20px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 0 1px #2d3748, 0 0 20px rgba(74, 85, 104, 0.2), inset 0 0 40px rgba(0, 0, 0, 0.3);
     transform: translateX(100%);
     transition: transform 0.3s ease;
 }
@@ -1991,230 +1991,474 @@ body::after {
     transform: translateX(0);
 }
 
-@media (max-width: 768px) {
-    .merchant-modal-panel {
-        height: 100vh;
-    }
-}
-
-/* 内容区域（交易/任务） */
-.merchant-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
-}
-
-@media (min-width: 501px) {
-    .merchant-modal-panel {
-        width: 500px;
-    }
-}
-
-/* 移动端弹窗 75vw 宽度 */
-@media (max-width: 768px) {
-    .merchant-modal {
-        width: 100vw;
-    }
-    
-    .merchant-modal-panel {
-        width: 75vw !important;
-        max-width: 75vw !important;
-        right: 0;
-    }
-}
-
 /* 弹窗头部 */
-.merchant-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background: rgba(0, 0, 0, 0.3);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.merchant-modal-title {
+.merchant-header {
     display: flex;
     align-items: center;
     gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(74, 85, 104, 0.4);
+    background: linear-gradient(180deg, rgba(30, 30, 46, 0.5) 0%, transparent 100%);
 }
 
-.merchant-modal-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.8rem;
-    border: 2px solid rgba(255, 255, 255, 0.4);
-}
-
-.merchant-modal-info h3 {
-    font-size: 1.1rem;
-    color: #fff;
-    margin-bottom: 4px;
-}
-
-.merchant-modal-favorability {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.85rem;
-    color: #FFD700;
-}
-
-.merchant-modal-close {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: #fff;
-    font-size: 1.5rem;
-    cursor: pointer;
-    transition: all 0.2s;
+.merchant-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.merchant-modal-close:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-/* 二级菜单 */
-.merchant-tabs {
-    display: flex;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    overflow: hidden;
-}
-
-.merchant-tab {
+.merchant-info {
     flex: 1;
-    padding: 12px;
-    background: transparent;
-    border: none;
-    color: #A0B2C0;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: flex 0.3s ease, padding 0.3s ease;
-    border-bottom: 2px solid transparent;
+    min-width: 0;
+}
+
+.merchant-name {
+    font-size: 14px;
+    color: #e2e8f0;
+}
+
+.merchant-title {
+    font-size: 10px;
+    color: #a0aec0;
+}
+
+/* 好感度条 */
+.reputation-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.reputation-label {
+    font-size: 10px;
+    color: #90cdf4;
     white-space: nowrap;
 }
 
-.merchant-tab.active {
-    flex: 2;
-    color: #FFD700;
-    border-bottom-color: #FFD700;
-    background: rgba(255, 215, 0, 0.05);
+.reputation-track {
+    flex: 1;
+    height: 6px;
+    background: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
+    border: 1px solid #4a5568;
+    border-radius: 2px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-.merchant-tab:hover:not(.active) {
-    background: rgba(255, 255, 255, 0.05);
-    color: #fff;
+.reputation-fill {
+    height: 100%;
+    background: linear-gradient(180deg, #68d391 0%, #48bb78 100%);
+    border-radius: 1px;
+    box-shadow: 0 0 4px rgba(104, 211, 145, 0.3);
 }
 
-@media (max-width: 768px) {
-    .merchant-tab {
-        padding: 10px 8px;
-        font-size: 0.75rem;
-    }
-    
-    .merchant-tab.active {
-        flex: 2;
-        padding: 10px 12px;
-    }
+.reputation-value {
+    font-size: 10px;
+    color: #68d391;
+    min-width: 32px;
+    text-align: right;
 }
 
-/* 内容区域 */
-.merchant-tab-content {
-    display: none;
-    padding: 16px;
-    max-height: 40vh;
-    overflow-y: auto;
-}
-
-.merchant-tab-content.active {
-    display: block;
-}
-
-@media (max-width: 768px) {
-    .merchant-tab-content {
-        padding: 10px;
-        max-height: 35vh;
-    }
-}
-
-/* 商品列表 */
-.merchant-goods-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.merchant-goods-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.merchant-goods-icon {
-    width: 50px;
-    height: 50px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+/* 关闭按钮 */
+.merchant-close-btn {
+    width: 26px;
+    height: 26px;
+    background: linear-gradient(180deg, #4a5568 0%, #2d3748 100%);
+    border: 1px solid #718096;
+    border-radius: 4px;
+    color: #e2e8f0;
+    font-size: 14px;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
+    transition: all 0.2s;
 }
 
-.merchant-goods-info {
-    flex: 1;
-}
-
-.merchant-goods-name {
-    font-size: 0.95rem;
+.merchant-close-btn:hover {
+    background: linear-gradient(180deg, #718096 0%, #4a5568 100%);
     color: #fff;
-    margin-bottom: 4px;
 }
 
-.merchant-goods-price {
-    font-size: 0.8rem;
-    color: #A0B2C0;
+/* 标签切换 */
+.merchant-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(74, 85, 104, 0.4);
+    background: rgba(30, 30, 46, 0.3);
 }
 
-.merchant-buy-btn {
-    padding: 8px 16px;
-    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+.merchant-tab {
+    padding: 8px 14px;
+    font-size: 12px;
+    color: #a0aec0;
+    background: transparent;
     border: none;
-    border-radius: 6px;
-    color: #1B2A3A;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.merchant-tab:hover {
+    color: #90cdf4;
+    background: rgba(74, 85, 104, 0.1);
+}
+
+.merchant-tab.active {
+    color: #63b3ed;
+    background: linear-gradient(180deg, rgba(74, 85, 104, 0.15) 0%, transparent 100%);
+}
+
+.merchant-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #63b3ed, transparent);
+}
+
+/* 内容区域 */
+.merchant-content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 12px;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.merchant-content-area::-webkit-scrollbar {
+    width: 6px;
+}
+
+.merchant-content-area::-webkit-scrollbar-track {
+    background: rgba(30, 30, 46, 0.5);
+}
+
+.merchant-content-area::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #4a5568 0%, #2d3748 100%);
+    border-radius: 3px;
+    border: 1px solid #718096;
+}
+
+/* 区域标题 */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.section-icon {
+    font-size: 14px;
+}
+
+.section-title {
+    font-size: 10px;
+    color: #e2e8f0;
+}
+
+.section-divider {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, #4a5568, transparent);
+}
+
+/* 商人出售区 */
+.merchant-goods-section {
+    flex: 0 0 auto;
+    min-height: 0;
+    border: 1px solid #4a5568;
+    border-radius: 4px;
+    padding: 4px;
+    margin-bottom: 8px;
+}
+
+.goods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+    gap: 4px;
+}
+
+.goods-card {
+    aspect-ratio: 1;
+    background: linear-gradient(145deg, #2d3748 0%, #1a202c 100%);
+    border: 1px solid #4a5568;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    padding: 4px;
+}
+
+.goods-card:hover {
+    border-color: #63b3ed;
+    background: linear-gradient(145deg, #3d4a5c 0%, #2d3748 100%);
+}
+
+.goods-card.empty-slot {
+    background: rgba(0,0,0,0.2);
+    border-style: dashed;
+    cursor: default;
+}
+
+.goods-card.empty-slot:hover {
+    border-color: #4a5568;
+    background: rgba(0,0,0,0.2);
+}
+
+.goods-icon {
+    font-size: 18px;
+}
+
+.goods-price {
+    font-size: 8px;
+    color: #e2e8f0;
+}
+
+/* 待售预览区 */
+.sell-preview-section {
+    flex: none;
+    padding: 6px;
+    min-height: 0;
+    border: 1px solid #4a5568;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.sell-preview-section.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60px;
+}
+
+.sell-preview-section.empty::after {
+    content: '拖拽物品到这里出售';
+    font-size: 10px;
+    color: #718096;
+    font-style: italic;
+}
+
+.preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+    gap: 4px;
+}
+
+.preview-card {
+    aspect-ratio: 1;
+    background: linear-gradient(145deg, #2d3748 0%, #1a202c 100%);
+    border: 1px solid #63b3ed;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3);
+    padding: 4px;
+}
+
+.preview-icon {
+    font-size: 16px;
+}
+
+.preview-count {
+    font-size: 8px;
+    color: #e2e8f0;
+}
+
+.preview-remove {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 12px;
+    height: 12px;
+    background: #e53e3e;
+    border: 1px solid #c53030;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 9px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+/* 出售按钮 */
+.sell-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(74, 85, 104, 0.25);
+    height: 26px;
+    align-items: center;
+}
+
+.sell-total {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: #e2e8f0;
+}
+
+.sell-total-value {
+    color: #68d391;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.btn-select {
+    padding: 4px 10px;
+    background: linear-gradient(180deg, #4299e1 0%, #3182ce 100%);
+    border: 1px solid #2b6cb0;
+    border-radius: 3px;
+    color: #fff;
+    font-size: 10px;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s;
 }
 
-.merchant-buy-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+.btn-select:hover {
+    background: linear-gradient(180deg, #63b3ed 0%, #4299e1 100%);
+    box-shadow: 0 0 8px rgba(66, 153, 225, 0.3);
 }
 
-.merchant-buy-btn:disabled {
+.btn-select.active {
+    background: linear-gradient(180deg, #68d391 0%, #48bb78 100%);
+    border-color: #38a169;
+}
+
+.btn-sell-confirm {
+    padding: 4px 10px;
+    background: linear-gradient(180deg, #68d391 0%, #48bb78 100%);
+    border: 1px solid #38a169;
+    border-radius: 3px;
+    color: #1a202c;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-sell-confirm:hover {
+    background: linear-gradient(180deg, #9ae6b4 0%, #68d391 100%);
+    box-shadow: 0 0 8px rgba(104, 211, 145, 0.3);
+}
+
+.btn-sell-confirm:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    transform: none;
 }
 
-/* 任务列表 */
+/* 我的物品区 */
+.merchant-inventory-section {
+    flex: 40;
+    min-height: 0;
+    border: 1px solid #4a5568;
+    border-radius: 4px;
+    padding: 4px;
+}
+
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+    gap: 4px;
+    overflow-y: auto;
+    max-height: 200px;
+}
+
+.inventory-card {
+    aspect-ratio: 1;
+    background: linear-gradient(145deg, #2d3748 0%, #1a202c 100%);
+    border: 1px solid #4a5568;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    padding: 4px;
+}
+
+.inventory-card:hover {
+    border-color: #63b3ed;
+    background: linear-gradient(145deg, #3d4a5c 0%, #2d3748 100%);
+}
+
+.inventory-card.selected {
+    border-color: #68d391;
+    box-shadow: 0 0 6px rgba(104, 211, 145, 0.3);
+}
+
+.inventory-card.empty-slot {
+    background: rgba(0,0,0,0.2);
+    border-style: dashed;
+    cursor: default;
+}
+
+.inventory-card.empty-slot:hover {
+    border-color: #4a5568;
+    background: rgba(0,0,0,0.2);
+}
+
+.inventory-icon {
+    font-size: 18px;
+}
+
+.inventory-count {
+    font-size: 8px;
+    color: #e2e8f0;
+}
+
+/* 品质边框 */
+.inventory-card.common { border-color: #4a5568; }
+.inventory-card.uncommon { border-color: #68d391; }
+.inventory-card.rare { border-color: #63b3ed; }
+.inventory-card.epic { border-color: #b794f4; }
+.inventory-card.legendary { border-color: #f6ad55; box-shadow: 0 0 6px rgba(246, 173, 85, 0.2); }
+
+/* 任务面板 */
+.merchant-quest-panel {
+    flex: 1;
+    padding: 30px;
+    text-align: center;
+}
+
+.quest-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.quest-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.quest-text {
+    font-size: 13px;
+    color: #718096;
+}
+
+/* 任务列表（保留兼容） */
 .merchant-quest-list {
     display: flex;
     flex-direction: column;
@@ -2282,171 +2526,6 @@ body::after {
     background: rgba(0, 255, 100, 0.3);
 }
 
-/* 仓库区域 */
-.merchant-warehouse {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 12px;
-    background: rgba(0, 0, 0, 0.2);
-    flex: 0 0 40%;  /* 占整个弹窗高度的 40% */
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-}
-
-@media (max-width: 768px) {
-    .merchant-warehouse {
-        padding: 8px;
-        flex: 0 0 40%;  /* 移动端同样占 40% */
-    }
-}
-
-.merchant-warehouse-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-}
-
-.merchant-warehouse-header h4 {
-    font-size: 0.95rem;
-    color: #fff;
-}
-
-.merchant-select-btn {
-    padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
-    color: #A0B2C0;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.merchant-select-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-}
-
-.merchant-select-btn.active {
-    background: rgba(0, 255, 100, 0.2);
-    border-color: #00FF64;
-    color: #00FF64;
-}
-
-.merchant-warehouse-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 8px;
-    overflow-y: auto;
-    align-content: start;
-}
-
-@media (max-width: 768px) {
-    .merchant-warehouse-grid {
-        gap: 6px;
-    }
-}
-
-.merchant-warehouse-item {
-    padding: 8px 6px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 70px;
-}
-
-.merchant-warehouse-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-@media (max-width: 768px) {
-    .merchant-warehouse-item {
-        padding: 6px 4px;
-        min-height: 60px;
-    }
-}
-
-.merchant-warehouse-item.selected {
-    border-color: #00FF64;
-    background: rgba(0, 255, 100, 0.1);
-}
-
-.merchant-warehouse-item.selected::after {
-    content: '✓';
-    position: absolute;
-    bottom: 2px;
-    right: 4px;
-    font-size: 1rem;
-    color: #00FF64;
-    font-weight: bold;
-}
-
-.merchant-warehouse-item-icon {
-    font-size: 1.5rem;
-    text-align: center;
-    margin-bottom: 4px;
-}
-
-.merchant-warehouse-item-name {
-    font-size: 0.7rem;
-    color: #A0B2C0;
-    text-align: center;
-}
-
-.merchant-warehouse-item-count {
-    font-size: 0.75rem;
-    color: #fff;
-    text-align: center;
-    font-weight: bold;
-}
-
-/* 出售按钮栏 */
-.merchant-sell-bar {
-    margin-top: 12px;
-    padding: 12px;
-    background: rgba(255, 215, 0, 0.1);
-    border-radius: 8px;
-    border: 1px solid rgba(255, 215, 0, 0.3);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.merchant-sell-total {
-    font-size: 0.9rem;
-    color: #FFD700;
-    font-weight: bold;
-}
-
-.merchant-sell-btn {
-    padding: 8px 20px;
-    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-    border: none;
-    border-radius: 6px;
-    color: #1B2A3A;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.merchant-sell-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
-}
-
-.merchant-sell-btn.confirming {
-    background: linear-gradient(135deg, #FF6B6B 0%, #FF4757 100%);
-}
-
 /* ============ 移动端优化 ============ */
 @media (max-width: 768px) {
     body {
@@ -2467,44 +2546,37 @@ body::after {
         box-shadow: -2px 0 10px rgba(0, 0, 0, 0.25);
     }
     
-    .merchant-modal-header {
+    .merchant-header {
         padding: 10px 12px;
     }
     
-    .merchant-modal-header h3 {
-        font-size: 0.85rem;
+    .merchant-name {
+        font-size: 12px;
     }
     
-    .merchant-modal-favorability {
-        font-size: 0.7rem;
+    .merchant-title {
+        font-size: 9px;
+    }
+    
+    .reputation-label {
+        font-size: 9px;
+    }
+    
+    .reputation-value {
+        font-size: 9px;
     }
     
     .merchant-tab {
-        font-size: 0.75rem;
+        font-size: 11px;
         padding: 8px;
     }
     
-    .merchant-goods-item {
-        padding: 8px;
+    .goods-card, .inventory-card, .preview-card {
+        min-width: 40px;
     }
     
-    .merchant-goods-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 1.2rem;
-    }
-    
-    .merchant-goods-name {
-        font-size: 0.75rem;
-    }
-    
-    .merchant-goods-price {
-        font-size: 0.65rem;
-    }
-    
-    .merchant-buy-btn {
-        padding: 6px 12px;
-        font-size: 0.7rem;
+    .inventory-grid {
+        max-height: 150px;
     }
     
     .merchant-quest-item {
@@ -2526,50 +2598,6 @@ body::after {
     .merchant-quest-btn {
         padding: 4px 8px;
         font-size: 0.65rem;
-    }
-    
-    .merchant-warehouse-header h4 {
-        font-size: 0.75rem;
-    }
-    
-    .merchant-select-btn {
-        padding: 4px 8px;
-        font-size: 0.65rem;
-    }
-    
-    .merchant-warehouse-grid {
-        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-        gap: 4px;
-    }
-    
-    .merchant-warehouse-item {
-        padding: 6px 4px;
-        min-height: 60px;
-    }
-    
-    .merchant-warehouse-item-icon {
-        font-size: 1.3rem;
-    }
-    
-    .merchant-warehouse-item-name {
-        font-size: 0.6rem;
-    }
-    
-    .merchant-warehouse-item-count {
-        font-size: 0.65rem;
-    }
-    
-    .merchant-sell-bar {
-        padding: 8px;
-    }
-    
-    .merchant-sell-total {
-        font-size: 0.75rem;
-    }
-    
-    .merchant-sell-btn {
-        padding: 6px 12px;
-        font-size: 0.7rem;
     }
 }
 
