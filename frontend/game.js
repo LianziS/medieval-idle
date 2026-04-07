@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0407 17:50';
+        versionEl.textContent = '0407 18:10';
     }
 }
 
@@ -196,9 +196,16 @@ function setupSocket() {
             showToast('✅ 已连接服务器');
         } else {
             console.error('认证失败:', data.error);
-            // 移除 loading，跳转到登录页
+            // 清除无效的 token
+            localStorage.removeItem('medieval_token');
+            localStorage.removeItem('medieval_auto_login');
+            // 移除 loading
             const loadingEl = document.getElementById('loading');
             if (loadingEl) loadingEl.remove();
+            // 显示错误信息后跳转
+            if (data.needRelogin && data.error) {
+                alert(data.error);
+            }
             window.location.href = '/login';
         }
     });

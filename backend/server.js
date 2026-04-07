@@ -733,50 +733,73 @@ io.on('connection', (socket) => {
     socket.on('auth', (data) => {
         try {
             const decoded = jwt.verify(data.token, JWT_SECRET);
-            currentUser = decoded;
-            socket.userId = decoded.userId;
-            socket.username = decoded.username;
-            socket.join('global'); // 加入全服频道
-            console.log(`用户认证成功: ${decoded.username} (userId: ${decoded.userId}, socket: ${socket.id})`);
             
-            // 断开该用户之前的 socket 连接（防止重复登录导致存档混乱）
-            // 但不显示警告消息（刷新页面/网络波动是正常行为）
-            if (userSockets.has(decoded.userId)) {
-                const oldSockets = userSockets.get(decoded.userId);
-                console.log(`检测到用户 ${decoded.username} 有 ${oldSockets.length} 个旧连接，正在清理...`);
-                oldSockets.forEach(oldSocketId => {
-                    if (oldSocketId !== socket.id) {
-                        const oldSocket = io.sockets.sockets.get(oldSocketId);
-                        if (oldSocket) {
-                            // 静默断开，不显示警告消息（避免刷新页面时的误报）
-                            oldSocket.disconnect(true);
+            // 先检查用户是否在数据库中存在
+            db.get('SELECT id, username FROM users WHERE id = ?', [decoded.userId], (err, userRow) => {
+                if (err) {
+                    console.error('数据库查询错误:', err);
+                    socket.emit('auth_result', { success: false, error: '服务器错误', needRelogin: true });
+                    return;
+                }
+                
+                // 用户不存在，强制重新登录/注册
+                if (!userRow) {
+                    console.log(`用户 ${decoded.username} (userId: ${decoded.userId}) 不存在于数据库，强制重新登录`);
+                    // 删除孤立的游戏数据
+                    db.run('DELETE FROM user_game_data WHERE user_id = ?', [decoded.userId], (deleteErr) => {
+                        if (!deleteErr) {
+                            console.log(`已删除 userId=${decoded.userId} 的孤立游戏数据`);
                         }
-                    }
-                });
-            }
-            
-            // 更新用户的 socket 列表
-            userSockets.set(decoded.userId, [socket.id]);
-            
-            // 获取或创建游戏引擎实例
-            if (gameEngines.has(decoded.userId)) {
-                // 已有内存中的实例（通常是页面刷新，不需要显示离线收益）
-                gameEngine = gameEngines.get(decoded.userId);
-                socketEngineMap.set(socket.id, { gameEngine, socket });
-                socket.emit('auth_result', { success: true, userId: decoded.userId });
-                socket.emit('game_state', gameEngine.getFullState());
-            } else {
-                // 尝试从数据库加载存档
-                db.get('SELECT data FROM user_game_data WHERE user_id = ?', [decoded.userId], (err, row) => {
-                    gameEngine = new GameEngine(decoded.userId);
-                    let offlineRewards = null;
-                    
-                    if (!err && row && row.data) {
-                        try {
-                            // 恢复存档数据
-                            const savedState = JSON.parse(row.data);
-                            gameEngine.state = { ...gameEngine.state, ...savedState };
-                            console.log(`已加载用户 ${decoded.username} 的存档`);
+                    });
+                    socket.emit('auth_result', { 
+                        success: false, 
+                        error: '账号不存在，请重新注册', 
+                        needRelogin: true 
+                    });
+                    return;
+                }
+                
+                // 用户存在，继续认证流程
+                currentUser = { userId: userRow.id, username: userRow.username };
+                socket.userId = userRow.id;
+                socket.username = userRow.username;
+                socket.join('global');
+                console.log(`用户认证成功: ${userRow.username} (userId: ${userRow.id}, socket: ${socket.id})`);
+                
+                // 断开该用户之前的 socket 连接
+                if (userSockets.has(userRow.id)) {
+                    const oldSockets = userSockets.get(userRow.id);
+                    console.log(`检测到用户 ${userRow.username} 有 ${oldSockets.length} 个旧连接，正在清理...`);
+                    oldSockets.forEach(oldSocketId => {
+                        if (oldSocketId !== socket.id) {
+                            const oldSocket = io.sockets.sockets.get(oldSocketId);
+                            if (oldSocket) {
+                                oldSocket.disconnect(true);
+                            }
+                        }
+                    });
+                }
+                
+                // 更新用户的 socket 列表
+                userSockets.set(userRow.id, [socket.id]);
+                
+                // 获取或创建游戏引擎实例
+                if (gameEngines.has(userRow.id)) {
+                    gameEngine = gameEngines.get(userRow.id);
+                    socketEngineMap.set(socket.id, { gameEngine, socket });
+                    socket.emit('auth_result', { success: true, userId: userRow.id });
+                    socket.emit('game_state', gameEngine.getFullState());
+                } else {
+                    // 从数据库加载存档
+                    db.get('SELECT data FROM user_game_data WHERE user_id = ?', [userRow.id], (err, row) => {
+                        gameEngine = new GameEngine(userRow.id);
+                        let offlineRewards = null;
+                        
+                        if (!err && row && row.data) {
+                            try {
+                                const savedState = JSON.parse(row.data);
+                                gameEngine.state = { ...gameEngine.state, ...savedState };
+                                console.log(`已加载用户 ${userRow.username} 的存档`);
                             
                             // 计算离线收益（如果上次退出时间有效且超过5分钟）
                             const lastLogout = savedState.lastLogoutTime || 0;
@@ -787,7 +810,7 @@ io.on('connection', (socket) => {
                                 const offlineMinutes = Math.floor((now - lastLogout) / 60000);
                                 if (offlineMinutes >= 1) {
                                     offlineRewards = calculateOfflineRewards(gameEngine, offlineMinutes);
-                                    console.log(`用户 ${decoded.username} 离线 ${offlineMinutes} 分钟，获得收益`);
+                                    console.log(`用户 ${userRow.username} 离线 ${offlineMinutes} 分钟，获得收益`);
                                 }
                             }
                         } catch (parseError) {
@@ -795,10 +818,10 @@ io.on('connection', (socket) => {
                         }
                     }
                     
-                    gameEngines.set(decoded.userId, gameEngine);
+                    gameEngines.set(userRow.id, gameEngine);
                     socketEngineMap.set(socket.id, { gameEngine, socket });
                     
-                    socket.emit('auth_result', { success: true, userId: decoded.userId });
+                    socket.emit('auth_result', { success: true, userId: userRow.id });
                     socket.emit('game_state', gameEngine.getFullState());
                     
                     // 发送离线收益（如果有）
@@ -807,6 +830,7 @@ io.on('connection', (socket) => {
                     }
                 });
             }
+            });
         } catch (e) {
             socket.emit('auth_result', { success: false, error: 'Token无效' });
         }
