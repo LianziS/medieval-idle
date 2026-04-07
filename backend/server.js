@@ -955,11 +955,22 @@ io.on('connection', (socket) => {
             }
             if (sockets.length === 0) {
                 userSockets.delete(socket.userId);
+                // 用户完全离线，移除内存中的游戏引擎实例
+                // 这样下次登录会从数据库加载并计算离线收益
+                if (currentUser && gameEngine) {
+                    gameEngine.state.lastLogoutTime = Date.now();
+                    db.run(
+                        'INSERT OR REPLACE INTO user_game_data (user_id, data, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
+                        [currentUser.userId, JSON.stringify(gameEngine.state)]
+                    );
+                    gameEngines.delete(currentUser.userId);
+                    console.log(`用户 ${currentUser.username} 完全离线，已保存数据并清理内存实例`);
+                }
             }
         }
         
-        // 保存游戏状态到数据库，并记录退出时间
-        if (currentUser && gameEngine) {
+        // 如果还有其他连接（页面刷新），只保存数据不移除实例
+        if (currentUser && gameEngine && userSockets.has(currentUser.userId)) {
             gameEngine.state.lastLogoutTime = Date.now();
             db.run(
                 'INSERT OR REPLACE INTO user_game_data (user_id, data, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
