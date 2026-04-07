@@ -378,6 +378,57 @@ app.get('/api/config', (req, res) => {
 
 // ============ Socket.io 连接处理 ============
 
+/**
+ * 计算离线收益
+ * 基于离线时间和游戏进度计算收益
+ */
+function calculateOfflineRewards(gameEngine, offlineMinutes) {
+    const state = gameEngine.state;
+    const rewards = {
+        offlineMinutes,
+        items: {},
+        experience: {},
+        gold: 0
+    };
+    
+    // 离线收益限制：最多计算12小时
+    const maxMinutes = 720;
+    const effectiveMinutes = Math.min(offlineMinutes, maxMinutes);
+    
+    // 计算基础金币收益（基于等级）
+    const baseGoldPerMinute = state.level * 0.5;
+    rewards.gold = Math.floor(baseGoldPerMinute * effectiveMinutes);
+    
+    // 根据各技能等级计算物品和经验收益
+    const skills = [
+        { key: 'woodcutting', levelKey: 'woodcuttingLevel', invKey: 'woodcuttingInventory' },
+        { key: 'mining', levelKey: 'miningLevel', invKey: 'miningInventory' },
+        { key: 'gathering', levelKey: 'gatheringLevel', invKey: 'gatheringInventory' },
+        { key: 'crafting', levelKey: 'craftingLevel', invKey: 'planksInventory' },
+        { key: 'forging', levelKey: 'forgingLevel', invKey: 'ingotsInventory' },
+        { key: 'tailoring', levelKey: 'tailoringLevel', invKey: 'fabricsInventory' },
+        { key: 'alchemy', levelKey: 'alchemyLevel', invKey: 'potionsInventory' },
+        { key: 'brewing', levelKey: 'brewingLevel', invKey: 'brewsInventory' }
+    ];
+    
+    // 简化的收益计算：每个技能根据等级获得少量经验
+    skills.forEach(skill => {
+        const level = state[skill.levelKey] || 1;
+        // 离线经验：每分钟获得 level * 0.5 经验
+        const expGain = Math.floor(level * 0.5 * effectiveMinutes);
+        if (expGain > 0) {
+            rewards.experience[skill.key] = expGain;
+            // 实际添加经验到游戏状态
+            gameEngine.addSkillExp(skill.levelKey, expGain);
+        }
+    });
+    
+    // 添加金币到游戏状态
+    state.gold += rewards.gold;
+    
+    return rewards;
+}
+
 io.on('connection', (socket) => {
     console.log(`用户连接: ${socket.id}`);
     
@@ -415,7 +466,7 @@ io.on('connection', (socket) => {
             
             // 获取或创建游戏引擎实例
             if (gameEngines.has(decoded.userId)) {
-                // 已有内存中的实例
+                // 已有内存中的实例（通常是页面刷新，不需要显示离线收益）
                 gameEngine = gameEngines.get(decoded.userId);
                 socketEngineMap.set(socket.id, { gameEngine, socket });
                 socket.emit('auth_result', { success: true, userId: decoded.userId });
@@ -424,6 +475,7 @@ io.on('connection', (socket) => {
                 // 尝试从数据库加载存档
                 db.get('SELECT data FROM user_game_data WHERE user_id = ?', [decoded.userId], (err, row) => {
                     gameEngine = new GameEngine(decoded.userId);
+                    let offlineRewards = null;
                     
                     if (!err && row && row.data) {
                         try {
@@ -431,6 +483,19 @@ io.on('connection', (socket) => {
                             const savedState = JSON.parse(row.data);
                             gameEngine.state = { ...gameEngine.state, ...savedState };
                             console.log(`已加载用户 ${decoded.username} 的存档`);
+                            
+                            // 计算离线收益（如果上次退出时间有效且超过5分钟）
+                            const lastLogout = savedState.lastLogoutTime || 0;
+                            // 只有当 lastLogout 是合理的时间（在过去24小时内）才计算
+                            const now = Date.now();
+                            const maxOfflineMs = 24 * 60 * 60 * 1000; // 24小时
+                            if (lastLogout > 0 && (now - lastLogout) > 0 && (now - lastLogout) < maxOfflineMs) {
+                                const offlineMinutes = Math.floor((now - lastLogout) / 60000);
+                                if (offlineMinutes >= 5) {
+                                    offlineRewards = calculateOfflineRewards(gameEngine, offlineMinutes);
+                                    console.log(`用户 ${decoded.username} 离线 ${offlineMinutes} 分钟，获得收益`);
+                                }
+                            }
                         } catch (parseError) {
                             console.error('存档解析失败:', parseError);
                         }
@@ -441,6 +506,11 @@ io.on('connection', (socket) => {
                     
                     socket.emit('auth_result', { success: true, userId: decoded.userId });
                     socket.emit('game_state', gameEngine.getFullState());
+                    
+                    // 发送离线收益（如果有）
+                    if (offlineRewards) {
+                        socket.emit('offline_rewards', offlineRewards);
+                    }
                 });
             }
         } catch (e) {
@@ -888,8 +958,9 @@ io.on('connection', (socket) => {
             }
         }
         
-        // 保存游戏状态到数据库
+        // 保存游戏状态到数据库，并记录退出时间
         if (currentUser && gameEngine) {
+            gameEngine.state.lastLogoutTime = Date.now();
             db.run(
                 'INSERT OR REPLACE INTO user_game_data (user_id, data, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
                 [currentUser.userId, JSON.stringify(gameEngine.state)]

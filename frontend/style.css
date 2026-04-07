@@ -1052,6 +1052,83 @@ body::after {
     color: #8B2C2D;
 }
 
+/* ============ 离线收益弹窗 ============ */
+.offline-rewards-content {
+    max-width: 380px;
+    padding: 24px;
+    text-align: center;
+}
+
+.offline-rewards-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.offline-rewards-icon {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+}
+
+.offline-rewards-header h2 {
+    color: #E8C57F;
+    font-size: 1.4rem;
+    margin: 0;
+}
+
+.offline-rewards-body {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.offline-rewards-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(107, 79, 60, 0.2);
+}
+
+.offline-rewards-item:last-child {
+    border-bottom: none;
+}
+
+.offline-label {
+    color: #A0B2C0;
+    font-size: 1rem;
+}
+
+.offline-value {
+    color: #E8C57F;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.offline-rewards-footer {
+    display: flex;
+    justify-content: center;
+}
+
+.offline-rewards-btn {
+    background: linear-gradient(135deg, #E8C57F 0%, #d4a84b 100%);
+    color: #1a1a2e;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 40px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.offline-rewards-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(232, 197, 127, 0.3);
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;

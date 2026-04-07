@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0407 00:15';
+        versionEl.textContent = '0407 15:15';
     }
 }
 
@@ -183,6 +183,11 @@ function setupSocket() {
             console.log('Loading 超时移除');
         }
     }, 3000);
+
+    // 离线收益弹窗
+    socket.on('offline_rewards', (data) => {
+        showOfflineRewardsModal(data);
+    });
 
     // 认证结果
     socket.on('auth_result', (data) => {
@@ -6102,3 +6107,66 @@ gameLoop();
 
 console.log('🎮 中世纪雇佣兵 - 前端客户端已加载');
 console.log('💡 按 Ctrl+F12 打开 GM 测试面板');
+
+/**
+ * 显示离线收益弹窗
+ */
+function showOfflineRewardsModal(data) {
+    const modal = document.getElementById('offline-rewards-modal');
+    const timeEl = document.getElementById('offline-time');
+    const goldEl = document.getElementById('offline-gold');
+    const expEl = document.getElementById('offline-exp');
+    const confirmBtn = document.getElementById('offline-rewards-confirm');
+    
+    if (!modal) return;
+    
+    // 格式化离线时间
+    const hours = Math.floor(data.offlineMinutes / 60);
+    const minutes = data.offlineMinutes % 60;
+    let timeText = '';
+    if (hours > 0) {
+        timeText = `${hours}小时${minutes}分钟`;
+    } else {
+        timeText = `${minutes}分钟`;
+    }
+    timeEl.textContent = timeText;
+    
+    // 显示金币
+    goldEl.textContent = `${data.gold} 💰`;
+    
+    // 显示经验（格式化）
+    const expEntries = Object.entries(data.experience || {});
+    if (expEntries.length > 0) {
+        const expNames = {
+            woodcutting: '伐木',
+            mining: '挖矿',
+            gathering: '采集',
+            crafting: '制作',
+            forging: '锻造',
+            tailoring: '裁缝',
+            alchemy: '炼金',
+            brewing: '酿造'
+        };
+        const expText = expEntries
+            .map(([skill, exp]) => `${expNames[skill] || skill}: ${exp}`)
+            .join(', ');
+        expEl.textContent = expText;
+    } else {
+        expEl.textContent = '无';
+    }
+    
+    // 显示弹窗
+    modal.classList.add('show');
+    
+    // 点击确认按钮关闭
+    confirmBtn.onclick = () => {
+        modal.classList.remove('show');
+    };
+    
+    // 点击弹窗外部关闭
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.classList.remove('show');
+        }
+    };
+}
