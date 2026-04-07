@@ -380,14 +380,18 @@ app.get('/api/config', (req, res) => {
 
 /**
  * 计算离线收益
- * 基于离线时间和游戏进度计算收益
+ * 基于用户退出时正在进行的行动计算具体收益
  */
 function calculateOfflineRewards(gameEngine, offlineMinutes) {
     const state = gameEngine.state;
+    const { CONFIG, ITEM_TYPES } = require('./GameConfig');
+    
     const rewards = {
         offlineMinutes,
-        items: {},
-        experience: {},
+        items: [],
+        experience: null,
+        skillName: null,
+        skillIcon: null,
         gold: 0
     };
     
@@ -395,36 +399,108 @@ function calculateOfflineRewards(gameEngine, offlineMinutes) {
     const maxMinutes = 720;
     const effectiveMinutes = Math.min(offlineMinutes, maxMinutes);
     
-    // 计算基础金币收益（基于等级）
-    const baseGoldPerMinute = state.level * 0.5;
-    rewards.gold = Math.floor(baseGoldPerMinute * effectiveMinutes);
+    // 检查用户退出时是否有正在进行的行动
+    const activeAction = state.activeAction;
     
-    // 根据各技能等级计算物品和经验收益
-    const skills = [
-        { key: 'woodcutting', levelKey: 'woodcuttingLevel', invKey: 'woodcuttingInventory' },
-        { key: 'mining', levelKey: 'miningLevel', invKey: 'miningInventory' },
-        { key: 'gathering', levelKey: 'gatheringLevel', invKey: 'gatheringInventory' },
-        { key: 'crafting', levelKey: 'craftingLevel', invKey: 'planksInventory' },
-        { key: 'forging', levelKey: 'forgingLevel', invKey: 'ingotsInventory' },
-        { key: 'tailoring', levelKey: 'tailoringLevel', invKey: 'fabricsInventory' },
-        { key: 'alchemy', levelKey: 'alchemyLevel', invKey: 'potionsInventory' },
-        { key: 'brewing', levelKey: 'brewingLevel', invKey: 'brewsInventory' }
-    ];
-    
-    // 简化的收益计算：每个技能根据等级获得少量经验
-    skills.forEach(skill => {
-        const level = state[skill.levelKey] || 1;
-        // 离线经验：每分钟获得 level * 0.5 经验
-        const expGain = Math.floor(level * 0.5 * effectiveMinutes);
-        if (expGain > 0) {
-            rewards.experience[skill.key] = expGain;
-            // 实际添加经验到游戏状态
-            gameEngine.addSkillExp(skill.levelKey, expGain);
+    if (activeAction) {
+        // 根据行动类型计算收益
+        const actionType = activeAction.type;
+        const actionId = activeAction.id;
+        
+        // 计算可以完成的次数
+        const duration = state.actionDuration || 6000; // 毫秒
+        const offlineMs = effectiveMinutes * 60 * 1000;
+        const completions = Math.floor(offlineMs / duration);
+        
+        if (completions > 0) {
+            // 技能映射
+            const skillMap = {
+                WOODCUTTING: { key: 'woodcutting', name: '伐木', icon: '🪓', levelKey: 'woodcuttingLevel' },
+                MINING: { key: 'mining', name: '挖矿', icon: '⛏️', levelKey: 'miningLevel' },
+                GATHERING: { key: 'gathering', name: '采集', icon: '🌿', levelKey: 'gatheringLevel' },
+                CRAFTING: { key: 'crafting', name: '制作', icon: '🔨', levelKey: 'craftingLevel' },
+                FORGING: { key: 'forging', name: '锻造', icon: '⚒️', levelKey: 'forgingLevel' },
+                TAILORING: { key: 'tailoring', name: '裁缝', icon: '🧵', levelKey: 'tailoringLevel' },
+                BREWING: { key: 'brewing', name: '酿造', icon: '🍺', levelKey: 'brewingLevel' },
+                ALCHEMY: { key: 'alchemy', name: '炼金', icon: '⚗️', levelKey: 'alchemyLevel' }
+            };
+            
+            const skill = skillMap[actionType];
+            if (skill) {
+                rewards.skillName = skill.name;
+                rewards.skillIcon = skill.icon;
+                
+                // 计算具体物品收益
+                let totalExp = 0;
+                
+                if (actionType === 'GATHERING') {
+                    // 采集：根据地点配置计算随机物品
+                    const location = CONFIG.gatheringLocations?.find(l => l.id === actionId);
+                    if (location && location.items) {
+                        location.items.forEach(item => {
+                            // 每次完成有 probability 概率获得
+                            const expectedCount = Math.floor(completions * item.probability);
+                            if (expectedCount > 0) {
+                                rewards.items.push({
+                                    id: item.id,
+                                    name: item.name,
+                                    icon: item.icon,
+                                    count: expectedCount
+                                });
+                                // 添加到库存
+                                gameEngine.addItem('gathering', item.id, expectedCount);
+                                totalExp += expectedCount * item.exp;
+                            }
+                        });
+                        // 基础经验
+                        totalExp += completions * location.exp;
+                    }
+                } else if (actionType === 'WOODCUTTING') {
+                    // 伐木
+                    const tree = CONFIG.trees?.find(t => t.id === actionId);
+                    if (tree) {
+                        rewards.items.push({
+                            id: tree.dropId,
+                            name: tree.drop,
+                            icon: tree.dropIcon,
+                            count: completions
+                        });
+                        gameEngine.addItem('woodcutting', tree.dropId, completions);
+                        totalExp = completions * tree.exp;
+                    }
+                } else if (actionType === 'MINING') {
+                    // 挖矿
+                    const ore = CONFIG.ores?.find(o => o.id === actionId);
+                    if (ore) {
+                        rewards.items.push({
+                            id: ore.dropId,
+                            name: ore.drop,
+                            icon: ore.dropIcon,
+                            count: completions
+                        });
+                        gameEngine.addItem('mining', ore.dropId, completions);
+                        totalExp = completions * ore.exp;
+                    }
+                } else {
+                    // 其他行动类型：给予经验，不计算具体物品（逻辑复杂）
+                    const baseExp = 5; // 基础经验
+                    totalExp = completions * baseExp;
+                }
+                
+                // 添加经验到游戏状态
+                gameEngine.addSkillExp(skill.levelKey, totalExp);
+                rewards.experience = Math.floor(totalExp);
+            }
         }
-    });
-    
-    // 添加金币到游戏状态
-    state.gold += rewards.gold;
+    } else {
+        // 用户没有正在进行行动，给予少量基础奖励
+        const baseGoldPerMinute = state.level * 0.5;
+        rewards.gold = Math.floor(baseGoldPerMinute * effectiveMinutes);
+        state.gold += rewards.gold;
+        rewards.skillName = '休息';
+        rewards.skillIcon = '💤';
+        rewards.experience = 0;
+    }
     
     return rewards;
 }

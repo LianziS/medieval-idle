@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0407 15:15';
+        versionEl.textContent = '0407 16:25';
     }
 }
 
@@ -6114,7 +6114,9 @@ console.log('💡 按 Ctrl+F12 打开 GM 测试面板');
 function showOfflineRewardsModal(data) {
     const modal = document.getElementById('offline-rewards-modal');
     const timeEl = document.getElementById('offline-time');
+    const goldItemEl = document.getElementById('offline-gold-item');
     const goldEl = document.getElementById('offline-gold');
+    const expLabelEl = document.getElementById('offline-exp-label');
     const expEl = document.getElementById('offline-exp');
     const confirmBtn = document.getElementById('offline-rewards-confirm');
     
@@ -6131,27 +6133,24 @@ function showOfflineRewardsModal(data) {
     }
     timeEl.textContent = timeText;
     
-    // 显示金币
-    goldEl.textContent = `${data.gold} 💰`;
-    
-    // 显示经验（格式化）
-    const expEntries = Object.entries(data.experience || {});
-    if (expEntries.length > 0) {
-        const expNames = {
-            woodcutting: '伐木',
-            mining: '挖矿',
-            gathering: '采集',
-            crafting: '制作',
-            forging: '锻造',
-            tailoring: '裁缝',
-            alchemy: '炼金',
-            brewing: '酿造'
-        };
-        const expText = expEntries
-            .map(([skill, exp]) => `${expNames[skill] || skill}: ${exp}`)
-            .join(', ');
-        expEl.textContent = expText;
+    // 显示金币（如果有）
+    if (data.gold && data.gold > 0) {
+        goldItemEl.style.display = 'flex';
+        goldEl.textContent = `${data.gold} 💰`;
     } else {
+        goldItemEl.style.display = 'none';
+    }
+    
+    // 显示物品或经验
+    if (data.items && data.items.length > 0) {
+        expLabelEl.textContent = '获得物品：';
+        const itemsText = data.items.map(item => `${item.icon} ${item.name}: ${item.count}`).join(', ');
+        expEl.textContent = itemsText;
+    } else if (data.experience && data.experience > 0) {
+        expLabelEl.textContent = '获得经验：';
+        expEl.textContent = `${data.skillIcon || '⭐'} ${data.skillName || '技能'}: ${data.experience} exp`;
+    } else {
+        expLabelEl.textContent = '获得物品：';
         expEl.textContent = '无';
     }
     
