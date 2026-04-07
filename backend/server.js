@@ -392,7 +392,9 @@ function calculateOfflineRewards(gameEngine, offlineMinutes) {
         experience: null,
         skillName: null,
         skillIcon: null,
-        gold: 0
+        gold: 0,
+        actionCompleted: false,  // 标记行动是否已完成
+        completions: 0           // 完成的次数
     };
     
     // 离线收益限制：最多计算12小时
@@ -410,9 +412,38 @@ function calculateOfflineRewards(gameEngine, offlineMinutes) {
         // 计算可以完成的次数
         const duration = state.actionDuration || 6000; // 毫秒
         const offlineMs = effectiveMinutes * 60 * 1000;
-        const completions = Math.floor(offlineMs / duration);
+        const possibleCompletions = Math.floor(offlineMs / duration);
         
-        if (completions > 0) {
+        // 考虑用户设置的行动次数限制
+        const remaining = activeAction.remaining || Infinity;
+        const isInfinite = activeAction.isInfinite || false;
+        
+        // 实际完成的次数（不超过剩余次数）
+        let actualCompletions;
+        if (isInfinite) {
+            actualCompletions = possibleCompletions;
+        } else {
+            actualCompletions = Math.min(possibleCompletions, remaining);
+        }
+        
+        rewards.completions = actualCompletions;
+        
+        if (actualCompletions > 0) {
+            // 更新行动剩余次数
+            if (!isInfinite) {
+                activeAction.remaining = remaining - actualCompletions;
+                state.actionCount = activeAction.remaining;
+                
+                // 如果行动已完成所有次数，清除行动状态
+                if (activeAction.remaining <= 0) {
+                    state.activeAction = null;
+                    state.actionStartTime = 0;
+                    state.actionDuration = 0;
+                    rewards.actionCompleted = true;
+                    console.log(`离线期间完成了所有行动次数 (${actualCompletions} 次)`);
+                }
+            }
+            
             // 技能映射
             const skillMap = {
                 WOODCUTTING: { key: 'woodcutting', name: '伐木', icon: '🪓', levelKey: 'woodcuttingLevel' },
@@ -439,7 +470,7 @@ function calculateOfflineRewards(gameEngine, offlineMinutes) {
                     if (location && location.items) {
                         location.items.forEach(item => {
                             // 每次完成有 probability 概率获得
-                            const expectedCount = Math.floor(completions * item.probability);
+                            const expectedCount = Math.floor(actualCompletions * item.probability);
                             if (expectedCount > 0) {
                                 rewards.items.push({
                                     id: item.id,
@@ -448,12 +479,12 @@ function calculateOfflineRewards(gameEngine, offlineMinutes) {
                                     count: expectedCount
                                 });
                                 // 添加到库存
-                                gameEngine.addItem('gathering', item.id, expectedCount);
+                                gameEngine.addItem('GATHERING', item.id, expectedCount);
                                 totalExp += expectedCount * item.exp;
                             }
                         });
                         // 基础经验
-                        totalExp += completions * location.exp;
+                        totalExp += actualCompletions * location.exp;
                     }
                 } else if (actionType === 'WOODCUTTING') {
                     // 伐木
@@ -463,10 +494,10 @@ function calculateOfflineRewards(gameEngine, offlineMinutes) {
                             id: tree.dropId,
                             name: tree.drop,
                             icon: tree.dropIcon,
-                            count: completions
+                            count: actualCompletions
                         });
-                        gameEngine.addItem('woodcutting', tree.dropId, completions);
-                        totalExp = completions * tree.exp;
+                        gameEngine.addItem('WOOD', tree.dropId, actualCompletions);
+                        totalExp = actualCompletions * tree.exp;
                     }
                 } else if (actionType === 'MINING') {
                     // 挖矿
@@ -476,15 +507,15 @@ function calculateOfflineRewards(gameEngine, offlineMinutes) {
                             id: ore.dropId,
                             name: ore.drop,
                             icon: ore.dropIcon,
-                            count: completions
+                            count: actualCompletions
                         });
-                        gameEngine.addItem('mining', ore.dropId, completions);
-                        totalExp = completions * ore.exp;
+                        gameEngine.addItem('ORE', ore.dropId, actualCompletions);
+                        totalExp = actualCompletions * ore.exp;
                     }
                 } else {
                     // 其他行动类型：给予经验，不计算具体物品（逻辑复杂）
                     const baseExp = 5; // 基础经验
-                    totalExp = completions * baseExp;
+                    totalExp = actualCompletions * baseExp;
                 }
                 
                 // 添加经验到游戏状态
