@@ -384,7 +384,7 @@ app.get('/api/config', (req, res) => {
  */
 function calculateOfflineRewards(gameEngine, offlineMinutes) {
     const state = gameEngine.state;
-    const { CONFIG, ITEM_TYPES } = require('./GameConfig');
+    const { CONFIG, ITEM_TYPES, ACTION_TYPES } = require('./GameConfig');
     
     const rewards = {
         offlineMinutes,
@@ -393,147 +393,334 @@ function calculateOfflineRewards(gameEngine, offlineMinutes) {
         skillName: null,
         skillIcon: null,
         gold: 0,
-        actionCompleted: false,  // 标记行动是否已完成
-        completions: 0           // 完成的次数
+        actionCompleted: false,
+        completions: 0
     };
     
-    // 离线收益限制：最多计算12小时
     const maxMinutes = 720;
     const effectiveMinutes = Math.min(offlineMinutes, maxMinutes);
     
-    // 检查用户退出时是否有正在进行的行动
     const activeAction = state.activeAction;
     
-    if (activeAction) {
-        // 根据行动类型计算收益
-        const actionType = activeAction.type;
-        const actionId = activeAction.id;
-        
-        // 计算可以完成的次数
-        const duration = state.actionDuration || 6000; // 毫秒
-        const offlineMs = effectiveMinutes * 60 * 1000;
-        const possibleCompletions = Math.floor(offlineMs / duration);
-        
-        // 考虑用户设置的行动次数限制
-        const remaining = activeAction.remaining || Infinity;
-        const isInfinite = activeAction.isInfinite || false;
-        
-        // 实际完成的次数（不超过剩余次数）
-        let actualCompletions;
-        if (isInfinite) {
-            actualCompletions = possibleCompletions;
-        } else {
-            actualCompletions = Math.min(possibleCompletions, remaining);
-        }
-        
-        rewards.completions = actualCompletions;
-        
-        if (actualCompletions > 0) {
-            // 更新行动剩余次数
-            if (!isInfinite) {
-                activeAction.remaining = remaining - actualCompletions;
-                state.actionCount = activeAction.remaining;
-                
-                // 如果行动已完成所有次数，清除行动状态
-                if (activeAction.remaining <= 0) {
-                    state.activeAction = null;
-                    state.actionStartTime = 0;
-                    state.actionDuration = 0;
-                    rewards.actionCompleted = true;
-                    console.log(`离线期间完成了所有行动次数 (${actualCompletions} 次)`);
-                }
-            }
-            
-            // 技能映射
-            const skillMap = {
-                WOODCUTTING: { key: 'woodcutting', name: '伐木', icon: '🪓', levelKey: 'woodcuttingLevel' },
-                MINING: { key: 'mining', name: '挖矿', icon: '⛏️', levelKey: 'miningLevel' },
-                GATHERING: { key: 'gathering', name: '采集', icon: '🌿', levelKey: 'gatheringLevel' },
-                CRAFTING: { key: 'crafting', name: '制作', icon: '🔨', levelKey: 'craftingLevel' },
-                FORGING: { key: 'forging', name: '锻造', icon: '⚒️', levelKey: 'forgingLevel' },
-                TAILORING: { key: 'tailoring', name: '裁缝', icon: '🧵', levelKey: 'tailoringLevel' },
-                BREWING: { key: 'brewing', name: '酿造', icon: '🍺', levelKey: 'brewingLevel' },
-                ALCHEMY: { key: 'alchemy', name: '炼金', icon: '⚗️', levelKey: 'alchemyLevel' }
-            };
-            
-            const skill = skillMap[actionType];
-            if (skill) {
-                rewards.skillName = skill.name;
-                rewards.skillIcon = skill.icon;
-                
-                // 计算具体物品收益
-                let totalExp = 0;
-                
-                if (actionType === 'GATHERING') {
-                    // 采集：根据地点配置计算随机物品
-                    const location = CONFIG.gatheringLocations?.find(l => l.id === actionId);
-                    if (location && location.items) {
-                        location.items.forEach(item => {
-                            // 每次完成有 probability 概率获得
-                            const expectedCount = Math.floor(actualCompletions * item.probability);
-                            if (expectedCount > 0) {
-                                rewards.items.push({
-                                    id: item.id,
-                                    name: item.name,
-                                    icon: item.icon,
-                                    count: expectedCount
-                                });
-                                // 添加到库存
-                                gameEngine.addItem('GATHERING', item.id, expectedCount);
-                                totalExp += expectedCount * item.exp;
-                            }
-                        });
-                        // 基础经验
-                        totalExp += actualCompletions * location.exp;
-                    }
-                } else if (actionType === 'WOODCUTTING') {
-                    // 伐木
-                    const tree = CONFIG.trees?.find(t => t.id === actionId);
-                    if (tree) {
-                        rewards.items.push({
-                            id: tree.dropId,
-                            name: tree.drop,
-                            icon: tree.dropIcon,
-                            count: actualCompletions
-                        });
-                        gameEngine.addItem('WOOD', tree.dropId, actualCompletions);
-                        totalExp = actualCompletions * tree.exp;
-                    }
-                } else if (actionType === 'MINING') {
-                    // 挖矿
-                    const ore = CONFIG.ores?.find(o => o.id === actionId);
-                    if (ore) {
-                        rewards.items.push({
-                            id: ore.dropId,
-                            name: ore.drop,
-                            icon: ore.dropIcon,
-                            count: actualCompletions
-                        });
-                        gameEngine.addItem('ORE', ore.dropId, actualCompletions);
-                        totalExp = actualCompletions * ore.exp;
-                    }
-                } else {
-                    // 其他行动类型：给予经验，不计算具体物品（逻辑复杂）
-                    const baseExp = 5; // 基础经验
-                    totalExp = actualCompletions * baseExp;
-                }
-                
-                // 添加经验到游戏状态
-                gameEngine.addSkillExp(skill.levelKey, totalExp);
-                rewards.experience = Math.floor(totalExp);
-            }
-        }
-    } else {
-        // 用户没有正在进行行动，给予少量基础奖励
+    if (!activeAction) {
+        // 没有正在进行的行动，给少量金币
         const baseGoldPerMinute = state.level * 0.5;
         rewards.gold = Math.floor(baseGoldPerMinute * effectiveMinutes);
         state.gold += rewards.gold;
         rewards.skillName = '休息';
         rewards.skillIcon = '💤';
         rewards.experience = 0;
+        return rewards;
+    }
+    
+    const actionType = activeAction.type;
+    const actionId = activeAction.id;
+    const duration = state.actionDuration || 6000;
+    const offlineMs = effectiveMinutes * 60 * 1000;
+    const possibleCompletions = Math.floor(offlineMs / duration);
+    
+    if (possibleCompletions <= 0) {
+        return rewards;
+    }
+    
+    // 计算实际可完成次数
+    const remaining = activeAction.remaining || Infinity;
+    const isInfinite = activeAction.isInfinite || false;
+    let actualCompletions = isInfinite ? possibleCompletions : Math.min(possibleCompletions, remaining);
+    
+    rewards.completions = actualCompletions;
+    
+    // 技能映射
+    const skillMap = {
+        WOODCUTTING: { name: '伐木', icon: '🪓', levelKey: 'woodcuttingLevel', tokenId: 'wood_token' },
+        MINING: { name: '挖矿', icon: '⛏️', levelKey: 'miningLevel', tokenId: 'mining_token' },
+        GATHERING: { name: '采集', icon: '🌿', levelKey: 'gatheringLevel', tokenId: 'gathering_token' },
+        CRAFTING: { name: '制作', icon: '🔨', levelKey: 'craftingLevel', tokenId: 'crafting_token' },
+        FORGING: { name: '锻造', icon: '⚒️', levelKey: 'forgingLevel', tokenId: 'forging_token' },
+        TAILORING: { name: '裁缝', icon: '🧵', levelKey: 'tailoringLevel', tokenId: 'tailoring_token' },
+        BREWING: { name: '酿造', icon: '🍺', levelKey: 'brewingLevel', tokenId: 'brewing_token' },
+        ALCHEMY: { name: '炼金', icon: '⚗️', levelKey: 'alchemyLevel', tokenId: 'alchemy_token' },
+        ESSENCE: { name: '提炼', icon: '💎', levelKey: 'gatheringLevel', tokenId: 'gathering_token' },
+        ENHANCE: { name: '强化', icon: '⭐', levelKey: 'forgingLevel', tokenId: 'forging_token' }
+    };
+    
+    const skill = skillMap[actionType];
+    if (skill) {
+        rewards.skillName = skill.name;
+        rewards.skillIcon = skill.icon;
+    }
+    
+    let totalExp = 0;
+    const tokenDrops = {};
+    
+    // 根据行动类型计算收益
+    if (actionType === 'GATHERING') {
+        const location = CONFIG.gatheringLocations?.find(l => l.id === actionId);
+        if (location && location.items) {
+            location.items.forEach(item => {
+                const expectedCount = Math.floor(actualCompletions * item.probability);
+                if (expectedCount > 0) {
+                    rewards.items.push({ id: item.id, name: item.name, icon: item.icon, count: expectedCount });
+                    gameEngine.addItem('GATHERING', item.id, expectedCount);
+                    totalExp += expectedCount * item.exp;
+                }
+            });
+            totalExp += actualCompletions * location.exp;
+        }
+        // 代币
+        addTokenDrops(tokenDrops, 'gathering_token', actualCompletions, state.gatheringLevel || 1, 'standard');
+        
+    } else if (actionType === 'WOODCUTTING') {
+        const tree = CONFIG.trees?.find(t => t.id === actionId);
+        if (tree) {
+            rewards.items.push({ id: tree.dropId, name: tree.drop, icon: tree.dropIcon, count: actualCompletions });
+            gameEngine.addItem('WOOD', tree.dropId, actualCompletions);
+            totalExp = actualCompletions * tree.exp;
+        }
+        addTokenDrops(tokenDrops, 'wood_token', actualCompletions, state.woodcuttingLevel || 1, 'standard');
+        
+    } else if (actionType === 'MINING') {
+        const ore = CONFIG.ores?.find(o => o.id === actionId);
+        if (ore) {
+            rewards.items.push({ id: ore.dropId, name: ore.drop, icon: ore.dropIcon, count: actualCompletions });
+            gameEngine.addItem('ORE', ore.dropId, actualCompletions);
+            totalExp = actualCompletions * ore.exp;
+        }
+        addTokenDrops(tokenDrops, 'mining_token', actualCompletions, state.miningLevel || 1, 'standard');
+        
+    } else if (actionType === 'CRAFTING') {
+        // 制作木板：需要材料
+        const plank = CONFIG.woodPlanks?.find(p => p.id === actionId);
+        if (plank && plank.materials) {
+            const materialType = 'WOOD';
+            let possibleCount = actualCompletions;
+            
+            // 检查材料是否足够
+            for (const [matId, count] of Object.entries(plank.materials)) {
+                const have = gameEngine.getItemCount(materialType, matId);
+                const need = count * actualCompletions;
+                if (have < need) {
+                    possibleCount = Math.floor(have / count);
+                }
+            }
+            
+            if (possibleCount > 0) {
+                // 消耗材料
+                for (const [matId, count] of Object.entries(plank.materials)) {
+                    gameEngine.removeItem(materialType, matId, count * possibleCount);
+                }
+                // 添加产物
+                rewards.items.push({ id: actionId, name: plank.name, icon: plank.icon, count: possibleCount });
+                gameEngine.addItem('PLANK', actionId, possibleCount);
+                totalExp = possibleCount * plank.exp;
+                actualCompletions = possibleCount; // 更新实际完成次数
+            }
+        }
+        addTokenDrops(tokenDrops, 'crafting_token', actualCompletions, state.craftingLevel || 1, 'standard');
+        
+    } else if (actionType === 'FORGING') {
+        // 锻造矿锭：需要矿石材料
+        const ingot = CONFIG.ingots?.find(i => i.id === actionId);
+        if (ingot && ingot.materials) {
+            const materialType = 'ORE';
+            let possibleCount = actualCompletions;
+            
+            for (const [matId, count] of Object.entries(ingot.materials)) {
+                const have = gameEngine.getItemCount(materialType, matId);
+                const need = count * actualCompletions;
+                if (have < need) {
+                    possibleCount = Math.floor(have / count);
+                }
+            }
+            
+            if (possibleCount > 0) {
+                for (const [matId, count] of Object.entries(ingot.materials)) {
+                    gameEngine.removeItem(materialType, matId, count * possibleCount);
+                }
+                rewards.items.push({ id: actionId, name: ingot.name, icon: ingot.icon, count: possibleCount });
+                gameEngine.addItem('INGOT', actionId, possibleCount);
+                totalExp = possibleCount * ingot.exp;
+                actualCompletions = possibleCount;
+            }
+        }
+        addTokenDrops(tokenDrops, 'forging_token', actualCompletions, state.forgingLevel || 1, 'standard');
+        
+    } else if (actionType === 'TAILORING') {
+        const fabric = CONFIG.fabrics?.find(f => f.id === actionId);
+        if (fabric && fabric.materials) {
+            const materialType = 'GATHERING';
+            let possibleCount = actualCompletions;
+            
+            for (const [matId, count] of Object.entries(fabric.materials)) {
+                const have = gameEngine.getItemCount(materialType, matId);
+                const need = count * actualCompletions;
+                if (have < need) {
+                    possibleCount = Math.floor(have / count);
+                }
+            }
+            
+            if (possibleCount > 0) {
+                for (const [matId, count] of Object.entries(fabric.materials)) {
+                    gameEngine.removeItem(materialType, matId, count * possibleCount);
+                }
+                rewards.items.push({ id: actionId, name: fabric.name, icon: fabric.icon, count: possibleCount });
+                gameEngine.addItem('FABRIC', actionId, possibleCount);
+                totalExp = possibleCount * fabric.exp;
+                actualCompletions = possibleCount;
+            }
+        }
+        addTokenDrops(tokenDrops, 'tailoring_token', actualCompletions, state.tailoringLevel || 1, 'tailoring');
+        
+    } else if (actionType === 'BREWING') {
+        const brew = CONFIG.brews?.find(b => b.id === actionId);
+        if (brew && brew.materials) {
+            const materialType = 'GATHERING';
+            let possibleCount = actualCompletions;
+            
+            for (const [matId, count] of Object.entries(brew.materials)) {
+                const have = gameEngine.getItemCount(materialType, matId);
+                const need = count * actualCompletions;
+                if (have < need) {
+                    possibleCount = Math.floor(have / count);
+                }
+            }
+            
+            if (possibleCount > 0) {
+                for (const [matId, count] of Object.entries(brew.materials)) {
+                    gameEngine.removeItem(materialType, matId, count * possibleCount);
+                }
+                rewards.items.push({ id: actionId, name: brew.name, icon: brew.icon, count: possibleCount });
+                gameEngine.addItem('BREW', actionId, possibleCount);
+                totalExp = possibleCount * brew.exp;
+                actualCompletions = possibleCount;
+            }
+        }
+        addTokenDrops(tokenDrops, 'brewing_token', actualCompletions, state.brewingLevel || 1, 'brewing');
+        
+    } else if (actionType === 'ALCHEMY') {
+        const potion = CONFIG.potions?.find(p => p.id === actionId);
+        if (potion && potion.materials) {
+            const materialType = 'GATHERING';
+            let possibleCount = actualCompletions;
+            
+            for (const [matId, count] of Object.entries(potion.materials)) {
+                const have = gameEngine.getItemCount(materialType, matId);
+                const need = count * actualCompletions;
+                if (have < need) {
+                    possibleCount = Math.floor(have / count);
+                }
+            }
+            
+            if (possibleCount > 0) {
+                for (const [matId, count] of Object.entries(potion.materials)) {
+                    gameEngine.removeItem(materialType, matId, count * possibleCount);
+                }
+                rewards.items.push({ id: actionId, name: potion.name, icon: potion.icon, count: possibleCount });
+                gameEngine.addItem('POTION', actionId, possibleCount);
+                totalExp = possibleCount * potion.exp;
+                actualCompletions = possibleCount;
+            }
+        }
+        addTokenDrops(tokenDrops, 'alchemy_token', actualCompletions, state.alchemyLevel || 1, 'standard');
+        
+    } else if (actionType === 'ESSENCE') {
+        const essence = CONFIG.essences?.find(e => e.id === actionId);
+        if (essence && essence.materials) {
+            const materialType = 'GATHERING';
+            let possibleCount = actualCompletions;
+            
+            for (const [matId, count] of Object.entries(essence.materials)) {
+                const have = gameEngine.getItemCount(materialType, matId);
+                const need = count * actualCompletions;
+                if (have < need) {
+                    possibleCount = Math.floor(have / count);
+                }
+            }
+            
+            if (possibleCount > 0) {
+                for (const [matId, count] of Object.entries(essence.materials)) {
+                    gameEngine.removeItem(materialType, matId, count * possibleCount);
+                }
+                rewards.items.push({ id: actionId, name: essence.name, icon: essence.icon, count: possibleCount });
+                gameEngine.addItem('ESSENCE', actionId, possibleCount);
+                totalExp = possibleCount * essence.exp;
+                actualCompletions = possibleCount;
+            }
+        }
+        addTokenDrops(tokenDrops, 'gathering_token', actualCompletions, state.gatheringLevel || 1, 'standard');
+        
+    } else if (actionType === 'ENHANCE') {
+        // 强化行动：特殊处理，离线期间不完成强化（逻辑复杂，跳过）
+        rewards.items = [];
+        totalExp = 0;
+        actualCompletions = 0;
+        rewards.skillName = '强化';
+        rewards.skillIcon = '⭐';
+    }
+    
+    // 添加代币到库存
+    for (const [tokenId, count] of Object.entries(tokenDrops)) {
+        if (count > 0) {
+            rewards.items.push({ id: tokenId, name: getTokenName(tokenId), icon: '🪙', count: count });
+            if (!state.tokensInventory) state.tokensInventory = {};
+            state.tokensInventory[tokenId] = (state.tokensInventory[tokenId] || 0) + count;
+        }
+    }
+    
+    // 添加经验
+    if (skill && totalExp > 0) {
+        gameEngine.addSkillExp(skill.levelKey, totalExp);
+        rewards.experience = Math.floor(totalExp);
+    }
+    
+    // 更新行动剩余次数
+    if (!isInfinite && actualCompletions > 0) {
+        activeAction.remaining = remaining - actualCompletions;
+        state.actionCount = activeAction.remaining;
+        
+        if (activeAction.remaining <= 0) {
+            state.activeAction = null;
+            state.actionStartTime = 0;
+            state.actionDuration = 0;
+            rewards.actionCompleted = true;
+        }
     }
     
     return rewards;
+}
+
+// 辅助函数：计算代币掉落
+function addTokenDrops(tokenDrops, tokenId, completions, level, rateType) {
+    const tokenDropRates = {
+        standard: [0.017, 0.024, 0.037, 0.053, 0.071, 0.092, 0.149, 0.210],
+        tailoring: [0.017, 0.032, 0.053, 0.078, 0.126, 0.195],
+        brewing: [0.022, 0.023, 0.024, 0.028, 0.029, 0.033, 0.033, 0.033]
+    };
+    
+    const rateTable = tokenDropRates[rateType] || tokenDropRates.standard;
+    const levelIndex = Math.min(Math.floor((level - 1) / 10), rateTable.length - 1);
+    const dropRate = rateTable[levelIndex];
+    
+    // 期望值计算
+    const expectedTokens = Math.floor(completions * dropRate);
+    if (expectedTokens > 0) {
+        tokenDrops[tokenId] = (tokenDrops[tokenId] || 0) + expectedTokens;
+    }
+}
+
+// 辅助函数：获取代币名称
+function getTokenName(tokenId) {
+    const names = {
+        wood_token: '伐木代币',
+        mining_token: '挖矿代币',
+        gathering_token: '采集代币',
+        crafting_token: '制作代币',
+        forging_token: '锻造代币',
+        tailoring_token: '裁缝代币',
+        alchemy_token: '炼金代币',
+        brewing_token: '酿造代币'
+    };
+    return names[tokenId] || tokenId;
 }
 
 io.on('connection', (socket) => {
