@@ -491,7 +491,7 @@ io.on('connection', (socket) => {
                             const maxOfflineMs = 24 * 60 * 60 * 1000; // 24小时
                             if (lastLogout > 0 && (now - lastLogout) > 0 && (now - lastLogout) < maxOfflineMs) {
                                 const offlineMinutes = Math.floor((now - lastLogout) / 60000);
-                                if (offlineMinutes >= 5) {
+                                if (offlineMinutes >= 1) {
                                     offlineRewards = calculateOfflineRewards(gameEngine, offlineMinutes);
                                     console.log(`用户 ${decoded.username} 离线 ${offlineMinutes} 分钟，获得收益`);
                                 }
