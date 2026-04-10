@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0410 11:22';
+        versionEl.textContent = '0410 11:38';
     }
 }
 
@@ -2635,31 +2635,29 @@ function renderAlchemy() {
  * 渲染提炼列表
  */
 function renderAlchemyEssences() {
-    if (!elements.essenceList || !gameState || !CONFIG.essences) return;
+    const container = document.getElementById('alchemy-essences-list');
+    if (!container || !gameState || !CONFIG.essences) return;
 
     // 提炼使用采集等级
     const level = gameState.gatheringLevel || 1;
 
-    elements.essenceList.innerHTML = CONFIG.essences.map(essence => {
+    container.innerHTML = CONFIG.essences.map(essence => {
         const unlocked = level >= essence.reqLevel;
+        const isActive = gameState.activeAction?.type === 'ESSENCE' && gameState.activeAction?.id === essence.id;
 
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'}"
+            <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
                  data-action="ESSENCE" data-id="${essence.id}">
-                <div class="action-icon">${essence.icon}</div>
-                <div class="action-info">
-                    <div class="action-name">${essence.name}</div>
-                    <div class="action-details">
-                        <span>⏱️ ${formatTime(essence.duration)}</span>
-                        <span>✨ ${essence.exp}</span>
-                    </div>
-                </div>
-                ${!unlocked ? `<div class="locked-overlay">🔒 采集 Lv.${essence.reqLevel}</div>` : ''}
+                <div class="card-name">${essence.name}</div>
+                <div class="card-icon">${essence.icon}</div>
             </div>
         `;
     }).join('');
 
-    elements.essenceList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
+    // 添加横行布局容器
+    container.classList.add('cards-grid');
+
+    container.querySelectorAll('.action-card-square').forEach(card => {
         card.addEventListener('click', () => {
             const essenceId = card.dataset.id;
             openActionModal('ESSENCE', essenceId);
@@ -2716,20 +2714,17 @@ function renderToolForge() {
                     <span class="tool-series-name">${series.name}</span>
                     <span class="tool-series-level">Lv.${series.level}</span>
                 </div>
-                <div class="tool-series-grid">
+                <div class="cards-grid">
                     ${seriesTools.map(({ tool, toolType, toolIndex }) => {
-                        const owned = (gameState.toolsInventory?.[toolType] || []).includes(tool.id);
+                        const owned = (gameState.toolsInventory?.[toolType] || []).some(t => 
+                            (typeof t === 'string' ? t : t.id) === tool.id
+                        );
 
                         return `
-                            <div class="tool-card"
+                            <div class="action-card-square ${owned ? 'owned' : ''}"
                                  data-tool-type="${toolType}" data-tool-index="${toolIndex}">
-                                <div class="tool-icon">${tool.icon}</div>
-                                <div class="tool-info">
-                                    <div class="tool-name">${tool.name}</div>
-                                    <div class="tool-meta">
-                                        <span>+${Math.round(tool.speedBonus * 100)}%</span>
-                                    </div>
-                                </div>
+                                <div class="card-name">${tool.name}</div>
+                                <div class="card-icon">${tool.icon}</div>
                             </div>
                         `;
                     }).join('')}
@@ -2742,13 +2737,14 @@ function renderToolForge() {
     container.innerHTML = html;
 
     // 绑定工具卡片点击事件
-    container.querySelectorAll('.tool-card:not(.locked)').forEach(card => {
+    container.querySelectorAll('.action-card-square').forEach(card => {
         card.addEventListener('click', () => {
             const toolType = card.dataset.toolType;
             const toolIndex = parseInt(card.dataset.toolIndex);
             openToolForgeModal(toolType, toolIndex);
         });
     });
+}
 }
 
 /**

@@ -2922,6 +2922,7 @@ body::after {
 /* 制作类卡片横行布局（覆盖 gathering-items-list 的 grid） */
 .cards-grid {
     display: flex !important;
+    flex-direction: row !important;
     flex-wrap: wrap;
     gap: 8px;
     padding: 10px;
@@ -2929,6 +2930,21 @@ body::after {
 
 .cards-grid .action-card-square {
     flex: 0 0 auto;
+}
+
+/* 已拥有的工具卡片样式 */
+.action-card-square.owned {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.1);
+}
+
+.action-card-square.owned::after {
+    content: '✓';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 10px;
+    color: #4CAF50;
 }
 
 /* 锻造页面需要标签切换，所以默认隐藏 */
