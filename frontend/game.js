@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0410 10:20';
+        versionEl.textContent = '0410 10:35';
     }
 }
 
@@ -2103,6 +2103,26 @@ function getResourceName(resourceId) {
 }
 
 /**
+ * 获取物品配置信息（图标、名称等）
+ */
+function getItemConfig(itemId) {
+    // 检查所有配置类型
+    const allConfigs = [
+        ...(CONFIG.trees || []),
+        ...(CONFIG.ores || []),
+        ...(CONFIG.woodPlanks || []),
+        ...(CONFIG.ingots || []),
+        ...(CONFIG.fabrics || []),
+        ...(CONFIG.potions || []),
+        ...(CONFIG.brews || []),
+        ...(CONFIG.essences || []),
+        ...((CONFIG.gatheringLocations || []).flatMap(loc => loc.items || []))
+    ];
+    
+    return allConfigs.find(item => item.id === itemId || item.dropId === itemId);
+}
+
+/**
  * 获取资源数量
  */
 function getResourceCount(resourceId) {
@@ -2397,24 +2417,18 @@ function renderCrafting() {
 
     elements.craftingList.innerHTML = CONFIG.woodPlanks.map(plank => {
         const unlocked = level >= plank.reqLevel;
+        const isActive = gameState.activeAction?.type === 'CRAFTING' && gameState.activeAction?.id === plank.id;
 
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'}"
+            <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
                  data-action="crafting" data-id="${plank.id}">
-                <div class="action-icon">${plank.icon}</div>
-                <div class="action-info">
-                    <div class="action-name">${plank.name}</div>
-                    <div class="action-details">
-                        <span>⏱️ ${formatTime(plank.duration)}</span>
-                        <span>✨ ${plank.exp}</span>
-                    </div>
-                </div>
-                ${!unlocked ? `<div class="locked-overlay">🔒 Lv.${plank.reqLevel}</div>` : ''}
+                <div class="card-name">${plank.name}</div>
+                <div class="card-icon">${plank.icon}</div>
             </div>
         `;
     }).join('');
 
-    elements.craftingList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
+    elements.craftingList.querySelectorAll('.action-card-square').forEach(card => {
         card.addEventListener('click', () => {
             const plankId = card.dataset.id;
             openActionModal('CRAFTING', plankId);
@@ -2432,24 +2446,18 @@ function renderForging() {
 
     elements.forgingList.innerHTML = CONFIG.ingots.map(ingot => {
         const unlocked = level >= ingot.reqLevel;
+        const isActive = gameState.activeAction?.type === 'FORGING' && gameState.activeAction?.id === ingot.id;
 
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'}"
+            <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
                  data-action="forging" data-id="${ingot.id}">
-                <div class="action-icon">${ingot.icon}</div>
-                <div class="action-info">
-                    <div class="action-name">${ingot.name}</div>
-                    <div class="action-details">
-                        <span>⏱️ ${formatTime(ingot.duration)}</span>
-                        <span>✨ ${ingot.exp}</span>
-                    </div>
-                </div>
-                ${!unlocked ? `<div class="locked-overlay">🔒 Lv.${ingot.reqLevel}</div>` : ''}
+                <div class="card-name">${ingot.name}</div>
+                <div class="card-icon">${ingot.icon}</div>
             </div>
         `;
     }).join('');
 
-    elements.forgingList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
+    elements.forgingList.querySelectorAll('.action-card-square').forEach(card => {
         card.addEventListener('click', () => {
             const ingotId = card.dataset.id;
             openActionModal('FORGING', ingotId);
@@ -2506,24 +2514,18 @@ function renderTailoring() {
 
     elements.tailoringList.innerHTML = CONFIG.fabrics.map(fabric => {
         const unlocked = level >= fabric.reqLevel;
+        const isActive = gameState.activeAction?.type === 'TAILORING' && gameState.activeAction?.id === fabric.id;
 
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'}"
+            <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
                  data-action="tailoring" data-id="${fabric.id}">
-                <div class="action-icon">${fabric.icon}</div>
-                <div class="action-info">
-                    <div class="action-name">${fabric.name}</div>
-                    <div class="action-details">
-                        <span>⏱️ ${formatTime(fabric.duration)}</span>
-                        <span>✨ ${fabric.exp}</span>
-                    </div>
-                </div>
-                ${!unlocked ? `<div class="locked-overlay">🔒 Lv.${fabric.reqLevel}</div>` : ''}
+                <div class="card-name">${fabric.name}</div>
+                <div class="card-icon">${fabric.icon}</div>
             </div>
         `;
     }).join('');
 
-    elements.tailoringList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
+    elements.tailoringList.querySelectorAll('.action-card-square').forEach(card => {
         card.addEventListener('click', () => {
             const fabricId = card.dataset.id;
             openActionModal('TAILORING', fabricId);
@@ -2541,24 +2543,18 @@ function renderBrewing() {
 
     elements.brewingList.innerHTML = CONFIG.brews.map(brew => {
         const unlocked = level >= brew.reqLevel;
+        const isActive = gameState.activeAction?.type === 'BREWING' && gameState.activeAction?.id === brew.id;
 
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'}"
+            <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
                  data-action="brewing" data-id="${brew.id}">
-                <div class="action-icon">${brew.icon}</div>
-                <div class="action-info">
-                    <div class="action-name">${brew.name}</div>
-                    <div class="action-details">
-                        <span>⏱️ ${formatTime(brew.duration)}</span>
-                        <span>✨ ${brew.exp}</span>
-                    </div>
-                </div>
-                ${!unlocked ? `<div class="locked-overlay">🔒 Lv.${brew.reqLevel}</div>` : ''}
+                <div class="card-name">${brew.name}</div>
+                <div class="card-icon">${brew.icon}</div>
             </div>
         `;
     }).join('');
 
-    elements.brewingList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
+    elements.brewingList.querySelectorAll('.action-card-square').forEach(card => {
         card.addEventListener('click', () => {
             const brewId = card.dataset.id;
             openActionModal('BREWING', brewId);
@@ -2576,24 +2572,18 @@ function renderAlchemy() {
 
     elements.alchemyList.innerHTML = CONFIG.potions.map(potion => {
         const unlocked = level >= potion.reqLevel;
+        const isActive = gameState.activeAction?.type === 'ALCHEMY' && gameState.activeAction?.id === potion.id;
 
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'}"
+            <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
                  data-action="alchemy" data-id="${potion.id}">
-                <div class="action-icon">${potion.icon}</div>
-                <div class="action-info">
-                    <div class="action-name">${potion.name}</div>
-                    <div class="action-details">
-                        <span>⏱️ ${formatTime(potion.duration)}</span>
-                        <span>✨ ${potion.exp}</span>
-                    </div>
-                </div>
-                ${!unlocked ? `<div class="locked-overlay">🔒 Lv.${potion.reqLevel}</div>` : ''}
+                <div class="card-name">${potion.name}</div>
+                <div class="card-icon">${potion.icon}</div>
             </div>
         `;
     }).join('');
 
-    elements.alchemyList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
+    elements.alchemyList.querySelectorAll('.action-card-square').forEach(card => {
         card.addEventListener('click', () => {
             const potionId = card.dataset.id;
             openActionModal('ALCHEMY', potionId);
@@ -4191,10 +4181,12 @@ function showActionModal(config) {
                     <div class="popup-info-val">
                         ${Object.entries(config.materials).map(([matId, amount]) => {
                             const matName = getResourceName(matId);
+                            const matConfig = getItemConfig(matId);
+                            const matIcon = matConfig?.icon || '📦';
                             const have = getResourceCount(matId);
                             const enough = have >= amount;
-                            return `<span class="popup-badge material ${enough ? '' : 'insufficient'}">${matName} ×${amount}</span>`;
-                        }).join(' ')}
+                            return `<br><span class="popup-mat-count ${enough ? '' : 'insufficient'}">[${have}/${amount}]</span> <span class="popup-badge material ${enough ? '' : 'insufficient'}" data-item-id="${matId}">${matIcon} ${matName}</span>`;
+                        }).join('')}
                     </div>
                 </div>
                 ` : ''}
@@ -4213,9 +4205,14 @@ function showActionModal(config) {
                             return '<br>' + config.items.map(item => {
                                 const maxCount = getGatheringItemMaxCount(item.id);
                                 const dropRange = maxCount === 1 ? '1' : `1-${maxCount}`;
-                                // 后端逻辑：每个物品独立30%概率判断
                                 return `<span class="popup-drop-prefix">${dropRange}</span> <span class="popup-badge drop item-hover-card" data-item-id="${item.id}" data-item-type="GATHERING" data-item-name="${item.name}" data-item-icon="${item.icon}">${item.icon} ${item.name}</span> <span class="popup-drop-prob">30%</span>`;
                             }).join('<br>');
+                        })() : ['CRAFTING', 'FORGING', 'TAILORING', 'BREWING', 'ALCHEMY'].includes(pendingAction?.type) ? (() => {
+                            // 制作类行动：产出固定物品（数量为1）
+                            const itemTypeMap = {CRAFTING:'PLANK',FORGING:'INGOT',TAILORING:'FABRIC',BREWING:'BREW',ALCHEMY:'POTION'};
+                            const productIcon = config.icon || '📦';
+                            const productName = config.name || pendingAction.id;
+                            return `<br><span class="popup-drop-prefix">1</span> <span class="popup-badge drop item-hover-card" data-item-id="${pendingAction.id}" data-item-type="${itemTypeMap[pendingAction.type]}" data-item-name="${productName}" data-item-icon="${productIcon}">${productIcon} ${productName}</span>`;
                         })() : config.dropId ? (() => {
                             const maxCount = config.dropMax || 3;
                             const dropRange = maxCount === 1 ? '1' : `1-${maxCount}`;
@@ -4252,12 +4249,12 @@ function showActionModal(config) {
             <div class="popup-count-section">
                 <div class="popup-count-label">${actionType.icon} ${actionType.name}</div>
                 <div class="popup-count-row">
-                    <input class="popup-count-input" type="text" value="∞" placeholder="次数" onclick="this.select();">
+                    <input class="popup-count-input" type="text" value="${config.materials ? '1' : '∞'}" placeholder="次数" onclick="this.select();">
                     <div class="popup-count-btns">
-                        <button class="popup-count-btn" data-count="1">1</button>
+                        <button class="popup-count-btn ${config.materials ? 'selected' : ''}" data-count="1">1</button>
                         <button class="popup-count-btn" data-count="10">10</button>
                         <button class="popup-count-btn" data-count="100">100</button>
-                        <button class="popup-count-btn inf selected" data-count="infinity">∞</button>
+                        <button class="popup-count-btn inf ${config.materials ? '' : 'selected'}" data-count="infinity" ${config.materials ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>∞</button>
                     </div>
                 </div>
             </div>
