@@ -635,7 +635,7 @@ body::after {
     color: #7A8A98;
     margin: 5px 0 0 0;
     text-align: left;
-    background: transparent;
+    background: #1B2A3A;
 }
 
 /* 技能分隔线（在经验条下面） */
