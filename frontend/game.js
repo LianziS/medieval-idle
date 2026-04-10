@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0410 16:05';
+        versionEl.textContent = '0410 16:15';
     }
 }
 
@@ -4748,6 +4748,51 @@ function showRewards(rewards) {
         }).join(' | ');
         showToast(expText);
     }
+    
+    // 检测升级，显示升级弹窗
+    const leveledUpRewards = expRewards.filter(r => r.leveledUp);
+    if (leveledUpRewards.length > 0) {
+        for (const reward of leveledUpRewards) {
+            showLevelUpToast(reward.skill, reward.newLevel);
+        }
+    }
+}
+
+/**
+ * 显示升级弹窗（从右侧滑出）
+ */
+function showLevelUpToast(skillName, newLevel) {
+    // 获取技能图标
+    const skillIcons = {
+        '伐木': '🪓',
+        '挖矿': '⛏️',
+        '采集': '🌿',
+        '制作': '🪵',
+        '锻造': '🔨',
+        '缝制': '🧵',
+        '炼金': '⚗️',
+        '酿造': '🍺'
+    };
+    const icon = skillIcons[skillName] || '🎉';
+    
+    const toast = document.createElement('div');
+    toast.className = 'level-up-toast';
+    toast.innerHTML = `
+        <span class="level-up-icon">${icon}</span>
+        <span class="level-up-text">${skillName}等级已达到 <strong>Lv.${newLevel}</strong></span>
+    `;
+    document.body.appendChild(toast);
+
+    // 触发动画
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+
+    // 3秒后滑回
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+    }, 3000);
 }
 
 /**

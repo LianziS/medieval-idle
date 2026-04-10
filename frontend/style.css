@@ -4499,6 +4499,42 @@ body::after {
 .popup-combo-chance { color: #f0c060; font-weight: 600; }
 .popup-combo-desc { color: #7a8fa8; font-size: 11px; margin-left: 3px; }
 
+/* ============ 升级弹窗（右侧滑出） ============ */
+.level-up-toast {
+    position: fixed;
+    top: 50px;
+    right: -300px;
+    background: linear-gradient(135deg, rgba(139, 44, 45, 0.95) 0%, rgba(107, 79, 60, 0.95) 100%);
+    border: 1px solid rgba(232, 197, 127, 0.5);
+    border-radius: 8px 0 0 8px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 1200;
+    transition: right 0.4s ease-out;
+    box-shadow: -4px 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.level-up-toast.show {
+    right: 0;
+}
+
+.level-up-icon {
+    font-size: 20px;
+}
+
+.level-up-text {
+    color: #E8C57F;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.level-up-text strong {
+    color: #FFD700;
+    font-size: 16px;
+}
+
 .popup-badge {
     display: inline-flex;
     align-items: center;
