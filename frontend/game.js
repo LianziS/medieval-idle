@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0410 09:40';
+        versionEl.textContent = '0410 09:50';
     }
 }
 
@@ -1578,10 +1578,33 @@ function getActionConfig(actionType, actionId) {
         };
     }
 
+    // 特殊处理采集行动：如果有 itemId，显示物品名而不是地点名
+    if (actionType === 'GATHERING') {
+        const activeAction = gameState?.activeAction;
+        const itemId = activeAction?.itemId;
+        
+        if (itemId && itemId !== 'all') {
+            // 找到地点配置
+            const location = CONFIG.gatheringLocations?.find(loc => loc.id === actionId);
+            // 在地点中找到具体物品
+            const itemConfig = location?.items?.find(i => i.id === itemId);
+            if (itemConfig) {
+                return {
+                    id: itemId,
+                    name: itemConfig.name,
+                    icon: itemConfig.icon,
+                    duration: location?.duration || 6000
+                };
+            }
+        }
+        // 全采集或没有 itemId，显示地点名
+        const location = CONFIG.gatheringLocations?.find(loc => loc.id === actionId);
+        return location || null;
+    }
+
     const configMaps = {
         WOODCUTTING: CONFIG.trees,
         MINING: CONFIG.ores,
-        GATHERING: CONFIG.gatheringLocations,
         CRAFTING: CONFIG.woodPlanks,
         FORGING: CONFIG.ingots,
         TAILORING: CONFIG.fabrics,
@@ -1631,6 +1654,16 @@ function showQueuePopover() {
             const toolConfig = CONFIG.tools?.[toolsKey]?.find(t => t.id === item.toolId);
             name = toolConfig?.name ? `强化 ${toolConfig.name}` : '强化';
             icon = toolConfig?.icon || '⬆️';
+        }
+        
+        // 处理采集行动：如果有 itemId，显示物品名而不是地点名
+        if (item.type === 'GATHERING' && item.itemId && item.itemId !== 'all') {
+            const location = CONFIG.gatheringLocations?.find(loc => loc.id === item.id);
+            const itemConfig = location?.items?.find(i => i.id === item.itemId);
+            if (itemConfig) {
+                name = itemConfig.name;
+                icon = itemConfig.icon;
+            }
         }
 
         return `
@@ -1724,7 +1757,20 @@ function showReplaceActionConfirm(index, action, queueItem) {
 
     const actionConfig = getActionConfig(currentAction.type, currentAction.id);
     const currentName = actionConfig?.name || '当前行动';
-    const replaceName = queueItem?.name || '新行动';
+    
+    // 获取队列项名称和图标
+    let replaceName = queueItem?.name || '新行动';
+    let replaceIcon = queueItem?.icon || '🔧';
+    
+    // 处理采集行动的队列项
+    if (queueItem?.type === 'GATHERING' && queueItem?.itemId && queueItem?.itemId !== 'all') {
+        const location = CONFIG.gatheringLocations?.find(loc => loc.id === queueItem.id);
+        const itemConfig = location?.items?.find(i => i.id === queueItem.itemId);
+        if (itemConfig) {
+            replaceName = itemConfig.name;
+            replaceIcon = itemConfig.icon;
+        }
+    }
 
     const modal = document.createElement('div');
     modal.className = 'action-modal-overlay';
@@ -1734,12 +1780,12 @@ function showReplaceActionConfirm(index, action, queueItem) {
             <div class="confirm-dialog-content">
                 <div class="confirm-dialog-compare">
                     <div class="confirm-dialog-item">
-                        <span class="confirm-dialog-icon">${actionConfig?.icon || '🔧'}</span>
-                        <span class="confirm-dialog-name">${currentName}</span>
+                        <span class="confirm-dialog-icon" style="opacity: 0.5;">${actionConfig?.icon || '🔧'}</span>
+                        <span class="confirm-dialog-name" style="opacity: 0.5;">${currentName}</span>
                     </div>
                     <span class="confirm-dialog-arrow">→</span>
                     <div class="confirm-dialog-item">
-                        <span class="confirm-dialog-icon">${queueItem?.icon || '🔧'}</span>
+                        <span class="confirm-dialog-icon">${replaceIcon}</span>
                         <span class="confirm-dialog-name">${replaceName}</span>
                     </div>
                 </div>
