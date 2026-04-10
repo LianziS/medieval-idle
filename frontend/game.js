@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0410 15:40';
+        versionEl.textContent = '0410 16:00';
     }
 }
 
@@ -4280,6 +4280,13 @@ function showActionModal(config) {
                         <span class="popup-token-prefix">1</span> 
                         <span class="popup-badge token item-hover-card" data-item-id="${{WOODCUTTING:'wood_token',MINING:'mining_token',GATHERING:'gathering_token',CRAFTING:'crafting_token',FORGING:'forging_token',TAILORING:'tailoring_token',ALCHEMY:'alchemy_token',BREWING:'brewing_token',ESSENCE:'gathering_token'}[pendingAction.type]}" data-item-type="TOKEN" data-item-name="${actionType.name}代币" data-item-icon="🪙">${actionType.icon} ${actionType.name}代币</span>
                         <span class="popup-token-prob">~${getTokenChance(pendingAction?.type, config.reqLevel)}%</span>
+                    </div>
+                </div>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">⚡</span>连击</div>
+                    <div class="popup-info-val">
+                        <span class="popup-combo-chance">${Math.max(0, currentLevel - (config.reqLevel || 1))}%</span>
+                        <span class="popup-combo-desc">（等级差 × 1%）</span>
                     </div>
                 </div>
                 ` : ''}

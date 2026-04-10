@@ -564,6 +564,13 @@ class GameEngine {
             rewards.push({ type: 'TOKEN', id: tokenId, name: `${actionType.name}代币`, icon: '🪙', count: 1 });
         }
         
+        // 连击系统：计算连击概率并触发
+        const comboResult = this.tryCombo(action, item, actionType);
+        if (comboResult.triggered) {
+            // 连击触发，添加额外奖励
+            rewards.push(...comboResult.rewards);
+        }
+        
         // 更新剩余次数（无限模式不递减）
         if (!action.isInfinite) {
             action.remaining--;
@@ -1295,6 +1302,141 @@ class GameEngine {
             rod: 'rods'
         };
         return map[slotType] || slotType;
+    }
+    
+    /**
+     * 尝试触发连击
+     * @param {Object} action - 当前行动
+     * @param {Object} item - 行动物品配置
+     * @param {Object} actionType - 行动类型配置
+     * @returns {Object} { triggered: boolean, rewards: Array }
+     */
+    tryCombo(action, item, actionType) {
+        // 强化功能不触发连击
+        if (action.type === 'ENHANCE') {
+            return { triggered: false, rewards: [] };
+        }
+        
+        // 获取玩家对应技能等级
+        const skillKey = actionType.skillKey;
+        const playerLevel = this.state[skillKey] || 1;
+        
+        // 获取需求等级
+        const reqLevel = item.reqLevel || 1;
+        
+        // 计算连击概率（每超过需求等级1级获得1%，最大100%）
+        const levelDiff = Math.max(0, playerLevel - reqLevel);
+        const comboChance = Math.min(levelDiff, 100) / 100;
+        
+        // 判断是否触发连击
+        const triggered = Math.random() < comboChance;
+        
+        if (!triggered) {
+            return { triggered: false, rewards: [] };
+        }
+        
+        // 连击触发，再次发放奖励
+        const comboRewards = [];
+        
+        // 处理不同行动类型的连击奖励
+        if (actionType.needsMaterials) {
+            // 制作类行动：连击时双倍产出（不消耗额外材料）
+            this.addItem(actionType.resultType, action.id, 1);
+            comboRewards.push({ 
+                type: actionType.resultType, 
+                id: action.id, 
+                name: item.name, 
+                icon: item.icon, 
+                count: 1,
+                isCombo: true 
+            });
+        } else {
+            // 采集类行动
+            if (action.type === 'GATHERING') {
+                const location = item;
+                const selectedItemId = action.itemId;
+                
+                if (selectedItemId && selectedItemId !== 'all') {
+                    // 采集单个物品
+                    const itemConfig = location.items.find(i => i.id === selectedItemId);
+                    if (itemConfig) {
+                        const category = this.getItemDropCategory(selectedItemId);
+                        const count = this.calculateDropCount(category, selectedItemId);
+                        this.addItem('GATHERING', selectedItemId, count);
+                        comboRewards.push({ 
+                            type: 'GATHERING', 
+                            id: selectedItemId, 
+                            name: itemConfig.name, 
+                            icon: itemConfig.icon, 
+                            count: count,
+                            isCombo: true 
+                        });
+                    }
+                } else {
+                    // 全采集连击：随机获得一个物品
+                    const randomItem = location.items[Math.floor(Math.random() * location.items.length)];
+                    if (randomItem) {
+                        const category = this.getItemDropCategory(randomItem.id);
+                        const count = this.calculateDropCount(category, randomItem.id);
+                        this.addItem('GATHERING', randomItem.id, count);
+                        comboRewards.push({ 
+                            type: 'GATHERING', 
+                            id: randomItem.id, 
+                            name: randomItem.name, 
+                            icon: randomItem.icon, 
+                            count: count,
+                            isCombo: true 
+                        });
+                    }
+                }
+            } else {
+                // 伐木/挖矿
+                const dropId = item.dropId || action.id;
+                const dropName = item.drop || item.name;
+                const dropIcon = item.dropIcon || item.icon;
+                const category = action.type === 'WOODCUTTING' ? 'wood' : 'ore';
+                const count = this.calculateDropCount(category, dropId);
+                
+                this.addItem(actionType.dropType, dropId, count);
+                comboRewards.push({ 
+                    type: actionType.dropType, 
+                    id: dropId, 
+                    name: dropName, 
+                    icon: dropIcon, 
+                    count: count,
+                    isCombo: true 
+                });
+            }
+        }
+        
+        // 连击时也获得额外经验
+        this.addSkillExp(skillKey, item.exp);
+        
+        // 连击时也有概率获得代币
+        const tokenDropRates = CONFIG.tokenDropRates || {
+            standard: [0.017, 0.024, 0.037, 0.053, 0.071, 0.092, 0.149, 0.210]
+        };
+        const levelIndex = Math.min(Math.floor((playerLevel - 1) / 10), tokenDropRates.standard.length - 1);
+        if (Math.random() < tokenDropRates.standard[levelIndex]) {
+            const tokenIdMap = {
+                'woodcutting': 'wood_token',
+                'mining': 'mining_token',
+                'gathering': 'gathering_token',
+                'crafting': 'crafting_token',
+                'forging': 'forging_token',
+                'tailoring': 'tailoring_token',
+                'alchemy': 'alchemy_token',
+                'brewing': 'brewing_token'
+            };
+            const tokenId = tokenIdMap[actionType.id] || `${actionType.id}_token`;
+            if (!this.state.tokensInventory) {
+                this.state.tokensInventory = {};
+            }
+            this.state.tokensInventory[tokenId] = (this.state.tokensInventory[tokenId] || 0) + 1;
+            comboRewards.push({ type: 'TOKEN', id: tokenId, name: `${actionType.name}代币`, icon: '🪙', count: 1, isCombo: true });
+        }
+        
+        return { triggered: true, rewards: comboRewards, comboChance: comboChance };
     }
     
     /**
