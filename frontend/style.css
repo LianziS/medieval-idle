@@ -640,7 +640,7 @@ body::after {
 /* 技能分隔线（在经验条下面） */
 .skill-divider {
     height: 2px;
-    background: rgba(107, 79, 60, 0.4);
+    background: #6b4f3c;
     margin: 15px 0;
     border-radius: 1px;
 }
