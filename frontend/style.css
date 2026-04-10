@@ -4475,6 +4475,18 @@ body::after {
 .popup-drop-prob { color: #7a8fa8; font-size: 11px; margin-left: 3px; }
 .popup-token-prob { color: #7a8fa8; font-size: 11px; margin-left: 3px; }
 
+/* 制作类卡片横行布局 */
+.cards-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+}
+
+.cards-grid .action-card-square {
+    flex: 0 0 auto;
+}
+
 .popup-badge {
     display: inline-flex;
     align-items: center;

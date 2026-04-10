@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0410 10:42';
+        versionEl.textContent = '0410 10:45';
     }
 }
 
@@ -2428,6 +2428,9 @@ function renderCrafting() {
         `;
     }).join('');
 
+    // 添加横行布局容器
+    elements.craftingList.classList.add('cards-grid');
+
     elements.craftingList.querySelectorAll('.action-card-square').forEach(card => {
         card.addEventListener('click', () => {
             const plankId = card.dataset.id;
@@ -2456,6 +2459,9 @@ function renderForging() {
             </div>
         `;
     }).join('');
+
+    // 添加横行布局容器
+    elements.forgingList.classList.add('cards-grid');
 
     elements.forgingList.querySelectorAll('.action-card-square').forEach(card => {
         card.addEventListener('click', () => {
@@ -2525,6 +2531,9 @@ function renderTailoring() {
         `;
     }).join('');
 
+    // 添加横行布局容器
+    elements.tailoringList.classList.add('cards-grid');
+
     elements.tailoringList.querySelectorAll('.action-card-square').forEach(card => {
         card.addEventListener('click', () => {
             const fabricId = card.dataset.id;
@@ -2554,6 +2563,9 @@ function renderBrewing() {
         `;
     }).join('');
 
+    // 添加横行布局容器
+    elements.brewingList.classList.add('cards-grid');
+
     elements.brewingList.querySelectorAll('.action-card-square').forEach(card => {
         card.addEventListener('click', () => {
             const brewId = card.dataset.id;
@@ -2582,6 +2594,9 @@ function renderAlchemy() {
             </div>
         `;
     }).join('');
+
+    // 添加横行布局容器
+    elements.alchemyList.classList.add('cards-grid');
 
     elements.alchemyList.querySelectorAll('.action-card-square').forEach(card => {
         card.addEventListener('click', () => {
