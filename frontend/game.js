@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0410 09:58';
+        versionEl.textContent = '0410 10:20';
     }
 }
 
@@ -4209,12 +4209,12 @@ function showActionModal(config) {
                             const dropRange = maxCount === 1 ? '1' : `1-${maxCount}`;
                             return `<br><span class="popup-drop-prefix">${dropRange}</span> <span class="popup-badge drop item-hover-card" data-item-id="${pendingAction.itemId}" data-item-type="GATHERING" data-item-name="${config.name}" data-item-icon="${config.icon}">${config.icon} ${config.name}</span>`;
                         })() : pendingAction?.type === 'GATHERING' && config.items ? (() => {
-                            // 区域采集：显示所有可能的物品及其概率
+                            // 区域采集：显示所有可能的物品（每个物品独立30%概率获得）
                             return '<br>' + config.items.map(item => {
                                 const maxCount = getGatheringItemMaxCount(item.id);
                                 const dropRange = maxCount === 1 ? '1' : `1-${maxCount}`;
-                                const probPercent = Math.round(item.probability * 100);
-                                return `<span class="popup-drop-prefix">${dropRange}</span> <span class="popup-badge drop item-hover-card" data-item-id="${item.id}" data-item-type="GATHERING" data-item-name="${item.name}" data-item-icon="${item.icon}">${item.icon} ${item.name}</span> <span class="popup-drop-prob">${probPercent}%</span>`;
+                                // 后端逻辑：每个物品独立30%概率判断
+                                return `<span class="popup-drop-prefix">${dropRange}</span> <span class="popup-badge drop item-hover-card" data-item-id="${item.id}" data-item-type="GATHERING" data-item-name="${item.name}" data-item-icon="${item.icon}">${item.icon} ${item.name}</span> <span class="popup-drop-prob">30%</span>`;
                             }).join('<br>');
                         })() : config.dropId ? (() => {
                             const maxCount = config.dropMax || 3;
