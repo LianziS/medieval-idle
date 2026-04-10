@@ -599,7 +599,7 @@ body::after {
     background: rgba(107, 79, 60, 0.12);
     border: none;
     border-radius: 10px;
-    padding: 12px 15px;
+    padding: 7px 15px;
     margin-bottom: 0;
 }
 
@@ -607,7 +607,7 @@ body::after {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
 }
 
 .panel-title {
