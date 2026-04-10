@@ -633,7 +633,7 @@ body::after {
 .skill-exp-info {
     font-size: 0.75rem;
     color: #7A8A98;
-    margin-top: 3px;
+    margin: 5px 0 0 0;
     text-align: left;
 }
 
