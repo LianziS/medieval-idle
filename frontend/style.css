@@ -2913,7 +2913,8 @@ body::after {
     opacity: 0.5;
 }
 
-.gathering-items-list {
+/* 采集区域选择网格 - 只用于采集页面区域列表 */
+#gathering-items-list.gathering-items-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 14px;
@@ -2950,43 +2951,46 @@ body::after {
 /* 锻造页面需要标签切换，所以默认隐藏 */
 #forging-ingots-list,
 #forging-tools-list {
-    display: none;
+    display: none !important;
 }
 
 #forging-ingots-list.active,
 #forging-tools-list.active {
-    display: grid;
+    display: flex !important;
 }
 
-/* 炼金页面标签切换 */
+/* 炼金页面标签切换 - 默认隐藏提炼 */
+#alchemy-potions-list {
+    display: flex !important;
+}
+
 #alchemy-essences-list {
-    display: none;
+    display: none !important;
+}
+
+#alchemy-potions-list.active {
+    display: flex !important;
 }
 
 #alchemy-essences-list.active {
-    display: grid;
+    display: flex !important;
 }
 
-/* 炼金页面标签切换 */
-#alchemy-potions-list,
-#alchemy-essences-list {
-    display: none;
+/* 酿造页面标签切换 - 默认显示酿造，隐藏陈酿 */
+#brewing-brews-list {
+    display: flex !important;
 }
 
-#alchemy-potions-list.active,
-#alchemy-essences-list.active {
-    display: grid;
-}
-
-/* 酿造页面标签切换 */
-#brewing-brews-list,
 #brewing-aging-list {
-    display: none;
+    display: none !important;
 }
 
-#brewing-brews-list.active,
+#brewing-brews-list.active {
+    display: flex !important;
+}
+
 #brewing-aging-list.active {
-    display: grid;
+    display: flex !important;
 }
 
 .gathering-item-card {
@@ -4972,8 +4976,8 @@ body::after {
     color: #fff;
 }
 
-/* 采集品网格 */
-.gathering-items-list {
+/* 采集品网格 - 只用于采集页面 */
+#gathering-items-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -5245,11 +5249,8 @@ body::after {
 }
 
 /* 标签切换的列表需要默认隐藏 */
-#forging-ingots-list,
 #forging-tools-list,
-#alchemy-potions-list,
 #alchemy-essences-list,
-#brewing-brews-list,
 #brewing-aging-list {
     display: none;
 }
