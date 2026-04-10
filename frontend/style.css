@@ -5254,32 +5254,6 @@ body::after {
     padding: 10px;
 }
 
-/* 标签切换的列表需要默认隐藏 */
-#forging-tools-list,
-#alchemy-essences-list,
-#brewing-aging-list {
-    display: none !important;
-}
-
-/* 默认显示的列表 */
-#forging-ingots-list,
-#alchemy-potions-list,
-#brewing-brews-list {
-    display: flex !important;
-}
-
-#forging-ingots-list.active,
-#forging-tools-list.active,
-#alchemy-potions-list.active,
-#alchemy-essences-list.active,
-#brewing-brews-list.active,
-#brewing-aging-list.active {
-    display: flex !important;
-    flex-direction: column;
-    gap: 8px;
-    padding: 10px;
-}
-
 /* ============ 工具系列分组样式 ============ */
 
 .tool-series-section {
