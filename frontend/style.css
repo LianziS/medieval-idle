@@ -4631,8 +4631,15 @@ body::after {
     font-size: 0.9rem;
 }
 
-/* 行动卡片容器 */
-.gathering-items-list,
+/* 行动卡片容器 - 制作类使用横行布局 */
+.gathering-items-list.cards-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+}
+
 .crafting-planks-list,
 .forging-ingots-list,
 .forging-tools-list,
@@ -4641,8 +4648,9 @@ body::after {
 .alchemy-essences-list,
 .brewing-brews-list,
 .brewing-aging-list {
-    display: flex;
-    flex-direction: column;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
     gap: 8px;
     padding: 10px;
 }
