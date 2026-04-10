@@ -2948,53 +2948,35 @@ body::after {
     color: #4CAF50;
 }
 
-/* 锻造页面标签切换 - 默认显示矿锭，隐藏工具 */
-#forging-ingots-list {
-    display: flex !important;
-}
-
+/* 锻造页面标签切换 - 默认隐藏所有，通过active显示 */
+#forging-ingots-list,
 #forging-tools-list {
     display: none !important;
 }
 
-#forging-ingots-list.active {
-    display: flex !important;
-}
-
+#forging-ingots-list.active,
 #forging-tools-list.active {
     display: flex !important;
 }
 
-/* 炼金页面标签切换 - 默认隐藏提炼 */
-#alchemy-potions-list {
-    display: flex !important;
-}
-
+/* 炼金页面标签切换 - 默认隐藏所有，通过active显示 */
+#alchemy-potions-list,
 #alchemy-essences-list {
     display: none !important;
 }
 
-#alchemy-potions-list.active {
-    display: flex !important;
-}
-
+#alchemy-potions-list.active,
 #alchemy-essences-list.active {
     display: flex !important;
 }
 
-/* 酿造页面标签切换 - 默认显示酿造，隐藏陈酿 */
-#brewing-brews-list {
-    display: flex !important;
-}
-
+/* 酿造页面标签切换 - 默认隐藏所有，通过active显示 */
+#brewing-brews-list,
 #brewing-aging-list {
     display: none !important;
 }
 
-#brewing-brews-list.active {
-    display: flex !important;
-}
-
+#brewing-brews-list.active,
 #brewing-aging-list.active {
     display: flex !important;
 }
