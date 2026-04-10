@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0410 11:50';
+        versionEl.textContent = '0410 11:58';
     }
 }
 
@@ -4232,9 +4232,9 @@ function showActionModal(config) {
                                 const dropRange = maxCount === 1 ? '1' : `1-${maxCount}`;
                                 return `<span class="popup-drop-prefix">${dropRange}</span> <span class="popup-badge drop item-hover-card" data-item-id="${item.id}" data-item-type="GATHERING" data-item-name="${item.name}" data-item-icon="${item.icon}">${item.icon} ${item.name}</span> <span class="popup-drop-prob">30%</span>`;
                             }).join('<br>');
-                        })() : ['CRAFTING', 'FORGING', 'TAILORING', 'BREWING', 'ALCHEMY'].includes(pendingAction?.type) ? (() => {
+                        })() : ['CRAFTING', 'FORGING', 'TAILORING', 'BREWING', 'ALCHEMY', 'ESSENCE'].includes(pendingAction?.type) ? (() => {
                             // 制作类行动：产出固定物品（数量为1）
-                            const itemTypeMap = {CRAFTING:'PLANK',FORGING:'INGOT',TAILORING:'FABRIC',BREWING:'BREW',ALCHEMY:'POTION'};
+                            const itemTypeMap = {CRAFTING:'PLANK',FORGING:'INGOT',TAILORING:'FABRIC',BREWING:'BREW',ALCHEMY:'POTION',ESSENCE:'ESSENCE'};
                             const productIcon = config.icon || '📦';
                             const productName = config.name || pendingAction.id;
                             return `<br><span class="popup-drop-prefix">1</span> <span class="popup-badge drop item-hover-card" data-item-id="${pendingAction.id}" data-item-type="${itemTypeMap[pendingAction.type]}" data-item-name="${productName}" data-item-icon="${productIcon}">${productIcon} ${productName}</span>`;
@@ -4247,12 +4247,12 @@ function showActionModal(config) {
                     </div>
                 </div>
                 
-                ${['WOODCUTTING', 'MINING', 'GATHERING', 'CRAFTING', 'FORGING', 'TAILORING', 'ALCHEMY', 'BREWING'].includes(pendingAction?.type) ? `
+                ${['WOODCUTTING', 'MINING', 'GATHERING', 'CRAFTING', 'FORGING', 'TAILORING', 'ALCHEMY', 'BREWING', 'ESSENCE'].includes(pendingAction?.type) ? `
                 <div class="popup-info-row">
                     <div class="popup-info-label"><span class="lbl-icon">🪙</span>代币</div>
                     <div class="popup-info-val">
                         <span class="popup-token-prefix">1</span> 
-                        <span class="popup-badge token item-hover-card" data-item-id="${{WOODCUTTING:'wood_token',MINING:'mining_token',GATHERING:'gathering_token',CRAFTING:'crafting_token',FORGING:'forging_token',TAILORING:'tailoring_token',ALCHEMY:'alchemy_token',BREWING:'brewing_token'}[pendingAction.type]}" data-item-type="TOKEN" data-item-name="${actionType.name}代币" data-item-icon="🪙">${actionType.icon} ${actionType.name}代币</span>
+                        <span class="popup-badge token item-hover-card" data-item-id="${{WOODCUTTING:'wood_token',MINING:'mining_token',GATHERING:'gathering_token',CRAFTING:'crafting_token',FORGING:'forging_token',TAILORING:'tailoring_token',ALCHEMY:'alchemy_token',BREWING:'brewing_token',ESSENCE:'gathering_token'}[pendingAction.type]}" data-item-type="TOKEN" data-item-name="${actionType.name}代币" data-item-icon="🪙">${actionType.icon} ${actionType.name}代币</span>
                         <span class="popup-token-prob">~${getTokenChance(pendingAction?.type, config.reqLevel)}%</span>
                     </div>
                 </div>

@@ -5252,7 +5252,14 @@ body::after {
 #forging-tools-list,
 #alchemy-essences-list,
 #brewing-aging-list {
-    display: none;
+    display: none !important;
+}
+
+/* 默认显示的列表 */
+#forging-ingots-list,
+#alchemy-potions-list,
+#brewing-brews-list {
+    display: flex !important;
 }
 
 #forging-ingots-list.active,
@@ -5261,7 +5268,7 @@ body::after {
 #alchemy-essences-list.active,
 #brewing-brews-list.active,
 #brewing-aging-list.active {
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     gap: 8px;
     padding: 10px;
