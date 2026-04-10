@@ -1340,16 +1340,39 @@ class GameEngine {
         
         // 处理不同行动类型的连击奖励
         if (actionType.needsMaterials) {
-            // 制作类行动：连击时双倍产出（不消耗额外材料）
-            this.addItem(actionType.resultType, action.id, 1);
-            comboRewards.push({ 
-                type: actionType.resultType, 
-                id: action.id, 
-                name: item.name, 
-                icon: item.icon, 
-                count: 1,
-                isCombo: true 
-            });
+            // 制作类行动：连击时消耗额外材料，产出额外产物
+            // 检查是否有足够材料
+            let hasEnoughMaterials = true;
+            if (item.materials) {
+                const materialType = actionType.materialType || 'WOOD';
+                for (const [matId, count] of Object.entries(item.materials)) {
+                    const have = this.getItemCount(materialType, matId);
+                    if (have < count) {
+                        hasEnoughMaterials = false;
+                        break;
+                    }
+                }
+            }
+            
+            if (hasEnoughMaterials) {
+                // 消耗额外材料
+                if (item.materials) {
+                    const materialType = actionType.materialType || 'WOOD';
+                    for (const [matId, count] of Object.entries(item.materials)) {
+                        this.removeItem(materialType, matId, count);
+                    }
+                }
+                // 添加额外产物
+                this.addItem(actionType.resultType, action.id, 1);
+                comboRewards.push({ 
+                    type: actionType.resultType, 
+                    id: action.id, 
+                    name: item.name, 
+                    icon: item.icon, 
+                    count: 1,
+                    isCombo: true 
+                });
+            }
         } else {
             // 采集类行动
             if (action.type === 'GATHERING') {
