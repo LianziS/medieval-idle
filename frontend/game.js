@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0410 10:35';
+        versionEl.textContent = '0410 10:42';
     }
 }
 
@@ -4173,23 +4173,36 @@ function showActionModal(config) {
                         ${!levelEnough ? `<span class="level-warning">（当前 Lv.${currentLevel}）</span>` : ''}
                     </div>
                 </div>
-                ` : ''}
-                
-                ${config.materials ? `
-                <div class="popup-info-row">
-                    <div class="popup-info-label"><span class="lbl-icon">📦</span>材料</div>
-                    <div class="popup-info-val">
-                        ${Object.entries(config.materials).map(([matId, amount]) => {
-                            const matName = getResourceName(matId);
-                            const matConfig = getItemConfig(matId);
-                            const matIcon = matConfig?.icon || '📦';
-                            const have = getResourceCount(matId);
-                            const enough = have >= amount;
-                            return `<br><span class="popup-mat-count ${enough ? '' : 'insufficient'}">[${have}/${amount}]</span> <span class="popup-badge material ${enough ? '' : 'insufficient'}" data-item-id="${matId}">${matIcon} ${matName}</span>`;
-                        }).join('')}
-                    </div>
-                </div>
-                ` : ''}
+                ${config.materials ? Object.entries(config.materials).map(([matId, amount]) => {
+                    const matName = getResourceName(matId);
+                    const matConfig = getItemConfig(matId);
+                    const matIcon = matConfig?.icon || '📦';
+                    const have = getResourceCount(matId);
+                    const enough = have >= amount;
+                    return `
+                    <div class="popup-info-row">
+                        <div class="popup-info-label"></div>
+                        <div class="popup-info-val">
+                            <span class="popup-mat-count ${enough ? '' : 'insufficient'}">[${have}/${amount}]</span>
+                            <span class="popup-badge material ${enough ? '' : 'insufficient'} item-hover-card" data-item-id="${matId}" data-item-type="WOOD" data-item-name="${matName}" data-item-icon="${matIcon}">${matIcon} ${matName}</span>
+                        </div>
+                    </div>`;
+                }).join('') : ''}
+                ` : config.materials ? Object.entries(config.materials).map(([matId, amount]) => {
+                    const matName = getResourceName(matId);
+                    const matConfig = getItemConfig(matId);
+                    const matIcon = matConfig?.icon || '📦';
+                    const have = getResourceCount(matId);
+                    const enough = have >= amount;
+                    return `
+                    <div class="popup-info-row">
+                        <div class="popup-info-label"><span class="lbl-icon">📦</span>材料</div>
+                        <div class="popup-info-val">
+                            <span class="popup-mat-count ${enough ? '' : 'insufficient'}">[${have}/${amount}]</span>
+                            <span class="popup-badge material ${enough ? '' : 'insufficient'} item-hover-card" data-item-id="${matId}" data-item-type="WOOD" data-item-name="${matName}" data-item-icon="${matIcon}">${matIcon} ${matName}</span>
+                        </div>
+                    </div>`;
+                }).join('') : ''}
                 
                 <div class="popup-info-row">
                     <div class="popup-info-label"><span class="lbl-icon">📦</span>产出</div>
@@ -4249,12 +4262,12 @@ function showActionModal(config) {
             <div class="popup-count-section">
                 <div class="popup-count-label">${actionType.icon} ${actionType.name}</div>
                 <div class="popup-count-row">
-                    <input class="popup-count-input" type="text" value="${config.materials ? '1' : '∞'}" placeholder="次数" onclick="this.select();">
+                    <input class="popup-count-input" type="text" value="∞" placeholder="次数" onclick="this.select();">
                     <div class="popup-count-btns">
-                        <button class="popup-count-btn ${config.materials ? 'selected' : ''}" data-count="1">1</button>
+                        <button class="popup-count-btn" data-count="1">1</button>
                         <button class="popup-count-btn" data-count="10">10</button>
                         <button class="popup-count-btn" data-count="100">100</button>
-                        <button class="popup-count-btn inf ${config.materials ? '' : 'selected'}" data-count="infinity" ${config.materials ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>∞</button>
+                        <button class="popup-count-btn inf selected" data-count="infinity">∞</button>
                     </div>
                 </div>
             </div>
