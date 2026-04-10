@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0410 12:25';
+        versionEl.textContent = '0410 14:12';
     }
 }
 
@@ -2696,69 +2696,54 @@ function renderToolForge() {
 
     const forgingLevel = gameState.forgingLevel || 1;
 
-    // 系列名称和颜色
-    const seriesNames = [
-        { name: '青闪系列', color: '#4ECDC4', level: 2 },
-        { name: '赤铁系列', color: '#FF6B6B', level: 12 },
-        { name: '羽系列', color: '#95E1D3', level: 22 },
-        { name: '白银系列', color: '#C0C0C0', level: 37 },
-        { name: '狱炎系列', color: '#FF8C00', level: 52 },
-        { name: '雷鸣系列', color: '#9370DB', level: 67 },
-        { name: '璀璨系列', color: '#FFD700', level: 82 },
-        { name: '星辉系列', color: '#E6E6FA', level: 97 }
-    ];
+    // 收集所有工具并按等级排序
+    const allTools = [];
+    const toolTypeNames = {
+        'axes': '斧',
+        'pickaxes': '镐',
+        'chisels': '凿',
+        'needles': '针',
+        'scythes': '镰',
+        'hammers': '锤',
+        'tongs': '桶',
+        'rods': '棒'
+    };
 
-    let html = '';
-
-    // 按系列（等级索引）分组
     for (let seriesIndex = 0; seriesIndex < 8; seriesIndex++) {
-        const series = seriesNames[seriesIndex];
-        const seriesTools = [];
-
-        // 收集该系列的所有工具
         Object.entries(CONFIG.tools).forEach(([toolType, tools]) => {
             if (tools[seriesIndex]) {
-                seriesTools.push({
-                    tool: tools[seriesIndex],
+                const tool = tools[seriesIndex];
+                allTools.push({
+                    tool: tool,
                     toolType: toolType,
-                    toolIndex: seriesIndex
+                    toolIndex: seriesIndex,
+                    reqLevel: tool.reqForgeLevel || (seriesIndex * 10 + 2)
                 });
             }
         });
-
-        if (seriesTools.length === 0) continue;
-
-        const unlocked = forgingLevel >= series.level;
-
-        html += `
-            <div class="tool-series-section ${unlocked ? '' : 'locked'}">
-                <div class="tool-series-header" style="border-left: 3px solid ${series.color};">
-                    <span class="tool-series-name">${series.name}</span>
-                    <span class="tool-series-level">Lv.${series.level}</span>
-                </div>
-                <div class="cards-grid">
-                    ${seriesTools.map(({ tool, toolType, toolIndex }) => {
-                        const owned = (gameState.toolsInventory?.[toolType] || []).some(t => 
-                            (typeof t === 'string' ? t : t.id) === tool.id
-                        );
-
-                        return `
-                            <div class="action-card-square ${owned ? 'owned' : ''}"
-                                 data-tool-type="${toolType}" data-tool-index="${toolIndex}">
-                                <div class="card-name">${tool.name}</div>
-                                <div class="card-icon">${tool.icon}</div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-                ${!unlocked ? `<div class="locked-overlay">🔒 需要 Lv.${series.level}</div>` : ''}
-            </div>
-        `;
     }
 
-    container.innerHTML = html;
+    // 按等级排序
+    allTools.sort((a, b) => a.reqLevel - b.reqLevel);
 
-    // 绑定工具卡片点击事件
+    container.innerHTML = allTools.map(({ tool, toolType, toolIndex, reqLevel }) => {
+        const unlocked = forgingLevel >= reqLevel;
+        const owned = (gameState.toolsInventory?.[toolType] || []).some(t => 
+            (typeof t === 'string' ? t : t.id) === tool.id
+        );
+
+        return `
+            <div class="action-card-square ${unlocked ? '' : 'locked'} ${owned ? 'owned' : ''}"
+                 data-tool-type="${toolType}" data-tool-index="${toolIndex}">
+                <div class="card-name">${tool.name}</div>
+                <div class="card-icon">${tool.icon}</div>
+            </div>
+        `;
+    }).join('');
+
+    // 添加横行布局
+    container.classList.add('cards-grid');
+
     container.querySelectorAll('.action-card-square').forEach(card => {
         card.addEventListener('click', () => {
             const toolType = card.dataset.toolType;
