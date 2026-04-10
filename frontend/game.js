@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0410 12:18';
+        versionEl.textContent = '0410 12:25';
     }
 }
 
@@ -2072,6 +2072,25 @@ function getResourceName(resourceId) {
         'wool': '羊毛',
         'falcon_tail_feather': '隼尾羽',
         'silk': '丝绸原料',
+
+        // 更多采集物
+        'chili': '辣椒',
+        'mist_flower': '雾菱花',
+        'four_leaf_clover': '四叶草',
+        'grape': '葡萄',
+        'soul_herb': '灵魂草',
+        'moonlight_honey': '月光蜜',
+        'rye': '黑麦',
+        'wild_heart': '原野之心',
+        'wind_velvet': '风语绒',
+        'rainbow_feather': '虹羽',
+        'dragon_blood_fruit': '龙血果',
+        'life_fiber': '生命纤维',
+        'star_blossom': '星辰花',
+        'mist_fruit': '雾果',
+        'rock_rose_honey': '岩玫瑰蜜',
+        'bewitch_berry': '迷心浆果',
+        'harpy_feather': '鹰身人的羽毛',
 
         // 药水类
         'hp_potion_1': '小型生命药水',

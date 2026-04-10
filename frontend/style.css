@@ -5248,7 +5248,15 @@ body::after {
 
 .tool-series-section.locked {
     opacity: 0.5;
-    pointer-events: none;
+}
+
+.tool-series-section.locked .tool-series-header {
+    pointer-events: auto;
+}
+
+.tool-series-section.locked .action-card-square {
+    cursor: pointer;
+    pointer-events: auto;
 }
 
 .tool-series-header {
