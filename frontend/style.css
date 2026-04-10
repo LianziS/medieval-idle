@@ -4498,6 +4498,7 @@ body::after {
 .popup-token-prob { color: #7a8fa8; font-size: 11px; margin-left: 3px; }
 .popup-combo-chance { color: #f0c060; font-weight: 600; }
 .popup-combo-desc { color: #7a8fa8; font-size: 11px; margin-left: 3px; }
+.popup-tool-bonus { color: #4ECDC4; font-size: 11px; margin-left: 5px; }
 
 /* ============ 升级弹窗（右侧滑出） ============ */
 .level-up-toast {

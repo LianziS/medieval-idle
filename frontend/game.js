@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0410 16:44';
+        versionEl.textContent = '0410 16:50';
     }
 }
 
@@ -2825,6 +2825,19 @@ function openToolForgeModal(toolType, toolIndex) {
     const maxForgeCount = Math.min(maxByOre, maxByIngot, maxByPlank, maxByPrevTool);
 
     const canForge = maxForgeCount > 0;
+    
+    // 获取锻造等级和需求等级
+    const forgingLevel = gameState.forgingLevel || 1;
+    const reqLevel = tool.reqForgeLevel || (toolIndex * 10 + 2);
+    const levelEnough = forgingLevel >= reqLevel;
+    
+    // 计算代币概率
+    const tokenDropRates = CONFIG.tokenDropRates?.tool || [0.017, 0.033, 0.061, 0.110, 0.196, 0.343, 0.590, 0.990];
+    const levelIndex = Math.min(Math.floor((forgingLevel - 1) / 10), tokenDropRates.length - 1);
+    const tokenChance = Math.round(tokenDropRates[levelIndex] * 100);
+    
+    // 连击概率
+    const comboChance = Math.max(0, forgingLevel - reqLevel);
 
     // 创建模态框
     const modal = document.createElement('div');
@@ -2837,27 +2850,86 @@ function openToolForgeModal(toolType, toolIndex) {
                 <button class="action-modal-close">&times;</button>
             </div>
             <div class="action-modal-body">
-                <div class="action-modal-info">
-                    <span>⚡ +${Math.round(tool.speedBonus * 100)}% 速度</span>
-                    <span>⏱️ ${formatTime(tool.duration || 6000)}</span>
-                    <span>✨ ${tool.exp || 14} 经验</span>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">🔓</span>需要</div>
+                    <div class="popup-info-val">
+                        <span class="popup-badge level ${levelEnough ? '' : 'insufficient'}">Lv.${reqLevel} 🔨</span>
+                        ${!levelEnough ? `<span class="level-warning">（当前 Lv.${forgingLevel}）</span>` : ''}
+                    </div>
                 </div>
-                <div class="forge-materials">
-                    <h4>所需材料 (最多 ${maxForgeCount} 次):</h4>
-                    ${materials.ore ? `<div class="${oreCount >= materials.ore ? '' : 'insufficient'}">${ore?.name || oreId} × ${materials.ore} <span class="count">(${oreCount})</span></div>` : ''}
-                    ${materials.ingot ? `<div class="${ingotCount >= materials.ingot ? '' : 'insufficient'}">${ingot?.name || ingotId} × ${materials.ingot} <span class="count">(${ingotCount})</span></div>` : ''}
-                    ${materials.plank ? `<div class="${plankCount >= materials.plank ? '' : 'insufficient'}">${plank?.name || plankId} × ${materials.plank} <span class="count">(${plankCount})</span></div>` : ''}
-                    ${materials.prevTool ? `<div class="${prevToolCount >= 1 ? '' : 'insufficient'}">${prevTool?.name || materials.prevTool} × 1 <span class="count">(${prevToolCount})</span></div>` : ''}
-                    ${!canForge ? '<div class="forge-warning">⚠️ 材料不足</div>' : ''}
+                ${materials.ore ? `
+                <div class="popup-info-row">
+                    <div class="popup-info-label"></div>
+                    <div class="popup-info-val">
+                        <span class="popup-mat-count ${oreCount >= materials.ore ? '' : 'insufficient'}">[${oreCount}/${materials.ore}]</span>
+                        <span class="popup-badge material ${oreCount >= materials.ore ? '' : 'insufficient'}">${ore?.icon || '💎'} ${ore?.name || oreId}</span>
+                    </div>
+                </div>` : ''}
+                ${materials.ingot ? `
+                <div class="popup-info-row">
+                    <div class="popup-info-label"></div>
+                    <div class="popup-info-val">
+                        <span class="popup-mat-count ${ingotCount >= materials.ingot ? '' : 'insufficient'}">[${ingotCount}/${materials.ingot}]</span>
+                        <span class="popup-badge material ${ingotCount >= materials.ingot ? '' : 'insufficient'}">${ingot?.icon || '🪨'} ${ingot?.name || ingotId}</span>
+                    </div>
+                </div>` : ''}
+                ${materials.plank ? `
+                <div class="popup-info-row">
+                    <div class="popup-info-label"></div>
+                    <div class="popup-info-val">
+                        <span class="popup-mat-count ${plankCount >= materials.plank ? '' : 'insufficient'}">[${plankCount}/${materials.plank}]</span>
+                        <span class="popup-badge material ${plankCount >= materials.plank ? '' : 'insufficient'}">${plank?.icon || '🪵'} ${plank?.name || plankId}</span>
+                    </div>
+                </div>` : ''}
+                ${materials.prevTool ? `
+                <div class="popup-info-row">
+                    <div class="popup-info-label"></div>
+                    <div class="popup-info-val">
+                        <span class="popup-mat-count ${prevToolCount >= 1 ? '' : 'insufficient'}">[${prevToolCount}/1]</span>
+                        <span class="popup-badge material ${prevToolCount >= 1 ? '' : 'insufficient'}">${prevTool?.icon || '🔧'} ${prevTool?.name || materials.prevTool}</span>
+                    </div>
+                </div>` : ''}
+                
+                <div class="popup-divider"></div>
+                
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">📦</span>产出</div>
+                    <div class="popup-info-val">
+                        <span class="popup-exp-val">${tool.exp || 14} exp</span>
+                        <br><span class="popup-drop-prefix">1</span> <span class="popup-badge drop">${tool.icon} ${tool.name}</span>
+                        <span class="popup-tool-bonus">+${Math.round(tool.speedBonus * 100)}%速度</span>
+                    </div>
                 </div>
-                <div class="action-modal-counts">
-                    <button class="count-btn" data-count="1">1次</button>
-                    <button class="count-btn" data-count="5">5次</button>
-                    <button class="count-btn" data-count="10">10次</button>
-                    <button class="count-btn" data-count="${maxForgeCount}">全部(${maxForgeCount})</button>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">🪙</span>代币</div>
+                    <div class="popup-info-val">
+                        <span class="popup-token-prefix">1</span> 
+                        <span class="popup-badge token">🔨 锻造代币</span>
+                        <span class="popup-token-prob">~${tokenChance}%</span>
+                    </div>
                 </div>
-                <div class="action-modal-custom">
-                    <input type="text" id="custom-count" placeholder="自定义次数">
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">⚡</span>连击</div>
+                    <div class="popup-info-val">
+                        <span class="popup-combo-chance">${comboChance}%</span>
+                        <span class="popup-combo-desc">（等级差 × 1%）</span>
+                    </div>
+                </div>
+                
+                <div class="popup-divider"></div>
+                
+                <!-- 次数选择 -->
+                <div class="popup-count-section">
+                    <div class="popup-count-label">🔨 锻造</div>
+                    <div class="popup-count-row">
+                        <input class="popup-count-input" type="text" value="1" placeholder="次数" onclick="this.select();">
+                        <div class="popup-count-btns">
+                            <button class="popup-count-btn" data-count="1">1</button>
+                            <button class="popup-count-btn" data-count="5">5</button>
+                            <button class="popup-count-btn" data-count="10">10</button>
+                            <button class="popup-count-btn inf" data-count="max">最大(${maxForgeCount})</button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="action-modal-footer">
@@ -2865,7 +2937,7 @@ function openToolForgeModal(toolType, toolIndex) {
                 ${currentAction && queueAvailable ?
                     `<button class="action-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` :
                     (!currentAction ? '' : `<button class="action-btn queue disabled" disabled>队列已满</button>`)}
-                <button class="action-btn primary ${canForge ? '' : 'disabled'}" id="action-start" ${canForge ? '' : 'disabled'}>开始锻造</button>
+                <button class="action-btn primary ${canForge && levelEnough ? '' : 'disabled'}" id="action-start" ${canForge && levelEnough ? '' : 'disabled'}>开始锻造</button>
             </div>
         </div>
     `;
@@ -2877,31 +2949,31 @@ function openToolForgeModal(toolType, toolIndex) {
     modal.querySelector('#action-cancel').addEventListener('click', () => modal.remove());
 
     // 快捷次数按钮
-    modal.querySelectorAll('.count-btn').forEach(btn => {
+    modal.querySelectorAll('.popup-count-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            modal.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            modal.querySelector('#custom-count').value = btn.dataset.count;
+            modal.querySelectorAll('.popup-count-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            const count = btn.dataset.count === 'max' ? maxForgeCount : parseInt(btn.dataset.count);
+            modal.querySelector('.popup-count-input').value = count;
         });
     });
 
     // 获取次数
     const getCount = () => {
-        const val = modal.querySelector('#custom-count').value;
+        const val = modal.querySelector('.popup-count-input').value;
         const num = parseInt(val) || 1;
         return Math.min(num, maxForgeCount);
     };
 
     // 开始锻造
     modal.querySelector('#action-start').addEventListener('click', () => {
+        if (!canForge || !levelEnough) return;
         const count = getCount();
         if (count <= 0) return;
 
-        // 转换 toolType: axes -> axe, chisels -> chisel, tongs -> tongs (保持不变), rods -> rod
         const singularType = toolType === 'tongs' ? 'tongs' :
                             toolType.endsWith('s') ? toolType.slice(0, -1) : toolType;
 
-        // 检查是否有行动进行中
         if (currentAction) {
             showForgeImmediatelyConfirm(toolType, toolIndex, tool, count, modal);
         } else {
