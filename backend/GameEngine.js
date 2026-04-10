@@ -567,8 +567,24 @@ class GameEngine {
         // 连击系统：计算连击概率并触发
         const comboResult = this.tryCombo(action, item, actionType);
         if (comboResult.triggered) {
-            // 连击触发，添加额外奖励
-            rewards.push(...comboResult.rewards);
+            // 连击触发，将额外奖励合并到原有奖励中（相同物品数量叠加）
+            for (const comboReward of comboResult.rewards) {
+                // 查找是否已有相同类型的奖励
+                const existingReward = rewards.find(r => 
+                    r.type === comboReward.type && 
+                    r.id === comboReward.id && 
+                    r.type !== 'exp' // 经验不合并
+                );
+                
+                if (existingReward) {
+                    // 已存在，增加数量
+                    existingReward.count += comboReward.count;
+                    existingReward.isCombo = true; // 标记为连击获得
+                } else {
+                    // 不存在，添加新奖励
+                    rewards.push({ ...comboReward, isCombo: true });
+                }
+            }
         }
         
         // 更新剩余次数（无限模式不递减）
