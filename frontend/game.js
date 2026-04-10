@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0410 16:50';
+        versionEl.textContent = '0410 16:56';
     }
 }
 
@@ -2922,12 +2922,12 @@ function openToolForgeModal(toolType, toolIndex) {
                 <div class="popup-count-section">
                     <div class="popup-count-label">🔨 锻造</div>
                     <div class="popup-count-row">
-                        <input class="popup-count-input" type="text" value="1" placeholder="次数" onclick="this.select();">
+                        <input class="popup-count-input" type="text" value="∞" placeholder="次数" onclick="this.select();">
                         <div class="popup-count-btns">
                             <button class="popup-count-btn" data-count="1">1</button>
                             <button class="popup-count-btn" data-count="5">5</button>
                             <button class="popup-count-btn" data-count="10">10</button>
-                            <button class="popup-count-btn inf" data-count="max">最大(${maxForgeCount})</button>
+                            <button class="popup-count-btn inf selected" data-count="infinity">∞</button>
                         </div>
                     </div>
                 </div>
@@ -2937,7 +2937,7 @@ function openToolForgeModal(toolType, toolIndex) {
                 ${currentAction && queueAvailable ?
                     `<button class="action-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` :
                     (!currentAction ? '' : `<button class="action-btn queue disabled" disabled>队列已满</button>`)}
-                <button class="action-btn primary ${canForge && levelEnough ? '' : 'disabled'}" id="action-start" ${canForge && levelEnough ? '' : 'disabled'}>开始锻造</button>
+                <button class="action-btn primary ${levelEnough ? '' : 'disabled'}" id="action-start" ${levelEnough ? '' : 'disabled'}>开始锻造</button>
             </div>
         </div>
     `;
@@ -2953,23 +2953,31 @@ function openToolForgeModal(toolType, toolIndex) {
         btn.addEventListener('click', () => {
             modal.querySelectorAll('.popup-count-btn').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
-            const count = btn.dataset.count === 'max' ? maxForgeCount : parseInt(btn.dataset.count);
-            modal.querySelector('.popup-count-input').value = count;
+            if (btn.dataset.count === 'infinity') {
+                modal.querySelector('.popup-count-input').value = '∞';
+            } else {
+                modal.querySelector('.popup-count-input').value = btn.dataset.count;
+            }
         });
     });
 
-    // 获取次数
+    // 获取次数（无限时自动计算最大值）
     const getCount = () => {
         const val = modal.querySelector('.popup-count-input').value;
+        if (val === '∞' || val === 'infinity') {
+            return maxForgeCount; // 无限时自动计算最大可锻造次数
+        }
         const num = parseInt(val) || 1;
         return Math.min(num, maxForgeCount);
     };
 
     // 开始锻造
     modal.querySelector('#action-start').addEventListener('click', () => {
-        if (!canForge || !levelEnough) return;
         const count = getCount();
-        if (count <= 0) return;
+        if (count <= 0) {
+            showToast('⚠️ 材料不足');
+            return;
+        }
 
         const singularType = toolType === 'tongs' ? 'tongs' :
                             toolType.endsWith('s') ? toolType.slice(0, -1) : toolType;
