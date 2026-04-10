@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0407 18:10';
+        versionEl.textContent = '0410 09:40';
     }
 }
 
@@ -256,6 +256,40 @@ function setupSocket() {
         updateUI();
         renderEquipmentSlots(); // 实时更新装备栏
         renderInventories(); // 实时更新物品栏
+        
+        // 实时更新物品详情卡片
+        document.querySelectorAll('.item-tooltip').forEach(tooltip => {
+            const itemId = tooltip.dataset.tooltipItemId;
+            const itemType = tooltip.dataset.tooltipItemType;
+            
+            if (itemId) {
+                let ownedCount = 0;
+                if (itemType === 'WOOD') {
+                    ownedCount = gameState?.woodcuttingInventory?.[itemId] || 0;
+                } else if (itemType === 'TOKEN') {
+                    ownedCount = gameState?.tokensInventory?.[itemId] || 0;
+                } else if (itemType === 'ORE') {
+                    ownedCount = gameState?.miningInventory?.[itemId] || 0;
+                } else if (itemType === 'GATHERING') {
+                    ownedCount = gameState?.gatheringInventory?.[itemId] || 0;
+                } else if (itemType === 'PLANK') {
+                    ownedCount = gameState?.planksInventory?.[itemId] || 0;
+                } else if (itemType === 'INGOT') {
+                    ownedCount = gameState?.ingotsInventory?.[itemId] || 0;
+                } else if (itemType === 'FABRIC') {
+                    ownedCount = gameState?.fabricsInventory?.[itemId] || 0;
+                } else if (itemType === 'POTION') {
+                    ownedCount = gameState?.potionsInventory?.[itemId] || 0;
+                } else if (itemType === 'BREW') {
+                    ownedCount = gameState?.brewsInventory?.[itemId] || 0;
+                }
+                
+                const countEl = tooltip.querySelector('.item-count-value');
+                if (countEl) {
+                    countEl.textContent = ownedCount;
+                }
+            }
+        });
 
         // 如果强化页面打开，更新锻造经验条
         const enhancePage = document.getElementById('page-enhance');
@@ -2094,6 +2128,27 @@ function getResourceCount(resourceId) {
 }
 
 /**
+ * 获取采集品的最大掉落数量
+ */
+function getGatheringItemMaxCount(itemId) {
+    // 四种蜜：1-7个
+    const honeyItems = ['honey', 'blossom_honey', 'moonlight_honey', 'rock_rose_honey'];
+    if (honeyItems.includes(itemId)) return 7;
+    
+    // 甜浆果、小麦、啤酒花、苹果、葡萄、黑麦、雾果、龙血果：1-5个
+    const berryItems = ['sweet_berry', 'wheat', 'hops', 'apple', 'grape', 'rye', 'mist_fruit', 'dragon_blood_fruit'];
+    if (berryItems.includes(itemId)) return 5;
+    
+    // 血蔷薇、黄麻、星露草、亚麻、赤炼蛇果、月光菇、羊毛、蚕丝、灵魂草、风语绒、原野之心、迷心浆果、生命纤维、星辰花：1-3个
+    const herbItems = ['blood_rose', 'jute', 'star_dew_herb', 'flax', 'red_serpent_fruit', 
+                      'moonlight_mushroom', 'wool', 'silk', 'soul_herb', 'wind_velvet',
+                      'wild_heart', 'bewitch_berry', 'life_fiber', 'star_blossom'];
+    if (herbItems.includes(itemId)) return 3;
+    
+    return 1; // 默认
+}
+
+/**
  * 渲染伐木列表
  */
 function renderWoodcutting() {
@@ -2136,22 +2191,16 @@ function renderMining() {
         const isActive = gameState.activeAction?.type === 'MINING' && gameState.activeAction?.id === ore.id;
 
         return `
-            <div class="action-card ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
-                 data-action="mining" data-id="${ore.id}">
-                <div class="action-icon">${ore.icon}</div>
-                <div class="action-info">
-                    <div class="action-name">${ore.name}</div>
-                    <div class="action-details">
-                        <span>⏱️ ${formatTime(ore.duration)}</span>
-                        <span>✨ ${ore.exp}</span>
-                    </div>
-                </div>
-                ${!unlocked ? `<div class="locked-overlay">🔒 Lv.${ore.reqLevel}</div>` : ''}
+            <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
+                 data-action="mining" data-id="${ore.id}" data-unlocked="${unlocked}">
+                <div class="card-name">${ore.name}</div>
+                <div class="card-icon">${ore.icon}</div>
             </div>
         `;
     }).join('');
 
-    elements.miningList.querySelectorAll('.action-card:not(.locked)').forEach(card => {
+    // 绑定点击事件（所有卡片都可以点击）
+    elements.miningList.querySelectorAll('.action-card-square').forEach(card => {
         card.addEventListener('click', () => {
             const oreId = card.dataset.id;
             openActionModal('MINING', oreId);
@@ -2211,35 +2260,28 @@ function renderGatheringLocation(locId, level) {
 
     const unlocked = level >= loc.reqLevel;
     const items = loc.items || [];
+    const isActive = gameState.activeAction?.type === 'GATHERING' && gameState.activeAction?.id === loc.id;
 
-    // 生成采集品卡片
-    const itemCards = items.map(item => `
-        <div class="gathering-item-card ${unlocked ? '' : 'locked'}" data-loc-id="${loc.id}" data-item-id="${item.id}">
-            <span class="gathering-item-icon">${item.icon}</span>
-            <div class="gathering-item-info">
-                <span class="gathering-item-name">${item.name}</span>
-                <div class="gathering-item-meta">
-                    <span>⏱️ ${formatTime(loc.duration)}</span>
-                    <span>✨ ${item.exp}</span>
-                </div>
+    // 生成采集品卡片（简洁方形样式）- 每个都是可采集的行动
+    const itemCards = items.map(item => {
+        const itemIsActive = gameState.activeAction?.type === 'GATHERING' && 
+                            gameState.activeAction?.id === loc.id && 
+                            gameState.activeAction?.itemId === item.id;
+        return `
+            <div class="action-card-square ${unlocked ? '' : 'locked'} ${itemIsActive ? 'active' : ''}"
+                 data-action="gathering-item" data-loc-id="${loc.id}" data-item-id="${item.id}">
+                <div class="card-name">${item.name}</div>
+                <div class="card-icon">${item.icon}</div>
             </div>
-            ${!unlocked ? `<div class="locked-overlay">🔒 Lv.${loc.reqLevel}</div>` : ''}
-        </div>
-    `).join('');
+        `;
+    }).join('');
 
-    // 区域采集点卡片
+    // 区域采集点卡片（简洁方形样式）
     const regionCard = `
-        <div class="gathering-region-action-card ${unlocked ? '' : 'locked'}" data-loc-id="${loc.id}">
-            <span class="gathering-region-icon">${loc.icon}</span>
-            <div class="gathering-region-info">
-                <span class="gathering-region-name">${loc.name}</span>
-                <div class="gathering-region-meta">
-                    <span>⏱️ ${formatTime(loc.duration)}</span>
-                    <span>✨ ${loc.exp}</span>
-                    <span>随机采集</span>
-                </div>
-            </div>
-            ${!unlocked ? `<div class="locked-overlay">🔒 Lv.${loc.reqLevel}</div>` : ''}
+        <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
+             data-action="gathering" data-id="${loc.id}" data-unlocked="${unlocked}">
+            <div class="card-name">${loc.name}</div>
+            <div class="card-icon">${loc.icon}</div>
         </div>
     `;
 
@@ -2253,8 +2295,8 @@ function renderGatheringLocation(locId, level) {
         ${regionCard}
     `;
 
-    // 绑定采集品点击事件
-    container.querySelectorAll('.gathering-item-card:not(.locked)').forEach(card => {
+    // 绑定采集品点击事件（弹出行动选择弹窗）
+    container.querySelectorAll('.action-card-square[data-action="gathering-item"]').forEach(card => {
         card.addEventListener('click', () => {
             const locId = card.dataset.locId;
             const itemId = card.dataset.itemId;
@@ -2263,9 +2305,9 @@ function renderGatheringLocation(locId, level) {
     });
 
     // 绑定区域采集点击事件
-    container.querySelectorAll('.gathering-region-action-card:not(.locked)').forEach(card => {
+    container.querySelectorAll('.action-card-square[data-action="gathering"]').forEach(card => {
         card.addEventListener('click', () => {
-            openActionModal('GATHERING', card.dataset.locId);
+            openActionModal('GATHERING', card.dataset.id);
         });
     });
 }
@@ -2278,125 +2320,21 @@ function openGatheringItemModal(locId, itemId) {
     const item = loc?.items?.find(i => i.id === itemId);
     if (!loc || !item) return;
 
-    pendingAction = { type: 'GATHERING', id: locId, name: `${loc.name} - ${item.name}`, icon: item.icon, itemId: itemId };
-
-    // 检查队列状态
-    const currentQueue = gameState?.actionQueue || [];
-    const maxQueueSize = 2;
-    const currentAction = gameState?.activeAction;
-    const queueAvailable = currentQueue.length < maxQueueSize;
-    const queuePosition = currentQueue.length + 1;
-
-    const modal = document.createElement('div');
-    modal.className = 'action-modal-overlay';
-    modal.innerHTML = `
-        <div class="action-modal">
-            <div class="action-modal-header">
-                <span class="action-modal-icon">${item.icon}</span>
-                <span class="action-modal-title">${item.name}</span>
-                <button class="action-modal-close">&times;</button>
-            </div>
-            <div class="action-modal-body">
-                <div class="action-modal-info">
-                    <span>📍 ${loc.name}</span>
-                    <span>⏱️ ${formatTime(loc.duration)}</span>
-                    <span>✨ ${item.exp} 经验</span>
-                </div>
-                <div class="action-modal-counts">
-                    <button class="count-btn" data-count="1">1次</button>
-                    <button class="count-btn" data-count="5">5次</button>
-                    <button class="count-btn" data-count="10">10次</button>
-                    <button class="count-btn" data-count="50">50次</button>
-                    <button class="count-btn infinity" data-count="infinity">∞</button>
-                </div>
-                <div class="action-modal-custom">
-                    <input type="text" id="custom-count" placeholder="自定义次数">
-                </div>
-            </div>
-            <div class="action-modal-footer">
-                <button class="action-btn secondary" id="action-cancel">取消</button>
-                ${queueAvailable ?
-                    `<button class="action-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` :
-                    `<button class="action-btn queue disabled" id="action-queue" disabled>队列已满</button>`}
-                <button class="action-btn primary" id="action-start">立即开始</button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    modal.querySelector('.action-modal-close').addEventListener('click', () => {
-        modal.remove();
-        pendingAction = null;
-    });
-
-    modal.querySelector('#action-cancel').addEventListener('click', () => {
-        modal.remove();
-        pendingAction = null;
-    });
-
-    modal.querySelectorAll('.count-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            modal.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            const countVal = btn.dataset.count;
-            if (countVal === 'infinity') {
-                modal.querySelector('#custom-count').value = '∞';
-            } else {
-                modal.querySelector('#custom-count').value = countVal;
-            }
-        });
-    });
-
-    const getCount = () => {
-        const val = modal.querySelector('#custom-count').value;
-        if (val === '∞' || val === '-1') return -1; // -1 表示无限模式
-        return parseInt(val) || 1;
+    // 设置 pendingAction 并使用统一的 showActionModal
+    pendingAction = { type: 'GATHERING', id: locId, name: item.name, icon: item.icon, itemId: itemId };
+    
+    // 构建一个类似 config 的对象传给 showActionModal
+    // 注意：采集品的 reqLevel 使用 loc.reqLevel（区域的等级要求）
+    const config = {
+        id: item.id,
+        name: item.name,
+        icon: item.icon,
+        reqLevel: loc.reqLevel,  // 使用区域的等级要求
+        duration: loc.duration,
+        exp: item.exp,
     };
-
-    const queueBtn = modal.querySelector('#action-queue');
-    if (queueBtn && !queueBtn.disabled) {
-        queueBtn.addEventListener('click', () => {
-            if (pendingAction) {
-                socket.emit('action_start', {
-                    type: pendingAction.type,
-                    id: pendingAction.id,
-                    count: getCount(),
-                    itemId: pendingAction.itemId
-                });
-            }
-            modal.remove();
-            pendingAction = null;
-        });
-    }
-
-    modal.querySelector('#action-start').addEventListener('click', () => {
-        const count = getCount();
-        if (currentAction) {
-            showStartImmediatelyConfirm(pendingAction, count, currentAction, currentQueue);
-        } else {
-            if (pendingAction) {
-                socket.emit('action_start', {
-                    type: pendingAction.type,
-                    id: pendingAction.id,
-                    count: count,
-                    itemId: pendingAction.itemId
-                });
-            }
-            modal.remove();
-            pendingAction = null;
-        }
-    });
-
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.remove();
-            pendingAction = null;
-        }
-    });
-
-    modal.querySelector('.count-btn[data-count="1"]').classList.add('active');
-    modal.querySelector('#custom-count').value = 1;
+    
+    showActionModal(config);
 }
 
 /**
@@ -3785,9 +3723,11 @@ function renderInventoryGrid(elementId, inventory, config, idField = 'id') {
 
     element.innerHTML = items || ''; // 暂无物品时不显示任何内容
 
-    // 绑定点击事件
+    // 绑定点击和悬浮事件
     element.querySelectorAll('.inventory-item').forEach(item => {
         item.addEventListener('click', (e) => showItemTooltip(item, e));
+        // 悬浮显示
+        item.addEventListener('mouseenter', (e) => showItemTooltip(item, e));
     });
 }
 
@@ -3877,8 +3817,8 @@ function showItemTooltip(item, event) {
         <div class="item-tooltip-name">${icon} ${displayName}</div>
         ${enhanceLevel > 0 ? `<div class="item-tooltip-row item-tooltip-enhance"><span>强化等级</span><span class="enhance-level">+${enhanceLevel}</span></div>` : ''}
         ${toolEffect ? `<div class="item-tooltip-row item-tooltip-effect"><span>效果</span><span class="tool-effect">${toolEffect}</span></div>` : ''}
-        <div class="item-tooltip-row"><span>数量</span><span>${count}</span></div>
-        <div class="item-tooltip-row"><span>价值</span><span>${price > 0 ? price + ' 金币' : '不可出售'}</span></div>
+        <div class="item-tooltip-row"><span>数量</span><span class="item-count-value">${count}</span></div>
+        <div class="item-tooltip-row"><span>单价</span><span class="item-price-value">${price > 0 ? price : '不可出售'}</span></div>
         <div class="item-tooltip-desc">${desc}</div>
         ${isTool && !isEquipped ? `<button class="item-equip-btn" data-id="${id}">装备</button>` : ''}
         ${isEquipped ? `<button class="item-unequip-btn" data-slot="${equipSlot}">卸下</button>` : ''}
@@ -3916,10 +3856,24 @@ function showItemTooltip(item, event) {
         if (!tooltip.contains(e.target) && !item.contains(e.target)) {
             tooltip.remove();
             document.removeEventListener('click', closeTooltip);
+            document.removeEventListener('mouseleave', closeTooltip);
         }
     };
+    
+    // 鼠标离开物品时关闭（用于悬浮显示）
+    const closeOnLeave = (e) => {
+        // 检查鼠标是否离开了物品和tooltip
+        if (!item.contains(e.relatedTarget) && !tooltip.contains(e.relatedTarget)) {
+            tooltip.remove();
+            item.removeEventListener('mouseleave', closeOnLeave);
+            document.removeEventListener('click', closeTooltip);
+        }
+    };
+    
     setTimeout(() => {
         document.addEventListener('click', closeTooltip);
+        // 监听鼠标离开物品
+        item.addEventListener('mouseleave', closeOnLeave);
     }, 10);
 
     // 绑定装备按钮
@@ -4032,6 +3986,93 @@ function openActionModal(type, id) {
 }
 
 /**
+ * 显示行动弹窗中的物品详情卡片
+ */
+function showActionItemTooltip(item, event, modal) {
+    // 移除已有的弹出卡片
+    document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+    
+    const itemId = item.dataset.itemId;
+    const itemType = item.dataset.itemType;
+    const itemName = item.dataset.itemName;
+    const itemIcon = item.dataset.itemIcon;
+    
+    // 获取已拥有数量
+    let ownedCount = 0;
+    if (itemType === 'WOOD') {
+        ownedCount = gameState?.woodcuttingInventory?.[itemId] || 0;
+    } else if (itemType === 'TOKEN') {
+        ownedCount = gameState?.tokensInventory?.[itemId] || 0;
+    } else if (itemType === 'ORE') {
+        ownedCount = gameState?.miningInventory?.[itemId] || 0;
+    } else if (itemType === 'GATHERING') {
+        ownedCount = gameState?.gatheringInventory?.[itemId] || 0;
+    } else if (itemType === 'PLANK') {
+        ownedCount = gameState?.planksInventory?.[itemId] || 0;
+    } else if (itemType === 'INGOT') {
+        ownedCount = gameState?.ingotsInventory?.[itemId] || 0;
+    } else if (itemType === 'FABRIC') {
+        ownedCount = gameState?.fabricsInventory?.[itemId] || 0;
+    } else if (itemType === 'POTION') {
+        ownedCount = gameState?.potionsInventory?.[itemId] || 0;
+    } else if (itemType === 'BREW') {
+        ownedCount = gameState?.brewsInventory?.[itemId] || 0;
+    }
+    
+    // 获取单价（代币固定50）
+    let price = 0;
+    if (itemType === 'TOKEN') {
+        price = 50;
+    } else {
+        price = getItemSellPrice(itemId);
+    }
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'item-tooltip';
+    tooltip.style.position = 'fixed';
+    tooltip.dataset.tooltipItemId = itemId;
+    tooltip.dataset.tooltipItemType = itemType;
+    tooltip.innerHTML = `
+        <div class="item-tooltip-name">${itemIcon} ${itemName}</div>
+        <div class="item-tooltip-row"><span>数量</span><span class="item-count-value">${ownedCount}</span></div>
+        <div class="item-tooltip-row"><span>单价</span><span class="item-price-value">${price}</span></div>
+    `;
+    
+    document.body.appendChild(tooltip);
+    
+    // 获取尺寸后定位
+    const itemRect = item.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    
+    // 水平居中于物品
+    let left = itemRect.left + (itemRect.width / 2) - (tooltipRect.width / 2);
+    // 垂直在物品上方
+    let top = itemRect.top - tooltipRect.height - 8;
+    
+    // 边界检查
+    left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
+    if (top < 10) top = itemRect.bottom + 8;
+    
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+    
+    // 存储关联的元素引用，用于实时更新
+    tooltip._sourceItem = item;
+    
+    // 鼠标离开时关闭
+    const closeTooltip = (e) => {
+        if (!item.contains(e.relatedTarget) && !tooltip.contains(e.relatedTarget)) {
+            tooltip.remove();
+            item.removeEventListener('mouseleave', closeTooltip);
+            document.removeEventListener('click', closeTooltip);
+        }
+    };
+    
+    item.addEventListener('mouseleave', closeTooltip);
+    setTimeout(() => document.addEventListener('click', closeTooltip), 10);
+}
+
+/**
  * 显示行动选择模态框（新样式）
  */
 function showActionModal(config) {
@@ -4116,10 +4157,16 @@ function showActionModal(config) {
                     <div class="popup-info-label"><span class="lbl-icon">📦</span>产出</div>
                     <div class="popup-info-val">
                         ${config.exp ? `<span class="popup-exp-val">${config.exp} exp</span>` : ''}
-                        ${config.dropId ? `
-                        <br><span class="popup-drop-prefix">1-${config.dropMax || 3}</span> 
-                        <span class="popup-badge drop">${config.dropIcon || '📦'} ${getResourceName(config.dropId)}</span>
-                        ` : ''}
+                        ${pendingAction?.itemId ? (() => {
+                            const maxCount = getGatheringItemMaxCount(pendingAction.itemId);
+                            const dropRange = maxCount === 1 ? '1' : `1-${maxCount}`;
+                            return `<br><span class="popup-drop-prefix">${dropRange}</span> <span class="popup-badge drop item-hover-card" data-item-id="${pendingAction.itemId}" data-item-type="GATHERING" data-item-name="${config.name}" data-item-icon="${config.icon}">${config.icon} ${config.name}</span>`;
+                        })() : config.dropId ? (() => {
+                            const maxCount = config.dropMax || 3;
+                            const dropRange = maxCount === 1 ? '1' : `1-${maxCount}`;
+                            const itemTypeMap = {WOODCUTTING:'WOOD',MINING:'ORE',GATHERING:'GATHERING',CRAFTING:'PLANK',FORGING:'INGOT',TAILORING:'FABRIC',ALCHEMY:'POTION',BREWING:'BREW'};
+                            return `<br><span class="popup-drop-prefix">${dropRange}</span> <span class="popup-badge drop item-hover-card" data-item-id="${config.dropId}" data-item-type="${itemTypeMap[pendingAction?.type] || 'WOOD'}" data-item-name="${getResourceName(config.dropId)}" data-item-icon="${config.dropIcon || '📦'}">${config.dropIcon || '📦'} ${getResourceName(config.dropId)}</span>`;
+                        })() : ''}
                     </div>
                 </div>
                 
@@ -4128,7 +4175,7 @@ function showActionModal(config) {
                     <div class="popup-info-label"><span class="lbl-icon">🪙</span>代币</div>
                     <div class="popup-info-val">
                         <span class="popup-token-prefix">1</span> 
-                        <span class="popup-badge token">${actionType.icon} ${actionType.name}代币</span>
+                        <span class="popup-badge token item-hover-card" data-item-id="${{WOODCUTTING:'wood_token',MINING:'mining_token',GATHERING:'gathering_token',CRAFTING:'crafting_token',FORGING:'forging_token',TAILORING:'tailoring_token',ALCHEMY:'alchemy_token',BREWING:'brewing_token'}[pendingAction.type]}" data-item-type="TOKEN" data-item-name="${actionType.name}代币" data-item-icon="🪙">${actionType.icon} ${actionType.name}代币</span>
                         <span class="popup-token-prob">~${getTokenChance(pendingAction?.type, config.reqLevel)}%</span>
                     </div>
                 </div>
@@ -4241,7 +4288,8 @@ function showActionModal(config) {
                 socket.emit('action_start', {
                     type: pendingAction.type,
                     id: pendingAction.id,
-                    count: getCount()
+                    count: getCount(),
+                    itemId: pendingAction.itemId  // 采集品需要 itemId
                 });
             }
             closeModal();
@@ -4262,11 +4310,21 @@ function showActionModal(config) {
                 socket.emit('action_start', {
                     type: pendingAction.type,
                     id: pendingAction.id,
-                    count: count
+                    count: count,
+                    itemId: pendingAction.itemId  // 采集品需要 itemId
                 });
             }
             closeModal();
         }
+    });
+    
+    // 为产出和代币绑定悬浮/点击事件显示详情卡片
+    modal.querySelectorAll('.item-hover-card').forEach(item => {
+        item.addEventListener('mouseenter', (e) => showActionItemTooltip(item, e, modal));
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showActionItemTooltip(item, e, modal);
+        });
     });
 }
 
