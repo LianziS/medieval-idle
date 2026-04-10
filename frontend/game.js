@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0410 09:50';
+        versionEl.textContent = '0410 09:58';
     }
 }
 
@@ -4204,9 +4204,18 @@ function showActionModal(config) {
                     <div class="popup-info-val">
                         ${config.exp ? `<span class="popup-exp-val">${config.exp} exp</span>` : ''}
                         ${pendingAction?.itemId ? (() => {
+                            // 采集单个物品
                             const maxCount = getGatheringItemMaxCount(pendingAction.itemId);
                             const dropRange = maxCount === 1 ? '1' : `1-${maxCount}`;
                             return `<br><span class="popup-drop-prefix">${dropRange}</span> <span class="popup-badge drop item-hover-card" data-item-id="${pendingAction.itemId}" data-item-type="GATHERING" data-item-name="${config.name}" data-item-icon="${config.icon}">${config.icon} ${config.name}</span>`;
+                        })() : pendingAction?.type === 'GATHERING' && config.items ? (() => {
+                            // 区域采集：显示所有可能的物品及其概率
+                            return '<br>' + config.items.map(item => {
+                                const maxCount = getGatheringItemMaxCount(item.id);
+                                const dropRange = maxCount === 1 ? '1' : `1-${maxCount}`;
+                                const probPercent = Math.round(item.probability * 100);
+                                return `<span class="popup-drop-prefix">${dropRange}</span> <span class="popup-badge drop item-hover-card" data-item-id="${item.id}" data-item-type="GATHERING" data-item-name="${item.name}" data-item-icon="${item.icon}">${item.icon} ${item.name}</span> <span class="popup-drop-prob">${probPercent}%</span>`;
+                            }).join('<br>');
                         })() : config.dropId ? (() => {
                             const maxCount = config.dropMax || 3;
                             const dropRange = maxCount === 1 ? '1' : `1-${maxCount}`;
