@@ -3820,7 +3820,7 @@ body::after {
     background: linear-gradient(180deg, #2d3f52 0%, #1B2A3A 100%);
     border: 2px solid #8B2C2D;
     border-radius: 12px;
-    padding: 20px;
+    padding: 15px;
     min-width: 320px;
     max-width: 90vw;
 }
@@ -3828,19 +3828,19 @@ body::after {
 .action-modal-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
     border-bottom: 1px solid rgba(107, 79, 60, 0.4);
 }
 
 .action-modal-icon {
-    font-size: 2rem;
+    font-size: 1.5rem;
 }
 
 .action-modal-title {
     flex: 1;
-    font-size: 1.2rem;
+    font-size: 1rem;
     color: #E8C57F;
 }
 
