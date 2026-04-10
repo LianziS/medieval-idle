@@ -596,7 +596,7 @@ body::after {
 
 /* 技能头部区域（标题+经验条合并） */
 .skill-header {
-    background: rgba(107, 79, 60, 0.12);
+    background: transparent;
     border: none;
     border-radius: 10px;
     padding: 7px 15px 12px 15px;
