@@ -65,7 +65,7 @@ function setVersionTime() {
     if (versionEl) {
         // 使用固定的版本号（与 CSS/JS 文件版本号同步）
         // 格式：MMDD HH:MM
-        versionEl.textContent = '0410 10:45';
+        versionEl.textContent = '0410 11:00';
     }
 }
 
@@ -2386,6 +2386,8 @@ function openGatheringItemModal(locId, itemId) {
     const item = loc?.items?.find(i => i.id === itemId);
     if (!loc || !item) return;
 
+    console.log('🌿 打开采集品弹窗:', { locId, itemId, locName: loc.name, itemName: item.name });
+
     // 设置 pendingAction 并使用统一的 showActionModal
     pendingAction = { type: 'GATHERING', id: locId, name: item.name, icon: item.icon, itemId: itemId };
     
@@ -4365,6 +4367,7 @@ function showActionModal(config) {
     if (queueBtn && !queueBtn.disabled) {
         queueBtn.addEventListener('click', () => {
             if (pendingAction) {
+                console.log('📤 加入队列:', { type: pendingAction.type, id: pendingAction.id, itemId: pendingAction.itemId, count: getCount() });
                 socket.emit('action_start', {
                     type: pendingAction.type,
                     id: pendingAction.id,
@@ -4387,6 +4390,7 @@ function showActionModal(config) {
         } else {
             // 没有正在进行的行动，直接开始
             if (pendingAction) {
+                console.log('📤 立即开始:', { type: pendingAction.type, id: pendingAction.id, itemId: pendingAction.itemId, count: count });
                 socket.emit('action_start', {
                     type: pendingAction.type,
                     id: pendingAction.id,
@@ -4455,10 +4459,12 @@ function showStartImmediatelyConfirm(newAction, count, currentAction, currentQue
 
     modal.querySelector('#start-confirm').addEventListener('click', () => {
         if (newAction) {
+            console.log('📤 立即开始确认:', { type: newAction.type, id: newAction.id, itemId: newAction.itemId, count: count });
             socket.emit('start_immediately', {
                 type: newAction.type,
                 id: newAction.id,
-                count: count
+                count: count,
+                itemId: newAction.itemId  // 采集品需要 itemId
             });
         }
         modal.remove();

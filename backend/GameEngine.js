@@ -790,7 +790,7 @@ class GameEngine {
     /**
      * 立即开始新行动（清空当前行动和队列）
      */
-    startImmediately(actionTypeKey, actionId, count = 1) {
+    startImmediately(actionTypeKey, actionId, count = 1, extraParams = null) {
         // 清空当前行动
         this.state.activeAction = null;
         this.state.actionRemaining = 0;
@@ -799,7 +799,7 @@ class GameEngine {
         this.state.actionQueue = [];
         
         // 开始新行动
-        return this.startAction(actionTypeKey, actionId, count);
+        return this.startAction(actionTypeKey, actionId, count, extraParams);
     }
     
     /**

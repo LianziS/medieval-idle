@@ -956,7 +956,10 @@ io.on('connection', (socket) => {
     socket.on('start_immediately', (data) => {
         if (!gameEngine) return socket.emit('error', { message: '未认证' });
         
-        const result = gameEngine.startImmediately(data.type, data.id, data.count || 1);
+        console.log('📥 start_immediately 收到:', JSON.stringify({ type: data.type, id: data.id, count: data.count, itemId: data.itemId }));
+        
+        const extraParams = data.itemId ? { itemId: data.itemId } : null;
+        const result = gameEngine.startImmediately(data.type, data.id, data.count || 1, extraParams);
         socket.emit('action_result', result);
         if (result.success) {
             socket.emit('game_state_update', gameEngine.getFullState());

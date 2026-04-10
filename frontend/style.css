@@ -2919,6 +2919,18 @@ body::after {
     gap: 14px;
 }
 
+/* 制作类卡片横行布局（覆盖 gathering-items-list 的 grid） */
+.cards-grid {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+}
+
+.cards-grid .action-card-square {
+    flex: 0 0 auto;
+}
+
 /* 锻造页面需要标签切换，所以默认隐藏 */
 #forging-ingots-list,
 #forging-tools-list {
@@ -4474,18 +4486,6 @@ body::after {
 .popup-drop-prefix, .popup-token-prefix { color: #a0b0c0; font-size: 12px; margin-right: 2px; }
 .popup-drop-prob { color: #7a8fa8; font-size: 11px; margin-left: 3px; }
 .popup-token-prob { color: #7a8fa8; font-size: 11px; margin-left: 3px; }
-
-/* 制作类卡片横行布局 */
-.cards-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 10px;
-}
-
-.cards-grid .action-card-square {
-    flex: 0 0 auto;
-}
 
 .popup-badge {
     display: inline-flex;
