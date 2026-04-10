@@ -2474,6 +2474,9 @@ function renderForging() {
 
     // 初始化锻造标签切换
     initForgingTabs();
+    
+    // 初始渲染工具列表（虽然可能隐藏）
+    renderToolForge();
 }
 
 /**

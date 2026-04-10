@@ -2948,13 +2948,19 @@ body::after {
     color: #4CAF50;
 }
 
-/* 锻造页面需要标签切换，所以默认隐藏 */
-#forging-ingots-list,
+/* 锻造页面标签切换 - 默认显示矿锭，隐藏工具 */
+#forging-ingots-list {
+    display: flex !important;
+}
+
 #forging-tools-list {
     display: none !important;
 }
 
-#forging-ingots-list.active,
+#forging-ingots-list.active {
+    display: flex !important;
+}
+
 #forging-tools-list.active {
     display: flex !important;
 }
