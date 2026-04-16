@@ -173,6 +173,16 @@ const CONFIG = {
         { id: 'dream_cloth', name: '梦幻布料', icon: '✨', reqLevel: 95, duration: 25000, exp: 72.5, materials: { life_fiber: 2 } }
     ],
     
+    // 丝线配置
+    threads: [
+        { id: 'jute_thread', name: '黄麻线', icon: '🧵', reqLevel: 1, duration: 6000, exp: 5, materials: { jute: 2 }, tokenRate: 0.017 },
+        { id: 'linen_thread', name: '亚麻线', icon: '🧶', reqLevel: 15, duration: 8000, exp: 10, materials: { flax: 2 }, tokenRate: 0.032 },
+        { id: 'wool_thread', name: '羊毛线', icon: '🧶', reqLevel: 35, duration: 12000, exp: 20, materials: { wool: 2 }, tokenRate: 0.053 },
+        { id: 'silk_thread', name: '蚕丝线', icon: '🎀', reqLevel: 55, duration: 15000, exp: 32.5, materials: { silk: 2 }, tokenRate: 0.078 },
+        { id: 'wind_thread', name: '风语丝线', icon: '💨', reqLevel: 75, duration: 18000, exp: 50, materials: { wind_velvet: 2 }, tokenRate: 0.126 },
+        { id: 'dream_thread', name: '梦幻丝线', icon: '✨', reqLevel: 95, duration: 25000, exp: 72.5, materials: { life_fiber: 2 }, tokenRate: 0.195 }
+    ],
+    
     // 药水配置
     potions: [
         { id: 'hp_potion_1', name: '素级生命药水', icon: '🧪', reqLevel: 1, duration: 6000, exp: 4, materials: { sweet_berry: 1, blood_rose: 1, honey: 4 } },
@@ -566,6 +576,7 @@ const ITEM_TYPES = {
     PLANK: { inventoryKey: 'planksInventory', name: '木板' },
     MANUSCRIPT: { inventoryKey: 'manuscriptsInventory', name: '手稿' },
     INGOT: { inventoryKey: 'ingotsInventory', name: '矿锭' },
+    THREAD: { inventoryKey: 'threadsInventory', name: '丝线' },
     FABRIC: { inventoryKey: 'fabricsInventory', name: '布料' },
     POTION: { inventoryKey: 'potionsInventory', name: '药水' },
     ESSENCE: { inventoryKey: 'essencesInventory', name: '精华' },
@@ -646,6 +657,17 @@ const ACTION_TYPES = {
         expKey: 'tailoringExp',
         inventoryKey: 'fabricsInventory',
         resultType: 'FABRIC',
+        materialType: 'GATHERING',
+        needsMaterials: true
+    },
+    TAILORING_THREAD: {
+        id: 'tailoring_thread',
+        name: '丝线',
+        configKey: 'threads',
+        skillKey: 'tailoringLevel',
+        expKey: 'tailoringExp',
+        inventoryKey: 'threadsInventory',
+        resultType: 'THREAD',
         materialType: 'GATHERING',
         needsMaterials: true
     },

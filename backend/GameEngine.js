@@ -46,6 +46,7 @@ class GameEngine {
             gatheringInventory: {},
             planksInventory: {},
             manuscriptsInventory: {},
+            threadsInventory: {},
             ingotsInventory: {},
             fabricsInventory: {},
             potionsInventory: {},
@@ -379,6 +380,9 @@ class GameEngine {
         
         // 手稿类型
         if (matId === 'manuscript') return 'MANUSCRIPT';
+        
+        // 丝线类型
+        if (matId.endsWith('_thread')) return 'THREAD';
         
         // 矿锭类型
         const ingotTypes = ['cyan_ingot', 'red_copper_ingot', 'feather_ingot', 'white_silver_ingot', 'hell_steel_ingot', 'thunder_steel_ingot', 'brilliant_crystal', 'star_crystal'];

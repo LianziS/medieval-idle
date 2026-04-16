@@ -4696,12 +4696,16 @@ body::after {
 
 /* 制作列表显示控制 */
 #crafting-planks-list,
-#crafting-manuscripts-list {
+#crafting-manuscripts-list,
+#tailoring-fabrics-list,
+#tailoring-threads-list {
     display: none !important;
 }
 
 #crafting-planks-list.active,
-#crafting-manuscripts-list.active {
+#crafting-manuscripts-list.active,
+#tailoring-fabrics-list.active,
+#tailoring-threads-list.active {
     display: flex !important;
     flex-direction: row;
     flex-wrap: wrap;
@@ -4711,7 +4715,6 @@ body::after {
 
 .forging-ingots-list,
 .forging-tools-list,
-.tailoring-fabrics-list,
 .alchemy-potions-list,
 .alchemy-essences-list,
 .brewing-brews-list,

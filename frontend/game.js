@@ -2090,6 +2090,12 @@ function getResourceName(resourceId) {
         'silk_cloth': '丝绸布料',
         'wind_silk': '风语丝绸',
         'dream_cloth': '梦幻布料',
+        'jute_thread': '黄麻线',
+        'linen_thread': '亚麻线',
+        'wool_thread': '羊毛线',
+        'silk_thread': '蚕丝线',
+        'wind_thread': '风语丝线',
+        'dream_thread': '梦幻丝线',
 
         // 采集物类
         'sweet_berry': '甜浆果',
@@ -2619,36 +2625,80 @@ function initForgingTabs() {
  * 渲染缝制列表
  */
 function renderTailoring() {
-    if (!elements.tailoringList || !gameState) return;
-    if (!CONFIG || !CONFIG.fabrics) {
-        console.warn('renderTailoring: CONFIG.fabrics 未加载');
-        return;
-    }
+    if (!gameState || !CONFIG) return;
 
     const level = gameState.tailoringLevel || 1;
 
-    elements.tailoringList.innerHTML = CONFIG.fabrics.map(fabric => {
-        const unlocked = level >= fabric.reqLevel;
-        const isActive = gameState.activeAction?.type === 'TAILORING' && gameState.activeAction?.id === fabric.id;
+    // 渲染布料列表
+    const fabricsList = document.getElementById('tailoring-fabrics-list');
+    if (fabricsList && CONFIG.fabrics) {
+        fabricsList.innerHTML = CONFIG.fabrics.map(fabric => {
+            const unlocked = level >= fabric.reqLevel;
+            const isActive = gameState.activeAction?.type === 'TAILORING' && gameState.activeAction?.id === fabric.id;
 
-        return `
-            <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
-                 data-action="tailoring" data-id="${fabric.id}">
-                <div class="card-name">${fabric.name}</div>
-                <div class="card-icon">${fabric.icon}</div>
-            </div>
-        `;
-    }).join('');
+            return `
+                <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
+                     data-action="TAILORING" data-id="${fabric.id}">
+                    <div class="card-name">${fabric.name}</div>
+                    <div class="card-icon">${fabric.icon}</div>
+                </div>
+            `;
+        }).join('');
 
-    // 添加横行布局容器
-    elements.tailoringList.classList.add('cards-grid');
+        fabricsList.classList.add('cards-grid');
 
-    elements.tailoringList.querySelectorAll('.action-card-square').forEach(card => {
-        card.addEventListener('click', () => {
-            const fabricId = card.dataset.id;
-            openActionModal('TAILORING', fabricId);
+        fabricsList.querySelectorAll('.action-card-square').forEach(card => {
+            card.addEventListener('click', () => {
+                const fabricId = card.dataset.id;
+                openActionModal('TAILORING', fabricId);
+            });
         });
-    });
+    }
+
+    // 渲染丝线列表
+    const threadsList = document.getElementById('tailoring-threads-list');
+    if (threadsList && CONFIG.threads) {
+        threadsList.innerHTML = CONFIG.threads.map(thread => {
+            const unlocked = level >= thread.reqLevel;
+            const isActive = gameState.activeAction?.type === 'TAILORING_THREAD' && gameState.activeAction?.id === thread.id;
+
+            return `
+                <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
+                     data-action="TAILORING_THREAD" data-id="${thread.id}">
+                    <div class="card-name">${thread.name}</div>
+                    <div class="card-icon">${thread.icon}</div>
+                </div>
+            `;
+        }).join('');
+
+        threadsList.classList.add('cards-grid');
+
+        threadsList.querySelectorAll('.action-card-square').forEach(card => {
+            card.addEventListener('click', () => {
+                const threadId = card.dataset.id;
+                openActionModal('TAILORING_THREAD', threadId);
+            });
+        });
+    }
+
+    // 标签切换逻辑
+    const tabsContainer = document.getElementById('tailoring-tabs');
+    if (tabsContainer && !tabsContainer.dataset.inited) {
+        tabsContainer.dataset.inited = 'true';
+        tabsContainer.querySelectorAll('.gathering-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabsContainer.querySelectorAll('.gathering-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                const tabId = tab.dataset.tab;
+                const fabricsL = document.getElementById('tailoring-fabrics-list');
+                const threadsL = document.getElementById('tailoring-threads-list');
+
+                if (fabricsL) fabricsL.classList.toggle('active', tabId === 'fabrics');
+                if (threadsL) threadsL.classList.toggle('active', tabId === 'threads');
+            });
+        });
+    }
 }
 
 /**
@@ -3891,6 +3941,11 @@ const ITEM_VALUES = {
         jute_cloth: 16, linen_cloth: 32, wool_cloth: 96, silk_cloth: 112,
         wind_silk: 154, dream_cloth: 314
     },
+    // 丝线（价值与布料一致）
+    threads: {
+        jute_thread: 16, linen_thread: 32, wool_thread: 96, silk_thread: 112,
+        wind_thread: 154, dream_thread: 314
+    },
     // 精华
     essences: {
         mint_essence: 16, pine_essence: 32, vanilla_essence: 64, sage_essence: 96,
@@ -4229,6 +4284,7 @@ function openActionModal(type, id) {
         CRAFTING_MANUSCRIPT: CONFIG.manuscripts,
         FORGING: CONFIG.ingots,
         TAILORING: CONFIG.fabrics,
+        TAILORING_THREAD: CONFIG.threads,
         BREWING: CONFIG.brews,
         ALCHEMY: CONFIG.potions,
         ESSENCE: CONFIG.essences
@@ -4353,6 +4409,7 @@ function showActionModal(config) {
         CRAFTING_MANUSCRIPT: 'craftingLevel',
         FORGING: 'forgingLevel',
         TAILORING: 'tailoringLevel',
+        TAILORING_THREAD: 'tailoringLevel',
         ALCHEMY: 'alchemyLevel',
         BREWING: 'brewingLevel',
         ESSENCE: 'alchemyLevel'
@@ -4369,6 +4426,7 @@ function showActionModal(config) {
         CRAFTING_MANUSCRIPT: { icon: '📜', name: '手稿' },
         FORGING: { icon: '🔨', name: '锻造' },
         TAILORING: { icon: '🧵', name: '缝制' },
+        TAILORING_THREAD: { icon: '🧶', name: '丝线' },
         BREWING: { icon: '⚗️', name: '酿造' },
         ALCHEMY: { icon: '🔮', name: '炼金' },
         ESSENCE: { icon: '✨', name: '提炼' }
@@ -4864,6 +4922,12 @@ function formatCost(cost, separator = ' ') {
         'silk_cloth': '丝绸布料',
         'wind_silk': '风语丝绸',
         'dream_cloth': '梦幻布料',
+        'jute_thread': '黄麻线',
+        'linen_thread': '亚麻线',
+        'wool_thread': '羊毛线',
+        'silk_thread': '蚕丝线',
+        'wind_thread': '风语丝线',
+        'dream_thread': '梦幻丝线',
 
         // 采集物类
         'sweet_berry': '甜浆果',
