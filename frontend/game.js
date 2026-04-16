@@ -4226,6 +4226,7 @@ function openActionModal(type, id) {
         MINING: CONFIG.ores,
         GATHERING: CONFIG.gatheringLocations,
         CRAFTING: CONFIG.woodPlanks,
+        CRAFTING_MANUSCRIPT: CONFIG.manuscripts,
         FORGING: CONFIG.ingots,
         TAILORING: CONFIG.fabrics,
         BREWING: CONFIG.brews,
@@ -4234,7 +4235,10 @@ function openActionModal(type, id) {
     };
 
     const config = configs[type]?.find(c => c.id === id);
-    if (!config) return;
+    if (!config) {
+        console.warn('openActionModal: 未找到配置', type, id);
+        return;
+    }
 
     pendingAction = { type, id, name: config.name, icon: config.icon };
 
@@ -4346,6 +4350,7 @@ function showActionModal(config) {
         MINING: 'miningLevel',
         GATHERING: 'gatheringLevel',
         CRAFTING: 'craftingLevel',
+        CRAFTING_MANUSCRIPT: 'craftingLevel',
         FORGING: 'forgingLevel',
         TAILORING: 'tailoringLevel',
         ALCHEMY: 'alchemyLevel',
@@ -4361,6 +4366,7 @@ function showActionModal(config) {
         MINING: { icon: '⛏️', name: '挖矿' },
         GATHERING: { icon: '🌿', name: '采集' },
         CRAFTING: { icon: '🪵', name: '制作' },
+        CRAFTING_MANUSCRIPT: { icon: '📜', name: '手稿' },
         FORGING: { icon: '🔨', name: '锻造' },
         TAILORING: { icon: '🧵', name: '缝制' },
         BREWING: { icon: '⚗️', name: '酿造' },
