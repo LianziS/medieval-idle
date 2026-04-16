@@ -3422,7 +3422,10 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
         previewGrid.innerHTML = pendingSellItems.map(item => `
             <div class="preview-card" data-item-type="${item.type}" data-item-id="${item.id}" data-item-icon="${item.icon}" data-item-name="${item.name}" data-item-count="${item.sellCount}" data-item-price="${item.price}">
                 <span class="preview-icon">${item.icon}</span>
-                <span class="preview-count">${item.sellCount}</span>
+                <div class="preview-info">
+                    <span class="preview-count">${item.sellCount}</span>
+                    <span class="preview-gold">💰${item.price * item.sellCount}</span>
+                </div>
             </div>
         `).join('') || '<div class="preview-empty">点击物品添加到待售</div>';
 

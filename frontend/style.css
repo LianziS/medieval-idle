@@ -2404,9 +2404,21 @@ body::after {
     font-size: 16px;
 }
 
+.preview-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+}
+
 .preview-count {
     font-size: 8px;
     color: #e2e8f0;
+}
+
+.preview-gold {
+    font-size: 7px;
+    color: #ffd700;
 }
 
 .preview-empty {
