@@ -3235,7 +3235,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
     // 关闭函数（带动画）
     const closeModal = () => {
         modal.classList.remove('active');
-        setTimeout(() => modal.remove(), 300);
+        setTimeout(() => modal.remove(), 400);
     };
 
     // 绑定事件

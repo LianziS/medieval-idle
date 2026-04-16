@@ -2061,7 +2061,8 @@ body::after {
     pointer-events: none;
     display: flex;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: opacity;
 }
 
 .merchant-modal.active {
@@ -2080,7 +2081,8 @@ body::after {
     z-index: 1;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: opacity;
 }
 
 .merchant-modal.active .merchant-modal-overlay {
@@ -2102,7 +2104,8 @@ body::after {
     overflow: hidden;
     box-shadow: 0 0 0 1px #2d3748, 0 0 20px rgba(74, 85, 104, 0.2), inset 0 0 40px rgba(0, 0, 0, 0.3);
     transform: translateX(100%);
-    transition: transform 0.3s ease;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, opacity;
 }
 
 .merchant-modal.active .merchant-modal-panel {
