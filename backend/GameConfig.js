@@ -197,7 +197,11 @@ const CONFIG = {
         { id: 'crafting_ale', name: '制作麦酒', icon: '🍺', reqLevel: 14, duration: 10000, exp: 18, materials: { wheat: 1, vanilla_essence: 1, crafting_token: 1 } },
         { id: 'tailoring_beer', name: '缝制啤酒', icon: '🍻', reqLevel: 17, duration: 10000, exp: 21, materials: { hops: 1, vanilla_essence: 1, tailoring_token: 1 } },
         { id: 'alchemy_beer', name: '炼金啤酒', icon: '🍻', reqLevel: 20, duration: 10000, exp: 24, materials: { hops: 1, sage_essence: 1, alchemy_token: 1 } },
-        { id: 'brewing_wine', name: '酿造果酒', icon: '🍷', reqLevel: 20, duration: 10000, exp: 24, materials: { apple: 1, sage_essence: 1, brewing_token: 1 } }
+        { id: 'brewing_wine', name: '酿造果酒', icon: '🍷', reqLevel: 20, duration: 10000, exp: 24, materials: { apple: 1, sage_essence: 1, brewing_token: 1 } },
+        // 酒箱系列
+        { id: 'beginner_wine_box', name: '初级酒箱', icon: '📦', reqLevel: 10, duration: 22000, exp: 40, materials: { sweet_berry: 40, wheat: 40, mint_essence: 20, pine_essence: 20 }, tokenRate: 0.055 },
+        { id: 'intermediate_wine_box', name: '中级酒箱', icon: '📦', reqLevel: 35, duration: 34000, exp: 115, materials: { hops: 40, apple: 40, vanilla_essence: 20, sage_essence: 20 }, tokenRate: 0.10 },
+        { id: 'advanced_wine_box', name: '高级酒箱', icon: '📦', reqLevel: 65, duration: 60000, exp: 280, materials: { grape: 40, rye: 40, chili_essence: 20, mist_essence: 20 }, tokenRate: 0.14 }
     ],
     
     // 精华配置（提炼功能）

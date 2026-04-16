@@ -568,11 +568,20 @@ class GameEngine {
         }
         // 注意：锻造矿锭冶炼使用 standard 概率，锻造工具在 completeForgeOnce 中单独处理
         
-        // 根据等级获取概率（每10级一个区间）
-        const skillKey = actionType.skillKey;
-        const level = this.state[skillKey] || 1;
-        const levelIndex = Math.min(Math.floor((level - 1) / 10), rateTable.length - 1);
-        const dropRate = rateTable[levelIndex];
+        // 检查是否有固定代币掉落率（酒箱系列）
+        const fixedTokenRate = item.tokenRate;
+        let dropRate;
+        
+        if (fixedTokenRate !== undefined) {
+            // 使用固定概率（酒箱）
+            dropRate = fixedTokenRate;
+        } else {
+            // 根据等级获取概率（每10级一个区间）
+            const skillKey = actionType.skillKey;
+            const level = this.state[skillKey] || 1;
+            const levelIndex = Math.min(Math.floor((level - 1) / 10), rateTable.length - 1);
+            dropRate = rateTable[levelIndex];
+        }
         
         if (Math.random() < dropRate) {
             // 代币ID映射
