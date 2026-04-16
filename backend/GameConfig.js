@@ -177,7 +177,15 @@ const CONFIG = {
         { id: 'hp_potion_3', name: '中级生命药水', icon: '🧪', reqLevel: 20, duration: 7500, exp: 12, materials: { hops: 1, red_serpent_fruit: 1, blossom_honey: 4 } },
         { id: 'mp_potion_3', name: '中级魔法药水', icon: '💧', reqLevel: 20, duration: 7500, exp: 12, materials: { hops: 1, moonlight_mushroom: 1, blossom_honey: 4 } },
         { id: 'hp_potion_4', name: '优级生命药水', icon: '🧪', reqLevel: 35, duration: 8250, exp: 18, materials: { apple: 1, red_serpent_fruit: 1, blossom_honey: 4 } },
-        { id: 'mp_potion_4', name: '优级魔法药水', icon: '💧', reqLevel: 35, duration: 8250, exp: 18, materials: { apple: 1, moonlight_mushroom: 1, blossom_honey: 4 } }
+        { id: 'mp_potion_4', name: '优级魔法药水', icon: '💧', reqLevel: 35, duration: 8250, exp: 18, materials: { apple: 1, moonlight_mushroom: 1, blossom_honey: 4 } },
+        { id: 'hp_potion_5', name: '高级生命药水', icon: '🧪', reqLevel: 50, duration: 9000, exp: 24, materials: { grape: 1, wild_heart: 1, moonlight_honey: 4 } },
+        { id: 'mp_potion_5', name: '高级魔法药水', icon: '💧', reqLevel: 50, duration: 9000, exp: 24, materials: { grape: 1, soul_herb: 1, moonlight_honey: 4 } },
+        { id: 'hp_potion_6', name: '特级生命药水', icon: '🧪', reqLevel: 65, duration: 10500, exp: 32, materials: { rye: 1, wild_heart: 1, moonlight_honey: 4 } },
+        { id: 'mp_potion_6', name: '特级魔法药水', icon: '💧', reqLevel: 65, duration: 10500, exp: 32, materials: { rye: 1, soul_herb: 1, moonlight_honey: 4 } },
+        { id: 'hp_potion_7', name: '珍级生命药水', icon: '🧪', reqLevel: 80, duration: 12000, exp: 40, materials: { mist_fruit: 1, bewitch_berry: 1, rock_rose_honey: 4 } },
+        { id: 'mp_potion_7', name: '珍级魔法药水', icon: '💧', reqLevel: 80, duration: 12000, exp: 40, materials: { mist_fruit: 1, bewitch_berry: 1, rock_rose_honey: 4 } },
+        { id: 'hp_potion_8', name: '至级生命药水', icon: '🧪', reqLevel: 95, duration: 13500, exp: 50, materials: { dragon_blood_fruit: 1, bewitch_berry: 1, rock_rose_honey: 4 } },
+        { id: 'mp_potion_8', name: '至级魔法药水', icon: '💧', reqLevel: 95, duration: 13500, exp: 50, materials: { dragon_blood_fruit: 1, bewitch_berry: 1, rock_rose_honey: 4 } }
     ],
     
     // 酒类配置
