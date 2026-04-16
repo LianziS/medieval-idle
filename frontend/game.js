@@ -626,7 +626,7 @@ function setupSocket() {
                 'cyan_ingot': '青闪锭', 'red_copper_ingot': '赤铜锭', 'feather_ingot': '羽铁锭',
                 'white_silver_ingot': '白银锭', 'hell_steel_ingot': '狱炎钢锭', 'thunder_steel_ingot': '雷鸣钢锭',
                 'brilliant_crystal': '璀璨晶', 'star_crystal': '星辉晶',
-                'cyan_ore': '青闪矿', 'red_iron': '赤铁矿', 'feather_ore': '羽石矿',
+                'cyan_ore': '青闪矿', 'red_iron': '赤铁矿', 'feather_ore': '轻羽石矿',
                 'hell_ore': '狱炎矿', 'white_ore': '白鸠矿', 'thunder_ore': '雷鸣矿',
                 'brilliant': '璀璨矿', 'star_ore': '星辉矿',
                 'pine_plank': '青杉木板', 'iron_birch_plank': '铁桦木板', 'wind_tree_plank': '风啸木板',
@@ -2028,13 +2028,13 @@ function getResourceName(resourceId) {
         'gold': '金币',
 
         // 木材类
-        'pine': '青杉木',
-        'iron_birch': '铁桦木',
-        'wind_tree': '风啸木',
-        'flame_tree': '焰心木',
-        'frost_maple': '霜叶枫木',
-        'thunder_tree': '雷鸣木',
-        'ancient_oak': '古橡木',
+        'pine': '青衫原木',
+        'iron_birch': '铁桦原木',
+        'wind_tree': '风啸原木',
+        'flame_tree': '焰心原木',
+        'frost_maple': '霜叶原木',
+        'thunder_tree': '雷鸣原木',
+        'ancient_oak': '古橡原木',
         'world_tree': '世界树枝',
 
         // 木板类
@@ -2050,7 +2050,7 @@ function getResourceName(resourceId) {
         // 矿石类
         'cyan_ore': '青闪石',
         'red_iron': '赤铁石',
-        'feather_ore': '羽石',
+        'feather_ore': '轻羽石',
         'hell_ore': '狱炎石',
         'white_ore': '白鸠石',
         'thunder_ore': '雷鸣石',
@@ -2060,7 +2060,7 @@ function getResourceName(resourceId) {
         // 矿锭类
         'cyan_ingot': '青闪锭',
         'red_copper_ingot': '赤铜锭',
-        'feather_ingot': '羽石锭',
+        'feather_ingot': '轻羽锭',
         'white_silver_ingot': '白银锭',
         'hell_steel_ingot': '白鸠钢锭',
         'thunder_steel_ingot': '雷鸣钢锭',
@@ -2072,7 +2072,7 @@ function getResourceName(resourceId) {
         'linen_cloth': '亚麻布料',
         'wool_cloth': '羊毛布料',
         'silk_cloth': '丝绸布料',
-        'wind_silk': '风丝绸',
+        'wind_silk': '风语丝绸',
         'dream_cloth': '梦幻布料',
 
         // 采集物类
@@ -2096,7 +2096,7 @@ function getResourceName(resourceId) {
         'moonlight_mushroom': '月光菇',
         'wool': '羊毛',
         'falcon_tail_feather': '隼尾羽',
-        'silk': '丝绸原料',
+        'silk': '蚕茧',
 
         // 更多采集物
         'chili': '辣椒',
@@ -4731,13 +4731,13 @@ function formatCost(cost, separator = ' ') {
         'gold': '金币',
 
         // 木材类
-        'pine': '青杉木',
-        'iron_birch': '铁桦木',
-        'wind_tree': '风啸木',
-        'flame_tree': '焰心木',
-        'frost_maple': '霜叶枫木',
-        'thunder_tree': '雷鸣木',
-        'ancient_oak': '古橡木',
+        'pine': '青衫原木',
+        'iron_birch': '铁桦原木',
+        'wind_tree': '风啸原木',
+        'flame_tree': '焰心原木',
+        'frost_maple': '霜叶原木',
+        'thunder_tree': '雷鸣原木',
+        'ancient_oak': '古橡原木',
         'world_tree': '世界树枝',
 
         // 木板类
@@ -4753,7 +4753,7 @@ function formatCost(cost, separator = ' ') {
         // 矿石类
         'cyan_ore': '青闪石',
         'red_iron': '赤铁石',
-        'feather_ore': '羽石',
+        'feather_ore': '轻羽石',
         'hell_ore': '狱炎石',
         'white_ore': '白鸠石',
         'thunder_ore': '雷鸣石',
@@ -4763,7 +4763,7 @@ function formatCost(cost, separator = ' ') {
         // 矿锭类
         'cyan_ingot': '青闪锭',
         'red_copper_ingot': '赤铜锭',
-        'feather_ingot': '羽石锭',
+        'feather_ingot': '轻羽锭',
         'white_silver_ingot': '白银锭',
         'hell_steel_ingot': '白鸠钢锭',
         'thunder_steel_ingot': '雷鸣钢锭',
@@ -4775,7 +4775,7 @@ function formatCost(cost, separator = ' ') {
         'linen_cloth': '亚麻布料',
         'wool_cloth': '羊毛布料',
         'silk_cloth': '丝绸布料',
-        'wind_silk': '风丝绸',
+        'wind_silk': '风语丝绸',
         'dream_cloth': '梦幻布料',
 
         // 采集物类
@@ -5391,7 +5391,7 @@ function updateCurrentFees(toolId, toolType) {
     const materialNames = {
         'cyan_ingot': '青闪锭', 'red_copper_ingot': '赤铜锭', 'feather_ingot': '羽铁锭',
         'white_silver_ingot': '白银锭', 'hell_steel_ingot': '狱炎钢锭', 'thunder_steel_ingot': '雷鸣钢锭',
-        'cyan_ore': '青闪矿', 'red_iron': '赤铁矿', 'feather_ore': '羽石矿',
+        'cyan_ore': '青闪矿', 'red_iron': '赤铁矿', 'feather_ore': '轻羽石矿',
         'pine_plank': '青杉木板', 'iron_birch_plank': '铁桦木板', 'wind_tree_plank': '风啸木板'
     };
 
@@ -5972,7 +5972,7 @@ function showMaterialPopover(triggerElement) {
         'cyan_ingot': '青闪锭', 'red_copper_ingot': '赤铜锭', 'feather_ingot': '羽铁锭',
         'white_silver_ingot': '白银锭', 'hell_steel_ingot': '狱炎钢锭', 'thunder_steel_ingot': '雷鸣钢锭',
         'brilliant_crystal': '璀璨晶', 'star_crystal': '星辉晶',
-        'cyan_ore': '青闪矿', 'red_iron': '赤铁矿', 'feather_ore': '羽石矿',
+        'cyan_ore': '青闪矿', 'red_iron': '赤铁矿', 'feather_ore': '轻羽石矿',
         'white_ore': '白鸠矿', 'hell_ore': '狱炎矿', 'thunder_ore': '雷鸣矿',
         'brilliant': '璀璨矿', 'star_ore': '星辉矿',
         'pine_plank': '青杉木板', 'iron_birch_plank': '铁桦木板', 'wind_tree_plank': '风啸木板',
