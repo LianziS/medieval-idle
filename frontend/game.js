@@ -3778,6 +3778,19 @@ function showRemovePopup(card, modal, pendingSellItems, updateSellPreview) {
 
         popup.remove();
     });
+
+    // 点击其他地方关闭弹出框
+    const closePopupOnClickOutside = (e) => {
+        if (!popup.contains(e.target) && !card.contains(e.target)) {
+            popup.remove();
+            document.removeEventListener('click', closePopupOnClickOutside);
+        }
+    };
+    
+    // 延迟添加监听器，避免当前点击立即触发
+    setTimeout(() => {
+        document.addEventListener('click', closePopupOnClickOutside);
+    }, 10);
 }
 
 /**

@@ -2406,9 +2406,9 @@ body::after {
 
 .preview-info {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 1px;
+    gap: 4px;
 }
 
 .preview-count {
@@ -2417,7 +2417,7 @@ body::after {
 }
 
 .preview-gold {
-    font-size: 7px;
+    font-size: 8px;
     color: #ffd700;
 }
 
