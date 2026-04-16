@@ -204,7 +204,7 @@ class GameEngine {
             3689099031, 4027993033, 4396979184, 4798675471, 5235923207, 5711805728, 6229668624, 6793141628, 7406162301, 8073001662,
             8798291902, 9587056372, 10444742007, 11377254401, 12390995728, 13492905745, 14690506120, 15991948361, 17406065609, 18942428633,
             20611406335, 22424231139, 24393069640, 26531098945, 28852589138, 31372992363, 34109039054, 37078841860, 40302007875, 43799759843,
-            47595067021, 51712786465, 56179815564, 61025256696, 66280594953, 71979889960, 78159982881, 84860719814, 9225192822, 100000000000
+            47595067021, 51712786465, 56179815564, 61025256696, 66280594953, 71979889960, 78159982881, 84860719814, 92251928220, 100000000000
         ];
         
         // 从 Lv.level 升到 Lv.level+1 所需经验 = cumulativeExp[level] - cumulativeExp[level-1]
@@ -459,7 +459,12 @@ class GameEngine {
             if (item.materials) {
                 const materialType = actionType.materialType || 'WOOD';
                 for (const [matId, count] of Object.entries(item.materials)) {
-                    this.removeItem(materialType, matId, count);
+                    // 特殊处理代币类型（酿造需要代币作为材料）
+                    if (matId.endsWith('_token')) {
+                        this.removeItem('TOKEN', matId, count);
+                    } else {
+                        this.removeItem(materialType, matId, count);
+                    }
                 }
             }
             // 添加产物
@@ -1089,7 +1094,12 @@ class GameEngine {
         }
         if (materials.prevTool) {
             const prevTools = this.state.toolsInventory[toolsKey] || [];
-            if (!prevTools.includes(materials.prevTool)) {
+            // 兼容对象格式的工具（强化过的工具）
+            const hasPrevTool = prevTools.some(t => {
+                const id = typeof t === 'string' ? t : t.id;
+                return id === materials.prevTool;
+            });
+            if (!hasPrevTool) {
                 this.state.activeAction = null;
                 return { success: false, reason: '需要前置工具', stopped: true };
             }
@@ -1110,7 +1120,11 @@ class GameEngine {
         }
         if (materials.prevTool) {
             const prevTools = this.state.toolsInventory[toolsKey] || [];
-            const idx = prevTools.indexOf(materials.prevTool);
+            // 兼容对象格式的工具（强化过的工具）
+            const idx = prevTools.findIndex(t => {
+                const id = typeof t === 'string' ? t : t.id;
+                return id === materials.prevTool;
+            });
             if (idx !== -1) prevTools.splice(idx, 1);
         }
         
@@ -1231,7 +1245,11 @@ class GameEngine {
         }
         if (materials.prevTool) {
             const prevTools = this.state.toolsInventory[toolsKey] || [];
-            const prevCount = prevTools.filter(id => id === materials.prevTool).length;
+            // 兼容对象格式的工具（强化过的工具）
+            const prevCount = prevTools.filter(t => {
+                const id = typeof t === 'string' ? t : t.id;
+                return id === materials.prevTool;
+            }).length;
             maxByPrevTool = prevCount;
         }
         
@@ -1287,7 +1305,11 @@ class GameEngine {
         // 检查前置工具
         if (materials.prevTool) {
             const prevTools = this.state.toolsInventory[toolsKey] || [];
-            const prevIndex = prevTools.indexOf(materials.prevTool);
+            // 兼容对象格式的工具（强化过的工具）
+            const prevIndex = prevTools.findIndex(t => {
+                const id = typeof t === 'string' ? t : t.id;
+                return id === materials.prevTool;
+            });
             if (prevIndex === -1) {
                 return { success: false, reason: '需要前置工具' };
             }

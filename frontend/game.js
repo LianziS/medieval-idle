@@ -627,7 +627,7 @@ function setupSocket() {
                 'white_silver_ingot': '白银锭', 'hell_steel_ingot': '狱炎钢锭', 'thunder_steel_ingot': '雷鸣钢锭',
                 'brilliant_crystal': '璀璨晶', 'star_crystal': '星辉晶',
                 'cyan_ore': '青闪矿', 'red_iron': '赤铁矿', 'feather_ore': '羽石矿',
-                'hell_ore': '白鸠矿', 'white_ore': '狱炎矿', 'thunder_ore': '雷鸣矿',
+                'hell_ore': '狱炎矿', 'white_ore': '白鸠矿', 'thunder_ore': '雷鸣矿',
                 'brilliant': '璀璨矿', 'star_ore': '星辉矿',
                 'pine_plank': '青杉木板', 'iron_birch_plank': '铁桦木板', 'wind_tree_plank': '风啸木板',
                 'flame_tree_plank': '焰心木板', 'frost_maple_plank': '霜叶枫木板', 'thunder_tree_plank': '雷鸣木板',
@@ -1352,7 +1352,7 @@ function updateSkillDisplay() {
             3689099031, 4027993033, 4396979184, 4798675471, 5235923207, 5711805728, 6229668624, 6793141628, 7406162301, 8073001662,
             8798291902, 9587056372, 10444742007, 11377254401, 12390995728, 13492905745, 14690506120, 15991948361, 17406065609, 18942428633,
             20611406335, 22424231139, 24393069640, 26531098945, 28852589138, 31372992363, 34109039054, 37078841860, 40302007875, 43799759843,
-            47595067021, 51712786465, 56179815564, 61025256696, 66280594953, 71979889960, 78159982881, 84860719814, 9225192822, 100000000000
+            47595067021, 51712786465, 56179815564, 61025256696, 66280594953, 71979889960, 78159982881, 84860719814, 92251928220, 100000000000
         ];
         
         // 从 Lv.level 升到 Lv.level+1 所需经验
@@ -2051,8 +2051,8 @@ function getResourceName(resourceId) {
         'cyan_ore': '青闪石',
         'red_iron': '赤铁石',
         'feather_ore': '羽石',
-        'hell_ore': '白鸠石',
-        'white_ore': '狱炎石',
+        'hell_ore': '狱炎石',
+        'white_ore': '白鸠石',
         'thunder_ore': '雷鸣石',
         'brilliant': '璀璨原石',
         'star_ore': '星辉原石',
@@ -4754,8 +4754,8 @@ function formatCost(cost, separator = ' ') {
         'cyan_ore': '青闪石',
         'red_iron': '赤铁石',
         'feather_ore': '羽石',
-        'hell_ore': '白鸠石',
-        'white_ore': '狱炎石',
+        'hell_ore': '狱炎石',
+        'white_ore': '白鸠石',
         'thunder_ore': '雷鸣石',
         'brilliant': '璀璨原石',
         'star_ore': '星辉原石',
