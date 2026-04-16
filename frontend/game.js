@@ -2016,8 +2016,10 @@ function getTokenChance(actionType, reqLevel) {
         MINING: 'standard',
         GATHERING: 'standard',
         CRAFTING: 'standard',
+        CRAFTING_MANUSCRIPT: 'standard',
         FORGING: 'standard',
         TAILORING: 'tailoring',
+        TAILORING_THREAD: 'tailoring',
         ALCHEMY: 'standard',
         BREWING: 'brewing',
         ESSENCE: 'standard'
@@ -4505,9 +4507,9 @@ function showActionModal(config) {
                                 const dropRange = maxCount === 1 ? '1' : `1-${maxCount}`;
                                 return `<span class="popup-drop-prefix">${dropRange}</span> <span class="popup-badge drop item-hover-card" data-item-id="${item.id}" data-item-type="GATHERING" data-item-name="${item.name}" data-item-icon="${item.icon}">${item.icon} ${item.name}</span> <span class="popup-drop-prob">30%</span>`;
                             }).join('<br>');
-                        })() : ['CRAFTING', 'FORGING', 'TAILORING', 'BREWING', 'ALCHEMY', 'ESSENCE'].includes(pendingAction?.type) ? (() => {
+                        })() : ['CRAFTING', 'CRAFTING_MANUSCRIPT', 'FORGING', 'TAILORING', 'TAILORING_THREAD', 'BREWING', 'ALCHEMY', 'ESSENCE'].includes(pendingAction?.type) ? (() => {
                             // 制作类行动：产出固定物品（数量为1）
-                            const itemTypeMap = {CRAFTING:'PLANK',FORGING:'INGOT',TAILORING:'FABRIC',BREWING:'BREW',ALCHEMY:'POTION',ESSENCE:'ESSENCE'};
+                            const itemTypeMap = {CRAFTING:'PLANK',CRAFTING_MANUSCRIPT:'MANUSCRIPT',FORGING:'INGOT',TAILORING:'FABRIC',TAILORING_THREAD:'THREAD',BREWING:'BREW',ALCHEMY:'POTION',ESSENCE:'ESSENCE'};
                             const productIcon = config.icon || '📦';
                             const productName = config.name || pendingAction.id;
                             return `<br><span class="popup-drop-prefix">1</span> <span class="popup-badge drop item-hover-card" data-item-id="${pendingAction.id}" data-item-type="${itemTypeMap[pendingAction.type]}" data-item-name="${productName}" data-item-icon="${productIcon}">${productIcon} ${productName}</span>`;
@@ -4520,12 +4522,12 @@ function showActionModal(config) {
                     </div>
                 </div>
                 
-                ${['WOODCUTTING', 'MINING', 'GATHERING', 'CRAFTING', 'FORGING', 'TAILORING', 'ALCHEMY', 'BREWING', 'ESSENCE'].includes(pendingAction?.type) ? `
+                ${['WOODCUTTING', 'MINING', 'GATHERING', 'CRAFTING', 'CRAFTING_MANUSCRIPT', 'FORGING', 'TAILORING', 'TAILORING_THREAD', 'ALCHEMY', 'BREWING', 'ESSENCE'].includes(pendingAction?.type) ? `
                 <div class="popup-info-row">
                     <div class="popup-info-label"><span class="lbl-icon">🪙</span>代币</div>
                     <div class="popup-info-val">
                         <span class="popup-token-prefix">1</span> 
-                        <span class="popup-badge token item-hover-card" data-item-id="${{WOODCUTTING:'wood_token',MINING:'mining_token',GATHERING:'gathering_token',CRAFTING:'crafting_token',FORGING:'forging_token',TAILORING:'tailoring_token',ALCHEMY:'alchemy_token',BREWING:'brewing_token',ESSENCE:'gathering_token'}[pendingAction.type]}" data-item-type="TOKEN" data-item-name="${actionType.name}代币" data-item-icon="🪙">${actionType.icon} ${actionType.name}代币</span>
+                        <span class="popup-badge token item-hover-card" data-item-id="${{WOODCUTTING:'wood_token',MINING:'mining_token',GATHERING:'gathering_token',CRAFTING:'crafting_token',CRAFTING_MANUSCRIPT:'crafting_token',FORGING:'forging_token',TAILORING:'tailoring_token',TAILORING_THREAD:'tailoring_token',ALCHEMY:'alchemy_token',BREWING:'brewing_token',ESSENCE:'alchemy_token'}[pendingAction.type]}" data-item-type="TOKEN" data-item-name="${actionType.name}代币" data-item-icon="🪙">${actionType.icon} ${actionType.name}代币</span>
                         <span class="popup-token-prob">~${config.tokenRate ? (() => {
                         const r = Math.round(config.tokenRate * 100 * 100) / 100;
                         return r % 1 === 0 ? r : r.toString().replace(/\.?0+$/, '');
