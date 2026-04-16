@@ -124,6 +124,7 @@ function cacheElements() {
     elements.storageGatheringItems = document.getElementById('storage-gathering-items');
     elements.storagePlanksItems = document.getElementById('storage-planks-items');
     elements.storageIngotsItems = document.getElementById('storage-ingots-items');
+    elements.storageManuscriptsItems = document.getElementById('storage-manuscripts-items');
 }
 
 /**
@@ -2455,36 +2456,80 @@ function openGatheringItemModal(locId, itemId) {
  * 渲染制作列表
  */
 function renderCrafting() {
-    if (!elements.craftingList || !gameState) return;
-    if (!CONFIG || !CONFIG.woodPlanks) {
-        console.warn('renderCrafting: CONFIG.woodPlanks 未加载');
-        return;
-    }
+    if (!gameState || !CONFIG) return;
 
     const level = gameState.craftingLevel || 1;
 
-    elements.craftingList.innerHTML = CONFIG.woodPlanks.map(plank => {
-        const unlocked = level >= plank.reqLevel;
-        const isActive = gameState.activeAction?.type === 'CRAFTING' && gameState.activeAction?.id === plank.id;
+    // 渲染木板列表
+    const planksList = document.getElementById('crafting-planks-list');
+    if (planksList && CONFIG.woodPlanks) {
+        planksList.innerHTML = CONFIG.woodPlanks.map(plank => {
+            const unlocked = level >= plank.reqLevel;
+            const isActive = gameState.activeAction?.type === 'CRAFTING' && gameState.activeAction?.id === plank.id;
 
-        return `
-            <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
-                 data-action="crafting" data-id="${plank.id}">
-                <div class="card-name">${plank.name}</div>
-                <div class="card-icon">${plank.icon}</div>
-            </div>
-        `;
-    }).join('');
+            return `
+                <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
+                     data-action="CRAFTING" data-id="${plank.id}">
+                    <div class="card-name">${plank.name}</div>
+                    <div class="card-icon">${plank.icon}</div>
+                </div>
+            `;
+        }).join('');
 
-    // 添加横行布局容器
-    elements.craftingList.classList.add('cards-grid');
+        planksList.classList.add('cards-grid');
 
-    elements.craftingList.querySelectorAll('.action-card-square').forEach(card => {
-        card.addEventListener('click', () => {
-            const plankId = card.dataset.id;
-            openActionModal('CRAFTING', plankId);
+        planksList.querySelectorAll('.action-card-square').forEach(card => {
+            card.addEventListener('click', () => {
+                const plankId = card.dataset.id;
+                openActionModal('CRAFTING', plankId);
+            });
         });
-    });
+    }
+
+    // 渲染手稿列表
+    const manuscriptsList = document.getElementById('crafting-manuscripts-list');
+    if (manuscriptsList && CONFIG.manuscripts) {
+        manuscriptsList.innerHTML = CONFIG.manuscripts.map(ms => {
+            const unlocked = level >= ms.reqLevel;
+            const isActive = gameState.activeAction?.type === 'CRAFTING_MANUSCRIPT' && gameState.activeAction?.id === ms.id;
+
+            return `
+                <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
+                     data-action="CRAFTING_MANUSCRIPT" data-id="${ms.id}">
+                    <div class="card-name">${ms.name}</div>
+                    <div class="card-icon">${ms.icon}</div>
+                </div>
+            `;
+        }).join('');
+
+        manuscriptsList.classList.add('cards-grid');
+
+        manuscriptsList.querySelectorAll('.action-card-square').forEach(card => {
+            card.addEventListener('click', () => {
+                const msId = card.dataset.id;
+                openActionModal('CRAFTING_MANUSCRIPT', msId);
+            });
+        });
+    }
+
+    // 标签切换逻辑
+    const tabsContainer = document.getElementById('crafting-tabs');
+    if (tabsContainer && !tabsContainer.dataset.inited) {
+        tabsContainer.dataset.inited = 'true';
+        tabsContainer.querySelectorAll('.gathering-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabsContainer.querySelectorAll('.gathering-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                const tabId = tab.dataset.tab;
+                const planksL = document.getElementById('crafting-planks-list');
+                const manuscriptsL = document.getElementById('crafting-manuscripts-list');
+
+                if (planksL) planksL.classList.toggle('active', tabId === 'planks');
+                if (manuscriptsL) manuscriptsL.classList.toggle('active', tabId === 'manuscripts');
+            });
+        });
+    }
 }
 
 /**
@@ -3608,6 +3653,11 @@ function renderInventories() {
     // 木板
     renderInventoryGrid('storage-planks-items', gameState.planksInventory, CONFIG.woodPlanks);
 
+    // 手稿
+    if (CONFIG.manuscripts) {
+        renderInventoryGrid('storage-manuscripts-items', gameState.manuscriptsInventory, CONFIG.manuscripts);
+    }
+
     // 矿锭
     renderInventoryGrid('storage-ingots-items', gameState.ingotsInventory, CONFIG.ingots);
 
@@ -3812,7 +3862,10 @@ const ITEM_VALUES = {
     // 木板
     planks: {
         pine_plank: 16, iron_birch_plank: 32, wind_tree_plank: 64, flame_tree_plank: 96,
-        frost_maple_plank: 112, thunder_tree_plank: 154, ancient_oak_plank: 240, world_tree_plank: 314,
+        frost_maple_plank: 112, thunder_tree_plank: 154, ancient_oak_plank: 240, world_tree_plank: 314
+    },
+    // 手稿
+    manuscripts: {
         manuscript: 260
     },
     // 矿锭

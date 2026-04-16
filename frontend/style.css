@@ -4695,6 +4695,7 @@ body::after {
 }
 
 .crafting-planks-list,
+.crafting-manuscripts-list,
 .forging-ingots-list,
 .forging-tools-list,
 .tailoring-fabrics-list,
@@ -4702,11 +4703,23 @@ body::after {
 .alchemy-essences-list,
 .brewing-brews-list,
 .brewing-aging-list {
-    display: flex !important;
-    flex-direction: row !important;
+    display: none;
+    flex-direction: row;
     flex-wrap: wrap;
     gap: 8px;
     padding: 10px;
+}
+
+.crafting-planks-list.active,
+.crafting-manuscripts-list.active,
+.forging-ingots-list.active,
+.forging-tools-list.active,
+.tailoring-fabrics-list.active,
+.alchemy-potions-list.active,
+.alchemy-essences-list.active,
+.brewing-brews-list.active,
+.brewing-aging-list.active {
+    display: flex !important;
 }
 
 /* ============ 商人面板样式（已整合到上方） ============ */

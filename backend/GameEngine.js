@@ -45,6 +45,7 @@ class GameEngine {
             miningInventory: {},
             gatheringInventory: {},
             planksInventory: {},
+            manuscriptsInventory: {},
             ingotsInventory: {},
             fabricsInventory: {},
             potionsInventory: {},
@@ -375,6 +376,9 @@ class GameEngine {
         
         // 木板类型
         if (matId.endsWith('_plank')) return 'PLANK';
+        
+        // 手稿类型
+        if (matId === 'manuscript') return 'MANUSCRIPT';
         
         // 矿锭类型
         const ingotTypes = ['cyan_ingot', 'red_copper_ingot', 'feather_ingot', 'white_silver_ingot', 'hell_steel_ingot', 'thunder_steel_ingot', 'brilliant_crystal', 'star_crystal'];
