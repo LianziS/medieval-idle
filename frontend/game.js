@@ -3517,7 +3517,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
         // 鼠标悬浮显示弹窗
         card.addEventListener('mouseenter', (e) => {
             hoverTimeout = setTimeout(() => {
-                showMerchantItemPopup(card, modal, sellPopupCards, pendingSellItems, pendingSellItems);
+                showMerchantItemPopup(card, modal, sellPopupCards, pendingSellItems, updateSellPreview);
             }, 300);
         });
         
@@ -3540,7 +3540,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
             sellPopupCards.forEach(popup => popup.remove());
             sellPopupCards.clear();
 
-            showMerchantItemPopup(card, modal, sellPopupCards, pendingSellItems, pendingSellItems);
+            showMerchantItemPopup(card, modal, sellPopupCards, pendingSellItems, updateSellPreview);
         });
     });
 
