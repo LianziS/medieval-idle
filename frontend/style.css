@@ -4694,8 +4694,9 @@ body::after {
     padding: 10px;
 }
 
-.crafting-planks-list,
-.crafting-manuscripts-list,
+/* 制作列表显示控制 */
+#crafting-planks-list,
+#crafting-manuscripts-list,
 .forging-ingots-list,
 .forging-tools-list,
 .tailoring-fabrics-list,
@@ -4710,8 +4711,8 @@ body::after {
     padding: 10px;
 }
 
-.crafting-planks-list.active,
-.crafting-manuscripts-list.active,
+#crafting-planks-list.active,
+#crafting-manuscripts-list.active,
 .forging-ingots-list.active,
 .forging-tools-list.active,
 .tailoring-fabrics-list.active,

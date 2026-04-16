@@ -63,9 +63,22 @@ async function init() {
 function setVersionTime() {
     const versionEl = document.getElementById('version-value');
     if (versionEl) {
-        // 使用固定的版本号（与 CSS/JS 文件版本号同步）
-        // 格式：MMDD HH:MM
-        versionEl.textContent = '0410 17:02';
+        // 从 CSS 文件 URL 中提取版本号
+        const cssLink = document.querySelector('link[href*="style.css?v=202604161609"]');
+        if (cssLink) {
+            const match = cssLink.href.match(/v=202604161609(\d+)/);
+            if (match) {
+                const ver = match[1]; // 如 202604161604
+                // 格式化为 MMDD HH:MM
+                const month = ver.substring(4, 6);
+                const day = ver.substring(6, 8);
+                const hour = ver.substring(8, 10);
+                const min = ver.substring(10, 12);
+                versionEl.textContent = `${month}${day} ${hour}:${min}`;
+            }
+        } else {
+            versionEl.textContent = '0416 16:04';
+        }
     }
 }
 
