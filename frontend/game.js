@@ -2005,7 +2005,8 @@ function getTokenChance(actionType, reqLevel) {
         FORGING: 'standard',
         TAILORING: 'tailoring',
         ALCHEMY: 'standard',
-        BREWING: 'brewing'
+        BREWING: 'brewing',
+        ESSENCE: 'standard'
     };
     
     const rateTable = tokenDropRates[rateTableMap[actionType]] || tokenDropRates.standard;
@@ -2013,10 +2014,11 @@ function getTokenChance(actionType, reqLevel) {
     // 根据物品所需等级获取概率（每10级一个区间）
     const itemReqLevel = reqLevel || 1;
     const levelIndex = Math.min(Math.floor((itemReqLevel - 1) / 10), rateTable.length - 1);
-    const dropRate = rateTable[levelIndex];
+    const dropRate = rateTable[levelIndex] * 100;
     
-    // 转换为百分比显示
-    return Math.round(dropRate * 1000) / 10;
+    // 保留两位小数
+    const rounded = Math.round(dropRate * 100) / 100;
+    return rounded % 1 === 0 ? rounded : rounded.toString().replace(/\.?0+$/, '');
 }
 
 /**
@@ -2834,10 +2836,13 @@ function openToolForgeModal(toolType, toolIndex) {
     // 计算代币概率
     const tokenDropRates = CONFIG.tokenDropRates?.tool || [0.017, 0.033, 0.061, 0.110, 0.196, 0.343, 0.590, 0.990];
     const levelIndex = Math.min(Math.floor((forgingLevel - 1) / 10), tokenDropRates.length - 1);
-    const tokenChance = Math.round(tokenDropRates[levelIndex] * 100);
+    const tokenRate = tokenDropRates[levelIndex] * 100;
+    const tokenChance = Math.round(tokenRate * 100) / 100;
+    const tokenChanceDisplay = tokenChance % 1 === 0 ? tokenChance : tokenChance.toString().replace(/\.?0+$/, '');
     
     // 连击概率
-    const comboChance = Math.max(0, forgingLevel - reqLevel);
+    const comboRate = Math.max(0, forgingLevel - reqLevel);
+    const comboChanceDisplay = comboRate % 1 === 0 ? comboRate : comboRate.toString().replace(/\.?0+$/, '');
 
     // 创建模态框
     const modal = document.createElement('div');
@@ -2905,13 +2910,13 @@ function openToolForgeModal(toolType, toolIndex) {
                     <div class="popup-info-val">
                         <span class="popup-token-prefix">1</span> 
                         <span class="popup-badge token">🔨 锻造代币</span>
-                        <span class="popup-token-prob">~${tokenChance}%</span>
+                        <span class="popup-token-prob">~${tokenChanceDisplay}%</span>
                     </div>
                 </div>
                 <div class="popup-info-row">
                     <div class="popup-info-label"><span class="lbl-icon">⚡</span>连击</div>
                     <div class="popup-info-val">
-                        <span class="popup-combo-chance">${comboChance}%</span>
+                        <span class="popup-combo-chance">${comboChanceDisplay}%</span>
                         <span class="popup-combo-desc">（等级差 × 1%）</span>
                     </div>
                 </div>
@@ -4390,7 +4395,10 @@ function showActionModal(config) {
                     <div class="popup-info-val">
                         <span class="popup-token-prefix">1</span> 
                         <span class="popup-badge token item-hover-card" data-item-id="${{WOODCUTTING:'wood_token',MINING:'mining_token',GATHERING:'gathering_token',CRAFTING:'crafting_token',FORGING:'forging_token',TAILORING:'tailoring_token',ALCHEMY:'alchemy_token',BREWING:'brewing_token',ESSENCE:'gathering_token'}[pendingAction.type]}" data-item-type="TOKEN" data-item-name="${actionType.name}代币" data-item-icon="🪙">${actionType.icon} ${actionType.name}代币</span>
-                        <span class="popup-token-prob">~${config.tokenRate ? Math.round(config.tokenRate * 100) : getTokenChance(pendingAction?.type, config.reqLevel)}%</span>
+                        <span class="popup-token-prob">~${config.tokenRate ? (() => {
+                        const r = Math.round(config.tokenRate * 100 * 100) / 100;
+                        return r % 1 === 0 ? r : r.toString().replace(/\.?0+$/, '');
+                    })() : getTokenChance(pendingAction?.type, config.reqLevel)}%</span>
                     </div>
                 </div>
                 <div class="popup-info-row">
