@@ -3120,7 +3120,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
     });
 
     const modal = document.createElement('div');
-    modal.className = 'merchant-modal active';
+    modal.className = 'merchant-modal';  // 先不添加 active
     modal.dataset.merchantId = merchantId;
 
     // 好感度百分比
@@ -3231,6 +3231,11 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
     `;
 
     document.body.appendChild(modal);
+
+    // 延迟添加 active 触发丝滑动画
+    requestAnimationFrame(() => {
+        modal.classList.add('active');
+    });
 
     // 关闭函数（带动画）
     const closeModal = () => {
