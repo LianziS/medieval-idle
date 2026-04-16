@@ -30,7 +30,7 @@ const CONFIG = {
     
     // 树木配置
     trees: [
-        { id: 'pine', name: '青杉树', icon: '🌲', reqLevel: 1, duration: 6000, drop: '青衫原木', dropIcon: '🪵', dropId: 'pine', exp: 5 },
+        { id: 'pine', name: '青杉树', icon: '🌲', reqLevel: 1, duration: 6000, drop: '青杉原木', dropIcon: '🪵', dropId: 'pine', exp: 5 },
         { id: 'iron_birch', name: '铁桦树', icon: '🌳', reqLevel: 10, duration: 8000, drop: '铁桦原木', dropIcon: '🪵', dropId: 'iron_birch', exp: 7.5 },
         { id: 'wind_tree', name: '风啸树', icon: '🌴', reqLevel: 20, duration: 10000, drop: '风啸原木', dropIcon: '🪵', dropId: 'wind_tree', exp: 12.5 },
         { id: 'flame_tree', name: '焰心树', icon: '🔥', reqLevel: 35, duration: 12000, drop: '焰心原木', dropIcon: '🪵', dropId: 'flame_tree', exp: 20 },
@@ -44,7 +44,7 @@ const CONFIG = {
     ores: [
         { id: 'cyan_ore', name: '青闪矿', icon: '💎', reqLevel: 1, duration: 6000, drop: '青闪石', dropIcon: '💎', dropId: 'cyan_ore', exp: 5 },
         { id: 'red_iron', name: '赤铁矿', icon: '🔴', reqLevel: 10, duration: 8000, drop: '赤铁石', dropIcon: '🪨', dropId: 'red_iron', exp: 7.5 },
-        { id: 'feather_ore', name: '轻羽石矿', icon: '🪶', reqLevel: 20, duration: 10000, drop: '轻羽石', dropIcon: '🪨', dropId: 'feather_ore', exp: 12.5 },
+        { id: 'feather_ore', name: '羽石矿', icon: '🪶', reqLevel: 20, duration: 10000, drop: '羽石', dropIcon: '🪨', dropId: 'feather_ore', exp: 12.5 },
         { id: 'hell_ore', name: '狱炎矿', icon: '🔥', reqLevel: 35, duration: 12000, drop: '狱炎石', dropIcon: '🪨', dropId: 'hell_ore', exp: 20 },
         { id: 'white_ore', name: '白鸠矿', icon: '⚪', reqLevel: 50, duration: 14000, drop: '白鸠石', dropIcon: '🪨', dropId: 'white_ore', exp: 30 },
         { id: 'thunder_ore', name: '雷鸣矿', icon: '⚡', reqLevel: 65, duration: 16000, drop: '雷鸣石', dropIcon: '🪨', dropId: 'thunder_ore', exp: 40 },
@@ -150,7 +150,7 @@ const CONFIG = {
     ingots: [
         { id: 'cyan_ingot', name: '青闪铁锭', icon: '🔩', reqLevel: 1, duration: 6000, exp: 5, materials: { cyan_ore: 2 } },
         { id: 'red_copper_ingot', name: '赤铜锭', icon: '🥉', reqLevel: 10, duration: 8000, exp: 7.5, materials: { red_iron: 2 } },
-        { id: 'feather_ingot', name: '轻羽锭', icon: '🪶', reqLevel: 20, duration: 10000, exp: 12.5, materials: { feather_ore: 2 } },
+        { id: 'feather_ingot', name: '羽铁锭', icon: '🪶', reqLevel: 20, duration: 10000, exp: 12.5, materials: { feather_ore: 2 } },
         { id: 'white_silver_ingot', name: '白银锭', icon: '🪙', reqLevel: 35, duration: 12000, exp: 20, materials: { white_ore: 2 } },
         { id: 'hell_steel_ingot', name: '狱炎钢锭', icon: '🔥', reqLevel: 50, duration: 14000, exp: 30, materials: { hell_ore: 2 } },
         { id: 'thunder_steel_ingot', name: '雷鸣钢', icon: '⚡', reqLevel: 65, duration: 16000, exp: 40, materials: { thunder_ore: 2 } },
@@ -655,8 +655,8 @@ const ACTION_TYPES = {
         id: 'essence',
         name: '提炼',
         configKey: 'essences',
-        skillKey: 'gatheringLevel',
-        expKey: 'gatheringExp',
+        skillKey: 'alchemyLevel',
+        expKey: 'alchemyExp',
         inventoryKey: 'essencesInventory',
         resultType: 'ESSENCE',
         materialType: 'GATHERING',
@@ -823,7 +823,7 @@ CONFIG.materialNames = {
     // 矿锭
     'cyan_ingot': '青闪锭',
     'red_copper_ingot': '赤铜锭',
-    'feather_ingot': '轻羽锭',
+    'feather_ingot': '羽铁锭',
     'white_silver_ingot': '白银锭',
     'hell_steel_ingot': '狱炎钢锭',
     'thunder_steel_ingot': '雷鸣钢锭',
@@ -833,7 +833,7 @@ CONFIG.materialNames = {
     // 矿石
     'cyan_ore': '青闪矿',
     'red_iron': '赤铁矿',
-    'feather_ore': '轻羽石矿',
+    'feather_ore': '羽石矿',
     'hell_ore': '狱炎矿',
     'white_ore': '白鸠矿',
     'thunder_ore': '雷鸣矿',

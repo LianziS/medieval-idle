@@ -584,7 +584,8 @@ class GameEngine {
                 'forging': 'forging_token',
                 'tailoring': 'tailoring_token',
                 'alchemy': 'alchemy_token',
-                'brewing': 'brewing_token'
+                'brewing': 'brewing_token',
+                'essence': 'alchemy_token'  // 提炼精华也掉落炼金代币
             };
             const tokenId = tokenIdMap[actionType.id] || `${actionType.id}_token`;
             if (!this.state.tokensInventory) {
@@ -1512,7 +1513,8 @@ class GameEngine {
                 'forging': 'forging_token',
                 'tailoring': 'tailoring_token',
                 'alchemy': 'alchemy_token',
-                'brewing': 'brewing_token'
+                'brewing': 'brewing_token',
+                'essence': 'alchemy_token'  // 提炼精华也掉落炼金代币
             };
             const tokenId = tokenIdMap[actionType.id] || `${actionType.id}_token`;
             if (!this.state.tokensInventory) {
