@@ -3420,7 +3420,7 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
         if (!previewGrid) return;
 
         previewGrid.innerHTML = pendingSellItems.map(item => `
-            <div class="preview-card" data-item-type="${item.type}" data-item-id="${item.id}">
+            <div class="preview-card" data-item-type="${item.type}" data-item-id="${item.id}" data-item-icon="${item.icon}" data-item-name="${item.name}" data-item-count="${item.sellCount}" data-item-price="${item.price}">
                 <span class="preview-icon">${item.icon}</span>
                 <span class="preview-count">${item.sellCount}</span>
             </div>
@@ -3433,16 +3433,10 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
             totalEl.textContent = `💰 ${totalGold}`;
         }
 
-        // 绑定待售卡片点击事件（移除）
+        // 绑定待售卡片点击事件（弹出移出框）
         previewGrid.querySelectorAll('.preview-card').forEach(card => {
             card.addEventListener('click', () => {
-                const itemType = card.dataset.itemType;
-                const itemId = card.dataset.itemId;
-                const index = pendingSellItems.findIndex(i => i.type === itemType && i.id === itemId);
-                if (index > -1) {
-                    pendingSellItems.splice(index, 1);
-                    updateSellPreview();
-                }
+                showRemovePopup(card, modal, pendingSellItems, updateSellPreview);
             });
         });
     };
@@ -3642,6 +3636,10 @@ function showMerchantItemPopup(card, modal, sellPopupCards, pendingSellItems, up
 
         updateSellPreview();
         showToast(`✅ 已加入待售: ${name} x${sellCount}`);
+        
+        // 关闭弹出卡片
+        popup.remove();
+        sellPopupCards.delete(itemId);
     });
 
     // 直接出售按钮
@@ -3695,6 +3693,88 @@ function showMerchantItemPopup(card, modal, sellPopupCards, pendingSellItems, up
     
     popup.addEventListener('mouseleave', closePopup);
     card.addEventListener('mouseleave', closePopup);
+}
+
+/**
+ * 显示待售移出弹出框
+ */
+function showRemovePopup(card, modal, pendingSellItems, updateSellPreview) {
+    // 移除已有的弹出框
+    modal.querySelectorAll('.item-remove-popup').forEach(p => p.remove());
+    
+    const itemType = card.dataset.itemType;
+    const itemId = card.dataset.itemId;
+    const icon = card.dataset.itemIcon || '❓';
+    const name = card.dataset.itemName || itemId;
+    const count = parseInt(card.dataset.itemCount) || 1;
+
+    // 创建弹出框
+    const popup = document.createElement('div');
+    popup.className = 'item-remove-popup';
+    popup.innerHTML = `
+        <div class="popup-header">
+            <span class="popup-icon">${icon}</span>
+            <span class="popup-name">${name}</span>
+        </div>
+        <div class="popup-info">
+            <span class="popup-count">待售: ${count}</span>
+        </div>
+        <div class="popup-input-row">
+            <input type="number" class="popup-input" min="1" max="${count}" value="1" placeholder="数量">
+            <button class="popup-all-btn">全部</button>
+        </div>
+        <button class="popup-remove-btn">移出</button>
+    `;
+
+    modal.querySelector('.merchant-modal-panel').appendChild(popup);
+
+    // 定位
+    const cardRect = card.getBoundingClientRect();
+    const modalRect = modal.querySelector('.merchant-modal-panel').getBoundingClientRect();
+    const popupRect = popup.getBoundingClientRect();
+
+    let left = cardRect.left - modalRect.left + (cardRect.width / 2) - (popupRect.width / 2);
+    const rightEdge = left + popupRect.width;
+    const modalRightEdge = modalRect.width - 10;
+    if (rightEdge > modalRightEdge) {
+        left = modalRightEdge - popupRect.width;
+    }
+    if (left < 10) {
+        left = 10;
+    }
+
+    const bottom = modalRect.height - (cardRect.top - modalRect.top) + 2;
+
+    popup.style.position = 'absolute';
+    popup.style.left = `${left}px`;
+    popup.style.bottom = `${bottom}px`;
+
+    // 全部按钮
+    popup.querySelector('.popup-all-btn').addEventListener('click', () => {
+        popup.querySelector('.popup-input').value = count;
+    });
+
+    // 移出按钮
+    popup.querySelector('.popup-remove-btn').addEventListener('click', () => {
+        const removeCount = parseInt(popup.querySelector('.popup-input').value) || 1;
+        if (removeCount <= 0 || removeCount > count) {
+            showToast('⚠️ 数量无效');
+            return;
+        }
+
+        const index = pendingSellItems.findIndex(i => i.type === itemType && i.id === itemId);
+        if (index > -1) {
+            if (removeCount >= count) {
+                pendingSellItems.splice(index, 1);
+            } else {
+                pendingSellItems[index].sellCount -= removeCount;
+            }
+            updateSellPreview();
+            showToast(`✅ 已移出: ${name} x${removeCount}`);
+        }
+
+        popup.remove();
+    });
 }
 
 /**
