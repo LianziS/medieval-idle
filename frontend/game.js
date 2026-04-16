@@ -4390,7 +4390,7 @@ function showActionModal(config) {
                     <div class="popup-info-val">
                         <span class="popup-token-prefix">1</span> 
                         <span class="popup-badge token item-hover-card" data-item-id="${{WOODCUTTING:'wood_token',MINING:'mining_token',GATHERING:'gathering_token',CRAFTING:'crafting_token',FORGING:'forging_token',TAILORING:'tailoring_token',ALCHEMY:'alchemy_token',BREWING:'brewing_token',ESSENCE:'gathering_token'}[pendingAction.type]}" data-item-type="TOKEN" data-item-name="${actionType.name}代币" data-item-icon="🪙">${actionType.icon} ${actionType.name}代币</span>
-                        <span class="popup-token-prob">~${getTokenChance(pendingAction?.type, config.reqLevel)}%</span>
+                        <span class="popup-token-prob">~${config.tokenRate ? Math.round(config.tokenRate * 100) : getTokenChance(pendingAction?.type, config.reqLevel)}%</span>
                     </div>
                 </div>
                 <div class="popup-info-row">
