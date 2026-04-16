@@ -3601,8 +3601,8 @@ function showMerchantItemPopup(card, modal, sellPopupCards, pendingSellItems, up
         left = 10;
     }
     
-    // 垂直定位：在卡片上方
-    const bottom = modalRect.height - (cardRect.top - modalRect.top) + 8;
+    // 垂直定位：在卡片上方，几乎贴着物品
+    const bottom = modalRect.height - (cardRect.top - modalRect.top) + 2;
 
     popup.style.position = 'absolute';
     popup.style.left = `${left}px`;
