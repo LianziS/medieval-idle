@@ -3545,6 +3545,9 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
  * 显示商人物品弹窗（居中对齐物品，右侧空间不足则往左）
  */
 function showMerchantItemPopup(card, modal, sellPopupCards, pendingSellItems, updateSellPreview) {
+    // 只移除物品出售弹出框，不移除待售移出弹出框
+    modal.querySelectorAll('.item-sell-popup').forEach(p => p.remove());
+    
     const itemType = card.dataset.itemType;
     const itemId = card.dataset.itemId;
     const count = parseInt(card.dataset.count) || 1;
@@ -3698,7 +3701,7 @@ function showMerchantItemPopup(card, modal, sellPopupCards, pendingSellItems, up
  * 显示待售移出弹出框
  */
 function showRemovePopup(card, modal, pendingSellItems, updateSellPreview) {
-    // 移除已有的弹出框
+    // 只移除待售移出弹出框，不移除物品出售弹出框
     modal.querySelectorAll('.item-remove-popup').forEach(p => p.remove());
     
     const itemType = card.dataset.itemType;
@@ -3778,6 +3781,9 @@ function showRemovePopup(card, modal, pendingSellItems, updateSellPreview) {
 
     // 点击其他地方关闭弹出框
     const closePopupOnClickOutside = (e) => {
+        // 点击物品卡片时不关闭（用户可能想添加物品）
+        if (e.target.closest('.inventory-card')) return;
+        
         if (!popup.contains(e.target) && !card.contains(e.target)) {
             popup.remove();
             document.removeEventListener('click', closePopupOnClickOutside);
