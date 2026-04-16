@@ -143,7 +143,9 @@ const CONFIG = {
         { id: 'frost_maple_plank', name: '霜叶木板', icon: '🪵', reqLevel: 50, duration: 14000, exp: 30, materials: { frost_maple: 2 } },
         { id: 'thunder_tree_plank', name: '雷鸣木板', icon: '🪵', reqLevel: 65, duration: 16000, exp: 40, materials: { thunder_tree: 2 } },
         { id: 'ancient_oak_plank', name: '古橡木板', icon: '🪵', reqLevel: 80, duration: 18000, exp: 55, materials: { ancient_oak: 2 } },
-        { id: 'world_tree_plank', name: '世界木板', icon: '🪵', reqLevel: 95, duration: 30000, exp: 73, materials: { world_tree: 2 } }
+        { id: 'world_tree_plank', name: '世界木板', icon: '🪵', reqLevel: 95, duration: 30000, exp: 73, materials: { world_tree: 2 } },
+        // 手稿
+        { id: 'manuscript', name: '手稿', icon: '📜', reqLevel: 20, duration: 22000, exp: 40, materials: { pine: 10, iron_birch: 10, wind_tree: 10, jute: 20, flax: 20 }, tokenRate: 0.055 }
     ],
     
     // 矿锭配置

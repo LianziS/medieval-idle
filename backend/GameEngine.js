@@ -347,16 +347,57 @@ class GameEngine {
         let maxCount = (requestedCount === -1 || requestedCount === Infinity) ? Infinity : requestedCount;
         
         for (const [matId, count] of Object.entries(item.materials)) {
-            const owned = this.getItemCount(actionType.materialType || 'WOOD', matId);
+            // 智能判断材料类型
+            const matType = matId.endsWith('_token') ? 'TOKEN' : this.getMaterialType(matId);
+            const owned = this.getItemCount(matType, matId);
             const possible = Math.floor(owned / count);
             maxCount = Math.min(maxCount, possible);
             
             // 调试日志
-            console.log(`📊 材料检查: ${matId}, 需要=${count}, 拥有=${owned}, 可执行=${possible}次`);
+            console.log(`📊 材料检查: ${matId}, 类型=${matType}, 需要=${count}, 拥有=${owned}, 可执行=${possible}次`);
         }
         
         console.log(`📊 最大可执行次数: ${maxCount}`);
         return maxCount;
+    }
+    
+    /**
+     * 根据材料ID判断材料类型
+     */
+    getMaterialType(matId) {
+        // 木材类型
+        const woodTypes = ['pine', 'iron_birch', 'wind_tree', 'flame_tree', 'frost_maple', 'thunder_tree', 'ancient_oak', 'world_tree'];
+        if (woodTypes.includes(matId)) return 'WOOD';
+        
+        // 矿石类型
+        const oreTypes = ['cyan_ore', 'red_iron', 'feather_ore', 'hell_ore', 'white_ore', 'thunder_ore', 'brilliant', 'star_ore'];
+        if (oreTypes.includes(matId)) return 'ORE';
+        
+        // 木板类型
+        if (matId.endsWith('_plank')) return 'PLANK';
+        
+        // 矿锭类型
+        const ingotTypes = ['cyan_ingot', 'red_copper_ingot', 'feather_ingot', 'white_silver_ingot', 'hell_steel_ingot', 'thunder_steel_ingot', 'brilliant_crystal', 'star_crystal'];
+        if (ingotTypes.includes(matId) || matId.endsWith('_ingot')) return 'INGOT';
+        
+        // 布料类型
+        const fabricTypes = ['jute_cloth', 'linen_cloth', 'wool_cloth', 'silk_cloth', 'wind_silk', 'dream_cloth', 'shadow_cloth', 'dragon_silk', 'celestial_cloth'];
+        if (fabricTypes.includes(matId)) return 'FABRIC';
+        
+        // 精华类型
+        if (matId.endsWith('_essence')) return 'ESSENCE';
+        
+        // 药水类型
+        if (matId.startsWith('hp_potion') || matId.startsWith('mp_potion')) return 'POTION';
+        
+        // 酒类类型
+        if (matId.endsWith('_wine') || matId.endsWith('_ale') || matId.endsWith('_beer') || matId.endsWith('_box')) return 'BREW';
+        
+        // 代币类型
+        if (matId.endsWith('_token')) return 'TOKEN';
+        
+        // 默认为采集物
+        return 'GATHERING';
     }
     
     /**
@@ -457,13 +498,14 @@ class GameEngine {
         if (actionType.needsMaterials) {
             // 制作类行动：消耗材料，添加产物
             if (item.materials) {
-                const materialType = actionType.materialType || 'WOOD';
                 for (const [matId, count] of Object.entries(item.materials)) {
                     // 特殊处理代币类型（酿造需要代币作为材料）
                     if (matId.endsWith('_token')) {
                         this.removeItem('TOKEN', matId, count);
                     } else {
-                        this.removeItem(materialType, matId, count);
+                        // 智能判断材料类型
+                        const matType = this.getMaterialType(matId);
+                        this.removeItem(matType, matId, count);
                     }
                 }
             }

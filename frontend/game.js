@@ -631,7 +631,7 @@ function setupSocket() {
                 'brilliant': '璀璨矿', 'star_ore': '星辉矿',
                 'pine_plank': '青杉木板', 'iron_birch_plank': '铁桦木板', 'wind_tree_plank': '风啸木板',
                 'flame_tree_plank': '焰心木板', 'frost_maple_plank': '霜叶枫木板', 'thunder_tree_plank': '雷鸣木板',
-                'ancient_oak_plank': '古橡木板', 'world_tree_plank': '世界树木板'
+                'ancient_oak_plank': '古橡木板', 'world_tree_plank': '世界树木板', 'manuscript': '手稿'
             };
 
             let html = `
@@ -2047,7 +2047,7 @@ function getResourceName(resourceId) {
         'frost_maple_plank': '霜叶枫木板',
         'thunder_tree_plank': '雷鸣木板',
         'ancient_oak_plank': '古橡木板',
-        'world_tree_plank': '世界树木板',
+        'world_tree_plank': '世界树木板', 'manuscript': '手稿',
 
         // 矿石类
         'cyan_ore': '青闪石',
@@ -3812,7 +3812,8 @@ const ITEM_VALUES = {
     // 木板
     planks: {
         pine_plank: 16, iron_birch_plank: 32, wind_tree_plank: 64, flame_tree_plank: 96,
-        frost_maple_plank: 112, thunder_tree_plank: 154, ancient_oak_plank: 240, world_tree_plank: 314
+        frost_maple_plank: 112, thunder_tree_plank: 154, ancient_oak_plank: 240, world_tree_plank: 314,
+        manuscript: 260
     },
     // 矿锭
     ingots: {
@@ -4762,7 +4763,7 @@ function formatCost(cost, separator = ' ') {
         'frost_maple_plank': '霜叶枫木板',
         'thunder_tree_plank': '雷鸣木板',
         'ancient_oak_plank': '古橡木板',
-        'world_tree_plank': '世界树木板',
+        'world_tree_plank': '世界树木板', 'manuscript': '手稿',
 
         // 矿石类
         'cyan_ore': '青闪石',
@@ -5991,7 +5992,7 @@ function showMaterialPopover(triggerElement) {
         'brilliant': '璀璨矿', 'star_ore': '星辉矿',
         'pine_plank': '青杉木板', 'iron_birch_plank': '铁桦木板', 'wind_tree_plank': '风啸木板',
         'flame_tree_plank': '焰心木板', 'frost_maple_plank': '霜叶枫木板', 'thunder_tree_plank': '雷鸣木板',
-        'ancient_oak_plank': '古橡木板', 'world_tree_plank': '世界树木板'
+        'ancient_oak_plank': '古橡木板', 'world_tree_plank': '世界树木板', 'manuscript': '手稿'
     };
 
     const materialIcons = {
