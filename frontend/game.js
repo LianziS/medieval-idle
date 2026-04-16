@@ -3839,7 +3839,7 @@ const ITEM_VALUES = {
     brews: {
         woodcutting_wine: 118, gathering_ale: 126, mining_wine: 182, forging_ale: 190,
         crafting_ale: 318, tailoring_beer: 326, alchemy_beer: 454, brewing_wine: 466,
-        beginner_wine_box: 0, intermediate_wine_box: 0, advanced_wine_box: 0  // 酒箱价值待定
+        beginner_wine_box: 1120, intermediate_wine_box: 3720, advanced_wine_box: 7480
     },
     // 工具（非锤子）
     tools_normal: {
