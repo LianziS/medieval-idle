@@ -4696,7 +4696,19 @@ body::after {
 
 /* 制作列表显示控制 */
 #crafting-planks-list,
-#crafting-manuscripts-list,
+#crafting-manuscripts-list {
+    display: none !important;
+}
+
+#crafting-planks-list.active,
+#crafting-manuscripts-list.active {
+    display: flex !important;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+}
+
 .forging-ingots-list,
 .forging-tools-list,
 .tailoring-fabrics-list,
@@ -4711,8 +4723,6 @@ body::after {
     padding: 10px;
 }
 
-#crafting-planks-list.active,
-#crafting-manuscripts-list.active,
 .forging-ingots-list.active,
 .forging-tools-list.active,
 .tailoring-fabrics-list.active,
