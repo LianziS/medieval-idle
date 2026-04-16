@@ -3422,10 +3422,6 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
         previewGrid.innerHTML = pendingSellItems.map(item => `
             <div class="preview-card" data-item-type="${item.type}" data-item-id="${item.id}" data-item-icon="${item.icon}" data-item-name="${item.name}" data-item-count="${item.sellCount}" data-item-price="${item.price}">
                 <span class="preview-icon">${item.icon}</span>
-                <div class="preview-info">
-                    <span class="preview-count">${item.sellCount}</span>
-                    <span class="preview-gold">💰${item.price * item.sellCount}</span>
-                </div>
             </div>
         `).join('') || '<div class="preview-empty">点击物品添加到待售</div>';
 
@@ -3720,7 +3716,8 @@ function showRemovePopup(card, modal, pendingSellItems, updateSellPreview) {
             <span class="popup-name">${name}</span>
         </div>
         <div class="popup-info">
-            <span class="popup-count">待售: ${count}</span>
+            <span class="popup-count">数量: ${count}</span>
+            <span class="popup-price">金额: 💰${count * parseInt(card.dataset.price || 1)}</span>
         </div>
         <div class="popup-input-row">
             <input type="number" class="popup-input" min="1" max="${count}" value="1" placeholder="数量">
