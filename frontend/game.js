@@ -2507,6 +2507,32 @@ function renderCrafting() {
         });
     }
 
+    // 渲染净羽列表
+    const feathersList = document.getElementById('crafting-feathers-list');
+    if (feathersList && CONFIG.cleanedFeathers) {
+        feathersList.innerHTML = CONFIG.cleanedFeathers.map(feather => {
+            const unlocked = level >= feather.reqLevel;
+            const isActive = gameState.activeAction?.type === 'CRAFTING_FEATHER' && gameState.activeAction?.id === feather.id;
+
+            return `
+                <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
+                     data-action="CRAFTING_FEATHER" data-id="${feather.id}">
+                    <div class="card-name">${feather.name}</div>
+                    <div class="card-icon">${feather.icon}</div>
+                </div>
+            `;
+        }).join('');
+
+        feathersList.classList.add('cards-grid');
+
+        feathersList.querySelectorAll('.action-card-square').forEach(card => {
+            card.addEventListener('click', () => {
+                const featherId = card.dataset.id;
+                openActionModal('CRAFTING_FEATHER', featherId);
+            });
+        });
+    }
+
     // 渲染手稿列表
     const manuscriptsList = document.getElementById('crafting-manuscripts-list');
     if (manuscriptsList && CONFIG.manuscripts) {
@@ -2544,9 +2570,11 @@ function renderCrafting() {
 
                 const tabId = tab.dataset.tab;
                 const planksL = document.getElementById('crafting-planks-list');
+                const feathersL = document.getElementById('crafting-feathers-list');
                 const manuscriptsL = document.getElementById('crafting-manuscripts-list');
 
                 if (planksL) planksL.classList.toggle('active', tabId === 'planks');
+                if (feathersL) feathersL.classList.toggle('active', tabId === 'feathers');
                 if (manuscriptsL) manuscriptsL.classList.toggle('active', tabId === 'manuscripts');
             });
         });

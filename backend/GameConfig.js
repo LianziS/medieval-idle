@@ -146,6 +146,15 @@ const CONFIG = {
         { id: 'world_tree_plank', name: '世界木板', icon: '🪵', reqLevel: 95, duration: 30000, exp: 73, materials: { world_tree: 2 } }
     ],
     
+    // 净羽配置
+    cleanedFeathers: [
+        { id: 'cleaned_feather', name: '普通净羽', icon: '🪶', reqLevel: 10, duration: 8000, exp: 7.5, materials: { feather: 2 }, tokenRate: 0.017, value: 32 },
+        { id: 'jade_cleaned_feather', name: '翡翠净羽', icon: '🦜', reqLevel: 20, duration: 10000, exp: 12.5, materials: { jade_feather: 2 }, tokenRate: 0.024, value: 64 },
+        { id: 'falcon_cleaned_feather', name: '猎隼的净尾羽', icon: '🦅', reqLevel: 35, duration: 12000, exp: 20, materials: { falcon_tail_feather: 2 }, tokenRate: 0.053, value: 96 },
+        { id: 'rainbow_cleaned_feather', name: '虹光净羽', icon: '🌈', reqLevel: 65, duration: 16000, exp: 40, materials: { rainbow_feather: 2 }, tokenRate: 0.149, value: 154 },
+        { id: 'harpy_cleaned_feather', name: '鹰身人的净羽', icon: '🦅', reqLevel: 80, duration: 18000, exp: 55, materials: { harpy_feather: 2 }, tokenRate: 0.21, value: 240 }
+    ],
+
     // 手稿配置
     manuscripts: [
         { id: 'manuscript', name: '手稿', icon: '📜', reqLevel: 20, duration: 22000, exp: 40, materials: { pine: 10, iron_birch: 10, wind_tree: 10, jute: 20, flax: 20 }, tokenRate: 0.055 }
@@ -575,6 +584,7 @@ const ITEM_TYPES = {
     GATHERING: { inventoryKey: 'gatheringInventory', name: '采集物' },
     PLANK: { inventoryKey: 'planksInventory', name: '木板' },
     MANUSCRIPT: { inventoryKey: 'manuscriptsInventory', name: '手稿' },
+    CLEANED_FEATHER: { inventoryKey: 'cleanedFeathersInventory', name: '净羽' },
     INGOT: { inventoryKey: 'ingotsInventory', name: '矿锭' },
     THREAD: { inventoryKey: 'threadsInventory', name: '丝线' },
     FABRIC: { inventoryKey: 'fabricsInventory', name: '布料' },
@@ -636,6 +646,17 @@ const ACTION_TYPES = {
         inventoryKey: 'manuscriptsInventory',
         resultType: 'MANUSCRIPT',
         materialType: 'WOOD',
+        needsMaterials: true
+    },
+    CRAFTING_FEATHER: {
+        id: 'crafting_feather',
+        name: '净羽',
+        configKey: 'cleanedFeathers',
+        skillKey: 'craftingLevel',
+        expKey: 'craftingExp',
+        inventoryKey: 'cleanedFeathersInventory',
+        resultType: 'CLEANED_FEATHER',
+        materialType: 'GATHERING',
         needsMaterials: true
     },
     FORGING: {
