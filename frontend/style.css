@@ -2995,6 +2995,19 @@ body::after {
     color: #4CAF50;
 }
 
+/* 制作页面标签切换 - 默认隐藏所有，通过active显示 */
+#crafting-planks-list,
+#crafting-feathers-list,
+#crafting-manuscripts-list {
+    display: none !important;
+}
+
+#crafting-planks-list.active,
+#crafting-feathers-list.active,
+#crafting-manuscripts-list.active {
+    display: flex !important;
+}
+
 /* 锻造页面标签切换 - 默认隐藏所有，通过active显示 */
 #forging-ingots-list,
 #forging-tools-list {
