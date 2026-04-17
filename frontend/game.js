@@ -1645,8 +1645,10 @@ function getActionConfig(actionType, actionId) {
         WOODCUTTING: CONFIG.trees,
         MINING: CONFIG.ores,
         CRAFTING: CONFIG.woodPlanks,
-        FORGING: CONFIG.ingots,
+        CRAFTING_FEATHER: CONFIG.cleanedFeathers,
+        CRAFTING_MANUSCRIPT: CONFIG.manuscripts,
         TAILORING: CONFIG.fabrics,
+        TAILORING_THREAD: CONFIG.threads,
         BREWING: CONFIG.brews,
         ALCHEMY: CONFIG.potions,
         ESSENCE: CONFIG.essences
@@ -2233,6 +2235,10 @@ function getResourceCount(resourceId) {
     else if (resourceId.endsWith('_potion') || resourceId.includes('potion')) {
         count = gameState.potionsInventory?.[resourceId] || 0;
     }
+    // 检查净羽
+    else if (resourceId.includes('cleaned_feather')) {
+        count = gameState.cleanedFeathersInventory?.[resourceId] || 0;
+    }
     // 检查金币
     else if (resourceId === 'gold') {
         count = gameState.gold || 0;
@@ -2251,6 +2257,8 @@ function getResourceCount(resourceId) {
                gameState.miningInventory?.[resourceId] ||
                gameState.gatheringInventory?.[resourceId] ||
                gameState.planksInventory?.[resourceId] ||
+               gameState.cleanedFeathersInventory?.[resourceId] ||
+               gameState.manuscriptsInventory?.[resourceId] ||
                gameState.ingotsInventory?.[resourceId] ||
                gameState.fabricsInventory?.[resourceId] ||
                gameState.potionsInventory?.[resourceId] ||
@@ -4410,6 +4418,7 @@ function openActionModal(type, id) {
         MINING: CONFIG.ores,
         GATHERING: CONFIG.gatheringLocations,
         CRAFTING: CONFIG.woodPlanks,
+        CRAFTING_FEATHER: CONFIG.cleanedFeathers,
         CRAFTING_MANUSCRIPT: CONFIG.manuscripts,
         FORGING: CONFIG.ingots,
         TAILORING: CONFIG.fabrics,
@@ -4535,6 +4544,7 @@ function showActionModal(config) {
         MINING: 'miningLevel',
         GATHERING: 'gatheringLevel',
         CRAFTING: 'craftingLevel',
+        CRAFTING_FEATHER: 'craftingLevel',
         CRAFTING_MANUSCRIPT: 'craftingLevel',
         FORGING: 'forgingLevel',
         TAILORING: 'tailoringLevel',
@@ -4634,9 +4644,9 @@ function showActionModal(config) {
                                 const dropRange = maxCount === 1 ? '1' : `1-${maxCount}`;
                                 return `<span class="popup-drop-prefix">${dropRange}</span> <span class="popup-badge drop item-hover-card" data-item-id="${item.id}" data-item-type="GATHERING" data-item-name="${item.name}" data-item-icon="${item.icon}">${item.icon} ${item.name}</span> <span class="popup-drop-prob">30%</span>`;
                             }).join('<br>');
-                        })() : ['CRAFTING', 'CRAFTING_MANUSCRIPT', 'FORGING', 'TAILORING', 'TAILORING_THREAD', 'BREWING', 'ALCHEMY', 'ESSENCE'].includes(pendingAction?.type) ? (() => {
+                        })() : ['CRAFTING', 'CRAFTING_FEATHER', 'CRAFTING_MANUSCRIPT', 'FORGING', 'TAILORING', 'TAILORING_THREAD', 'BREWING', 'ALCHEMY', 'ESSENCE'].includes(pendingAction?.type) ? (() => {
                             // 制作类行动：产出固定物品（数量为1）
-                            const itemTypeMap = {CRAFTING:'PLANK',CRAFTING_MANUSCRIPT:'MANUSCRIPT',FORGING:'INGOT',TAILORING:'FABRIC',TAILORING_THREAD:'THREAD',BREWING:'BREW',ALCHEMY:'POTION',ESSENCE:'ESSENCE'};
+                            const itemTypeMap = {CRAFTING:'PLANK',CRAFTING_FEATHER:'CLEANED_FEATHER',CRAFTING_MANUSCRIPT:'MANUSCRIPT',FORGING:'INGOT',TAILORING:'FABRIC',TAILORING_THREAD:'THREAD',BREWING:'BREW',ALCHEMY:'POTION',ESSENCE:'ESSENCE'};
                             const productIcon = config.icon || '📦';
                             const productName = config.name || pendingAction.id;
                             return `<br><span class="popup-drop-prefix">1</span> <span class="popup-badge drop item-hover-card" data-item-id="${pendingAction.id}" data-item-type="${itemTypeMap[pendingAction.type]}" data-item-name="${productName}" data-item-icon="${productIcon}">${productIcon} ${productName}</span>`;
@@ -4649,12 +4659,12 @@ function showActionModal(config) {
                     </div>
                 </div>
                 
-                ${['WOODCUTTING', 'MINING', 'GATHERING', 'CRAFTING', 'CRAFTING_MANUSCRIPT', 'FORGING', 'TAILORING', 'TAILORING_THREAD', 'ALCHEMY', 'BREWING', 'ESSENCE'].includes(pendingAction?.type) ? `
+                ${['WOODCUTTING', 'MINING', 'GATHERING', 'CRAFTING', 'CRAFTING_FEATHER', 'CRAFTING_MANUSCRIPT', 'FORGING', 'TAILORING', 'TAILORING_THREAD', 'ALCHEMY', 'BREWING', 'ESSENCE'].includes(pendingAction?.type) ? `
                 <div class="popup-info-row">
                     <div class="popup-info-label"><span class="lbl-icon">🪙</span>代币</div>
                     <div class="popup-info-val">
                         <span class="popup-token-prefix">1</span> 
-                        <span class="popup-badge token item-hover-card" data-item-id="${{WOODCUTTING:'wood_token',MINING:'mining_token',GATHERING:'gathering_token',CRAFTING:'crafting_token',CRAFTING_MANUSCRIPT:'crafting_token',FORGING:'forging_token',TAILORING:'tailoring_token',TAILORING_THREAD:'tailoring_token',ALCHEMY:'alchemy_token',BREWING:'brewing_token',ESSENCE:'alchemy_token'}[pendingAction.type]}" data-item-type="TOKEN" data-item-name="${actionType.name}代币" data-item-icon="🪙">${actionType.icon} ${actionType.name}代币</span>
+                        <span class="popup-badge token item-hover-card" data-item-id="${{WOODCUTTING:'wood_token',MINING:'mining_token',GATHERING:'gathering_token',CRAFTING:'crafting_token',CRAFTING_FEATHER:'crafting_token',CRAFTING_MANUSCRIPT:'crafting_token',FORGING:'forging_token',TAILORING:'tailoring_token',TAILORING_THREAD:'tailoring_token',ALCHEMY:'alchemy_token',BREWING:'brewing_token',ESSENCE:'alchemy_token'}[pendingAction.type]}" data-item-type="TOKEN" data-item-name="${actionType.name}代币" data-item-icon="🪙">${actionType.icon} ${actionType.name}代币</span>
                         <span class="popup-token-prob">~${config.tokenRate ? (() => {
                         const r = Math.round(config.tokenRate * 100 * 100) / 100;
                         return r % 1 === 0 ? r : r.toString().replace(/\.?0+$/, '');

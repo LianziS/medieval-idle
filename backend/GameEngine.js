@@ -45,6 +45,7 @@ class GameEngine {
             miningInventory: {},
             gatheringInventory: {},
             planksInventory: {},
+            cleanedFeathersInventory: {},
             manuscriptsInventory: {},
             threadsInventory: {},
             ingotsInventory: {},
