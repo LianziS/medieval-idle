@@ -3353,6 +3353,12 @@ function openPenForgeModal(penId) {
                         <span class="popup-combo-desc">（等级差 × 1%）</span>
                     </div>
                 </div>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">⏱️</span>持续时间</div>
+                    <div class="popup-info-val">
+                        <span class="popup-highlight">${formatTime(pen.duration)}</span>
+                    </div>
+                </div>
             </div>
             
             <div class="popup-divider"></div>
