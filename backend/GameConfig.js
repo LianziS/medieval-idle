@@ -419,6 +419,114 @@ const CONFIG = {
         ]
     },
     
+    // 笔装备配置（吟游诗人专用）
+    pens: [
+        { 
+            id: 'traveler_pen', 
+            name: '旅人之笔', 
+            icon: '✒️', 
+            reqForgeLevel: 1,
+            reqBardLevel: 1,
+            materials: { cleaned_feather: 15, conch_ink: 4 },
+            duration: 6000,
+            exp: 18,
+            tokenRate: 0.02,
+            value: 15 * 32 + 4 * 300, // 普通净羽价值32 + 海螺墨价值300
+            effect: '用以谱写歌谣、书写诗篇，为吟游诗人的歌颂赋予实质的魔力与传世的载体。（无其他效果）'
+        },
+        { 
+            id: 'lyre_pen', 
+            name: '琴语之笔', 
+            icon: '✒️', 
+            reqForgeLevel: 10,
+            reqBardLevel: 3,
+            materials: { cleaned_feather: 16, jade_cleaned_feather: 12, conch_ink: 8 },
+            duration: 8000,
+            exp: 40,
+            tokenRate: 0.04,
+            value: 16 * 32 + 12 * 64 + 8 * 300,
+            effect: '+3%精良，+2%史诗'
+        },
+        { 
+            id: 'witness_pen', 
+            name: '见闻之笔', 
+            icon: '✒️', 
+            reqForgeLevel: 20,
+            reqBardLevel: 5,
+            materials: { cleaned_feather: 12, jade_cleaned_feather: 16, falcon_cleaned_feather: 14, conch_ink: 12 },
+            duration: 10000,
+            exp: 90,
+            tokenRate: 0.076,
+            value: 12 * 32 + 16 * 64 + 14 * 96 + 12 * 300,
+            effect: '+6%精良，+4%史诗'
+        },
+        { 
+            id: 'awaken_pen', 
+            name: '醒木之笔', 
+            icon: '✒️', 
+            reqForgeLevel: 35,
+            reqBardLevel: 7,
+            materials: { jade_cleaned_feather: 32, falcon_cleaned_feather: 28, conch_ink: 17 },
+            duration: 12000,
+            exp: 216,
+            tokenRate: 0.145,
+            value: 32 * 64 + 28 * 96 + 17 * 300,
+            effect: '+9%精良，+6%史诗'
+        },
+        { 
+            id: 'blaze_pen', 
+            name: '灼言之笔', 
+            icon: '✒️', 
+            reqForgeLevel: 50,
+            reqBardLevel: 9,
+            materials: { jade_cleaned_feather: 24, falcon_cleaned_feather: 30, rainbow_cleaned_feather: 24, conch_ink: 23 },
+            duration: 14000,
+            exp: 486,
+            tokenRate: 0.267,
+            value: 24 * 64 + 30 * 96 + 24 * 154 + 23 * 300,
+            effect: '+12%精良，+8%史诗'
+        },
+        { 
+            id: 'lionheart_pen', 
+            name: '狮心之笔', 
+            icon: '✒️', 
+            reqForgeLevel: 65,
+            reqBardLevel: 11,
+            materials: { falcon_cleaned_feather: 50, rainbow_cleaned_feather: 48, conch_ink: 30 },
+            duration: 16000,
+            exp: 936,
+            tokenRate: 0.467,
+            value: 50 * 96 + 48 * 154 + 30 * 300,
+            effect: '+15%精良，+10%史诗'
+        },
+        { 
+            id: 'echo_pen', 
+            name: '回响之笔', 
+            icon: '✒️', 
+            reqForgeLevel: 80,
+            reqBardLevel: 13,
+            materials: { falcon_cleaned_feather: 36, rainbow_cleaned_feather: 48, harpy_cleaned_feather: 36, conch_ink: 38 },
+            duration: 18000,
+            exp: 1782,
+            tokenRate: 0.70,
+            value: 36 * 96 + 48 * 154 + 36 * 240 + 38 * 300,
+            effect: '+18%精良，+12%史诗'
+        },
+        { 
+            id: 'epic_pen', 
+            name: '史诗之笔', 
+            icon: '✒️', 
+            reqForgeLevel: 95,
+            reqBardLevel: 16,
+            materials: { rainbow_cleaned_feather: 72, harpy_cleaned_feather: 78, conch_ink: 47 },
+            duration: 30000,
+            exp: 3193,
+            tokenRate: 0.90,
+            value: 72 * 154 + 78 * 240 + 47 * 300,
+            effect: '+21%精良，+14%史诗'
+        }
+    ],
+    
     // 矿石与矿锭的映射
     oreIngotMapping: {
         'cyan_ore': 'cyan_ingot',

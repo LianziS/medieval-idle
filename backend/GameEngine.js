@@ -63,6 +63,12 @@ class GameEngine {
                 tailoring_token: 0
             },
             
+            // 笔装备库存（吟游诗人）
+            pensInventory: [],
+            
+            // 海螺墨库存
+            conchInkInventory: 0,
+            
             // 建筑
             buildings: {},
             
@@ -1426,6 +1432,182 @@ class GameEngine {
             rod: 'rods'
         };
         return map[slotType] || slotType;
+    }
+    
+    /**
+     * 开始锻造笔行动
+     */
+    startForgePenAction(penId, count = 1) {
+        const pen = CONFIG.pens?.find(p => p.id === penId);
+        if (!pen) {
+            return { success: false, reason: '笔不存在' };
+        }
+        
+        // 检查等级要求
+        const forgingLevel = this.state.forgingLevel || 1;
+        if (forgingLevel < pen.reqForgeLevel) {
+            return { success: false, reason: `需要锻造 Lv.${pen.reqForgeLevel}` };
+        }
+        
+        // 检查材料是否足够
+        const feathersInv = this.state.cleanedFeathersInventory || {};
+        const inkInv = this.state.conchInkInventory || 0;
+        
+        for (const [matId, matCount] of Object.entries(pen.materials)) {
+            if (matId === 'conch_ink') {
+                if (inkInv < matCount) {
+                    return { success: false, reason: `海螺墨不足: 需要 ${matCount}` };
+                }
+            } else {
+                if ((feathersInv[matId] || 0) < matCount) {
+                    const matNames = {
+                        cleaned_feather: '普通净羽',
+                        jade_cleaned_feather: '翡翠净羽',
+                        falcon_cleaned_feather: '猎隼的净尾羽',
+                        rainbow_cleaned_feather: '虹光净羽',
+                        harpy_cleaned_feather: '鹰身人的净羽'
+                    };
+                    return { success: false, reason: `${matNames[matId] || matId}不足: 需要 ${matCount}` };
+                }
+            }
+        }
+        
+        // 消耗材料
+        for (const [matId, matCount] of Object.entries(pen.materials)) {
+            if (matId === 'conch_ink') {
+                this.state.conchInkInventory -= matCount;
+            } else {
+                feathersInv[matId] = (feathersInv[matId] || 0) - matCount;
+                if (feathersInv[matId] <= 0) delete feathersInv[matId];
+            }
+        }
+        
+        // 创建行动
+        const action = {
+            type: 'FORGE_PEN',
+            id: penId,
+            name: pen.name,
+            icon: pen.icon,
+            duration: pen.duration,
+            exp: pen.exp,
+            tokenRate: pen.tokenRate,
+            count: count,
+            startTime: Date.now()
+        };
+        
+        // 设置行动状态
+        this.state.activeAction = action;
+        this.state.actionStartTime = Date.now();
+        this.state.actionDuration = pen.duration;
+        this.state.actionRemaining = pen.duration;
+        this.state.actionCount = count;
+        
+        return { success: true, action };
+    }
+    
+    /**
+     * 完成一次锻造笔
+     */
+    completeForgePenOnce() {
+        const action = this.state.activeAction;
+        if (!action || action.type !== 'FORGE_PEN') {
+            return null;
+        }
+        
+        const pen = CONFIG.pens?.find(p => p.id === action.id);
+        if (!pen) return null;
+        
+        // 添加笔到背包
+        if (!this.state.pensInventory) {
+            this.state.pensInventory = [];
+        }
+        this.state.pensInventory.push(pen.id);
+        
+        // 添加经验
+        this.addSkillExp('forgingLevel', pen.exp);
+        
+        // 检查是否有锻造代币掉落
+        const rewards = [];
+        rewards.push({ type: 'PEN', id: pen.id, name: pen.name, icon: pen.icon, count: 1 });
+        
+        if (Math.random() < pen.tokenRate) {
+            if (!this.state.tokensInventory) {
+                this.state.tokensInventory = {};
+            }
+            this.state.tokensInventory.forging_token = (this.state.tokensInventory.forging_token || 0) + 1;
+            rewards.push({ type: 'TOKEN', id: 'forging_token', name: '锻造代币', icon: '🪙', count: 1 });
+        }
+        
+        // 减少次数
+        this.state.actionCount--;
+        
+        // 检查是否还有剩余次数且有足够材料继续
+        if (this.state.actionCount > 0 && this.state.actionCount < 99999) {
+            // 检查材料是否足够继续
+            const feathersInv = this.state.cleanedFeathersInventory || {};
+            const inkInv = this.state.conchInkInventory || 0;
+            
+            let hasMaterials = true;
+            for (const [matId, matCount] of Object.entries(pen.materials)) {
+                if (matId === 'conch_ink') {
+                    if (inkInv < matCount) hasMaterials = false;
+                } else {
+                    if ((feathersInv[matId] || 0) < matCount) hasMaterials = false;
+                }
+            }
+            
+            if (hasMaterials) {
+                // 消耗材料，继续锻造
+                for (const [matId, matCount] of Object.entries(pen.materials)) {
+                    if (matId === 'conch_ink') {
+                        this.state.conchInkInventory -= matCount;
+                    } else {
+                        feathersInv[matId] = (feathersInv[matId] || 0) - matCount;
+                        if (feathersInv[matId] <= 0) delete feathersInv[matId];
+                    }
+                }
+                // 重置计时
+                this.state.actionStartTime = Date.now();
+                this.state.actionRemaining = pen.duration;
+            } else {
+                // 材料不足，停止锻造
+                this.state.activeAction = null;
+                this.state.actionCount = 0;
+            }
+        } else if (this.state.actionCount <= 0 || this.state.actionCount >= 99999) {
+            // 无限模式或次数用完，检查材料继续
+            const feathersInv = this.state.cleanedFeathersInventory || {};
+            const inkInv = this.state.conchInkInventory || 0;
+            
+            let hasMaterials = true;
+            for (const [matId, matCount] of Object.entries(pen.materials)) {
+                if (matId === 'conch_ink') {
+                    if (inkInv < matCount) hasMaterials = false;
+                } else {
+                    if ((feathersInv[matId] || 0) < matCount) hasMaterials = false;
+                }
+            }
+            
+            if (hasMaterials && this.state.actionCount >= 99999) {
+                // 无限模式有材料，继续消耗并重置
+                for (const [matId, matCount] of Object.entries(pen.materials)) {
+                    if (matId === 'conch_ink') {
+                        this.state.conchInkInventory -= matCount;
+                    } else {
+                        feathersInv[matId] = (feathersInv[matId] || 0) - matCount;
+                        if (feathersInv[matId] <= 0) delete feathersInv[matId];
+                    }
+                }
+                this.state.actionStartTime = Date.now();
+                this.state.actionRemaining = pen.duration;
+            } else {
+                // 停止锻造
+                this.state.activeAction = null;
+                this.state.actionCount = 0;
+            }
+        }
+        
+        return { success: true, rewards, exp: pen.exp };
     }
     
     /**

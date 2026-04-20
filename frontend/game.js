@@ -409,7 +409,18 @@ function setupSocket() {
     // 锻造结果
     socket.on('forge_result', (result) => {
         if (result.success) {
-            showToast(`✅ 锻造成功: ${result.tool.name}`);
+            // 检查是笔锻造还是工具锻造
+            if (result.tool) {
+                showToast(`✅ 锻造成功: ${result.tool.name}`);
+            } else if (result.rewards) {
+                // 笔锻造结果
+                const penReward = result.rewards.find(r => r.type === 'PEN');
+                if (penReward) {
+                    showToast(`✅ 锻造成功: ${penReward.name}`);
+                }
+            } else {
+                showToast(`✅ 锻造成功`);
+            }
         } else {
             showToast(`❌ ${result.reason}`);
         }
@@ -1589,6 +1600,12 @@ function getActionConfig(actionType, actionId) {
         return ingot || null;
     }
 
+    // 特殊处理笔锻造行动
+    if (actionType === 'FORGE_PEN') {
+        const pen = CONFIG.pens?.find(p => p.id === actionId);
+        return pen || null;
+    }
+
     // 特殊处理强化行动
     if (actionType === 'ENHANCE') {
         // 从 action 对象获取工具信息
@@ -2637,6 +2654,7 @@ function initForgingTabs() {
     const tabs = tabsContainer.querySelectorAll('.gathering-tab');
     const ingotsList = document.getElementById('forging-ingots-list');
     const toolsList = document.getElementById('forging-tools-list');
+    const equipmentList = document.getElementById('forging-equipment-list');
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -2648,12 +2666,16 @@ function initForgingTabs() {
             // 切换显示
             if (ingotsList) ingotsList.classList.remove('active');
             if (toolsList) toolsList.classList.remove('active');
+            if (equipmentList) equipmentList.classList.remove('active');
 
             if (tabName === 'ingots' && ingotsList) {
                 ingotsList.classList.add('active');
             } else if (tabName === 'tools' && toolsList) {
                 toolsList.classList.add('active');
                 renderToolForge(); // 渲染工具列表
+            } else if (tabName === 'equipment' && equipmentList) {
+                equipmentList.classList.add('active');
+                renderForgingEquipment(); // 渲染装备列表（笔）
             }
         });
     });
@@ -3169,6 +3191,214 @@ function openToolForgeModal(toolType, toolIndex) {
     // 默认选中1次
     modal.querySelector('.count-btn[data-count="1"]').classList.add('active');
     modal.querySelector('#custom-count').value = 1;
+}
+
+/**
+ * 渲染锻造装备列表（笔）
+ */
+function renderForgingEquipment() {
+    const container = document.getElementById('forging-equipment-list');
+    if (!container || !gameState || !CONFIG.pens) return;
+
+    const forgingLevel = gameState.forgingLevel || 1;
+
+    container.innerHTML = CONFIG.pens.map(pen => {
+        const unlocked = forgingLevel >= pen.reqForgeLevel;
+        const owned = (gameState.pensInventory || []).some(p => 
+            (typeof p === 'string' ? p : p.id) === pen.id
+        );
+
+        return `
+            <div class="action-card-square ${unlocked ? '' : 'locked'} ${owned ? 'owned' : ''}"
+                 data-pen-id="${pen.id}">
+                <div class="card-name">${pen.name}</div>
+                <div class="card-icon">${pen.icon}</div>
+            </div>
+        `;
+    }).join('');
+
+    // 添加横行布局
+    container.classList.add('cards-grid');
+
+    container.querySelectorAll('.action-card-square').forEach(card => {
+        card.addEventListener('click', () => {
+            const penId = card.dataset.penId;
+            openPenForgeModal(penId);
+        });
+    });
+}
+
+/**
+ * 打开笔锻造模态框
+ */
+function openPenForgeModal(penId) {
+    const pen = CONFIG.pens.find(p => p.id === penId);
+    if (!pen) return;
+
+    // 检查队列状态
+    const currentQueue = gameState?.actionQueue || [];
+    const maxQueueSize = 2;
+    const currentAction = gameState?.activeAction;
+    const queueAvailable = currentQueue.length < maxQueueSize;
+    const queuePosition = currentQueue.length + 1;
+
+    // 获取库存数量
+    const feathersInv = gameState.cleanedFeathersInventory || {};
+    const inkInv = gameState.conchInkInventory || 0;
+
+    // 检查材料是否足够
+    let canForge = true;
+    let materialsHtml = '';
+    const materialNames = {
+        cleaned_feather: '普通净羽',
+        jade_cleaned_feather: '翡翠净羽',
+        falcon_cleaned_feather: '猎隼的净尾羽',
+        rainbow_cleaned_feather: '虹光净羽',
+        harpy_cleaned_feather: '鹰身人的净羽',
+        conch_ink: '海螺墨'
+    };
+
+    for (const [matId, count] of Object.entries(pen.materials)) {
+        let have = 0;
+        if (matId === 'conch_ink') {
+            have = inkInv;
+        } else {
+            have = feathersInv[matId] || 0;
+        }
+        const enough = have >= count;
+        if (!enough) canForge = false;
+
+        materialsHtml += `
+            <div class="material-row ${enough ? '' : 'insufficient'}">
+                <span class="material-icon">${matId === 'conch_ink' ? '🐚' : '🪶'}</span>
+                <span class="material-name">${materialNames[matId] || matId}</span>
+                <span class="material-count">${have} / ${count}</span>
+            </div>
+        `;
+    }
+
+    // 获取锻造等级
+    const forgingLevel = gameState.forgingLevel || 1;
+    const levelEnough = forgingLevel >= pen.reqForgeLevel;
+    if (!levelEnough) canForge = false;
+
+    // 代币概率百分比
+    const tokenPercent = Math.floor(pen.tokenRate * 100);
+
+    // 计算价值
+    const penValue = pen.value || 0;
+
+    const modal = document.createElement('div');
+    modal.className = 'action-modal-overlay';
+    modal.innerHTML = `
+        <div class="action-modal-card">
+            <div class="modal-header">
+                <h2>${pen.name}</h2>
+                <span class="modal-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="pen-info-section">
+                    <div class="pen-icon-large">${pen.icon}</div>
+                    <div class="pen-details">
+                        <div class="detail-row">
+                            <span class="detail-label">需求锻造等级</span>
+                            <span class="detail-value ${levelEnough ? '' : 'insufficient'}">${pen.reqForgeLevel}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">需求诗人等级</span>
+                            <span class="detail-value">${pen.reqBardLevel}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">锻造经验</span>
+                            <span class="detail-value">${pen.exp} exp</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">锻造代币概率</span>
+                            <span class="detail-value">${tokenPercent}%</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">装备价值</span>
+                            <span class="detail-value">${penValue} 💰</span>
+                        </div>
+                        <div class="detail-row effect-row">
+                            <span class="detail-label">装备效果</span>
+                            <span class="detail-value effect-text">${pen.effect}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="materials-section">
+                    <h3>所需材料</h3>
+                    ${materialsHtml}
+                </div>
+                
+                <div class="count-section">
+                    <div class="count-label">锻造次数</div>
+                    <div class="count-buttons">
+                        <button class="count-btn" data-count="1">1</button>
+                        <button class="count-btn" data-count="5">5</button>
+                        <button class="count-btn" data-count="10">10</button>
+                        <button class="count-btn is-inf" data-count="inf">∞</button>
+                    </div>
+                    <input type="number" class="custom-count-input" id="pen-custom-count" min="1" placeholder="自定义">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" id="pen-cancel">取消</button>
+                <button class="modal-btn secondary" id="pen-queue" ${canForge && queueAvailable ? '' : 'disabled'}>添加到队列#${queuePosition}</button>
+                <button class="modal-btn primary" id="pen-start" ${canForge ? '' : 'disabled'}>${currentAction ? '立即锻造' : '开始锻造'}</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // 绑定关闭事件
+    modal.querySelector('.modal-close').addEventListener('click', () => modal.remove());
+    modal.querySelector('#pen-cancel').addEventListener('click', () => modal.remove());
+
+    // 绑定次数按钮
+    let selectedCount = 1;
+    modal.querySelectorAll('.count-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            modal.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const val = btn.dataset.count;
+            selectedCount = val === 'inf' ? 99999 : parseInt(val);
+            modal.querySelector('#pen-custom-count').value = val === 'inf' ? '' : selectedCount;
+        });
+    });
+
+    // 自定义次数输入
+    modal.querySelector('#pen-custom-count').addEventListener('input', (e) => {
+        const val = parseInt(e.target.value) || 1;
+        selectedCount = Math.max(1, Math.min(99999, val));
+        modal.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
+    });
+
+    // 添加到队列
+    modal.querySelector('#pen-queue').addEventListener('click', () => {
+        socket.emit('forge_pen', { penId: pen.id, count: selectedCount, addToQueue: true });
+        modal.remove();
+    });
+
+    // 立即开始锻造
+    modal.querySelector('#pen-start').addEventListener('click', () => {
+        if (currentAction) {
+            // 清空当前行动
+            socket.emit('forge_pen_immediately', { penId: pen.id, count: selectedCount });
+        } else {
+            socket.emit('forge_pen', { penId: pen.id, count: selectedCount, addToQueue: false });
+        }
+        modal.remove();
+    });
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+
+    // 默认选中1次
+    modal.querySelector('.count-btn[data-count="1"]').classList.add('active');
 }
 
 /**
@@ -3995,6 +4225,45 @@ function renderInventories() {
         { id: 'brewing_token', name: '酿造代币', icon: '🪙' }
     ];
     renderInventoryGrid('storage-tokens-items', gameState.tokensInventory, tokenConfig);
+
+    // 笔装备（吟游诗人）
+    if (CONFIG.pens) {
+        const pensInventory = gameState.pensInventory || [];
+        // 统计笔数量
+        const penCounts = {};
+        pensInventory.forEach(penId => {
+            penCounts[penId] = (penCounts[penId] || 0) + 1;
+        });
+        renderInventoryGrid('storage-pens-items', penCounts, CONFIG.pens);
+    }
+
+    // 净羽
+    if (CONFIG.cleanedFeathers) {
+        renderInventoryGrid('storage-cleaned-feathers-items', gameState.cleanedFeathersInventory, CONFIG.cleanedFeathers);
+    }
+
+    // 海螺墨（单独显示数量）
+    const conchInkElement = document.getElementById('storage-conch-ink-items');
+    if (conchInkElement) {
+        const inkCount = gameState.conchInkInventory || 0;
+        if (inkCount > 0) {
+            conchInkElement.innerHTML = `
+                <div class="inventory-item"
+                     data-id="conch_ink"
+                     data-name="海螺墨"
+                     data-count="${inkCount}"
+                     data-price="300"
+                     data-desc="用于锻造笔装备的珍贵材料"
+                     data-icon="🐚">
+                    <span class="item-icon">🐚</span>
+                    <span class="item-name">海螺墨</span>
+                    <span class="item-count">${inkCount}</span>
+                </div>
+            `;
+        } else {
+            conchInkElement.innerHTML = '';
+        }
+    }
 }
 
 /**
@@ -4126,6 +4395,26 @@ const ITEM_VALUES = {
     hammers: {
         cyan_hammer: 160, red_hammer: 832, feather_hammer: 3072, white_hammer: 9408,
         hell_hammer: 22758, thunder_hammer: 48271, brilliant_hammer: 98087, star_hammer: 182224
+    },
+    // 净羽
+    cleaned_feathers: {
+        cleaned_feather: 32, jade_cleaned_feather: 64, falcon_cleaned_feather: 96,
+        rainbow_cleaned_feather: 154, harpy_cleaned_feather: 240
+    },
+    // 海螺墨
+    other_materials: {
+        conch_ink: 300
+    },
+    // 笔装备（吟游诗人）
+    pens: {
+        traveler_pen: 15 * 32 + 4 * 300,      // 480 + 1200 = 1680
+        lyre_pen: 16 * 32 + 12 * 64 + 8 * 300, // 512 + 768 + 2400 = 3680
+        witness_pen: 12 * 32 + 16 * 64 + 14 * 96 + 12 * 300, // 384 + 1024 + 1344 + 3600 = 6352
+        awaken_pen: 32 * 64 + 28 * 96 + 17 * 300, // 2048 + 2688 + 5100 = 9836
+        blaze_pen: 24 * 64 + 30 * 96 + 24 * 154 + 23 * 300, // 1536 + 2880 + 3696 + 6900 = 15012
+        lionheart_pen: 50 * 96 + 48 * 154 + 30 * 300, // 4800 + 7392 + 9000 = 21192
+        echo_pen: 36 * 96 + 48 * 154 + 36 * 240 + 38 * 300, // 3456 + 7392 + 8640 + 11400 = 30888
+        epic_pen: 72 * 154 + 78 * 240 + 47 * 300 // 11088 + 18720 + 14100 = 43908
     }
 };
 
@@ -5089,7 +5378,17 @@ function formatCost(cost, separator = ' ') {
         'moonlight_mushroom': '月光菇',
         'wool': '羊毛',
         'falcon_tail_feather': '隼尾羽',
-        'silk': '丝绸原料'
+        'silk': '丝绸原料',
+
+        // 净羽类
+        'cleaned_feather': '普通净羽',
+        'jade_cleaned_feather': '翡翠净羽',
+        'falcon_cleaned_feather': '猎隼的净尾羽',
+        'rainbow_cleaned_feather': '虹光净羽',
+        'harpy_cleaned_feather': '鹰身人的净羽',
+
+        // 其他材料
+        'conch_ink': '海螺墨'
     };
 
     return Object.entries(cost)

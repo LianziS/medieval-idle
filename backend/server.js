@@ -1036,6 +1036,50 @@ io.on('connection', (socket) => {
         }
     });
     
+    // 开始锻造笔
+    socket.on('forge_pen', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        console.log('✒️ forge_pen 收到:', JSON.stringify({ penId: data.penId, count: data.count }));
+        
+        const result = gameEngine.startForgePenAction(data.penId, data.count || 1);
+        
+        console.log('✒️ startForgePenAction 结果:', JSON.stringify({ 
+            success: result.success, 
+            action: result.action ? { type: result.action.type, id: result.action.id, duration: result.action.duration } : null 
+        }));
+        
+        socket.emit('action_result', result);
+        if (result.success) {
+            socket.emit('game_state_update', gameEngine.getFullState());
+        }
+    });
+    
+    // 立即锻造笔（清空当前行动和队列）
+    socket.on('forge_pen_immediately', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        // 清空当前行动和队列
+        gameEngine.state.activeAction = null;
+        gameEngine.state.actionQueue = [];
+        
+        // 开始锻造笔
+        const result = gameEngine.startForgePenAction(data.penId, data.count || 1);
+        socket.emit('action_result', result);
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
+    // 完成一次锻造笔
+    socket.on('forge_pen_complete', () => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.completeForgePenOnce();
+        if (result) {
+            socket.emit('forge_result', result);
+            socket.emit('game_state_update', gameEngine.getFullState());
+        }
+    });
+    
     // 获取游戏状态
     socket.on('get_state', () => {
         if (!gameEngine) return socket.emit('error', { message: '未认证' });
@@ -1375,6 +1419,12 @@ setInterval(() => {
                 if (action.type === 'ENHANCE') {
                     result = gameEngine.completeEnhanceOnce();
                     socket.emit('enhance_complete_result', result);
+                } else if (action.type === 'FORGE_PEN') {
+                    result = gameEngine.completeForgePenOnce();
+                    socket.emit('forge_result', result);
+                } else if (action.type === 'FORGE_TOOL') {
+                    result = gameEngine.completeForgeOnce();
+                    socket.emit('forge_result', result);
                 } else {
                     result = gameEngine.completeActionOnce();
                     socket.emit('action_complete_result', result);
