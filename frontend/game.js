@@ -3246,8 +3246,12 @@ function openPenForgeModal(penId) {
     const feathersInv = gameState.cleanedFeathersInventory || {};
     const inkInv = gameState.conchInkInventory || 0;
 
-    // 检查材料是否足够
-    let canForge = true;
+    // 获取锻造等级
+    const forgingLevel = gameState.forgingLevel || 1;
+    const levelEnough = forgingLevel >= pen.reqForgeLevel;
+
+    // 检查材料是否足够，计算最大可锻造次数
+    let maxForgeCount = Infinity;
     const materialNames = {
         cleaned_feather: '普通净羽',
         jade_cleaned_feather: '翡翠净羽',
@@ -3259,6 +3263,7 @@ function openPenForgeModal(penId) {
 
     // 生成材料行HTML
     let materialsRowsHtml = '';
+    let firstMaterial = true;
     for (const [matId, count] of Object.entries(pen.materials)) {
         let have = 0;
         if (matId === 'conch_ink') {
@@ -3267,31 +3272,35 @@ function openPenForgeModal(penId) {
             have = feathersInv[matId] || 0;
         }
         const enough = have >= count;
-        if (!enough) canForge = false;
+        const maxByThis = Math.floor(have / count);
+        if (maxByThis < maxForgeCount) maxForgeCount = maxByThis;
         const matIcon = matId === 'conch_ink' ? '🐚' : '🪶';
+
+        // 第一个材料显示"材料"标签，后面的材料标签为空
+        const labelHtml = firstMaterial ? 
+            `<div class="popup-info-label"><span class="lbl-icon">📦</span>材料</div>` :
+            `<div class="popup-info-label"></div>`;
+        firstMaterial = false;
 
         materialsRowsHtml += `
             <div class="popup-info-row">
-                <div class="popup-info-label"><span class="lbl-icon">${matIcon}</span>材料</div>
+                ${labelHtml}
                 <div class="popup-info-val">
                     <span class="popup-mat-count ${enough ? '' : 'insufficient'}">[${have}/${count}]</span>
-                    <span class="popup-badge material ${enough ? '' : 'insufficient'}">${materialNames[matId] || matId}</span>
+                    <span class="popup-badge material ${enough ? '' : 'insufficient'}">${matIcon} ${materialNames[matId] || matId}</span>
                 </div>
             </div>`;
     }
 
-    // 获取锻造等级
-    const forgingLevel = gameState.forgingLevel || 1;
-    const levelEnough = forgingLevel >= pen.reqForgeLevel;
-    if (!levelEnough) canForge = false;
+    // 计算代币概率（使用笔配置的 tokenRate）
+    const tokenChance = Math.round(pen.tokenRate * 100 * 100) / 100;
+    const tokenChanceDisplay = tokenChance % 1 === 0 ? tokenChance : tokenChance.toString().replace(/\.?0+$/, '');
+    
+    // 连击概率（等级差 × 1%）
+    const comboChance = Math.max(0, forgingLevel - pen.reqForgeLevel);
+    const comboChanceDisplay = comboChance % 1 === 0 ? comboChance : comboChance.toString().replace(/\.?0+$/, '');
 
-    // 代币概率百分比
-    const tokenPercent = Math.floor(pen.tokenRate * 100);
-
-    // 计算价值
-    const penValue = pen.value || 0;
-
-    // 创建模态框（使用与其他行动一致的样式）
+    // 创建模态框（使用与矿锭一致的样式）
     const modal = document.createElement('div');
     modal.className = 'action-detail-overlay';
     modal.innerHTML = `
@@ -3309,103 +3318,143 @@ function openPenForgeModal(penId) {
             <!-- 信息区 -->
             <div class="popup-info-rows">
                 <div class="popup-info-row">
-                    <div class="popup-info-label"><span class="lbl-icon">🔓</span>锻造等级</div>
+                    <div class="popup-info-label"><span class="lbl-icon">🔓</span>需要</div>
                     <div class="popup-info-val">
                         <span class="popup-badge level ${levelEnough ? '' : 'insufficient'}">Lv.${pen.reqForgeLevel} 🔨</span>
                         ${!levelEnough ? `<span class="level-warning">（当前 Lv.${forgingLevel}）</span>` : ''}
                     </div>
                 </div>
-                <div class="popup-info-row">
-                    <div class="popup-info-label"><span class="lbl-icon">🎵</span>诗人等级</div>
-                    <div class="popup-info-val">
-                        <span class="popup-badge level">Lv.${pen.reqBardLevel}</span>
-                    </div>
-                </div>
                 ${materialsRowsHtml}
+                
+                <div class="popup-divider"></div>
+                
                 <div class="popup-info-row">
-                    <div class="popup-info-label"><span class="lbl-icon">⭐</span>锻造经验</div>
+                    <div class="popup-info-label"><span class="lbl-icon">📦</span>产出</div>
                     <div class="popup-info-val">
-                        <span class="popup-exp-val">${pen.exp}</span>
+                        <span class="popup-exp-val">${pen.exp} exp</span>
+                        <br><span class="popup-drop-prefix">1</span> <span class="popup-badge drop">${pen.icon} ${pen.name}</span>
                     </div>
                 </div>
                 <div class="popup-info-row">
-                    <div class="popup-info-label"><span class="lbl-icon">🪙</span>代币概率</div>
+                    <div class="popup-info-label"><span class="lbl-icon">🪙</span>代币</div>
                     <div class="popup-info-val">
-                        <span class="popup-token-prefix">锻造代币</span>
-                        <span class="popup-token-prob">${tokenPercent}%</span>
+                        <span class="popup-token-prefix">1</span> 
+                        <span class="popup-badge token">🔨 锻造代币</span>
+                        <span class="popup-token-prob">~${tokenChanceDisplay}%</span>
                     </div>
                 </div>
                 <div class="popup-info-row">
-                    <div class="popup-info-label"><span class="lbl-icon">💰</span>装备价值</div>
-                    <div class="popup-info-val">${penValue}</div>
-                </div>
-                <div class="popup-info-row">
-                    <div class="popup-info-label"><span class="lbl-icon">✨</span>装备效果</div>
-                    <div class="popup-info-val" style="font-size:12px;color:#a0b0c0;">${pen.effect}</div>
+                    <div class="popup-info-label"><span class="lbl-icon">⚡</span>连击</div>
+                    <div class="popup-info-val">
+                        <span class="popup-combo-chance">${comboChanceDisplay}%</span>
+                        <span class="popup-combo-desc">（等级差 × 1%）</span>
+                    </div>
                 </div>
             </div>
             
             <div class="popup-divider"></div>
             
             <!-- 次数选择 -->
-            <div class="popup-count-row">
-                <span class="popup-count-label">锻造次数</span>
-                <div class="popup-count-btns">
-                    <button class="popup-count-btn" data-count="1">1</button>
-                    <button class="popup-count-btn" data-count="5">5</button>
-                    <button class="popup-count-btn" data-count="10">10</button>
-                    <button class="popup-count-btn" data-count="99999">∞</button>
+            <div class="popup-count-section">
+                <div class="popup-count-label">🔨 锻造</div>
+                <div class="popup-count-row">
+                    <input class="popup-count-input" type="text" value="∞" placeholder="次数" onclick="this.select();">
+                    <div class="popup-count-btns">
+                        <button class="popup-count-btn" data-count="1">1</button>
+                        <button class="popup-count-btn" data-count="5">5</button>
+                        <button class="popup-count-btn" data-count="10">10</button>
+                        <button class="popup-count-btn inf selected" data-count="infinity">∞</button>
+                    </div>
                 </div>
             </div>
             
-            <div class="popup-divider"></div>
-            
-            <!-- 底部按钮 -->
-            <div class="popup-action-btns">
-                <button class="popup-btn-secondary" id="pen-queue" ${canForge && queueAvailable ? '' : 'disabled'}>添加到队列#${queuePosition}</button>
-                <button class="popup-btn-primary" id="pen-start" ${canForge ? '' : 'disabled'}>${currentAction ? '立即锻造' : '开始锻造'}</button>
+            <!-- 操作按钮 -->
+            <div class="popup-actions-row">
+                <button class="popup-btn cancel" id="action-cancel">取消</button>
+                ${queueAvailable ?
+                    `<button class="popup-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` :
+                    `<button class="popup-btn queue disabled" id="action-queue" disabled>队列已满</button>`}
+                ${levelEnough && maxForgeCount > 0 ?
+                    `<button class="popup-btn start" id="action-start">立即开始</button>` :
+                    `<button class="popup-btn start disabled" id="action-start" disabled>${!levelEnough ? '等级不足' : '材料不足'}</button>`}
             </div>
         </div>
     `;
 
     document.body.appendChild(modal);
 
-    // 绑定关闭事件
-    modal.querySelector('.popup-close-btn').addEventListener('click', () => modal.remove());
+    // 关闭函数
+    const closeModal = () => {
+        modal.remove();
+    };
 
-    // 绑定次数按钮
-    let selectedCount = 1;
+    // 绑定关闭事件
+    modal.querySelector('.popup-close-btn').addEventListener('click', closeModal);
+    modal.querySelector('#action-cancel').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+
+    // 次数选择按钮
     modal.querySelectorAll('.popup-count-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             modal.querySelectorAll('.popup-count-btn').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
-            selectedCount = parseInt(btn.dataset.count);
+            const countVal = btn.dataset.count;
+            const input = modal.querySelector('.popup-count-input');
+            if (countVal === 'infinity') {
+                input.value = '∞';
+            } else {
+                input.value = countVal;
+            }
         });
     });
 
-    // 添加到队列
-    modal.querySelector('#pen-queue').addEventListener('click', () => {
-        socket.emit('forge_pen', { penId: pen.id, count: selectedCount, addToQueue: true });
-        modal.remove();
-    });
-
-    // 立即开始锻造
-    modal.querySelector('#pen-start').addEventListener('click', () => {
-        if (currentAction) {
-            // 清空当前行动
-            socket.emit('forge_pen_immediately', { penId: pen.id, count: selectedCount });
-        } else {
-            socket.emit('forge_pen', { penId: pen.id, count: selectedCount, addToQueue: false });
+    // 输入框事件
+    const countInput = modal.querySelector('.popup-count-input');
+    countInput.addEventListener('input', () => {
+        let val = countInput.value;
+        
+        // 只允许数字和∞
+        if (val !== '∞' && val !== '') {
+            val = val.replace(/[^0-9]/g, '');
+            countInput.value = val;
         }
-        modal.remove();
+        
+        modal.querySelectorAll('.popup-count-btn').forEach(b => b.classList.remove('selected'));
+        if (val === '∞') {
+            modal.querySelector('.popup-count-btn[data-count="infinity"]').classList.add('selected');
+        }
     });
 
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.remove();
-    });
+    // 获取次数
+    const getCount = () => {
+        const val = countInput.value;
+        if (val === '∞' || val === '-1' || val === '') return -1;
+        return parseInt(val) || 1;
+    };
 
-    // 默认选中1次
-    modal.querySelector('.popup-count-btn[data-count="1"]').classList.add('selected');
+    // 加入队列按钮
+    const queueBtn = modal.querySelector('#action-queue');
+    if (queueBtn && !queueBtn.disabled) {
+        queueBtn.addEventListener('click', () => {
+            socket.emit('forge_pen', { penId: pen.id, count: getCount(), addToQueue: true });
+            closeModal();
+        });
+    }
+
+    // 开始锻造按钮
+    const startBtn = modal.querySelector('#action-start');
+    if (startBtn && !startBtn.disabled) {
+        startBtn.addEventListener('click', () => {
+            if (currentAction) {
+                socket.emit('forge_pen_immediately', { penId: pen.id, count: getCount() });
+            } else {
+                socket.emit('forge_pen', { penId: pen.id, count: getCount(), addToQueue: false });
+            }
+            closeModal();
+        });
+    }
 }
 
 /**
