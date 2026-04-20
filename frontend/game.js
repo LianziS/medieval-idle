@@ -3231,12 +3231,9 @@ function renderToolForge() {
 
     container.innerHTML = allTools.map(({ tool, toolType, toolIndex, reqLevel }) => {
         const unlocked = forgingLevel >= reqLevel;
-        const owned = (gameState.toolsInventory?.[toolType] || []).some(t => 
-            (typeof t === 'string' ? t : t.id) === tool.id
-        );
 
         return `
-            <div class="action-card-square ${unlocked ? '' : 'locked'} ${owned ? 'owned' : ''}"
+            <div class="action-card-square ${unlocked ? '' : 'locked'}"
                  data-tool-type="${toolType}" data-tool-index="${toolIndex}">
                 <div class="card-name">${tool.name}</div>
                 <div class="card-icon">${tool.icon}</div>
