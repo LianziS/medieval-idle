@@ -3444,7 +3444,6 @@ function openToolForgeModal(toolType, toolIndex) {
                         <button class="popup-count-btn" data-count="5">5</button>
                         <button class="popup-count-btn" data-count="10">10</button>
                         <button class="popup-count-btn inf selected" data-count="infinity">∞</button>
-                        </div>
                     </div>
                 </div>
             </div>
