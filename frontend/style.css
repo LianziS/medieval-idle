@@ -4756,14 +4756,18 @@ body::after {
 #crafting-planks-list,
 #crafting-manuscripts-list,
 #tailoring-fabrics-list,
-#tailoring-threads-list {
+#tailoring-threads-list,
+#tailoring-equipment-list,
+#forging-equipment-list {
     display: none !important;
 }
 
 #crafting-planks-list.active,
 #crafting-manuscripts-list.active,
 #tailoring-fabrics-list.active,
-#tailoring-threads-list.active {
+#tailoring-threads-list.active,
+#tailoring-equipment-list.active,
+#forging-equipment-list.active {
     display: flex !important;
     flex-direction: row;
     flex-wrap: wrap;

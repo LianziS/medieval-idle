@@ -2800,12 +2800,9 @@ function renderTailoringEquipment() {
 
     container.innerHTML = CONFIG.boots.map(boot => {
         const unlocked = tailoringLevel >= boot.reqTailorLevel;
-        const owned = (gameState.bootsInventory || []).some(b => 
-            (typeof b === 'string' ? b : b.id) === boot.id
-        );
 
         return `
-            <div class="action-card-square ${unlocked ? '' : 'locked'} ${owned ? 'owned' : ''}"
+            <div class="action-card-square ${unlocked ? '' : 'locked'}"
                  data-boot-id="${boot.id}">
                 <div class="card-name">${boot.name}</div>
                 <div class="card-icon">${boot.icon}</div>
@@ -3515,12 +3512,9 @@ function renderForgingEquipment() {
 
     container.innerHTML = CONFIG.pens.map(pen => {
         const unlocked = forgingLevel >= pen.reqForgeLevel;
-        const owned = (gameState.pensInventory || []).some(p => 
-            (typeof p === 'string' ? p : p.id) === pen.id
-        );
 
         return `
-            <div class="action-card-square ${unlocked ? '' : 'locked'} ${owned ? 'owned' : ''}"
+            <div class="action-card-square ${unlocked ? '' : 'locked'}"
                  data-pen-id="${pen.id}">
                 <div class="card-name">${pen.name}</div>
                 <div class="card-icon">${pen.icon}</div>
