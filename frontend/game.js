@@ -3248,7 +3248,6 @@ function openPenForgeModal(penId) {
 
     // 检查材料是否足够
     let canForge = true;
-    let materialsHtml = '';
     const materialNames = {
         cleaned_feather: '普通净羽',
         jade_cleaned_feather: '翡翠净羽',
@@ -3258,6 +3257,8 @@ function openPenForgeModal(penId) {
         conch_ink: '海螺墨'
     };
 
+    // 生成材料行HTML
+    let materialsRowsHtml = '';
     for (const [matId, count] of Object.entries(pen.materials)) {
         let have = 0;
         if (matId === 'conch_ink') {
@@ -3267,14 +3268,16 @@ function openPenForgeModal(penId) {
         }
         const enough = have >= count;
         if (!enough) canForge = false;
+        const matIcon = matId === 'conch_ink' ? '🐚' : '🪶';
 
-        materialsHtml += `
-            <div class="material-row ${enough ? '' : 'insufficient'}">
-                <span class="material-icon">${matId === 'conch_ink' ? '🐚' : '🪶'}</span>
-                <span class="material-name">${materialNames[matId] || matId}</span>
-                <span class="material-count">${have} / ${count}</span>
-            </div>
-        `;
+        materialsRowsHtml += `
+            <div class="popup-info-row">
+                <div class="popup-info-label"><span class="lbl-icon">${matIcon}</span>材料</div>
+                <div class="popup-info-val">
+                    <span class="popup-mat-count ${enough ? '' : 'insufficient'}">[${have}/${count}]</span>
+                    <span class="popup-badge material ${enough ? '' : 'insufficient'}">${materialNames[matId] || matId}</span>
+                </div>
+            </div>`;
     }
 
     // 获取锻造等级
@@ -3288,65 +3291,79 @@ function openPenForgeModal(penId) {
     // 计算价值
     const penValue = pen.value || 0;
 
+    // 创建模态框（使用与其他行动一致的样式）
     const modal = document.createElement('div');
-    modal.className = 'action-modal-overlay';
+    modal.className = 'action-detail-overlay';
     modal.innerHTML = `
-        <div class="action-modal-card">
-            <div class="modal-header">
-                <h2>${pen.name}</h2>
-                <span class="modal-close">&times;</span>
+        <div class="action-detail-popup">
+            <button class="popup-close-btn">✕</button>
+            
+            <!-- 标题行 -->
+            <div class="popup-header-row">
+                <div class="popup-icon-large">${pen.icon}</div>
+                <div class="popup-name-large">${pen.name}</div>
             </div>
-            <div class="modal-body">
-                <div class="pen-info-section">
-                    <div class="pen-icon-large">${pen.icon}</div>
-                    <div class="pen-details">
-                        <div class="detail-row">
-                            <span class="detail-label">需求锻造等级</span>
-                            <span class="detail-value ${levelEnough ? '' : 'insufficient'}">${pen.reqForgeLevel}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">需求诗人等级</span>
-                            <span class="detail-value">${pen.reqBardLevel}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">锻造经验</span>
-                            <span class="detail-value">${pen.exp} exp</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">锻造代币概率</span>
-                            <span class="detail-value">${tokenPercent}%</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">装备价值</span>
-                            <span class="detail-value">${penValue} 💰</span>
-                        </div>
-                        <div class="detail-row effect-row">
-                            <span class="detail-label">装备效果</span>
-                            <span class="detail-value effect-text">${pen.effect}</span>
-                        </div>
+            
+            <div class="popup-divider"></div>
+            
+            <!-- 信息区 -->
+            <div class="popup-info-rows">
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">🔓</span>锻造等级</div>
+                    <div class="popup-info-val">
+                        <span class="popup-badge level ${levelEnough ? '' : 'insufficient'}">Lv.${pen.reqForgeLevel} 🔨</span>
+                        ${!levelEnough ? `<span class="level-warning">（当前 Lv.${forgingLevel}）</span>` : ''}
                     </div>
                 </div>
-                
-                <div class="materials-section">
-                    <h3>所需材料</h3>
-                    ${materialsHtml}
-                </div>
-                
-                <div class="count-section">
-                    <div class="count-label">锻造次数</div>
-                    <div class="count-buttons">
-                        <button class="count-btn" data-count="1">1</button>
-                        <button class="count-btn" data-count="5">5</button>
-                        <button class="count-btn" data-count="10">10</button>
-                        <button class="count-btn is-inf" data-count="inf">∞</button>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">🎵</span>诗人等级</div>
+                    <div class="popup-info-val">
+                        <span class="popup-badge level">Lv.${pen.reqBardLevel}</span>
                     </div>
-                    <input type="number" class="custom-count-input" id="pen-custom-count" min="1" placeholder="自定义">
+                </div>
+                ${materialsRowsHtml}
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">⭐</span>锻造经验</div>
+                    <div class="popup-info-val">
+                        <span class="popup-exp-val">${pen.exp}</span>
+                    </div>
+                </div>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">🪙</span>代币概率</div>
+                    <div class="popup-info-val">
+                        <span class="popup-token-prefix">锻造代币</span>
+                        <span class="popup-token-prob">${tokenPercent}%</span>
+                    </div>
+                </div>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">💰</span>装备价值</div>
+                    <div class="popup-info-val">${penValue}</div>
+                </div>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">✨</span>装备效果</div>
+                    <div class="popup-info-val" style="font-size:12px;color:#a0b0c0;">${pen.effect}</div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="modal-btn secondary" id="pen-cancel">取消</button>
-                <button class="modal-btn secondary" id="pen-queue" ${canForge && queueAvailable ? '' : 'disabled'}>添加到队列#${queuePosition}</button>
-                <button class="modal-btn primary" id="pen-start" ${canForge ? '' : 'disabled'}>${currentAction ? '立即锻造' : '开始锻造'}</button>
+            
+            <div class="popup-divider"></div>
+            
+            <!-- 次数选择 -->
+            <div class="popup-count-row">
+                <span class="popup-count-label">锻造次数</span>
+                <div class="popup-count-btns">
+                    <button class="popup-count-btn" data-count="1">1</button>
+                    <button class="popup-count-btn" data-count="5">5</button>
+                    <button class="popup-count-btn" data-count="10">10</button>
+                    <button class="popup-count-btn" data-count="99999">∞</button>
+                </div>
+            </div>
+            
+            <div class="popup-divider"></div>
+            
+            <!-- 底部按钮 -->
+            <div class="popup-action-btns">
+                <button class="popup-btn-secondary" id="pen-queue" ${canForge && queueAvailable ? '' : 'disabled'}>添加到队列#${queuePosition}</button>
+                <button class="popup-btn-primary" id="pen-start" ${canForge ? '' : 'disabled'}>${currentAction ? '立即锻造' : '开始锻造'}</button>
             </div>
         </div>
     `;
@@ -3354,26 +3371,16 @@ function openPenForgeModal(penId) {
     document.body.appendChild(modal);
 
     // 绑定关闭事件
-    modal.querySelector('.modal-close').addEventListener('click', () => modal.remove());
-    modal.querySelector('#pen-cancel').addEventListener('click', () => modal.remove());
+    modal.querySelector('.popup-close-btn').addEventListener('click', () => modal.remove());
 
     // 绑定次数按钮
     let selectedCount = 1;
-    modal.querySelectorAll('.count-btn').forEach(btn => {
+    modal.querySelectorAll('.popup-count-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            modal.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            const val = btn.dataset.count;
-            selectedCount = val === 'inf' ? 99999 : parseInt(val);
-            modal.querySelector('#pen-custom-count').value = val === 'inf' ? '' : selectedCount;
+            modal.querySelectorAll('.popup-count-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedCount = parseInt(btn.dataset.count);
         });
-    });
-
-    // 自定义次数输入
-    modal.querySelector('#pen-custom-count').addEventListener('input', (e) => {
-        const val = parseInt(e.target.value) || 1;
-        selectedCount = Math.max(1, Math.min(99999, val));
-        modal.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
     });
 
     // 添加到队列
@@ -3398,7 +3405,7 @@ function openPenForgeModal(penId) {
     });
 
     // 默认选中1次
-    modal.querySelector('.count-btn[data-count="1"]').classList.add('active');
+    modal.querySelector('.popup-count-btn[data-count="1"]').classList.add('selected');
 }
 
 /**
