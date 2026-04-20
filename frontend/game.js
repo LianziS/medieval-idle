@@ -3275,6 +3275,7 @@ function openPenForgeModal(penId) {
         const maxByThis = Math.floor(have / count);
         if (maxByThis < maxForgeCount) maxForgeCount = maxByThis;
         const matIcon = matId === 'conch_ink' ? '🐚' : '🪶';
+        const matName = materialNames[matId] || matId;
 
         // 第一个材料显示"材料"标签，后面的材料标签为空
         const labelHtml = firstMaterial ? 
@@ -3282,12 +3283,14 @@ function openPenForgeModal(penId) {
             `<div class="popup-info-label"></div>`;
         firstMaterial = false;
 
+        // 添加 item-hover-card 类用于悬浮/点击功能
+        const itemType = matId === 'conch_ink' ? 'CONCH_INK' : 'CLEANED_FEATHER';
         materialsRowsHtml += `
             <div class="popup-info-row">
                 ${labelHtml}
                 <div class="popup-info-val">
                     <span class="popup-mat-count ${enough ? '' : 'insufficient'}">[${have}/${count}]</span>
-                    <span class="popup-badge material ${enough ? '' : 'insufficient'}">${matIcon} ${materialNames[matId] || matId}</span>
+                    <span class="popup-badge material ${enough ? '' : 'insufficient'} item-hover-card" data-item-id="${matId}" data-item-type="${itemType}" data-item-name="${matName}" data-item-icon="${matIcon}">${matIcon} ${matName}</span>
                 </div>
             </div>`;
     }
@@ -3332,14 +3335,14 @@ function openPenForgeModal(penId) {
                     <div class="popup-info-label"><span class="lbl-icon">📦</span>产出</div>
                     <div class="popup-info-val">
                         <span class="popup-exp-val">${pen.exp} exp</span>
-                        <br><span class="popup-drop-prefix">1</span> <span class="popup-badge drop">${pen.icon} ${pen.name}</span>
+                        <br><span class="popup-drop-prefix">1</span> <span class="popup-badge drop item-hover-card" data-item-id="${pen.id}" data-item-type="PEN" data-item-name="${pen.name}" data-item-icon="${pen.icon}">${pen.icon} ${pen.name}</span>
                     </div>
                 </div>
                 <div class="popup-info-row">
                     <div class="popup-info-label"><span class="lbl-icon">🪙</span>代币</div>
                     <div class="popup-info-val">
                         <span class="popup-token-prefix">1</span> 
-                        <span class="popup-badge token">🔨 锻造代币</span>
+                        <span class="popup-badge token item-hover-card" data-item-id="forging_token" data-item-type="TOKEN" data-item-name="锻造代币" data-item-icon="🪙">🔨 锻造代币</span>
                         <span class="popup-token-prob">~${tokenChanceDisplay}%</span>
                     </div>
                 </div>
@@ -3455,6 +3458,15 @@ function openPenForgeModal(penId) {
             closeModal();
         });
     }
+
+    // 绑定材料、产出、代币的悬浮/点击事件
+    modal.querySelectorAll('.item-hover-card').forEach(item => {
+        item.addEventListener('mouseenter', (e) => showActionItemTooltip(item, e, modal));
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showActionItemTooltip(item, e, modal);
+        });
+    });
 }
 
 /**
@@ -4817,6 +4829,13 @@ function showActionItemTooltip(item, event, modal) {
         ownedCount = gameState?.potionsInventory?.[itemId] || 0;
     } else if (itemType === 'BREW') {
         ownedCount = gameState?.brewsInventory?.[itemId] || 0;
+    } else if (itemType === 'CLEANED_FEATHER') {
+        ownedCount = gameState?.cleanedFeathersInventory?.[itemId] || 0;
+    } else if (itemType === 'CONCH_INK') {
+        ownedCount = gameState?.conchInkInventory || 0;
+    } else if (itemType === 'PEN') {
+        const pensInv = gameState?.pensInventory || [];
+        ownedCount = pensInv.filter(p => (typeof p === 'string' ? p : p.id) === itemId).length;
     }
     
     // 获取单价（代币固定50）
