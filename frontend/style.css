@@ -4543,7 +4543,12 @@ body::after {
     padding-top: 2px;
 }
 
-.popup-info-label .lbl-icon { font-size: 13px; }
+.popup-info-label .lbl-icon { 
+    font-size: 13px; 
+    width: 20px; 
+    text-align: center; 
+    display: inline-block;
+}
 
 .popup-info-val { color: #c8d0d8; flex: 1; }
 
