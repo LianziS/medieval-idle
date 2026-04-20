@@ -66,8 +66,14 @@ class GameEngine {
             // 笔装备库存（吟游诗人）
             pensInventory: [],
             
+            // 靴子装备库存（吟游诗人）
+            bootsInventory: [],
+            
             // 海螺墨库存
             conchInkInventory: 0,
+            
+            // 河铸钉库存
+            riverNailInventory: 0,
             
             // 建筑
             buildings: {},
@@ -1608,6 +1614,165 @@ class GameEngine {
         }
         
         return { success: true, rewards, exp: pen.exp };
+    }
+    
+    /**
+     * 开始缝制靴子行动
+     */
+    startTailorBootAction(bootId, count = 1) {
+        const boot = CONFIG.boots?.find(b => b.id === bootId);
+        if (!boot) {
+            return { success: false, reason: '靴子不存在' };
+        }
+        
+        // 检查等级要求
+        const tailoringLevel = this.state.tailoringLevel || 1;
+        if (tailoringLevel < boot.reqTailorLevel) {
+            return { success: false, reason: `需要缝制 Lv.${boot.reqTailorLevel}` };
+        }
+        
+        // 检查材料是否足够
+        const fabricsInv = this.state.fabricsInventory || {};
+        const threadsInv = this.state.threadsInventory || {};
+        const nailInv = this.state.riverNailInventory || 0;
+        
+        for (const [matId, matCount] of Object.entries(boot.materials)) {
+            let have = 0;
+            if (matId === 'river_nail') {
+                have = nailInv;
+            } else if (matId.includes('thread') || matId === 'wind_thread' || matId === 'dream_thread') {
+                have = threadsInv[matId] || 0;
+            } else {
+                have = fabricsInv[matId] || 0;
+            }
+            
+            if (have < matCount) {
+                const matNames = {
+                    jute_cloth: '黄麻布料', linen_cloth: '亚麻布料', wool_cloth: '羊毛布料',
+                    silk_cloth: '丝绸布料', wind_silk: '风语丝绸', dream_cloth: '梦幻布料',
+                    jute_thread: '黄麻线', linen_thread: '亚麻线', wool_thread: '羊毛线',
+                    silk_thread: '蚕丝线', wind_thread: '风语丝线', dream_thread: '梦幻丝线',
+                    river_nail: '河铸钉'
+                };
+                return { success: false, reason: `${matNames[matId] || matId}不足: 需要 ${matCount}` };
+            }
+        }
+        
+        // 消耗材料
+        for (const [matId, matCount] of Object.entries(boot.materials)) {
+            if (matId === 'river_nail') {
+                this.state.riverNailInventory -= matCount;
+            } else if (matId.includes('thread') || matId === 'wind_thread' || matId === 'dream_thread') {
+                threadsInv[matId] = (threadsInv[matId] || 0) - matCount;
+                if (threadsInv[matId] <= 0) delete threadsInv[matId];
+            } else {
+                fabricsInv[matId] = (fabricsInv[matId] || 0) - matCount;
+                if (fabricsInv[matId] <= 0) delete fabricsInv[matId];
+            }
+        }
+        
+        // 创建行动
+        const action = {
+            type: 'TAILOR_BOOT',
+            id: bootId,
+            name: boot.name,
+            icon: boot.icon,
+            duration: boot.duration,
+            exp: boot.exp,
+            tokenRate: boot.tokenRate,
+            count: count,
+            startTime: Date.now()
+        };
+        
+        this.state.activeAction = action;
+        this.state.actionStartTime = Date.now();
+        this.state.actionDuration = boot.duration;
+        this.state.actionRemaining = boot.duration;
+        this.state.actionCount = count;
+        
+        return { success: true, action };
+    }
+    
+    /**
+     * 完成一次缝制靴子
+     */
+    completeTailorBootOnce() {
+        const action = this.state.activeAction;
+        if (!action || action.type !== 'TAILOR_BOOT') {
+            return null;
+        }
+        
+        const boot = CONFIG.boots?.find(b => b.id === action.id);
+        if (!boot) return null;
+        
+        // 添加靴子到背包
+        if (!this.state.bootsInventory) {
+            this.state.bootsInventory = [];
+        }
+        this.state.bootsInventory.push(boot.id);
+        
+        // 添加经验
+        this.addSkillExp('tailoringLevel', boot.exp);
+        
+        // 检查是否有缝制代币掉落
+        const rewards = [];
+        rewards.push({ type: 'BOOT', id: boot.id, name: boot.name, icon: boot.icon, count: 1 });
+        
+        if (Math.random() < boot.tokenRate) {
+            if (!this.state.tokensInventory) {
+                this.state.tokensInventory = {};
+            }
+            this.state.tokensInventory.tailoring_token = (this.state.tokensInventory.tailoring_token || 0) + 1;
+            rewards.push({ type: 'TOKEN', id: 'tailoring_token', name: '缝制代币', icon: '🪙', count: 1 });
+        }
+        
+        // 减少次数
+        this.state.actionCount--;
+        
+        // 检查是否继续
+        if (this.state.actionCount > 0 || this.state.actionCount >= 99999) {
+            const fabricsInv = this.state.fabricsInventory || {};
+            const threadsInv = this.state.threadsInventory || {};
+            const nailInv = this.state.riverNailInventory || 0;
+            
+            let hasMaterials = true;
+            for (const [matId, matCount] of Object.entries(boot.materials)) {
+                let have = 0;
+                if (matId === 'river_nail') {
+                    have = nailInv;
+                } else if (matId.includes('thread') || matId === 'wind_thread' || matId === 'dream_thread') {
+                    have = threadsInv[matId] || 0;
+                } else {
+                    have = fabricsInv[matId] || 0;
+                }
+                if (have < matCount) hasMaterials = false;
+            }
+            
+            if (hasMaterials && this.state.actionCount >= 99999) {
+                // 无限模式，继续消耗材料
+                for (const [matId, matCount] of Object.entries(boot.materials)) {
+                    if (matId === 'river_nail') {
+                        this.state.riverNailInventory -= matCount;
+                    } else if (matId.includes('thread') || matId === 'wind_thread' || matId === 'dream_thread') {
+                        threadsInv[matId] = (threadsInv[matId] || 0) - matCount;
+                        if (threadsInv[matId] <= 0) delete threadsInv[matId];
+                    } else {
+                        fabricsInv[matId] = (fabricsInv[matId] || 0) - matCount;
+                        if (fabricsInv[matId] <= 0) delete fabricsInv[matId];
+                    }
+                }
+                this.state.actionStartTime = Date.now();
+                this.state.actionRemaining = boot.duration;
+            } else {
+                this.state.activeAction = null;
+                this.state.actionCount = 0;
+            }
+        } else {
+            this.state.activeAction = null;
+            this.state.actionCount = 0;
+        }
+        
+        return { success: true, rewards, exp: boot.exp };
     }
     
     /**

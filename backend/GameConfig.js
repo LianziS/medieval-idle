@@ -527,6 +527,114 @@ const CONFIG = {
         }
     ],
     
+    // 靴子装备配置（吟游诗人专用）
+    boots: [
+        { 
+            id: 'traveler_boots', 
+            name: '旅人之靴', 
+            icon: '👢', 
+            reqTailorLevel: 1,
+            reqBardLevel: 5,
+            materials: { jute_cloth: 16, jute_thread: 4, river_nail: 4 },
+            duration: 6000,
+            exp: 18,
+            tokenRate: 0.02,
+            value: 16 * 16 + 4 * 16 + 4 * 500,
+            effect: '-30min诗人出游时长'
+        },
+        { 
+            id: 'lyre_boots', 
+            name: '琴语之靴', 
+            icon: '👢', 
+            reqTailorLevel: 10,
+            reqBardLevel: 6,
+            materials: { linen_cloth: 32, linen_thread: 8, river_nail: 8 },
+            duration: 10500,
+            exp: 40,
+            tokenRate: 0.04,
+            value: 32 * 32 + 8 * 32 + 8 * 500,
+            effect: '-1h诗人出游时长'
+        },
+        { 
+            id: 'witness_boots', 
+            name: '见闻之靴', 
+            icon: '👢', 
+            reqTailorLevel: 20,
+            reqBardLevel: 7,
+            materials: { jute_cloth: 20, linen_cloth: 28, jute_thread: 5, linen_thread: 7, river_nail: 12 },
+            duration: 16000,
+            exp: 90,
+            tokenRate: 0.076,
+            value: 20 * 16 + 28 * 32 + 5 * 16 + 7 * 32 + 12 * 500,
+            effect: '-1h30min诗人出游时长'
+        },
+        { 
+            id: 'awaken_boots', 
+            name: '醒木之靴', 
+            icon: '👢', 
+            reqTailorLevel: 35,
+            reqBardLevel: 8,
+            materials: { wool_cloth: 48, wool_thread: 12, river_nail: 17 },
+            duration: 27000,
+            exp: 216,
+            tokenRate: 0.145,
+            value: 48 * 96 + 12 * 96 + 17 * 500,
+            effect: '-2h诗人出游时长'
+        },
+        { 
+            id: 'blaze_boots', 
+            name: '灼言之靴', 
+            icon: '👢', 
+            reqTailorLevel: 50,
+            reqBardLevel: 10,
+            materials: { linen_cloth: 32, wool_cloth: 60, linen_thread: 8, wool_thread: 15, river_nail: 23 },
+            duration: 45000,
+            exp: 486,
+            tokenRate: 0.267,
+            value: 32 * 32 + 60 * 96 + 8 * 32 + 15 * 96 + 23 * 500,
+            effect: '-2h30min诗人出游时长'
+        },
+        { 
+            id: 'lionheart_boots', 
+            name: '狮心之靴', 
+            icon: '👢', 
+            reqTailorLevel: 65,
+            reqBardLevel: 13,
+            materials: { wool_cloth: 36, silk_cloth: 84, wool_thread: 9, silk_thread: 21, river_nail: 30 },
+            duration: 78000,
+            exp: 936,
+            tokenRate: 0.467,
+            value: 36 * 96 + 84 * 112 + 9 * 96 + 21 * 112 + 30 * 500,
+            effect: '-3h诗人出游时长'
+        },
+        { 
+            id: 'echo_boots', 
+            name: '回响之靴', 
+            icon: '👢', 
+            reqTailorLevel: 80,
+            reqBardLevel: 16,
+            materials: { silk_cloth: 64, wind_silk: 88, silk_thread: 16, wind_thread: 22, river_nail: 38 },
+            duration: 135000,
+            exp: 1782,
+            tokenRate: 0.70,
+            value: 64 * 112 + 88 * 154 + 16 * 112 + 22 * 154 + 38 * 500,
+            effect: '-3h30min诗人出游时长'
+        },
+        { 
+            id: 'epic_boots', 
+            name: '史诗之靴', 
+            icon: '👢', 
+            reqTailorLevel: 95,
+            reqBardLevel: 19,
+            materials: { wind_silk: 72, dream_cloth: 116, wind_thread: 18, dream_thread: 29, river_nail: 47 },
+            duration: 226000,
+            exp: 3193,
+            tokenRate: 0.90,
+            value: 72 * 154 + 116 * 314 + 18 * 154 + 29 * 314 + 47 * 500,
+            effect: '-4h诗人出游时长'
+        }
+    ],
+    
     // 矿石与矿锭的映射
     oreIngotMapping: {
         'cyan_ore': 'cyan_ingot',

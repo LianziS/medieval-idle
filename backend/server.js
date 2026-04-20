@@ -1080,6 +1080,38 @@ io.on('connection', (socket) => {
         }
     });
     
+    // 开始缝制靴子
+    socket.on('tailor_boot', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        console.log('👢 tailor_boot 收到:', JSON.stringify({ bootId: data.bootId, count: data.count }));
+        
+        const result = gameEngine.startTailorBootAction(data.bootId, data.count || 1);
+        
+        console.log('👢 startTailorBootAction 结果:', JSON.stringify({ 
+            success: result.success, 
+            action: result.action ? { type: result.action.type, id: result.action.id, duration: result.action.duration } : null 
+        }));
+        
+        socket.emit('action_result', result);
+        if (result.success) {
+            socket.emit('game_state_update', gameEngine.getFullState());
+        }
+    });
+    
+    // 立即缝制靴子（清空当前行动和队列）
+    socket.on('tailor_boot_immediately', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        // 清空当前行动和队列
+        gameEngine.state.activeAction = null;
+        gameEngine.state.actionQueue = [];
+        
+        const result = gameEngine.startTailorBootAction(data.bootId, data.count || 1);
+        socket.emit('action_result', result);
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
     // 获取游戏状态
     socket.on('get_state', () => {
         if (!gameEngine) return socket.emit('error', { message: '未认证' });
@@ -1425,6 +1457,9 @@ setInterval(() => {
                 } else if (action.type === 'FORGE_TOOL') {
                     result = gameEngine.completeForgeOnce();
                     socket.emit('forge_result', result);
+                } else if (action.type === 'TAILOR_BOOT') {
+                    result = gameEngine.completeTailorBootOnce();
+                    socket.emit('tailor_result', result);
                 } else {
                     result = gameEngine.completeActionOnce();
                     socket.emit('action_complete_result', result);

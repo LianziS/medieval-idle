@@ -426,6 +426,22 @@ function setupSocket() {
         }
     });
 
+    // 缝制结果（靴子）
+    socket.on('tailor_result', (result) => {
+        if (result.success) {
+            if (result.rewards) {
+                const bootReward = result.rewards.find(r => r.type === 'BOOT');
+                if (bootReward) {
+                    showToast(`✅ 缝制成功: ${bootReward.name}`);
+                }
+            } else {
+                showToast(`✅ 缝制成功`);
+            }
+        } else {
+            showToast(`❌ ${result.reason}`);
+        }
+    });
+
     // 商人系统事件
     socket.on('merchant_data', (data) => {
         const oldModal = document.querySelector('.merchant-modal.active');
@@ -1606,6 +1622,12 @@ function getActionConfig(actionType, actionId) {
         return pen || null;
     }
 
+    // 特殊处理靴子缝制行动
+    if (actionType === 'TAILOR_BOOT') {
+        const boot = CONFIG.boots?.find(b => b.id === actionId);
+        return boot || null;
+    }
+
     // 特殊处理强化行动
     if (actionType === 'ENHANCE') {
         // 从 action 对象获取工具信息
@@ -2753,12 +2775,301 @@ function renderTailoring() {
                 const tabId = tab.dataset.tab;
                 const fabricsL = document.getElementById('tailoring-fabrics-list');
                 const threadsL = document.getElementById('tailoring-threads-list');
+                const equipmentL = document.getElementById('tailoring-equipment-list');
 
                 if (fabricsL) fabricsL.classList.toggle('active', tabId === 'fabrics');
                 if (threadsL) threadsL.classList.toggle('active', tabId === 'threads');
+                if (equipmentL) equipmentL.classList.toggle('active', tabId === 'equipment');
+                
+                if (tabId === 'equipment' && equipmentL) {
+                    renderTailoringEquipment();
+                }
             });
         });
     }
+}
+
+/**
+ * 渲染缝制装备列表（靴子）
+ */
+function renderTailoringEquipment() {
+    const container = document.getElementById('tailoring-equipment-list');
+    if (!container || !gameState || !CONFIG.boots) return;
+
+    const tailoringLevel = gameState.tailoringLevel || 1;
+
+    container.innerHTML = CONFIG.boots.map(boot => {
+        const unlocked = tailoringLevel >= boot.reqTailorLevel;
+        const owned = (gameState.bootsInventory || []).some(b => 
+            (typeof b === 'string' ? b : b.id) === boot.id
+        );
+
+        return `
+            <div class="action-card-square ${unlocked ? '' : 'locked'} ${owned ? 'owned' : ''}"
+                 data-boot-id="${boot.id}">
+                <div class="card-name">${boot.name}</div>
+                <div class="card-icon">${boot.icon}</div>
+            </div>
+        `;
+    }).join('');
+
+    container.classList.add('cards-grid');
+
+    container.querySelectorAll('.action-card-square').forEach(card => {
+        card.addEventListener('click', () => {
+            const bootId = card.dataset.bootId;
+            openBootsTailorModal(bootId);
+        });
+    });
+}
+
+/**
+ * 打开靴子缝制弹窗
+ */
+function openBootsTailorModal(bootId) {
+    const boot = CONFIG.boots.find(b => b.id === bootId);
+    if (!boot) return;
+
+    // 检查队列状态
+    const currentQueue = gameState?.actionQueue || [];
+    const maxQueueSize = 2;
+    const currentAction = gameState?.activeAction;
+    const queueAvailable = currentQueue.length < maxQueueSize;
+    const queuePosition = currentQueue.length + 1;
+
+    // 获取库存数量
+    const fabricsInv = gameState.fabricsInventory || {};
+    const threadsInv = gameState.threadsInventory || {};
+    const nailInv = gameState.riverNailInventory || 0;
+
+    // 获取缝制等级
+    const tailoringLevel = gameState.tailoringLevel || 1;
+    const levelEnough = tailoringLevel >= boot.reqTailorLevel;
+
+    // 检查材料是否足够，计算最大可缝制次数
+    let maxTailorCount = Infinity;
+    const materialNames = {
+        jute_cloth: '黄麻布料',
+        linen_cloth: '亚麻布料',
+        wool_cloth: '羊毛布料',
+        silk_cloth: '丝绸布料',
+        wind_silk: '风语丝绸',
+        dream_cloth: '梦幻布料',
+        jute_thread: '黄麻线',
+        linen_thread: '亚麻线',
+        wool_thread: '羊毛线',
+        silk_thread: '蚕丝线',
+        wind_thread: '风语丝线',
+        dream_thread: '梦幻丝线',
+        river_nail: '河铸钉'
+    };
+
+    // 生成材料行HTML
+    let materialsRowsHtml = '';
+    let firstMaterial = true;
+    for (const [matId, count] of Object.entries(boot.materials)) {
+        let have = 0;
+        if (matId === 'river_nail') {
+            have = nailInv;
+        } else if (matId.includes('thread')) {
+            have = threadsInv[matId] || 0;
+        } else {
+            have = fabricsInv[matId] || 0;
+        }
+        const enough = have >= count;
+        const maxByThis = Math.floor(have / count);
+        if (maxByThis < maxTailorCount) maxTailorCount = maxByThis;
+        
+        // 获取材料图标
+        let matIcon = '📦';
+        if (matId.includes('cloth') || matId === 'wind_silk' || matId === 'dream_cloth') {
+            matIcon = '🧵';
+        } else if (matId.includes('thread') || matId === 'wind_thread' || matId === 'dream_thread') {
+            matIcon = '🧶';
+        } else if (matId === 'river_nail') {
+            matIcon = '🔩';
+        }
+        
+        const matName = materialNames[matId] || matId;
+        const itemType = matId === 'river_nail' ? 'RIVER_NAIL' : (matId.includes('thread') ? 'THREAD' : 'FABRIC');
+
+        const labelHtml = firstMaterial ? 
+            `<div class="popup-info-label"><span class="lbl-icon">📦</span>材料</div>` :
+            `<div class="popup-info-label"></div>`;
+        firstMaterial = false;
+
+        materialsRowsHtml += `
+            <div class="popup-info-row">
+                ${labelHtml}
+                <div class="popup-info-val">
+                    <span class="popup-mat-count ${enough ? '' : 'insufficient'}">[${have}/${count}]</span>
+                    <span class="popup-badge material ${enough ? '' : 'insufficient'} item-hover-card" data-item-id="${matId}" data-item-type="${itemType}" data-item-name="${matName}" data-item-icon="${matIcon}">${matIcon} ${matName}</span>
+                </div>
+            </div>`;
+    }
+
+    // 计算代币概率
+    const tokenChance = Math.round(boot.tokenRate * 100 * 100) / 100;
+    const tokenChanceDisplay = tokenChance % 1 === 0 ? tokenChance : tokenChance.toString().replace(/\.?0+$/, '');
+    
+    // 连击概率
+    const comboChance = Math.max(0, tailoringLevel - boot.reqTailorLevel);
+    const comboChanceDisplay = comboChance % 1 === 0 ? comboChance : comboChance.toString().replace(/\.?0+$/, '');
+
+    // 创建模态框
+    const modal = document.createElement('div');
+    modal.className = 'action-detail-overlay';
+    modal.innerHTML = `
+        <div class="action-detail-popup">
+            <button class="popup-close-btn">✕</button>
+            
+            <div class="popup-header-row">
+                <div class="popup-icon-large">${boot.icon}</div>
+                <div class="popup-name-large">${boot.name}</div>
+            </div>
+            
+            <div class="popup-divider"></div>
+            
+            <div class="popup-info-rows">
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">🔓</span>需要</div>
+                    <div class="popup-info-val">
+                        <span class="popup-badge level ${levelEnough ? '' : 'insufficient'}">Lv.${boot.reqTailorLevel} 🧵</span>
+                        ${!levelEnough ? `<span class="level-warning">（当前 Lv.${tailoringLevel}）</span>` : ''}
+                    </div>
+                </div>
+                ${materialsRowsHtml}
+                
+                <div class="popup-divider"></div>
+                
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">📦</span>产出</div>
+                    <div class="popup-info-val">
+                        <span class="popup-exp-val">${boot.exp} exp</span>
+                        <br><span class="popup-drop-prefix">1</span> <span class="popup-badge drop item-hover-card" data-item-id="${boot.id}" data-item-type="BOOT" data-item-name="${boot.name}" data-item-icon="${boot.icon}">${boot.icon} ${boot.name}</span>
+                    </div>
+                </div>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">🪙</span>代币</div>
+                    <div class="popup-info-val">
+                        <span class="popup-token-prefix">1</span> 
+                        <span class="popup-badge token item-hover-card" data-item-id="tailoring_token" data-item-type="TOKEN" data-item-name="缝制代币" data-item-icon="🪙">🧵 缝制代币</span>
+                        <span class="popup-token-prob">~${tokenChanceDisplay}%</span>
+                    </div>
+                </div>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">⚡</span>连击</div>
+                    <div class="popup-info-val">
+                        <span class="popup-combo-chance">${comboChanceDisplay}%</span>
+                        <span class="popup-combo-desc">（等级差 × 1%）</span>
+                    </div>
+                </div>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">⏱️</span>持续时间</div>
+                    <div class="popup-info-val">
+                        <span class="popup-highlight">${formatTime(boot.duration)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="popup-divider"></div>
+            
+            <div class="popup-count-section">
+                <div class="popup-count-label">🧵 缝制</div>
+                <div class="popup-count-row">
+                    <input class="popup-count-input" type="text" value="∞" placeholder="次数" onclick="this.select();">
+                    <div class="popup-count-btns">
+                        <button class="popup-count-btn" data-count="1">1</button>
+                        <button class="popup-count-btn" data-count="5">5</button>
+                        <button class="popup-count-btn" data-count="10">10</button>
+                        <button class="popup-count-btn inf selected" data-count="infinity">∞</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="popup-actions-row">
+                <button class="popup-btn cancel" id="action-cancel">取消</button>
+                ${queueAvailable ?
+                    `<button class="popup-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` :
+                    `<button class="popup-btn queue disabled" id="action-queue" disabled>队列已满</button>`}
+                ${levelEnough && maxTailorCount > 0 ?
+                    `<button class="popup-btn start" id="action-start">立即开始</button>` :
+                    `<button class="popup-btn start disabled" id="action-start" disabled>${!levelEnough ? '等级不足' : '材料不足'}</button>`}
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // 关闭函数
+    const closeModal = () => modal.remove();
+
+    // 绑定关闭事件
+    modal.querySelector('.popup-close-btn').addEventListener('click', closeModal);
+    modal.querySelector('#action-cancel').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+
+    // 次数选择按钮
+    modal.querySelectorAll('.popup-count-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            modal.querySelectorAll('.popup-count-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            const countVal = btn.dataset.count;
+            const input = modal.querySelector('.popup-count-input');
+            input.value = countVal === 'infinity' ? '∞' : countVal;
+        });
+    });
+
+    // 输入框事件
+    const countInput = modal.querySelector('.popup-count-input');
+    countInput.addEventListener('input', () => {
+        let val = countInput.value;
+        if (val !== '∞' && val !== '') {
+            val = val.replace(/[^0-9]/g, '');
+            countInput.value = val;
+        }
+        modal.querySelectorAll('.popup-count-btn').forEach(b => b.classList.remove('selected'));
+        if (val === '∞') modal.querySelector('.popup-count-btn[data-count="infinity"]').classList.add('selected');
+    });
+
+    const getCount = () => {
+        const val = countInput.value;
+        if (val === '∞' || val === '-1' || val === '') return -1;
+        return parseInt(val) || 1;
+    };
+
+    // 加入队列
+    const queueBtn = modal.querySelector('#action-queue');
+    if (queueBtn && !queueBtn.disabled) {
+        queueBtn.addEventListener('click', () => {
+            socket.emit('tailor_boot', { bootId: boot.id, count: getCount(), addToQueue: true });
+            closeModal();
+        });
+    }
+
+    // 开始缝制
+    const startBtn = modal.querySelector('#action-start');
+    if (startBtn && !startBtn.disabled) {
+        startBtn.addEventListener('click', () => {
+            if (currentAction) {
+                socket.emit('tailor_boot_immediately', { bootId: boot.id, count: getCount() });
+            } else {
+                socket.emit('tailor_boot', { bootId: boot.id, count: getCount(), addToQueue: false });
+            }
+            closeModal();
+        });
+    }
+
+    // 绑定悬浮/点击事件
+    modal.querySelectorAll('.item-hover-card').forEach(item => {
+        item.addEventListener('mouseenter', (e) => showActionItemTooltip(item, e, modal));
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showActionItemTooltip(item, e, modal);
+        });
+    });
 }
 
 /**
@@ -4338,6 +4649,39 @@ function renderInventories() {
             conchInkElement.innerHTML = '';
         }
     }
+
+    // 靴子装备（吟游诗人）
+    if (CONFIG.boots) {
+        const bootsInventory = gameState.bootsInventory || [];
+        const bootCounts = {};
+        bootsInventory.forEach(bootId => {
+            bootCounts[bootId] = (bootCounts[bootId] || 0) + 1;
+        });
+        renderInventoryGrid('storage-boots-items', bootCounts, CONFIG.boots);
+    }
+
+    // 河铸钉（单独显示数量）
+    const riverNailElement = document.getElementById('storage-river-nail-items');
+    if (riverNailElement) {
+        const nailCount = gameState.riverNailInventory || 0;
+        if (nailCount > 0) {
+            riverNailElement.innerHTML = `
+                <div class="inventory-item"
+                     data-id="river_nail"
+                     data-name="河铸钉"
+                     data-count="${nailCount}"
+                     data-price="500"
+                     data-desc="用于缝制靴子装备的珍贵材料"
+                     data-icon="🔩">
+                    <span class="item-icon">🔩</span>
+                    <span class="item-name">河铸钉</span>
+                    <span class="item-count">${nailCount}</span>
+                </div>
+            `;
+        } else {
+            riverNailElement.innerHTML = '';
+        }
+    }
 }
 
 /**
@@ -4475,10 +4819,6 @@ const ITEM_VALUES = {
         cleaned_feather: 32, jade_cleaned_feather: 64, falcon_cleaned_feather: 96,
         rainbow_cleaned_feather: 154, harpy_cleaned_feather: 240
     },
-    // 海螺墨
-    other_materials: {
-        conch_ink: 300
-    },
     // 笔装备（吟游诗人）
     pens: {
         traveler_pen: 15 * 32 + 4 * 300,      // 480 + 1200 = 1680
@@ -4489,6 +4829,22 @@ const ITEM_VALUES = {
         lionheart_pen: 50 * 96 + 48 * 154 + 30 * 300, // 4800 + 7392 + 9000 = 21192
         echo_pen: 36 * 96 + 48 * 154 + 36 * 240 + 38 * 300, // 3456 + 7392 + 8640 + 11400 = 30888
         epic_pen: 72 * 154 + 78 * 240 + 47 * 300 // 11088 + 18720 + 14100 = 43908
+    },
+    // 靴子装备（吟游诗人）
+    boots: {
+        traveler_boots: 16 * 16 + 4 * 16 + 4 * 500, // 256 + 64 + 2000 = 2320
+        lyre_boots: 32 * 32 + 8 * 32 + 8 * 500, // 1024 + 256 + 4000 = 5280
+        witness_boots: 20 * 16 + 28 * 32 + 5 * 16 + 7 * 32 + 12 * 500, // 320 + 896 + 80 + 224 + 6000 = 7520
+        awaken_boots: 48 * 96 + 12 * 96 + 17 * 500, // 4608 + 1152 + 8500 = 14260
+        blaze_boots: 32 * 32 + 60 * 96 + 8 * 32 + 15 * 96 + 23 * 500, // 1024 + 5760 + 256 + 1440 + 11500 = 19980
+        lionheart_boots: 36 * 96 + 84 * 112 + 9 * 96 + 21 * 112 + 30 * 500, // 3456 + 9408 + 864 + 2352 + 15000 = 31080
+        echo_boots: 64 * 112 + 88 * 154 + 16 * 112 + 22 * 154 + 38 * 500, // 7168 + 13552 + 1792 + 3388 + 19000 = 44900
+        epic_boots: 72 * 154 + 116 * 314 + 18 * 154 + 29 * 314 + 47 * 500 // 11088 + 36424 + 2772 + 9106 + 23500 = 82890
+    },
+    // 河铸钉和海螺墨
+    other_materials: {
+        river_nail: 500,
+        conch_ink: 300
     }
 };
 
@@ -4842,6 +5198,15 @@ function showActionItemTooltip(item, event, modal) {
     } else if (itemType === 'PEN') {
         const pensInv = gameState?.pensInventory || [];
         ownedCount = pensInv.filter(p => (typeof p === 'string' ? p : p.id) === itemId).length;
+    } else if (itemType === 'BOOT') {
+        const bootsInv = gameState?.bootsInventory || [];
+        ownedCount = bootsInv.filter(b => (typeof b === 'string' ? b : b.id) === itemId).length;
+    } else if (itemType === 'RIVER_NAIL') {
+        ownedCount = gameState?.riverNailInventory || 0;
+    } else if (itemType === 'THREAD') {
+        ownedCount = gameState?.threadsInventory?.[itemId] || 0;
+    } else if (itemType === 'FABRIC') {
+        ownedCount = gameState?.fabricsInventory?.[itemId] || 0;
     }
     
     // 获取单价（代币固定50）
@@ -5469,7 +5834,24 @@ function formatCost(cost, separator = ' ') {
         'harpy_cleaned_feather': '鹰身人的净羽',
 
         // 其他材料
-        'conch_ink': '海螺墨'
+        'conch_ink': '海螺墨',
+        'river_nail': '河铸钉',
+
+        // 布料类（靴子材料）
+        'jute_cloth': '黄麻布料',
+        'linen_cloth': '亚麻布料',
+        'wool_cloth': '羊毛布料',
+        'silk_cloth': '丝绸布料',
+        'wind_silk': '风语丝绸',
+        'dream_cloth': '梦幻布料',
+
+        // 丝线类（靴子材料）
+        'jute_thread': '黄麻线',
+        'linen_thread': '亚麻线',
+        'wool_thread': '羊毛线',
+        'silk_thread': '蚕丝线',
+        'wind_thread': '风语丝线',
+        'dream_thread': '梦幻丝线'
     };
 
     return Object.entries(cost)
