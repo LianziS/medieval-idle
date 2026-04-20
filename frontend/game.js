@@ -3319,15 +3319,21 @@ function openToolForgeModal(toolType, toolIndex) {
 
     // 创建模态框
     const modal = document.createElement('div');
-    modal.className = 'action-modal-overlay';
+    modal.className = 'action-detail-overlay';
     modal.innerHTML = `
-        <div class="action-modal">
-            <div class="action-modal-header">
-                <span class="action-modal-icon">${tool.icon}</span>
-                <span class="action-modal-title">${tool.name}</span>
-                <button class="action-modal-close">&times;</button>
+        <div class="action-detail-popup">
+            <button class="popup-close-btn">✕</button>
+            
+            <!-- 标题行 -->
+            <div class="popup-header-row">
+                <div class="popup-icon-large">${tool.icon}</div>
+                <div class="popup-name-large">${tool.name}</div>
             </div>
-            <div class="action-modal-body">
+            
+            <div class="popup-divider"></div>
+            
+            <!-- 信息区 -->
+            <div class="popup-info-rows">
                 <div class="popup-info-row">
                     <div class="popup-info-label"><span class="lbl-icon">🔓</span>需要</div>
                     <div class="popup-info-val">
@@ -3335,38 +3341,64 @@ function openToolForgeModal(toolType, toolIndex) {
                         ${!levelEnough ? `<span class="level-warning">（当前 Lv.${forgingLevel}）</span>` : ''}
                     </div>
                 </div>
-                ${materials.ore ? `
-                <div class="popup-info-row">
-                    <div class="popup-info-label"></div>
-                    <div class="popup-info-val">
-                        <span class="popup-mat-count ${oreCount >= materials.ore ? '' : 'insufficient'}">[${oreCount}/${materials.ore}]</span>
-                        <span class="popup-badge material ${oreCount >= materials.ore ? '' : 'insufficient'}">${ore?.icon || '💎'} ${ore?.name || oreId}</span>
-                    </div>
-                </div>` : ''}
-                ${materials.ingot ? `
-                <div class="popup-info-row">
-                    <div class="popup-info-label"></div>
-                    <div class="popup-info-val">
-                        <span class="popup-mat-count ${ingotCount >= materials.ingot ? '' : 'insufficient'}">[${ingotCount}/${materials.ingot}]</span>
-                        <span class="popup-badge material ${ingotCount >= materials.ingot ? '' : 'insufficient'}">${ingot?.icon || '🪨'} ${ingot?.name || ingotId}</span>
-                    </div>
-                </div>` : ''}
-                ${materials.plank ? `
-                <div class="popup-info-row">
-                    <div class="popup-info-label"></div>
-                    <div class="popup-info-val">
-                        <span class="popup-mat-count ${plankCount >= materials.plank ? '' : 'insufficient'}">[${plankCount}/${materials.plank}]</span>
-                        <span class="popup-badge material ${plankCount >= materials.plank ? '' : 'insufficient'}">${plank?.icon || '🪵'} ${plank?.name || plankId}</span>
-                    </div>
-                </div>` : ''}
-                ${materials.prevTool ? `
-                <div class="popup-info-row">
-                    <div class="popup-info-label"></div>
-                    <div class="popup-info-val">
-                        <span class="popup-mat-count ${prevToolCount >= 1 ? '' : 'insufficient'}">[${prevToolCount}/1]</span>
-                        <span class="popup-badge material ${prevToolCount >= 1 ? '' : 'insufficient'}">${prevTool?.icon || '🔧'} ${prevTool?.name || materials.prevTool}</span>
-                    </div>
-                </div>` : ''}
+                ${(() => {
+                    let matHtml = '';
+                    let firstMat = true;
+                    
+                    if (materials.ore) {
+                        const labelHtml = firstMat ? `<div class="popup-info-label"><span class="lbl-icon">📦</span>材料</div>` : `<div class="popup-info-label"></div>`;
+                        firstMat = false;
+                        matHtml += `
+                        <div class="popup-info-row">
+                            ${labelHtml}
+                            <div class="popup-info-val">
+                                <span class="popup-mat-count ${oreCount >= materials.ore ? '' : 'insufficient'}">[${oreCount}/${materials.ore}]</span>
+                                <span class="popup-badge material ${oreCount >= materials.ore ? '' : 'insufficient'}">${ore?.icon || '💎'} ${ore?.name || oreId}</span>
+                            </div>
+                        </div>`;
+                    }
+                    
+                    if (materials.ingot) {
+                        const labelHtml = firstMat ? `<div class="popup-info-label"><span class="lbl-icon">📦</span>材料</div>` : `<div class="popup-info-label"></div>`;
+                        firstMat = false;
+                        matHtml += `
+                        <div class="popup-info-row">
+                            ${labelHtml}
+                            <div class="popup-info-val">
+                                <span class="popup-mat-count ${ingotCount >= materials.ingot ? '' : 'insufficient'}">[${ingotCount}/${materials.ingot}]</span>
+                                <span class="popup-badge material ${ingotCount >= materials.ingot ? '' : 'insufficient'}">${ingot?.icon || '🪨'} ${ingot?.name || ingotId}</span>
+                            </div>
+                        </div>`;
+                    }
+                    
+                    if (materials.plank) {
+                        const labelHtml = firstMat ? `<div class="popup-info-label"><span class="lbl-icon">📦</span>材料</div>` : `<div class="popup-info-label"></div>`;
+                        firstMat = false;
+                        matHtml += `
+                        <div class="popup-info-row">
+                            ${labelHtml}
+                            <div class="popup-info-val">
+                                <span class="popup-mat-count ${plankCount >= materials.plank ? '' : 'insufficient'}">[${plankCount}/${materials.plank}]</span>
+                                <span class="popup-badge material ${plankCount >= materials.plank ? '' : 'insufficient'}">${plank?.icon || '🪵'} ${plank?.name || plankId}</span>
+                            </div>
+                        </div>`;
+                    }
+                    
+                    if (materials.prevTool) {
+                        const labelHtml = firstMat ? `<div class="popup-info-label"><span class="lbl-icon">📦</span>材料</div>` : `<div class="popup-info-label"></div>`;
+                        firstMat = false;
+                        matHtml += `
+                        <div class="popup-info-row">
+                            ${labelHtml}
+                            <div class="popup-info-val">
+                                <span class="popup-mat-count ${prevToolCount >= 1 ? '' : 'insufficient'}">[${prevToolCount}/1]</span>
+                                <span class="popup-badge material ${prevToolCount >= 1 ? '' : 'insufficient'}">${prevTool?.icon || '🔧'} ${prevTool?.name || materials.prevTool}</span>
+                            </div>
+                        </div>`;
+                    }
+                    
+                    return matHtml;
+                })()}
                 
                 <div class="popup-divider"></div>
                 
@@ -3375,7 +3407,6 @@ function openToolForgeModal(toolType, toolIndex) {
                     <div class="popup-info-val">
                         <span class="popup-exp-val">${tool.exp || 14} exp</span>
                         <br><span class="popup-drop-prefix">1</span> <span class="popup-badge drop">${tool.icon} ${tool.name}</span>
-                        <span class="popup-tool-bonus">+${Math.round(tool.speedBonus * 100)}%速度</span>
                     </div>
                 </div>
                 <div class="popup-info-row">
@@ -3393,40 +3424,57 @@ function openToolForgeModal(toolType, toolIndex) {
                         <span class="popup-combo-desc">（等级差 × 1%）</span>
                     </div>
                 </div>
-                
-                <div class="popup-divider"></div>
-                
-                <!-- 次数选择 -->
-                <div class="popup-count-section">
-                    <div class="popup-count-label">🔨 锻造</div>
-                    <div class="popup-count-row">
-                        <input class="popup-count-input" type="text" value="∞" placeholder="次数" onclick="this.select();">
-                        <div class="popup-count-btns">
-                            <button class="popup-count-btn" data-count="1">1</button>
-                            <button class="popup-count-btn" data-count="5">5</button>
-                            <button class="popup-count-btn" data-count="10">10</button>
-                            <button class="popup-count-btn inf selected" data-count="infinity">∞</button>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">⏱️</span>持续时间</div>
+                    <div class="popup-info-val">
+                        <span class="popup-highlight">${formatTime(tool.duration || 6000)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="popup-divider"></div>
+            
+            <!-- 次数选择 -->
+            <div class="popup-count-section">
+                <div class="popup-count-label">🔨 锻造</div>
+                <div class="popup-count-row">
+                    <input class="popup-count-input" type="text" value="∞" placeholder="次数" onclick="this.select();">
+                    <div class="popup-count-btns">
+                        <button class="popup-count-btn" data-count="1">1</button>
+                        <button class="popup-count-btn" data-count="5">5</button>
+                        <button class="popup-count-btn" data-count="10">10</button>
+                        <button class="popup-count-btn inf selected" data-count="infinity">∞</button>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="action-modal-footer">
-                <button class="action-btn secondary" id="action-cancel">取消</button>
-                ${currentAction && queueAvailable ?
-                    `<button class="action-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` :
-                    (!currentAction ? '' : `<button class="action-btn queue disabled" disabled>队列已满</button>`)}
-                <button class="action-btn primary ${levelEnough ? '' : 'disabled'}" id="action-start" ${levelEnough ? '' : 'disabled'}>开始锻造</button>
+            
+            <!-- 操作按钮 -->
+            <div class="popup-actions-row">
+                <button class="popup-btn cancel" id="action-cancel">取消</button>
+                ${queueAvailable ?
+                    `<button class="popup-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` :
+                    `<button class="popup-btn queue disabled" id="action-queue" disabled>队列已满</button>`}
+                ${levelEnough && maxForgeCount > 0 ?
+                    `<button class="popup-btn start" id="action-start">立即开始</button>` :
+                    `<button class="popup-btn start disabled" id="action-start" disabled>${!levelEnough ? '等级不足' : '材料不足'}</button>`}
             </div>
         </div>
     `;
 
     document.body.appendChild(modal);
 
-    // 绑定事件
-    modal.querySelector('.action-modal-close').addEventListener('click', () => modal.remove());
-    modal.querySelector('#action-cancel').addEventListener('click', () => modal.remove());
+    // 关闭函数
+    const closeModal = () => modal.remove();
 
-    // 快捷次数按钮
+    // 绑定关闭事件
+    modal.querySelector('.popup-close-btn').addEventListener('click', closeModal);
+    modal.querySelector('#action-cancel').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+
+    // 次数选择按钮
     modal.querySelectorAll('.popup-count-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             modal.querySelectorAll('.popup-count-btn').forEach(b => b.classList.remove('selected'));
@@ -3492,10 +3540,6 @@ function openToolForgeModal(toolType, toolIndex) {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.remove();
     });
-
-    // 默认选中1次
-    modal.querySelector('.count-btn[data-count="1"]').classList.add('active');
-    modal.querySelector('#custom-count').value = 1;
 }
 
 /**
@@ -5323,36 +5367,54 @@ function showActionModal(config) {
                         ${!levelEnough ? `<span class="level-warning">（当前 Lv.${currentLevel}）</span>` : ''}
                     </div>
                 </div>
-                ${config.materials ? Object.entries(config.materials).map(([matId, amount]) => {
-                    const matName = getResourceName(matId);
-                    const matConfig = getItemConfig(matId);
-                    const matIcon = matConfig?.icon || '📦';
-                    const have = getResourceCount(matId);
-                    const enough = have >= amount;
-                    return `
-                    <div class="popup-info-row">
-                        <div class="popup-info-label"></div>
-                        <div class="popup-info-val">
-                            <span class="popup-mat-count ${enough ? '' : 'insufficient'}">[${have}/${amount}]</span>
-                            <span class="popup-badge material ${enough ? '' : 'insufficient'} item-hover-card" data-item-id="${matId}" data-item-type="WOOD" data-item-name="${matName}" data-item-icon="${matIcon}">${matIcon} ${matName}</span>
-                        </div>
-                    </div>`;
-                }).join('') : ''}
-                ` : config.materials ? Object.entries(config.materials).map(([matId, amount]) => {
-                    const matName = getResourceName(matId);
-                    const matConfig = getItemConfig(matId);
-                    const matIcon = matConfig?.icon || '📦';
-                    const have = getResourceCount(matId);
-                    const enough = have >= amount;
-                    return `
-                    <div class="popup-info-row">
-                        <div class="popup-info-label"><span class="lbl-icon">📦</span>材料</div>
-                        <div class="popup-info-val">
-                            <span class="popup-mat-count ${enough ? '' : 'insufficient'}">[${have}/${amount}]</span>
-                            <span class="popup-badge material ${enough ? '' : 'insufficient'} item-hover-card" data-item-id="${matId}" data-item-type="WOOD" data-item-name="${matName}" data-item-icon="${matIcon}">${matIcon} ${matName}</span>
-                        </div>
-                    </div>`;
-                }).join('') : ''}
+                ${config.materials ? (() => {
+                    let matHtml = '';
+                    let firstMat = true;
+                    for (const [matId, amount] of Object.entries(config.materials)) {
+                        const matName = getResourceName(matId);
+                        const matConfig = getItemConfig(matId);
+                        const matIcon = matConfig?.icon || '📦';
+                        const have = getResourceCount(matId);
+                        const enough = have >= amount;
+                        const labelHtml = firstMat ? 
+                            `<div class="popup-info-label"><span class="lbl-icon">📦</span>材料</div>` :
+                            `<div class="popup-info-label"></div>`;
+                        firstMat = false;
+                        matHtml += `
+                        <div class="popup-info-row">
+                            ${labelHtml}
+                            <div class="popup-info-val">
+                                <span class="popup-mat-count ${enough ? '' : 'insufficient'}">[${have}/${amount}]</span>
+                                <span class="popup-badge material ${enough ? '' : 'insufficient'} item-hover-card" data-item-id="${matId}" data-item-type="WOOD" data-item-name="${matName}" data-item-icon="${matIcon}">${matIcon} ${matName}</span>
+                            </div>
+                        </div>`;
+                    }
+                    return matHtml;
+                })() : ''}
+                ` : config.materials ? (() => {
+                    let matHtml = '';
+                    let firstMat = true;
+                    for (const [matId, amount] of Object.entries(config.materials)) {
+                        const matName = getResourceName(matId);
+                        const matConfig = getItemConfig(matId);
+                        const matIcon = matConfig?.icon || '📦';
+                        const have = getResourceCount(matId);
+                        const enough = have >= amount;
+                        const labelHtml = firstMat ? 
+                            `<div class="popup-info-label"><span class="lbl-icon">📦</span>材料</div>` :
+                            `<div class="popup-info-label"></div>`;
+                        firstMat = false;
+                        matHtml += `
+                        <div class="popup-info-row">
+                            ${labelHtml}
+                            <div class="popup-info-val">
+                                <span class="popup-mat-count ${enough ? '' : 'insufficient'}">[${have}/${amount}]</span>
+                                <span class="popup-badge material ${enough ? '' : 'insufficient'} item-hover-card" data-item-id="${matId}" data-item-type="WOOD" data-item-name="${matName}" data-item-icon="${matIcon}">${matIcon} ${matName}</span>
+                            </div>
+                        </div>`;
+                    }
+                    return matHtml;
+                })() : ''}
                 
                 <div class="popup-info-row">
                     <div class="popup-info-label"><span class="lbl-icon">📦</span>产出</div>
