@@ -3406,14 +3406,14 @@ function openToolForgeModal(toolType, toolIndex) {
                     <div class="popup-info-label"><span class="lbl-icon">📦</span>产出</div>
                     <div class="popup-info-val">
                         <span class="popup-exp-val">${tool.exp || 14} exp</span>
-                        <br><span class="popup-drop-prefix">1</span> <span class="popup-badge drop">${tool.icon} ${tool.name}</span>
+                        <br><span class="popup-drop-prefix">1</span> <span class="popup-badge drop item-hover-card" data-item-id="${tool.id}" data-item-type="TOOL" data-item-name="${tool.name}" data-item-icon="${tool.icon}">${tool.icon} ${tool.name}</span>
                     </div>
                 </div>
                 <div class="popup-info-row">
                     <div class="popup-info-label"><span class="lbl-icon">🪙</span>代币</div>
                     <div class="popup-info-val">
                         <span class="popup-token-prefix">1</span> 
-                        <span class="popup-badge token">🔨 锻造代币</span>
+                        <span class="popup-badge token item-hover-card" data-item-id="forging_token" data-item-type="TOKEN" data-item-name="锻造代币" data-item-icon="🪙">🔨 锻造代币</span>
                         <span class="popup-token-prob">~${tokenChanceDisplay}%</span>
                     </div>
                 </div>
