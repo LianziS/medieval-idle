@@ -3353,7 +3353,7 @@ function openToolForgeModal(toolType, toolIndex) {
                             ${labelHtml}
                             <div class="popup-info-val">
                                 <span class="popup-mat-count ${oreCount >= materials.ore ? '' : 'insufficient'}">[${oreCount}/${materials.ore}]</span>
-                                <span class="popup-badge material ${oreCount >= materials.ore ? '' : 'insufficient'}">${ore?.icon || '💎'} ${ore?.name || oreId}</span>
+                                <span class="popup-badge material ${oreCount >= materials.ore ? '' : 'insufficient'} item-hover-card" data-item-id="${oreId}" data-item-type="ORE" data-item-name="${ore?.name || oreId}" data-item-icon="${ore?.icon || '💎'}">${ore?.icon || '💎'} ${ore?.name || oreId}</span>
                             </div>
                         </div>`;
                     }
@@ -3366,7 +3366,7 @@ function openToolForgeModal(toolType, toolIndex) {
                             ${labelHtml}
                             <div class="popup-info-val">
                                 <span class="popup-mat-count ${ingotCount >= materials.ingot ? '' : 'insufficient'}">[${ingotCount}/${materials.ingot}]</span>
-                                <span class="popup-badge material ${ingotCount >= materials.ingot ? '' : 'insufficient'}">${ingot?.icon || '🪨'} ${ingot?.name || ingotId}</span>
+                                <span class="popup-badge material ${ingotCount >= materials.ingot ? '' : 'insufficient'} item-hover-card" data-item-id="${ingotId}" data-item-type="INGOT" data-item-name="${ingot?.name || ingotId}" data-item-icon="${ingot?.icon || '🪨'}">${ingot?.icon || '🪨'} ${ingot?.name || ingotId}</span>
                             </div>
                         </div>`;
                     }
@@ -3379,7 +3379,7 @@ function openToolForgeModal(toolType, toolIndex) {
                             ${labelHtml}
                             <div class="popup-info-val">
                                 <span class="popup-mat-count ${plankCount >= materials.plank ? '' : 'insufficient'}">[${plankCount}/${materials.plank}]</span>
-                                <span class="popup-badge material ${plankCount >= materials.plank ? '' : 'insufficient'}">${plank?.icon || '🪵'} ${plank?.name || plankId}</span>
+                                <span class="popup-badge material ${plankCount >= materials.plank ? '' : 'insufficient'} item-hover-card" data-item-id="${plankId}" data-item-type="PLANK" data-item-name="${plank?.name || plankId}" data-item-icon="${plank?.icon || '🪵'}">${plank?.icon || '🪵'} ${plank?.name || plankId}</span>
                             </div>
                         </div>`;
                     }
@@ -3392,7 +3392,7 @@ function openToolForgeModal(toolType, toolIndex) {
                             ${labelHtml}
                             <div class="popup-info-val">
                                 <span class="popup-mat-count ${prevToolCount >= 1 ? '' : 'insufficient'}">[${prevToolCount}/1]</span>
-                                <span class="popup-badge material ${prevToolCount >= 1 ? '' : 'insufficient'}">${prevTool?.icon || '🔧'} ${prevTool?.name || materials.prevTool}</span>
+                                <span class="popup-badge material ${prevToolCount >= 1 ? '' : 'insufficient'} item-hover-card" data-item-id="${materials.prevTool}" data-item-type="TOOL" data-item-name="${prevTool?.name || materials.prevTool}" data-item-icon="${prevTool?.icon || '🔧'}">${prevTool?.icon || '🔧'} ${prevTool?.name || materials.prevTool}</span>
                             </div>
                         </div>`;
                     }
@@ -3471,6 +3471,15 @@ function openToolForgeModal(toolType, toolIndex) {
     modal.querySelector('#action-cancel').addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => {
         if (e.target === modal) closeModal();
+    });
+
+    // 绑定材料、产出、代币的悬浮/点击事件
+    modal.querySelectorAll('.item-hover-card').forEach(item => {
+        item.addEventListener('mouseenter', (e) => showActionItemTooltip(item, e, modal));
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showActionItemTooltip(item, e, modal);
+        });
     });
 
     // 次数选择按钮
@@ -5241,6 +5250,17 @@ function showActionItemTooltip(item, event, modal) {
         ownedCount = gameState?.threadsInventory?.[itemId] || 0;
     } else if (itemType === 'FABRIC') {
         ownedCount = gameState?.fabricsInventory?.[itemId] || 0;
+    } else if (itemType === 'TOOL') {
+        // 工具存在于多个类型库存中，需要查找
+        const toolTypes = ['axes', 'pickaxes', 'chisels', 'needles', 'scythes', 'hammers', 'tongs', 'rods'];
+        for (const type of toolTypes) {
+            const toolsInv = gameState?.toolsInventory?.[type] || [];
+            const count = toolsInv.filter(t => (typeof t === 'string' ? t : t.id) === itemId).length;
+            if (count > 0) {
+                ownedCount = count;
+                break;
+            }
+        }
     }
     
     // 获取单价（代币固定50）
