@@ -1326,6 +1326,188 @@ io.on('connection', (socket) => {
         socket.emit('game_state_update', gameEngine.getFullState());
     });
     
+    // ============ 吟游诗人系统 Socket 事件 ============
+    
+    // 获取诗人状态信息
+    socket.on('get_bard_info', () => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const levelInfo = gameEngine.getBardLevelInfo();
+        const status = gameEngine.getBardStatus();
+        const unlockedDestinations = gameEngine.getUnlockedDestinations();
+        const travelProgress = gameEngine.getBardTravelProgress();
+        const performProgress = gameEngine.getBardPerformProgress();
+        const penBonus = gameEngine.calculatePenBonus();
+        const travelDuration = gameEngine.calculateTravelDuration();
+        
+        socket.emit('bard_info', {
+            levelInfo,
+            status,
+            unlockedDestinations,
+            travelProgress,
+            performProgress,
+            penBonus,
+            travelDuration,
+            sheetsInventory: gameEngine.state.sheetsInventory,
+            wineBoxInventory: gameEngine.state.wineBoxInventory,
+            bardEquipment: gameEngine.state.bardEquipment,
+            bardTravelCount: gameEngine.state.bardTravelCount,
+            bardPerformCount: gameEngine.state.bardPerformCount,
+            bardSheetsTotal: gameEngine.state.bardSheetsTotal,
+            bardEpicSheets: gameEngine.state.bardEpicSheets
+        });
+    });
+    
+    // 开始诗人出游
+    socket.on('bard_travel_start', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const { destId, wineId } = data;
+        console.log(`🎵 bard_travel_start: ${destId}, wine: ${wineId}`);
+        
+        const result = gameEngine.startBardTravel(destId, wineId);
+        
+        if (result.success) {
+            socket.emit('bard_travel_started', result);
+            socket.emit('game_state_update', gameEngine.getFullState());
+        } else {
+            socket.emit('bard_error', { reason: result.reason });
+        }
+    });
+    
+    // 完成诗人出游
+    socket.on('bard_travel_complete', () => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.completeBardTravel();
+        
+        if (result.success) {
+            socket.emit('bard_travel_completed', result);
+            socket.emit('game_state_update', gameEngine.getFullState());
+        } else {
+            socket.emit('bard_error', { reason: result.reason });
+        }
+    });
+    
+    // 开始诗人演奏
+    socket.on('bard_perform_start', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const { category, quality } = data;
+        console.log(`🎵 bard_perform_start: ${category}, quality: ${quality}`);
+        
+        const result = gameEngine.startBardPerform(category, quality);
+        
+        if (result.success) {
+            socket.emit('bard_perform_started', result);
+            socket.emit('game_state_update', gameEngine.getFullState());
+        } else {
+            socket.emit('bard_error', { reason: result.reason });
+        }
+    });
+    
+    // 完成诗人演奏
+    socket.on('bard_perform_complete', () => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.completeBardPerform();
+        
+        if (result.success) {
+            socket.emit('bard_perform_completed', result);
+            socket.emit('game_state_update', gameEngine.getFullState());
+        } else {
+            socket.emit('bard_error', { reason: result.reason });
+        }
+    });
+    
+    // 穿戴诗人装备
+    socket.on('bard_equip', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const { slot, itemId } = data;
+        const result = gameEngine.equipBardItem(slot, itemId);
+        
+        if (result.success) {
+            socket.emit('bard_equip_success', result);
+            socket.emit('game_state_update', gameEngine.getFullState());
+        } else {
+            socket.emit('bard_error', { reason: result.reason });
+        }
+    });
+    
+    // 卸下诗人装备
+    socket.on('bard_unequip', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const { slot } = data;
+        const result = gameEngine.unequipBardItem(slot);
+        
+        if (result.success) {
+            socket.emit('bard_unequip_success', result);
+            socket.emit('game_state_update', gameEngine.getFullState());
+        } else {
+            socket.emit('bard_error', { reason: result.reason });
+        }
+    });
+    
+    // 选择酒箱
+    socket.on('bard_select_wine', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const { wineId } = data;
+        gameEngine.state.bardSelectedWine = wineId;
+        
+        socket.emit('bard_wine_selected', { wineId });
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
+    // GM命令：添加酒箱
+    socket.on('gm_add_wine', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const { wineId, count } = data;
+        if (!gameEngine.state.wineBoxInventory) {
+            gameEngine.state.wineBoxInventory = { basic_wine: 0, medium_wine: 0, premium_wine: 0 };
+        }
+        gameEngine.state.wineBoxInventory[wineId] = (gameEngine.state.wineBoxInventory[wineId] || 0) + count;
+        
+        socket.emit('bard_wine_added', { wineId, count, total: gameEngine.state.wineBoxInventory[wineId] });
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
+    // GM命令：添加乐谱
+    socket.on('gm_add_sheet', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const { category, quality, count } = data;
+        if (!gameEngine.state.sheetsInventory) {
+            gameEngine.state.sheetsInventory = {
+                earth: { normal: 0, fine: 0, epic: 0 },
+                craft: { normal: 0, fine: 0, epic: 0 },
+                sublime: { normal: 0, fine: 0, epic: 0 }
+            };
+        }
+        gameEngine.state.sheetsInventory[category][quality] += count;
+        gameEngine.state.bardSheetsTotal = (gameEngine.state.bardSheetsTotal || 0) + count;
+        if (quality === 'epic') {
+            gameEngine.state.bardEpicSheets = (gameEngine.state.bardEpicSheets || 0) + count;
+        }
+        
+        socket.emit('bard_sheet_added', { category, quality, count });
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
+    // GM命令：设置诗人等级
+    socket.on('gm_set_bard_level', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const { level } = data;
+        gameEngine.state.bardLevel = level;
+        
+        socket.emit('bard_level_set', { level });
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
     // 获取强化预览信息
     socket.on('get_enhance_preview', (data) => {
         if (!gameEngine) return socket.emit('error', { message: '未认证' });
@@ -1481,6 +1663,7 @@ server.listen(PORT, '0.0.0.0', () => {
 // 每500ms检查所有用户的活动行动
 setInterval(() => {
     for (const [socketId, { gameEngine, socket }] of socketEngineMap) {
+        // 检查常规行动
         if (gameEngine.state.activeAction) {
             const elapsed = Date.now() - gameEngine.state.actionStartTime;
             const duration = gameEngine.state.actionDuration;
@@ -1517,6 +1700,40 @@ setInterval(() => {
                 if (result.nextAction) {
                     socket.emit('queue_next', result.nextAction);
                 }
+            }
+        }
+        
+        // 检查诗人出游进度
+        if (gameEngine.state.bardStatus === 'traveling') {
+            const now = Date.now();
+            if (now >= gameEngine.state.bardTravelEndTime) {
+                // 出游完成
+                const result = gameEngine.completeBardTravel();
+                if (result.success) {
+                    socket.emit('bard_travel_completed', result);
+                    socket.emit('game_state_update', gameEngine.getFullState());
+                }
+            } else {
+                // 发送进度更新
+                const progress = gameEngine.getBardTravelProgress();
+                socket.emit('bard_travel_progress', progress);
+            }
+        }
+        
+        // 检查诗人演奏进度
+        if (gameEngine.state.bardStatus === 'performing') {
+            const now = Date.now();
+            if (now >= gameEngine.state.bardPerformEndTime) {
+                // 演奏完成
+                const result = gameEngine.completeBardPerform();
+                if (result.success) {
+                    socket.emit('bard_perform_completed', result);
+                    socket.emit('game_state_update', gameEngine.getFullState());
+                }
+            } else {
+                // 发送进度更新
+                const progress = gameEngine.getBardPerformProgress();
+                socket.emit('bard_perform_progress', progress);
             }
         }
     }
