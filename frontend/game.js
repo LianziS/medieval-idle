@@ -8015,6 +8015,31 @@ function initBardPage() {
     // 酒箱选择
     document.getElementById('wine-box').addEventListener('click', showWineSelectModal);
     
+    // 酒箱tooltip
+    document.getElementById('wine-box').addEventListener('mouseenter', (e) => {
+        const wine = CONFIG.wineBoxes?.find(w => w.id === bardState.selectedWine);
+        if (!wine) return;
+        
+        const stock = bardState.wineBoxInventory?.[wine.id] || 0;
+        const tooltip = document.createElement('div');
+        tooltip.className = 'item-tooltip';
+        tooltip.innerHTML = `
+            <div class="item-tooltip-name">${wine.icon} ${wine.name}</div>
+            <div class="item-tooltip-row"><span>经验增益</span><span class="item-tooltip-value">${wine.expBonus > 0 ? `+${wine.expBonus}%` : '无'}</span></div>
+            <div class="item-tooltip-row"><span>库存</span><span class="item-tooltip-value item-count-value">${stock}</span></div>
+        `;
+        
+        const rect = e.target.getBoundingClientRect();
+        tooltip.style.left = `${rect.left}px`;
+        tooltip.style.top = `${rect.top - 80}px`;
+        
+        document.body.appendChild(tooltip);
+        
+        e.target.addEventListener('mouseleave', () => {
+            tooltip.remove();
+        }, { once: true });
+    });
+    
     // 演奏选择
     document.getElementById('perf-slot').addEventListener('click', showSheetSelectModal);
     
@@ -8247,13 +8272,20 @@ function showWineSelectModal() {
                 <div class="bard-modal-title">选择酒箱</div>
             </div>
             <div class="wine-select-grid">
-                ${CONFIG.wineBoxes?.map(wine => `
-                    <div class="wine-select-item ${bardState.selectedWine === wine.id ? 'active' : ''}" 
-                         onclick="selectWineAndClose('${wine.id}')">
-                        <span class="wsi-icon">${wine.icon}</span>
-                        <span class="wsi-count">×${bardState.wineBoxInventory?.[wine.id] || 0}</span>
-                    </div>
-                `).join('')}
+                ${CONFIG.wineBoxes?.map(wine => {
+                    const stock = bardState.wineBoxInventory?.[wine.id] || 0;
+                    const tooltipTitle = `${wine.icon} ${wine.name}`;
+                    const tooltipContent = `经验增益: ${wine.expBonus > 0 ? `+${wine.expBonus}%` : '无'} | 库存: ${stock}`;
+                    return `
+                        <div class="wine-select-item ${bardState.selectedWine === wine.id ? 'active' : ''}" 
+                             onclick="selectWineAndClose('${wine.id}')"
+                             onmouseenter="showWineTooltip(this, '${tooltipTitle}', '${tooltipContent}')"
+                             onmouseleave="hideWineTooltip()">
+                            <span class="wsi-icon">${wine.icon}</span>
+                            <span class="wsi-count">×${stock}</span>
+                        </div>
+                    `;
+                }).join('')}
             </div>
         </div>
     `;
@@ -8264,6 +8296,32 @@ function showWineSelectModal() {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.remove();
     });
+}
+
+// 酒箱tooltip
+let wineTooltipEl = null;
+function showWineTooltip(el, title, content) {
+    hideWineTooltip();
+    
+    wineTooltipEl = document.createElement('div');
+    wineTooltipEl.className = 'item-tooltip';
+    wineTooltipEl.innerHTML = `
+        <div class="item-tooltip-name">${title}</div>
+        <div class="item-tooltip-desc" style="font-size:0.72rem;">${content}</div>
+    `;
+    
+    const rect = el.getBoundingClientRect();
+    wineTooltipEl.style.left = `${rect.left}px`;
+    wineTooltipEl.style.top = `${rect.top - 70}px`;
+    
+    document.body.appendChild(wineTooltipEl);
+}
+
+function hideWineTooltip() {
+    if (wineTooltipEl) {
+        wineTooltipEl.remove();
+        wineTooltipEl = null;
+    }
 }
 
 // 选择酒箱并关闭
@@ -8325,6 +8383,13 @@ function showSheetSelectModal() {
     const categories = ['earth', 'craft', 'sublime'];
     const qualities = ['normal', 'fine', 'epic'];
     
+    // 效果详情
+    const effectDetails = {
+        earth: '采集时有概率将原材料转化为加工品（2:1转化比）',
+        craft: '每次行动有概率获得双倍产出',
+        sublime: '缩短炼金/酿造/强化行动时长'
+    };
+    
     modal.innerHTML = `
         <div class="modal-content bard-modal">
             <button class="modal-close bard-modal-close">✕</button>
@@ -8339,9 +8404,13 @@ function showSheetSelectModal() {
                         const qualInfo = CONFIG.sheets?.qualities?.[qual];
                         const stock = bardState.sheetsInventory?.[cat]?.[qual] || 0;
                         const isSelected = bardState.selectedSheet?.category === cat && bardState.selectedSheet?.quality === qual;
+                        const tooltipTitle = `${catInfo?.name || cat} ${qualInfo?.name || qual}`;
+                        const tooltipContent = `可用于: ${catInfo?.target || '-'} | 效果: ${qualInfo?.effect?.[cat] || '-'} | 时长: ${qualInfo?.duration || 30}分钟 | 库存: ${stock}`;
                         return `
                             <div class="sheet-select-item ${isSelected ? 'active' : ''} ${stock === 0 ? 'locked' : ''}"
-                                 onclick="selectSheetAndClose('${cat}', '${qual}')">
+                                 onclick="selectSheetAndClose('${cat}', '${qual}')"
+                                 onmouseenter="showSheetTooltip(this, '${tooltipTitle}', '${tooltipContent}')"
+                                 onmouseleave="hideSheetTooltip()">
                                 <span class="ssi-icon">${catInfo?.icon || '📜'}</span>
                                 <span class="ssi-count">×${stock}</span>
                             </div>
@@ -8358,6 +8427,32 @@ function showSheetSelectModal() {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.remove();
     });
+}
+
+// 乐谱tooltip
+let sheetTooltipEl = null;
+function showSheetTooltip(el, title, content) {
+    hideSheetTooltip();
+    
+    sheetTooltipEl = document.createElement('div');
+    sheetTooltipEl.className = 'item-tooltip';
+    sheetTooltipEl.innerHTML = `
+        <div class="item-tooltip-name">${title}</div>
+        <div class="item-tooltip-desc" style="font-size:0.72rem;">${content}</div>
+    `;
+    
+    const rect = el.getBoundingClientRect();
+    sheetTooltipEl.style.left = `${rect.left}px`;
+    sheetTooltipEl.style.top = `${rect.top - 70}px`;
+    
+    document.body.appendChild(sheetTooltipEl);
+}
+
+function hideSheetTooltip() {
+    if (sheetTooltipEl) {
+        sheetTooltipEl.remove();
+        sheetTooltipEl = null;
+    }
 }
 
 // 选择乐谱并关闭
@@ -8396,11 +8491,19 @@ function updatePerformArea() {
     slot.classList.add('active');
     slot.innerHTML = `<span class="slot-icon">${catInfo?.icon || '📜'}</span><span class="slot-count">×${stock}</span>`;
     
+    // 效果详情
+    const effectDetails = {
+        earth: '采集时有概率将原材料转化为加工品（2:1转化比）',
+        craft: '每次行动有概率获得双倍产出',
+        sublime: '缩短炼金/酿造/强化行动时长'
+    };
+    
     info.innerHTML = `
         <div class="sheet-detail-row"><span class="sheet-detail-label">乐谱</span><span class="sheet-detail-val"><span class="quality-badge quality-badge-${quality}">${catInfo?.name || category} ${qualInfo?.name || quality}</span></span></div>
         <div class="sheet-detail-row"><span class="sheet-detail-label">演奏时长</span><span class="sheet-detail-val">${qualInfo?.duration || 30}分钟</span></div>
         <div class="sheet-detail-row"><span class="sheet-detail-label">可用于</span><span class="sheet-detail-val">${catInfo?.target || '-'}</span></div>
         <div class="sheet-detail-row"><span class="sheet-detail-label">效果</span><span class="sheet-detail-val" style="color:#FFA726;font-weight:bold;">${qualInfo?.effect?.[category] || '-'}</span></div>
+        <div class="sheet-detail-row"><span class="sheet-detail-label">详情</span><span class="sheet-detail-val" style="color:#6b7f90;font-size:0.78rem;">${effectDetails[category] || '-'}</span></div>
         <div class="sheet-detail-row"><span class="sheet-detail-label">获得经验</span><span class="sheet-detail-val" style="color:#66BB6A;font-weight:bold;">${qualInfo?.exp || 15} exp</span></div>
     `;
     
@@ -8449,9 +8552,13 @@ function showEquipSelectModal(slotType) {
                 ${configList.map(item => {
                     const isEquipped = bardState.bardEquipment?.[slotType] === item.id;
                     const count = counts[item.id] || 0;
+                    const tooltipTitle = `${item.icon} ${item.name}`;
+                    const tooltipContent = `效果: ${item.effect || '-'} | 库存: ${isEquipped ? '已装备' : count}`;
                     return `
-                        <div class="eq-select-item ${isEquipped ? 'equipped' : ''} ${count === 0 ? 'locked' : ''}"
-                             onclick="equipBardItem('${slotType}', '${item.id}')">
+                        <div class="eq-select-item ${isEquipped ? 'equipped' : ''} ${count === 0 && !isEquipped ? 'locked' : ''}"
+                             onclick="equipBardItem('${slotType}', '${item.id}')"
+                             onmouseenter="showEquipTooltip(this, '${tooltipTitle}', '${tooltipContent}')"
+                             onmouseleave="hideEquipTooltip()">
                             <span class="eq-item-icon">${item.icon}</span>
                             <span class="eq-item-name">${item.name}</span>
                             <span class="eq-count">${isEquipped ? '已装备' : `×${count}`}</span>
@@ -8469,6 +8576,32 @@ function showEquipSelectModal(slotType) {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.remove();
     });
+}
+
+// 装备tooltip
+let equipTooltipEl = null;
+function showEquipTooltip(el, title, content) {
+    hideEquipTooltip();
+    
+    equipTooltipEl = document.createElement('div');
+    equipTooltipEl.className = 'item-tooltip';
+    equipTooltipEl.innerHTML = `
+        <div class="item-tooltip-name">${title}</div>
+        <div class="item-tooltip-desc" style="font-size:0.72rem;">${content}</div>
+    `;
+    
+    const rect = el.getBoundingClientRect();
+    equipTooltipEl.style.left = `${rect.left}px`;
+    equipTooltipEl.style.top = `${rect.top - 70}px`;
+    
+    document.body.appendChild(equipTooltipEl);
+}
+
+function hideEquipTooltip() {
+    if (equipTooltipEl) {
+        equipTooltipEl.remove();
+        equipTooltipEl = null;
+    }
 }
 
 // 穿戴诗人装备
