@@ -675,9 +675,25 @@ class GameEngine {
         
         // 连击系统：计算连击概率并触发
         const comboResult = this.tryCombo(action, item, actionType);
-        if (comboResult.triggered) {
-            // 连击触发！行动次数已经增加，后续会执行额外一次行动
-            // 只需要在 rewards 中标记连击触发信息
+        if (comboResult.triggered && comboResult.rewards) {
+            // 连击触发！将额外奖励合并到原有奖励中
+            for (const comboReward of comboResult.rewards) {
+                // 查找是否已有相同类型的奖励
+                const existingReward = rewards.find(r => 
+                    r.type === comboReward.type && 
+                    r.id === comboReward.id && 
+                    r.type !== 'exp'
+                );
+                
+                if (existingReward) {
+                    // 已存在，增加数量
+                    existingReward.count += comboReward.count;
+                    existingReward.isCombo = true;
+                } else {
+                    // 不存在，添加新奖励
+                    rewards.push({ ...comboReward });
+                }
+            }
             rewards.push({ type: 'COMBO', triggered: true, comboChance: comboResult.comboChance });
         }
         
@@ -1541,18 +1557,54 @@ class GameEngine {
         const levelDiff = Math.max(0, forgingLevel - pen.reqForgeLevel);
         const comboChance = Math.min(levelDiff, 100) / 100;
         
-        // 只有不是单次行动（次数 > 1 或无限模式）才能触发连击
-        const canCombo = (this.state.actionCount > 1 && this.state.actionCount < 99999) || this.state.actionCount >= 99999;
+        // 只有剩余次数 > 1 或无限模式才能触发连击
+        const remaining = this.state.actionCount >= 99999 ? Infinity : this.state.actionCount;
+        const canCombo = (remaining > 1) || (remaining >= 99999);
         
         if (canCombo && Math.random() < comboChance) {
-            // 连击触发！增加行动次数
-            if (this.state.actionCount >= 99999) {
-                // 无限模式：不需要增加次数
-            } else {
-                // 有限次数模式：增加一次行动机会
-                this.state.actionCount++;
+            // 连击触发！检查是否有足够材料再做一个
+            const feathersInv = this.state.cleanedFeathersInventory || {};
+            const inkInv = this.state.conchInkInventory || 0;
+            
+            let hasMaterials = true;
+            for (const [matId, matCount] of Object.entries(pen.materials)) {
+                if (matId === 'conch_ink') {
+                    if (inkInv < matCount) hasMaterials = false;
+                } else {
+                    if ((feathersInv[matId] || 0) < matCount) hasMaterials = false;
+                }
             }
-            rewards.push({ type: 'COMBO', triggered: true, comboChance: comboChance });
+            
+            if (hasMaterials) {
+                // 消耗额外材料
+                for (const [matId, matCount] of Object.entries(pen.materials)) {
+                    if (matId === 'conch_ink') {
+                        this.state.conchInkInventory -= matCount;
+                    } else {
+                        feathersInv[matId] = (feathersInv[matId] || 0) - matCount;
+                        if (feathersInv[matId] <= 0) delete feathersInv[matId];
+                    }
+                }
+                
+                // 添加额外笔
+                this.state.pensInventory.push(pen.id);
+                this.addSkillExp('forgingLevel', pen.exp);
+                
+                rewards.push({ type: 'PEN', id: pen.id, name: pen.name, icon: pen.icon, count: 1, isCombo: true });
+                
+                // 连击时进行第二次代币概率判定
+                if (Math.random() < pen.tokenRate) {
+                    this.state.tokensInventory.forging_token = (this.state.tokensInventory.forging_token || 0) + 1;
+                    rewards.push({ type: 'TOKEN', id: 'forging_token', name: '锻造代币', icon: '🪙', count: 1, isCombo: true });
+                }
+                
+                // 额外减少一次行动次数
+                if (this.state.actionCount < 99999) {
+                    this.state.actionCount--;
+                }
+                
+                rewards.push({ type: 'COMBO', triggered: true, comboChance: comboChance });
+            }
         }
         
         // 减少次数
@@ -1743,18 +1795,62 @@ class GameEngine {
         const levelDiff = Math.max(0, tailoringLevel - boot.reqTailorLevel);
         const comboChance = Math.min(levelDiff, 100) / 100;
         
-        // 只有不是单次行动（次数 > 1 或无限模式）才能触发连击
-        const canCombo = (this.state.actionCount > 1 && this.state.actionCount < 99999) || this.state.actionCount >= 99999;
+        // 只有剩余次数 > 1 或无限模式才能触发连击
+        const remaining = this.state.actionCount >= 99999 ? Infinity : this.state.actionCount;
+        const canCombo = (remaining > 1) || (remaining >= 99999);
         
         if (canCombo && Math.random() < comboChance) {
-            // 连击触发！增加行动次数
-            if (this.state.actionCount >= 99999) {
-                // 无限模式：不需要增加次数
-            } else {
-                // 有限次数模式：增加一次行动机会
-                this.state.actionCount++;
+            // 连击触发！检查是否有足够材料再做一个
+            const fabricsInv = this.state.fabricsInventory || {};
+            const threadsInv = this.state.threadsInventory || {};
+            const nailInv = this.state.riverNailInventory || 0;
+            
+            let hasMaterials = true;
+            for (const [matId, matCount] of Object.entries(boot.materials)) {
+                let have = 0;
+                if (matId === 'river_nail') {
+                    have = nailInv;
+                } else if (matId.includes('thread') || matId === 'wind_thread' || matId === 'dream_thread') {
+                    have = threadsInv[matId] || 0;
+                } else {
+                    have = fabricsInv[matId] || 0;
+                }
+                if (have < matCount) hasMaterials = false;
             }
-            rewards.push({ type: 'COMBO', triggered: true, comboChance: comboChance });
+            
+            if (hasMaterials) {
+                // 消耗额外材料
+                for (const [matId, matCount] of Object.entries(boot.materials)) {
+                    if (matId === 'river_nail') {
+                        this.state.riverNailInventory -= matCount;
+                    } else if (matId.includes('thread') || matId === 'wind_thread' || matId === 'dream_thread') {
+                        threadsInv[matId] = (threadsInv[matId] || 0) - matCount;
+                        if (threadsInv[matId] <= 0) delete threadsInv[matId];
+                    } else {
+                        fabricsInv[matId] = (fabricsInv[matId] || 0) - matCount;
+                        if (fabricsInv[matId] <= 0) delete fabricsInv[matId];
+                    }
+                }
+                
+                // 添加额外靴子
+                this.state.bootsInventory.push(boot.id);
+                this.addSkillExp('tailoringLevel', boot.exp);
+                
+                rewards.push({ type: 'BOOT', id: boot.id, name: boot.name, icon: boot.icon, count: 1, isCombo: true });
+                
+                // 连击时进行第二次代币概率判定
+                if (Math.random() < boot.tokenRate) {
+                    this.state.tokensInventory.tailoring_token = (this.state.tokensInventory.tailoring_token || 0) + 1;
+                    rewards.push({ type: 'TOKEN', id: 'tailoring_token', name: '缝制代币', icon: '🪙', count: 1, isCombo: true });
+                }
+                
+                // 额外减少一次行动次数
+                if (this.state.actionCount < 99999) {
+                    this.state.actionCount--;
+                }
+                
+                rewards.push({ type: 'COMBO', triggered: true, comboChance: comboChance });
+            }
         }
         
         // 减少次数
@@ -1924,18 +2020,62 @@ class GameEngine {
         const levelDiff = Math.max(0, craftingLevel - instrument.reqCraftingLevel);
         const comboChance = Math.min(levelDiff, 100) / 100;
         
-        // 只有不是单次行动（次数 > 1 或无限模式）才能触发连击
-        const canCombo = (this.state.actionCount > 1 && this.state.actionCount < 99999) || this.state.actionCount >= 99999;
+        // 只有剩余次数 > 1 或无限模式才能触发连击
+        const remaining = this.state.actionCount >= 99999 ? Infinity : this.state.actionCount;
+        const canCombo = (remaining > 1) || (remaining >= 99999);
         
         if (canCombo && Math.random() < comboChance) {
-            // 连击触发！增加行动次数
-            if (this.state.actionCount >= 99999) {
-                // 无限模式：不需要增加次数
-            } else {
-                // 有限次数模式：增加一次行动机会
-                this.state.actionCount++;
+            // 连击触发！检查是否有足够材料再做一个
+            const planksInv = this.state.planksInventory || {};
+            const ingotsInv = this.state.ingotsInventory || {};
+            const echoStoneInv = this.state.echoStoneInventory || 0;
+            
+            let hasMaterials = true;
+            for (const [matId, matCount] of Object.entries(instrument.materials)) {
+                let have = 0;
+                if (matId === 'echo_stone') {
+                    have = echoStoneInv;
+                } else if (matId.includes('_plank')) {
+                    have = planksInv[matId] || 0;
+                } else {
+                    have = ingotsInv[matId] || 0;
+                }
+                if (have < matCount) hasMaterials = false;
             }
-            rewards.push({ type: 'COMBO', triggered: true, comboChance: comboChance });
+            
+            if (hasMaterials) {
+                // 消耗额外材料
+                for (const [matId, matCount] of Object.entries(instrument.materials)) {
+                    if (matId === 'echo_stone') {
+                        this.state.echoStoneInventory -= matCount;
+                    } else if (matId.includes('_plank')) {
+                        planksInv[matId] = (planksInv[matId] || 0) - matCount;
+                        if (planksInv[matId] <= 0) delete planksInv[matId];
+                    } else {
+                        ingotsInv[matId] = (ingotsInv[matId] || 0) - matCount;
+                        if (ingotsInv[matId] <= 0) delete ingotsInv[matId];
+                    }
+                }
+                
+                // 添加额外乐器
+                this.state.instrumentsInventory.push(instrument.id);
+                this.addSkillExp('craftingLevel', instrument.exp);
+                
+                rewards.push({ type: 'INSTRUMENT', id: instrument.id, name: instrument.name, icon: instrument.icon, count: 1, isCombo: true });
+                
+                // 连击时进行第二次代币概率判定
+                if (Math.random() < instrument.tokenRate) {
+                    this.state.tokensInventory.crafting_token = (this.state.tokensInventory.crafting_token || 0) + 1;
+                    rewards.push({ type: 'TOKEN', id: 'crafting_token', name: '制作代币', icon: '🪙', count: 1, isCombo: true });
+                }
+                
+                // 额外减少一次行动次数
+                if (this.state.actionCount < 99999) {
+                    this.state.actionCount--;
+                }
+                
+                rewards.push({ type: 'COMBO', triggered: true, comboChance: comboChance });
+            }
         }
         
         // 减少次数
@@ -1997,12 +2137,13 @@ class GameEngine {
     tryCombo(action, item, actionType) {
         // 强化功能不触发连击
         if (action.type === 'ENHANCE') {
-            return { triggered: false, comboChance: 0 };
+            return { triggered: false, rewards: [], comboChance: 0 };
         }
         
-        // 单次行动不能触发连击（remaining <= 1 且不是无限模式）
-        if (!action.isInfinite && (action.remaining || this.state.actionCount) <= 1) {
-            return { triggered: false, comboChance: 0 };
+        // 单次行动不能触发连击（只剩1次时不能触发）
+        const remaining = action.isInfinite ? Infinity : (action.remaining || this.state.actionCount);
+        if (!action.isInfinite && remaining <= 1) {
+            return { triggered: false, rewards: [], comboChance: 0 };
         }
         
         // 获取玩家对应技能等级
@@ -2020,24 +2161,140 @@ class GameEngine {
         const triggered = Math.random() < comboChance;
         
         if (!triggered) {
-            return { triggered: false, comboChance: comboChance };
+            return { triggered: false, rewards: [], comboChance: comboChance };
         }
         
-        // 连击触发！增加行动次数（相当于免费获得一次额外行动机会）
-        if (action.isInfinite) {
-            // 无限模式：不需要增加次数
+        // 连击触发！立即获得额外奖励
+        const comboRewards = [];
+        
+        // 处理不同行动类型的连击奖励
+        if (actionType.needsMaterials) {
+            // 制作类行动：连击时消耗额外材料，产出额外产物
+            let hasEnoughMaterials = true;
+            if (item.materials) {
+                const materialType = actionType.materialType || 'WOOD';
+                for (const [matId, count] of Object.entries(item.materials)) {
+                    const have = this.getItemCount(materialType, matId);
+                    if (have < count) {
+                        hasEnoughMaterials = false;
+                        break;
+                    }
+                }
+            }
+            
+            if (hasEnoughMaterials) {
+                // 消耗额外材料
+                if (item.materials) {
+                    const materialType = actionType.materialType || 'WOOD';
+                    for (const [matId, count] of Object.entries(item.materials)) {
+                        this.removeItem(materialType, matId, count);
+                    }
+                }
+                // 添加额外产物
+                this.addItem(actionType.resultType, action.id, 1);
+                comboRewards.push({ 
+                    type: actionType.resultType, 
+                    id: action.id, 
+                    name: item.name, 
+                    icon: item.icon, 
+                    count: 1,
+                    isCombo: true 
+                });
+            }
         } else {
-            // 有限次数模式：增加一次行动机会
-            action.remaining = (action.remaining || this.state.actionCount) + 1;
-            this.state.actionCount = action.remaining;
-            this.state.actionRemaining = action.remaining;
+            // 采集类行动：伐木/挖矿/采集
+            if (action.type === 'GATHERING') {
+                const location = item;
+                const selectedItemId = action.itemId;
+                
+                if (selectedItemId && selectedItemId !== 'all') {
+                    const itemConfig = location.items.find(i => i.id === selectedItemId);
+                    if (itemConfig) {
+                        const category = this.getItemDropCategory(selectedItemId);
+                        const count = this.calculateDropCount(category, selectedItemId);
+                        this.addItem('GATHERING', selectedItemId, count);
+                        comboRewards.push({ 
+                            type: 'GATHERING', 
+                            id: selectedItemId, 
+                            name: itemConfig.name, 
+                            icon: itemConfig.icon, 
+                            count: count,
+                            isCombo: true 
+                        });
+                    }
+                } else {
+                    // 全采集连击：随机获得一个物品
+                    const randomItem = location.items[Math.floor(Math.random() * location.items.length)];
+                    if (randomItem) {
+                        const category = this.getItemDropCategory(randomItem.id);
+                        const count = this.calculateDropCount(category, randomItem.id);
+                        this.addItem('GATHERING', randomItem.id, count);
+                        comboRewards.push({ 
+                            type: 'GATHERING', 
+                            id: randomItem.id, 
+                            name: randomItem.name, 
+                            icon: randomItem.icon, 
+                            count: count,
+                            isCombo: true 
+                        });
+                    }
+                }
+            } else {
+                // 伐木/挖矿
+                const dropId = item.dropId || action.id;
+                const dropName = item.drop || item.name;
+                const dropIcon = item.dropIcon || item.icon;
+                const category = action.type === 'WOODCUTTING' ? 'wood' : 'ore';
+                const count = this.calculateDropCount(category, dropId);
+                
+                this.addItem(actionType.dropType, dropId, count);
+                comboRewards.push({ 
+                    type: actionType.dropType, 
+                    id: dropId, 
+                    name: dropName, 
+                    icon: dropIcon, 
+                    count: count,
+                    isCombo: true 
+                });
+            }
         }
         
-        // 连击触发后，后续那一次额外行动会正常消耗材料、产出产物、获得经验
-        // 所以这里不需要额外处理，只需要增加次数
+        // 连击时获得额外经验
+        this.addSkillExp(skillKey, item.exp);
         
-        return { triggered: true, comboChance: comboChance };
-    return { triggered: true, comboChance: comboChance };
+        // 连击时进行第二次代币概率判定
+        const tokenDropRates = CONFIG.tokenDropRates || {
+            standard: [0.017, 0.024, 0.037, 0.053, 0.071, 0.092, 0.149, 0.210]
+        };
+        const levelIndex = Math.min(Math.floor((playerLevel - 1) / 10), tokenDropRates.standard.length - 1);
+        if (Math.random() < tokenDropRates.standard[levelIndex]) {
+            const tokenIdMap = {
+                'woodcutting': 'wood_token',
+                'mining': 'mining_token',
+                'gathering': 'gathering_token',
+                'crafting': 'crafting_token',
+                'forging': 'forging_token',
+                'tailoring': 'tailoring_token',
+                'alchemy': 'alchemy_token',
+                'brewing': 'brewing_token',
+                'essence': 'alchemy_token'
+            };
+            const tokenId = tokenIdMap[actionType.id] || `${actionType.id}_token`;
+            if (!this.state.tokensInventory) {
+                this.state.tokensInventory = {};
+            }
+            this.state.tokensInventory[tokenId] = (this.state.tokensInventory[tokenId] || 0) + 1;
+            comboRewards.push({ type: 'TOKEN', id: tokenId, name: `${actionType.name}代币`, icon: '🪙', count: 1, isCombo: true });
+        }
+        
+        // 连击触发后，额外减少一次行动次数（一次行动完成了两次效果）
+        if (!action.isInfinite) {
+            this.state.actionCount--;
+            action.remaining = this.state.actionCount;
+            this.state.actionRemaining = this.state.actionCount;
+        }
+        
+        return { triggered: true, rewards: comboRewards, comboChance: comboChance };
     }
     
     /**
