@@ -6680,6 +6680,31 @@ body::after {
     font-size: 18px;
 }
 
+.res-ok {
+    color: #66BB6A;
+}
+.res-no {
+    color: #E57373;
+}
+
+.slot-icon {
+    font-size: 1.6rem;
+}
+.slot-count {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 0.7rem;
+    color: #FFA726;
+}
+
+.res-ok {
+    color: #66BB6A;
+}
+.res-no {
+    color: #E57373;
+}
+
 /* ============ 吟游诗人页面样式 ============ */
 
 /* 诗人头部 */
@@ -7386,6 +7411,15 @@ body::after {
     font-size: 0.8rem;
     color: #6b7f90;
     margin-top: 2px;
+}
+.modal-desc {
+    font-size: 0.82rem;
+    color: #7A8A98;
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+.modal-section {
+    margin-top: 12px;
 }
 
 /* 音符背景动画 */

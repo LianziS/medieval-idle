@@ -7965,3 +7965,759 @@ function showOfflineRewardsModal(data) {
         }
     };
 }
+
+// ============ 吟游诗人系统 ============
+
+// 诗人状态
+let bardState = {
+    level: 1,
+    exp: 0,
+    status: 'idle',
+    travelProgress: null,
+    performProgress: null,
+    sheetsInventory: { earth: { normal: 0, fine: 0, epic: 0 }, craft: { normal: 0, fine: 0, epic: 0 }, sublime: { normal: 0, fine: 0, epic: 0 } },
+    wineBoxInventory: { basic_wine: 0, medium_wine: 0, premium_wine: 0 },
+    bardEquipment: { pen: null, shoe: null, instrument: null },
+    selectedDest: 'whisper_bay',
+    selectedWine: 'basic_wine',
+    selectedSheet: null,
+    travelCount: 0,
+    performCount: 0,
+    sheetsTotal: 0,
+    epicSheets: 0
+};
+
+// 初始化诗人页面
+function initBardPage() {
+    // Tab切换
+    document.querySelectorAll('.bard-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabId = tab.dataset.tab;
+            document.querySelectorAll('.bard-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.bard-tab-content').forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(`bard-tab-${tabId}`).classList.add('active');
+        });
+    });
+    
+    // 目的地卡片点击
+    document.querySelectorAll('.dest-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const destId = card.dataset.dest;
+            if (card.classList.contains('locked')) {
+                showToast(`需要诗人 Lv.${card.dataset.level} 解锁`);
+                return;
+            }
+            showDestDetailModal(destId);
+        });
+    });
+    
+    // 酒箱选择
+    document.getElementById('wine-box').addEventListener('click', showWineSelectModal);
+    
+    // 演奏选择
+    document.getElementById('perf-slot').addEventListener('click', showSheetSelectModal);
+    
+    // 演奏按钮
+    document.getElementById('perf-btn').addEventListener('click', startBardPerform);
+    
+    // 装备槽点击
+    document.querySelectorAll('.equip-slot').forEach(slot => {
+        slot.addEventListener('click', () => {
+            const slotType = slot.dataset.slot;
+            showEquipSelectModal(slotType);
+        });
+    });
+    
+    // 派遣按钮
+    document.getElementById('bard-dispatch-btn').addEventListener('click', startBardTravel);
+    
+    // 请求诗人信息
+    socket.emit('get_bard_info');
+    
+    // 渲染成长记录
+    renderBardUpgrades();
+}
+
+// 更新诗人页面
+function updateBardPage() {
+    // 更新等级和经验
+    document.getElementById('bard-level').textContent = `Lv. ${bardState.level}`;
+    document.getElementById('bard-avatar-level').textContent = `Lv.${bardState.level}`;
+    
+    const nextExp = CONFIG.bardLevels?.find(l => l.level === bardState.level + 1)?.exp || 35000;
+    const expPercent = bardState.level >= 20 ? 100 : (bardState.exp / nextExp) * 100;
+    document.getElementById('bard-exp-fill').style.width = `${expPercent}%`;
+    document.getElementById('bard-exp-info').textContent = `${bardState.exp} / ${nextExp} · 出游×${bardState.travelCount}次 · 演奏×${bardState.performCount}次`;
+    
+    // 更新侧边栏诗人经验
+    if (elements['nav-bard-lvl']) {
+        elements['nav-bard-lvl'].textContent = bardState.level;
+    }
+    if (elements['nav-bard-exp']) {
+        elements['nav-bard-exp'].style.width = `${expPercent}%`;
+    }
+    
+    // 更新状态徽章
+    const statusBadge = document.getElementById('bard-status-badge');
+    statusBadge.className = 'bard-status-badge';
+    if (bardState.status === 'idle') {
+        statusBadge.classList.add('bard-status-idle');
+        statusBadge.innerHTML = '<span class="bard-status-dot"></span>空闲';
+    } else if (bardState.status === 'traveling') {
+        statusBadge.classList.add('bard-status-traveling');
+        statusBadge.innerHTML = '<span class="bard-status-dot"></span>出游中';
+    } else if (bardState.status === 'performing') {
+        statusBadge.classList.add('bard-status-performing');
+        statusBadge.innerHTML = '<span class="bard-status-dot"></span>演奏中';
+    }
+    
+    // 更新统计
+    document.getElementById('bard-stat-travel').textContent = `${bardState.travelCount} 次`;
+    document.getElementById('bard-stat-perform').textContent = `${bardState.performCount} 次`;
+    document.getElementById('bard-stat-sheets').textContent = `${bardState.sheetsTotal} 张`;
+    document.getElementById('bard-stat-epic').textContent = `${bardState.epicSheets} 张`;
+    document.getElementById('bard-sheet-count').textContent = `${bardState.sheetsTotal} 张`;
+    
+    // 更新解锁目的地
+    const unlockedCount = CONFIG.bardDestinations?.filter(d => bardState.level >= d.reqLevel).length || 0;
+    document.getElementById('bard-dest-unlocked').textContent = `${unlockedCount} / 4 目的地`;
+    
+    // 更新目的地卡片状态
+    document.querySelectorAll('.dest-card').forEach(card => {
+        const reqLevel = parseInt(card.dataset.level);
+        if (bardState.level >= reqLevel) {
+            card.classList.remove('locked');
+        } else {
+            card.classList.add('locked');
+        }
+    });
+    
+    // 更新酒箱显示
+    updateWineBoxDisplay();
+    
+    // 更新消耗品显示
+    updateDispatchResources();
+    
+    // 更新装备显示
+    updateBardEquipSlots();
+    
+    // 更新演奏区
+    updatePerformArea();
+    
+    // 更新成长记录解锁状态
+    updateBardUpgradesStatus();
+}
+
+// 显示目的地详情弹框
+function showDestDetailModal(destId) {
+    const dest = CONFIG.bardDestinations?.find(d => d.id === destId);
+    if (!dest) return;
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'dest-modal';
+    
+    // 计算笔加成后的品质概率
+    const penBonus = bardState.penBonus || { fine: 0, epic: 0 };
+    const qualityRates = {
+        normal: Math.max(0, dest.quality.normal - penBonus.fine - penBonus.epic),
+        fine: dest.quality.fine + penBonus.fine,
+        epic: dest.quality.epic + penBonus.epic
+    };
+    
+    modal.innerHTML = `
+        <div class="modal-content bard-modal">
+            <button class="modal-close bard-modal-close">✕</button>
+            <div class="bard-modal-header">
+                <span class="bard-modal-icon">${dest.icon}</span>
+                <div>
+                    <div class="bard-modal-title">${dest.name}</div>
+                    <div class="bard-modal-subtitle">${dest.area} · Lv.${dest.reqLevel}解锁</div>
+                </div>
+            </div>
+            <div class="modal-desc" style="font-size:0.82rem;color:#7A8A98;line-height:1.5;margin-bottom:12px;">${dest.desc}</div>
+            
+            <div class="modal-section">
+                <div style="font-size:0.85rem;color:#6b4f3c;font-weight:bold;margin-bottom:8px;">🎼 乐谱品质概率</div>
+                <div class="drop-line">
+                    <span class="quality-badge quality-badge-normal">普通</span>
+                    <span class="item-pct">${qualityRates.normal}%</span>
+                </div>
+                <div class="drop-line">
+                    <span class="quality-badge quality-badge-fine">精良</span>
+                    <span class="item-pct">${qualityRates.fine}%</span>
+                </div>
+                <div class="drop-line">
+                    <span class="quality-badge quality-badge-epic">史诗</span>
+                    <span class="item-pct">${qualityRates.epic}%</span>
+                </div>
+            </div>
+            
+            <div class="modal-section" style="margin-top:12px;">
+                <div style="font-size:0.85rem;color:#6b4f3c;font-weight:bold;margin-bottom:8px;">📦 掉落物</div>
+                <div class="drop-list">
+                    ${dest.drops.map(d => `
+                        <div class="drop-line">
+                            <span class="drop-count">1</span>
+                            <span class="res-tag">${d.icon} ${d.name}</span>
+                            <span class="item-pct">${Math.round(d.rate * 100)}%</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="font-size:0.82rem;color:#7A8A98;margin-top:8px;">
+                    获得经验：<span style="color:#FFA726;font-weight:bold;">50 exp</span>
+                </div>
+            </div>
+            
+            <button class="dispatch-btn" style="margin-top:16px;" onclick="selectDestAndClose('${destId}')">确定</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('.bard-modal-close').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+}
+
+// 选择目的地并关闭弹框
+function selectDestAndClose(destId) {
+    bardState.selectedDest = destId;
+    document.querySelectorAll('.dest-card').forEach(card => {
+        card.classList.toggle('selected', card.dataset.dest === destId);
+    });
+    document.getElementById('dest-modal').remove();
+    updateDispatchResources();
+}
+
+// 更新消耗品显示
+function updateDispatchResources() {
+    const dest = CONFIG.bardDestinations?.find(d => d.id === bardState.selectedDest);
+    if (!dest) return;
+    
+    const goldHave = gameState.gold || 0;
+    const goldNeed = dest.cost.gold;
+    document.getElementById('bard-gold-have').textContent = goldHave;
+    document.getElementById('bard-gold-have').className = goldHave >= goldNeed ? 'res-ok' : 'res-no';
+    document.getElementById('bard-gold-need').textContent = goldNeed;
+    
+    // 手稿总数
+    const scrollHave = Object.values(gameState.manuscriptsInventory || {}).reduce((a, b) => a + b, 0);
+    const scrollNeed = dest.cost.scroll;
+    document.getElementById('bard-scroll-have').textContent = scrollHave;
+    document.getElementById('bard-scroll-have').className = scrollHave >= scrollNeed ? 'res-ok' : 'res-no';
+    document.getElementById('bard-scroll-need').textContent = scrollNeed;
+    
+    // 预览时长和经验
+    const wine = CONFIG.wineBoxes?.find(w => w.id === bardState.selectedWine);
+    const expBonus = wine?.expBonus || 0;
+    const baseExp = 50;
+    const finalExp = Math.round(baseExp * (1 + expBonus / 100));
+    
+    // 计算时长（考虑鞋子）
+    const travelDuration = bardState.travelDuration || 720;
+    const hours = Math.floor(travelDuration / 60);
+    const mins = travelDuration % 60;
+    
+    document.getElementById('bard-preview-time').textContent = `${hours}h${mins > 0 ? mins + 'min' : ''}`;
+    document.getElementById('bard-preview-exp').textContent = `${finalExp} exp`;
+    
+    // 检查是否可以派遣
+    const wineStock = bardState.wineBoxInventory?.[bardState.selectedWine] || 0;
+    const canDispatch = goldHave >= goldNeed && scrollHave >= scrollNeed && wineStock > 0 && bardState.status === 'idle';
+    
+    const btn = document.getElementById('bard-dispatch-btn');
+    btn.disabled = !canDispatch;
+    btn.textContent = canDispatch ? `🚀 出发前往${dest.name}` : '⚠️ 材料不足';
+}
+
+// 显示酒箱选择弹框
+function showWineSelectModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'wine-modal';
+    
+    modal.innerHTML = `
+        <div class="modal-content bard-modal">
+            <button class="modal-close bard-modal-close">✕</button>
+            <div class="bard-modal-header">
+                <span class="bard-modal-icon">🍷</span>
+                <div class="bard-modal-title">选择酒箱</div>
+            </div>
+            <div class="wine-select-grid">
+                ${CONFIG.wineBoxes?.map(wine => `
+                    <div class="wine-select-item ${bardState.selectedWine === wine.id ? 'active' : ''}" 
+                         onclick="selectWineAndClose('${wine.id}')">
+                        <span class="wsi-icon">${wine.icon}</span>
+                        <span class="wsi-count">×${bardState.wineBoxInventory?.[wine.id] || 0}</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('.bard-modal-close').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+}
+
+// 选择酒箱并关闭
+function selectWineAndClose(wineId) {
+    bardState.selectedWine = wineId;
+    socket.emit('bard_select_wine', { wineId });
+    document.getElementById('wine-modal').remove();
+    updateWineBoxDisplay();
+    updateDispatchResources();
+}
+
+// 更新酒箱显示
+function updateWineBoxDisplay() {
+    const wine = CONFIG.wineBoxes?.find(w => w.id === bardState.selectedWine);
+    if (!wine) return;
+    
+    document.getElementById('wb-icon').textContent = wine.icon;
+    const stock = bardState.wineBoxInventory?.[wine.id] || 0;
+    document.getElementById('wb-count').textContent = stock > 0 ? `×${stock}` : '无';
+}
+
+// 开始诗人出游
+function startBardTravel() {
+    if (bardState.status !== 'idle') {
+        showToast('诗人正在行动中');
+        return;
+    }
+    
+    socket.emit('bard_travel_start', {
+        destId: bardState.selectedDest,
+        wineId: bardState.selectedWine
+    });
+}
+
+// 开始诗人演奏
+function startBardPerform() {
+    if (bardState.status !== 'idle') {
+        showToast('诗人正在行动中');
+        return;
+    }
+    
+    if (!bardState.selectedSheet) {
+        showToast('请先选择乐谱');
+        return;
+    }
+    
+    socket.emit('bard_perform_start', {
+        category: bardState.selectedSheet.category,
+        quality: bardState.selectedSheet.quality
+    });
+}
+
+// 显示乐谱选择弹框
+function showSheetSelectModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'sheet-modal';
+    
+    const categories = ['earth', 'craft', 'sublime'];
+    const qualities = ['normal', 'fine', 'epic'];
+    
+    modal.innerHTML = `
+        <div class="modal-content bard-modal">
+            <button class="modal-close bard-modal-close">✕</button>
+            <div class="bard-modal-header">
+                <span class="bard-modal-icon">🎵</span>
+                <div class="bard-modal-title">选择乐谱</div>
+            </div>
+            <div class="sheet-select-grid">
+                ${categories.map(cat => 
+                    qualities.map(qual => {
+                        const catInfo = CONFIG.sheets?.categories?.[cat];
+                        const qualInfo = CONFIG.sheets?.qualities?.[qual];
+                        const stock = bardState.sheetsInventory?.[cat]?.[qual] || 0;
+                        const isSelected = bardState.selectedSheet?.category === cat && bardState.selectedSheet?.quality === qual;
+                        return `
+                            <div class="sheet-select-item ${isSelected ? 'active' : ''} ${stock === 0 ? 'locked' : ''}"
+                                 onclick="selectSheetAndClose('${cat}', '${qual}')">
+                                <span class="ssi-icon">${catInfo?.icon || '📜'}</span>
+                                <span class="ssi-count">×${stock}</span>
+                            </div>
+                        `;
+                    }).join('')
+                ).join('')}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('.bard-modal-close').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+}
+
+// 选择乐谱并关闭
+function selectSheetAndClose(category, quality) {
+    const stock = bardState.sheetsInventory?.[category]?.[quality] || 0;
+    if (stock === 0) {
+        showToast('乐谱不足');
+        return;
+    }
+    
+    bardState.selectedSheet = { category, quality };
+    document.getElementById('sheet-modal').remove();
+    updatePerformArea();
+}
+
+// 更新演奏区显示
+function updatePerformArea() {
+    const slot = document.getElementById('perf-slot');
+    const info = document.getElementById('perf-info');
+    const btn = document.getElementById('perf-btn');
+    
+    if (!bardState.selectedSheet) {
+        slot.classList.remove('active');
+        slot.innerHTML = '<span id="perf-slot-text" style="color:#4a5a6a;font-size:0.82rem;">选择</span>';
+        info.innerHTML = '';
+        btn.disabled = true;
+        btn.textContent = '🎵 开始演奏';
+        return;
+    }
+    
+    const { category, quality } = bardState.selectedSheet;
+    const catInfo = CONFIG.sheets?.categories?.[category];
+    const qualInfo = CONFIG.sheets?.qualities?.[quality];
+    const stock = bardState.sheetsInventory?.[category]?.[quality] || 0;
+    
+    slot.classList.add('active');
+    slot.innerHTML = `<span class="slot-icon">${catInfo?.icon || '📜'}</span><span class="slot-count">×${stock}</span>`;
+    
+    info.innerHTML = `
+        <div class="sheet-detail-row"><span class="sheet-detail-label">乐谱</span><span class="sheet-detail-val"><span class="quality-badge quality-badge-${quality}">${catInfo?.name || category} ${qualInfo?.name || quality}</span></span></div>
+        <div class="sheet-detail-row"><span class="sheet-detail-label">演奏时长</span><span class="sheet-detail-val">${qualInfo?.duration || 30}分钟</span></div>
+        <div class="sheet-detail-row"><span class="sheet-detail-label">可用于</span><span class="sheet-detail-val">${catInfo?.target || '-'}</span></div>
+        <div class="sheet-detail-row"><span class="sheet-detail-label">效果</span><span class="sheet-detail-val" style="color:#FFA726;font-weight:bold;">${qualInfo?.effect?.[category] || '-'}</span></div>
+        <div class="sheet-detail-row"><span class="sheet-detail-label">获得经验</span><span class="sheet-detail-val" style="color:#66BB6A;font-weight:bold;">${qualInfo?.exp || 15} exp</span></div>
+    `;
+    
+    btn.disabled = bardState.status !== 'idle' || stock === 0;
+    btn.textContent = bardState.status === 'performing' ? '🎵 演奏中...' : '🎵 开始演奏';
+}
+
+// 显示装备选择弹框
+function showEquipSelectModal(slotType) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'equip-modal';
+    
+    // 获取对应类型的库存
+    let inventory = [];
+    let configList = [];
+    
+    if (slotType === 'pen') {
+        inventory = gameState.pensInventory || [];
+        configList = CONFIG.pens || [];
+    } else if (slotType === 'shoe') {
+        inventory = gameState.bootsInventory || [];
+        configList = CONFIG.boots || [];
+    } else if (slotType === 'instrument') {
+        inventory = gameState.instrumentsInventory || [];
+        configList = CONFIG.instruments || [];
+    }
+    
+    // 统计数量
+    const counts = {};
+    inventory.forEach(item => {
+        const itemId = typeof item === 'string' ? item : item.id;
+        counts[itemId] = (counts[itemId] || 0) + 1;
+    });
+    
+    const slotNames = { pen: '笔', shoe: '鞋子', instrument: '乐器' };
+    
+    modal.innerHTML = `
+        <div class="modal-content bard-modal bard-modal-wide">
+            <button class="modal-close bard-modal-close">✕</button>
+            <div class="bard-modal-header">
+                <span class="bard-modal-icon">${slotType === 'pen' ? '🖋️' : slotType === 'shoe' ? '👢' : '🎸'}</span>
+                <div class="bard-modal-title">选择${slotNames[slotType]}</div>
+            </div>
+            <div class="eq-select-grid">
+                ${configList.map(item => {
+                    const isEquipped = bardState.bardEquipment?.[slotType] === item.id;
+                    const count = counts[item.id] || 0;
+                    return `
+                        <div class="eq-select-item ${isEquipped ? 'equipped' : ''} ${count === 0 ? 'locked' : ''}"
+                             onclick="equipBardItem('${slotType}', '${item.id}')">
+                            <span class="eq-item-icon">${item.icon}</span>
+                            <span class="eq-item-name">${item.name}</span>
+                            <span class="eq-count">${isEquipped ? '已装备' : `×${count}`}</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+            ${bardState.bardEquipment?.[slotType] ? `<button class="eq-unequip-btn" onclick="unequipBardItem('${slotType}')">卸下当前装备</button>` : ''}
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('.bard-modal-close').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+}
+
+// 穿戴诗人装备
+function equipBardItem(slot, itemId) {
+    socket.emit('bard_equip', { slot, itemId });
+    document.getElementById('equip-modal').remove();
+}
+
+// 卸下诗人装备
+function unequipBardItem(slot) {
+    socket.emit('bard_unequip', { slot });
+    document.getElementById('equip-modal').remove();
+}
+
+// 更新诗人装备槽显示
+function updateBardEquipSlots() {
+    document.querySelectorAll('.equip-slot').forEach(slot => {
+        const slotType = slot.dataset.slot;
+        const equipped = bardState.bardEquipment?.[slotType];
+        
+        // 获取库存
+        let inventory = [];
+        let configList = [];
+        
+        if (slotType === 'pen') {
+            inventory = gameState.pensInventory || [];
+            configList = CONFIG.pens || [];
+        } else if (slotType === 'shoe') {
+            inventory = gameState.bootsInventory || [];
+            configList = CONFIG.boots || [];
+        } else if (slotType === 'instrument') {
+            inventory = gameState.instrumentsInventory || [];
+            configList = CONFIG.instruments || [];
+        }
+        
+        const hasAny = inventory.length > 0;
+        
+        if (equipped) {
+            const item = configList.find(i => i.id === equipped);
+            slot.classList.add('equipped');
+            slot.classList.remove('locked');
+            slot.innerHTML = `
+                <span class="card-icon">${item?.icon || '📦'}</span>
+                <span class="card-name">${item?.name || equipped}</span>
+                <span class="card-sub equip-status" style="color:#FFA726;">已装备</span>
+            `;
+        } else if (hasAny) {
+            slot.classList.remove('equipped');
+            slot.classList.remove('locked');
+            const slotIcons = { pen: '🖋️', shoe: '👢', instrument: '🎸' };
+            const slotNames = { pen: '笔', shoe: '鞋子', instrument: '乐器' };
+            slot.innerHTML = `
+                <span class="card-icon">${slotIcons[slotType]}</span>
+                <span class="card-name">${slotNames[slotType]}</span>
+                <span class="card-sub equip-status">未装备</span>
+            `;
+        } else {
+            slot.classList.remove('equipped');
+            slot.classList.add('locked');
+            const slotIcons = { pen: '🖋️', shoe: '👢', instrument: '🎸' };
+            const slotNames = { pen: '笔', shoe: '鞋子', instrument: '乐器' };
+            slot.innerHTML = `
+                <span class="card-icon" style="opacity:0.4;">${slotIcons[slotType]}</span>
+                <span class="card-name">${slotNames[slotType]}</span>
+                <span class="card-sub equip-status">未获得</span>
+            `;
+        }
+    });
+    
+    // 更新笔加成显示
+    const penBonus = bardState.penBonus || { fine: 0, epic: 0 };
+    if (penBonus.fine > 0 || penBonus.epic > 0) {
+        document.getElementById('bard-pen-bonus').textContent = `精良+${penBonus.fine}% / 史诗+${penBonus.epic}%`;
+    } else {
+        document.getElementById('bard-pen-bonus').textContent = '无';
+    }
+}
+
+// 渲染成长记录等级卡片
+function renderBardUpgrades() {
+    const grid = document.getElementById('bard-upgrades-grid');
+    if (!grid) return;
+    
+    grid.innerHTML = CONFIG.bardLevels?.map(lvl => `
+        <div class="upgrade-card" data-level="${lvl.level}">
+            <span class="upgrade-level">Lv.<span class="lv-val">${lvl.level}</span></span>
+            <span class="upgrade-desc">${lvl.unlock}</span>
+            <span class="upgrade-exp">${lvl.exp} exp</span>
+            <span class="upgrade-status upgrade-status-locked">🔒</span>
+        </div>
+    `).join('');
+}
+
+// 更新成长记录解锁状态
+function updateBardUpgradesStatus() {
+    document.querySelectorAll('.upgrade-card').forEach(card => {
+        const level = parseInt(card.dataset.level);
+        const currentLevel = bardState.level;
+        const nextExp = CONFIG.bardLevels?.find(l => l.level === currentLevel + 1)?.exp || 35000;
+        
+        card.classList.remove('unlocked', 'next-unlock');
+        
+        const statusEl = card.querySelector('.upgrade-status');
+        
+        if (level <= currentLevel) {
+            card.classList.add('unlocked');
+            statusEl.className = 'upgrade-status upgrade-status-done';
+            statusEl.textContent = '✓ 已解锁';
+        } else if (level === currentLevel + 1) {
+            card.classList.add('next-unlock');
+            statusEl.className = 'upgrade-status upgrade-status-locked';
+            statusEl.textContent = `🔒 ${bardState.exp} / ${CONFIG.bardLevels?.find(l => l.level === level)?.exp || 0}`;
+        } else {
+            statusEl.className = 'upgrade-status upgrade-status-locked';
+            statusEl.textContent = '🔒';
+        }
+    });
+}
+
+// Socket事件监听：诗人信息
+socket.on('bard_info', (data) => {
+    bardState = {
+        ...bardState,
+        level: data.levelInfo?.level || 1,
+        exp: data.levelInfo?.exp || 0,
+        status: data.status || 'idle',
+        sheetsInventory: data.sheetsInventory || bardState.sheetsInventory,
+        wineBoxInventory: data.wineBoxInventory || bardState.wineBoxInventory,
+        bardEquipment: data.bardEquipment || { pen: null, shoe: null, instrument: null },
+        travelProgress: data.travelProgress,
+        performProgress: data.performProgress,
+        penBonus: data.penBonus || { fine: 0, epic: 0 },
+        travelDuration: data.travelDuration || 720,
+        travelCount: data.bardTravelCount || 0,
+        performCount: data.bardPerformCount || 0,
+        sheetsTotal: data.bardSheetsTotal || 0,
+        epicSheets: data.bardEpicSheets || 0
+    };
+    
+    updateBardPage();
+});
+
+// Socket事件监听：出游开始
+socket.on('bard_travel_started', (data) => {
+    showToast(`🚀 开始出游：${data.destination?.name}`);
+    bardState.status = 'traveling';
+    updateBardPage();
+});
+
+// Socket事件监听：出游完成
+socket.on('bard_travel_completed', (data) => {
+    showToast(`✅ 出游归来！获得 ${data.exp} exp`);
+    
+    // 显示奖励
+    if (data.rewards && data.rewards.length > 0) {
+        const rewardsText = data.rewards.map(r => `${r.icon} ${r.name}`).join(' ');
+        showToast(`获得：${rewardsText}`);
+    }
+    
+    bardState.status = 'idle';
+    bardState.travelCount = data.travelCount;
+    
+    // 更新统计
+    socket.emit('get_bard_info');
+});
+
+// Socket事件监听：演奏开始
+socket.on('bard_perform_started', (data) => {
+    showToast(`🎵 开始演奏`);
+    bardState.status = 'performing';
+    updateBardPage();
+});
+
+// Socket事件监听：演奏完成
+socket.on('bard_perform_completed', (data) => {
+    showToast(`✅ 演奏完成！获得 ${data.exp} exp`);
+    bardState.status = 'idle';
+    bardState.performCount = data.performCount;
+    
+    // 清除乐谱选择
+    bardState.selectedSheet = null;
+    
+    socket.emit('get_bard_info');
+});
+
+// Socket事件监听：出游进度
+socket.on('bard_travel_progress', (data) => {
+    bardState.travelProgress = data;
+    
+    // 更新状态徽章显示剩余时间
+    const remainingMs = data.remaining;
+    const hours = Math.floor(remainingMs / (1000 * 60 * 60));
+    const mins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    const statusBadge = document.getElementById('bard-status-badge');
+    statusBadge.innerHTML = `<span class="bard-status-dot"></span>出游中 ${hours}h${mins}m`;
+});
+
+// Socket事件监听：演奏进度
+socket.on('bard_perform_progress', (data) => {
+    bardState.performProgress = data;
+    
+    // 显示进度条
+    const progressArea = document.getElementById('perf-progress-area');
+    const progressFill = document.getElementById('perf-progress-fill');
+    const progressText = document.getElementById('perf-progress-text');
+    
+    progressArea.style.display = 'block';
+    progressFill.style.width = `${data.progress}%`;
+    progressText.textContent = `${Math.round(data.progress)}%`;
+});
+
+// Socket事件监听：装备穿戴成功
+socket.on('bard_equip_success', (data) => {
+    showToast(`✅ 已穿戴装备`);
+    socket.emit('get_bard_info');
+});
+
+// Socket事件监听：装备卸下成功
+socket.on('bard_unequip_success', (data) => {
+    showToast(`已卸下装备`);
+    socket.emit('get_bard_info');
+});
+
+// Socket事件监听：诗人错误
+socket.on('bard_error', (data) => {
+    showToast(`❌ ${data.reason}`);
+});
+
+// Socket事件监听：酒箱添加
+socket.on('bard_wine_added', (data) => {
+    showToast(`✅ 获得 ${CONFIG.wineBoxes?.find(w => w.id === data.wineId)?.name || '酒箱'} ×${data.count}`);
+    socket.emit('get_bard_info');
+});
+
+// Socket事件监听：乐谱添加
+socket.on('bard_sheet_added', (data) => {
+    const catInfo = CONFIG.sheets?.categories?.[data.category];
+    const qualInfo = CONFIG.sheets?.qualities?.[data.quality];
+    showToast(`✅ 获得 ${catInfo?.name} ${qualInfo?.name} ×${data.count}`);
+    socket.emit('get_bard_info');
+});
+
+// 页面切换时初始化诗人页面
+document.querySelectorAll('.nav-item[data-page="bard"]').forEach(item => {
+    item.addEventListener('click', () => {
+        if (!document.querySelector('.bard-tab').classList.contains('initialized')) {
+            initBardPage();
+            document.querySelectorAll('.bard-tab').forEach(t => t.classList.add('initialized'));
+        }
+    });
+});
