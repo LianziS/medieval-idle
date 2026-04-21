@@ -8,7 +8,7 @@
     <meta name="format-detection" content="telephone=no">
     <title>中世纪雇佣兵 - 放置游戏</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="style.css?v=202604211650">
+    <link rel="stylesheet" href="style.css?v=202604212034">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#1B2A3A;color:#A0B2C0;min-height:100vh;padding:0;font-size:14px;overflow-x:hidden}
@@ -210,6 +210,22 @@
                     <div class="nav-exp-bar">
                         <div class="nav-exp-bg">
                             <div class="nav-exp-fill" id="nav-enhance-exp"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 吟游诗人 -->
+            <div class="nav-item nav-item-skill" data-page="bard">
+                <span class="nav-icon">🎵</span>
+                <div class="nav-skill-wrapper">
+                    <div class="nav-text-row">
+                        <span class="nav-text">吟游诗人</span>
+                        <span class="nav-exp-level" id="nav-bard-lvl">1</span>
+                    </div>
+                    <div class="nav-exp-bar">
+                        <div class="nav-exp-bg">
+                            <div class="nav-exp-fill" id="nav-bard-exp"></div>
                         </div>
                     </div>
                 </div>
@@ -813,6 +829,157 @@
             </section>
         </main>
 
+        <!-- 吟游诗人页 -->
+        <main class="page" id="page-bard">
+            <section class="panel">
+                <!-- 诗人信息头部 -->
+                <div class="skill-header">
+                    <div class="title-row">
+                        <h2 class="panel-title">🎵 吟游诗人</h2>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span class="bard-status-badge bard-status-idle" id="bard-status-badge"><span class="bard-status-dot"></span>空闲</span>
+                            <span class="skill-level" id="bard-level">Lv. 1</span>
+                        </div>
+                    </div>
+                    <div class="skill-exp-bg"><div class="skill-exp-fill" id="bard-exp-fill" style="width:0%"></div></div>
+                    <p class="skill-exp-info" id="bard-exp-info">0 / 100 · 出游×0次 · 演奏×0次</p>
+                </div>
+                <div class="skill-divider"></div>
+                
+                <!-- 角色卡 -->
+                <div class="bard-char-card">
+                    <div class="bard-avatar"><span class="bard-avatar-icon">🎵</span></div>
+                    <div class="bard-details">
+                        <span class="bard-name" id="bard-avatar-level">Lv.1</span>
+                        <div class="bard-stats">
+                            <div class="bard-stat-item"><span class="bard-stat-icon">⏱️</span><div class="bard-stat-text"><span class="bard-stat-label">出游时长</span><span class="bard-stat-value" id="bard-travel-time">12小时</span></div></div>
+                            <div class="bard-stat-item"><span class="bard-stat-icon">✨</span><div class="bard-stat-text"><span class="bard-stat-label">笔加成</span><span class="bard-stat-value" id="bard-pen-bonus">无</span></div></div>
+                            <div class="bard-stat-item"><span class="bard-stat-icon">🗺️</span><div class="bard-stat-text"><span class="bard-stat-label">已解锁</span><span class="bard-stat-value" id="bard-dest-unlocked">1 / 4 目的地</span></div></div>
+                            <div class="bard-stat-item"><span class="bard-stat-icon">📜</span><div class="bard-stat-text"><span class="bard-stat-label">乐谱总数</span><span class="bard-stat-value" id="bard-sheet-count">0 张</span></div></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tab导航 -->
+                <div class="bard-tabs">
+                    <button class="bard-tab active" data-tab="dispatch">🗺️ 出游派遣</button>
+                    <button class="bard-tab" data-tab="sheets">🎵 演奏</button>
+                    <button class="bard-tab" data-tab="equip">🎒 诗人装备</button>
+                    <button class="bard-tab" data-tab="grow">📈 成长记录</button>
+                </div>
+                
+                <!-- Tab 1: 出游派遣 -->
+                <div class="bard-tab-content active" id="bard-tab-dispatch">
+                    <h2 class="section-title">🗺️ 选择目的地</h2>
+                    <div class="card-grid bard-dest-grid">
+                        <div class="card-item dest-card" data-dest="whisper_bay" data-level="1">
+                            <span class="card-icon">🌊</span>
+                            <span class="card-name">低语湾</span>
+                            <span class="card-sub">Lv.1</span>
+                        </div>
+                        <div class="card-item dest-card locked" data-dest="river_valley" data-level="3">
+                            <span class="card-icon">🏞️</span>
+                            <span class="card-name">河间谷地</span>
+                            <span class="card-sub">Lv.3</span>
+                        </div>
+                        <div class="card-item dest-card locked" data-dest="gorge_camp" data-level="6">
+                            <span class="card-icon">⛰️</span>
+                            <span class="card-name">峡谷营地</span>
+                            <span class="card-sub">Lv.6</span>
+                        </div>
+                        <div class="card-item dest-card locked" data-dest="blackstone_tower" data-level="8">
+                            <span class="card-icon">🗼</span>
+                            <span class="card-name">黑石灯塔</span>
+                            <span class="card-sub">Lv.8</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 消耗品与派遣 -->
+                    <div class="dispatch-resources">
+                        <div class="res-row">
+                            <span class="res-label">💰 金币</span>
+                            <span class="res-tag"><span id="bard-gold-have">0</span><span class="res-slash">/</span><span id="bard-gold-need">300</span></span>
+                        </div>
+                        <div class="res-row">
+                            <span class="res-label">📜 手稿</span>
+                            <span class="res-tag"><span id="bard-scroll-have">0</span><span class="res-slash">/</span><span id="bard-scroll-need">2</span></span>
+                        </div>
+                        <div class="dispatch-wine-select">
+                            <label>🍷 酒箱</label>
+                            <div class="wine-box" id="wine-box">
+                                <span class="wb-icon" id="wb-icon">🍺</span>
+                                <span class="wb-count" id="wb-count">×0</span>
+                            </div>
+                        </div>
+                        <div class="dispatch-preview" id="bard-dispatch-preview">
+                            <span class="dp-label">预计时长</span><span class="dp-val" id="bard-preview-time">12h</span>
+                            <span style="margin-left:8px;" class="dp-label">经验</span><span class="dp-val" id="bard-preview-exp">50 exp</span>
+                        </div>
+                        <button class="dispatch-btn" id="bard-dispatch-btn" disabled>⚠️ 材料不足</button>
+                    </div>
+                </div>
+                
+                <!-- Tab 2: 演奏 -->
+                <div class="bard-tab-content" id="bard-tab-sheets">
+                    <div class="perf-area">
+                        <div class="perf-select-label">选择乐谱</div>
+                        <div class="perf-slot" id="perf-slot">
+                            <span id="perf-slot-text" style="color:#4a5a6a;font-size:0.82rem;">选择</span>
+                        </div>
+                        <div class="perf-info" id="perf-info"></div>
+                        <div class="perf-progress-area" id="perf-progress-area" style="display:none;">
+                            <div class="perf-progress-bar">
+                                <div class="perf-progress-fill" id="perf-progress-fill"></div>
+                            </div>
+                            <div class="perf-progress-text" id="perf-progress-text">0%</div>
+                        </div>
+                        <button class="dispatch-btn" id="perf-btn" disabled>🎵 开始演奏</button>
+                    </div>
+                </div>
+                
+                <!-- Tab 3: 诗人装备 -->
+                <div class="bard-tab-content" id="bard-tab-equip">
+                    <h2 class="section-title">🎒 诗人装备</h2>
+                    <div class="card-grid bard-equip-grid">
+                        <div class="card-item equip-slot" data-slot="pen">
+                            <span class="card-icon">🖋️</span>
+                            <span class="card-name">笔</span>
+                            <span class="card-sub equip-status">未获得</span>
+                        </div>
+                        <div class="card-item equip-slot" data-slot="shoe">
+                            <span class="card-icon">👢</span>
+                            <span class="card-name">鞋子</span>
+                            <span class="card-sub equip-status">未获得</span>
+                        </div>
+                        <div class="card-item equip-slot" data-slot="instrument">
+                            <span class="card-icon">🎸</span>
+                            <span class="card-name">乐器</span>
+                            <span class="card-sub equip-status">未获得</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tab 4: 成长记录 -->
+                <div class="bard-tab-content" id="bard-tab-grow">
+                    <h2 class="section-title">📈 诗人成长</h2>
+                    <div class="bard-char-card" style="margin-bottom:18px;">
+                        <div class="bard-details" style="width:100%;">
+                            <div class="bard-stats" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
+                                <div class="bard-stat-item"><span class="bard-stat-icon">🗺️</span><div class="bard-stat-text"><span class="bard-stat-label">出游次数</span><span class="bard-stat-value" id="bard-stat-travel">0 次</span></div></div>
+                                <div class="bard-stat-item"><span class="bard-stat-icon">🎶</span><div class="bard-stat-text"><span class="bard-stat-label">演奏次数</span><span class="bard-stat-value" id="bard-stat-perform">0 次</span></div></div>
+                                <div class="bard-stat-item"><span class="bard-stat-icon">📜</span><div class="bard-stat-text"><span class="bard-stat-label">获得乐谱总数</span><span class="bard-stat-value" id="bard-stat-sheets">0 张</span></div></div>
+                                <div class="bard-stat-item"><span class="bard-stat-icon">⭐</span><div class="bard-stat-text"><span class="bard-stat-label">获得史诗乐谱</span><span class="bard-stat-value" id="bard-stat-epic">0 张</span></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    <h2 class="section-title" style="font-size:1rem;">🔓 等级解锁内容（20级）</h2>
+                    <div class="upgrades-grid" id="bard-upgrades-grid">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+            </section>
+        </main>
+
         <!-- 商人页 -->
         <main class="page" id="page-merchant">
             <section class="panel">
@@ -1160,7 +1327,7 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="game.js?v=202604211650"></script>
+    <script src="game.js?v=202604212034"></script>
     <script>
         // 登录验证
         (function() {

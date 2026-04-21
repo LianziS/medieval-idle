@@ -1206,4 +1206,135 @@ CONFIG.materialNames = {
     'world_tree_plank': '世界树木板'
 };
 
+// ============ 吟游诗人系统配置 ============
+
+// 诗人等级经验表（20级）
+const BARD_LEVELS = [
+    { level: 1, exp: 0, unlock: '初始诗人 / 解锁低语湾 / 解锁笔 / 默认可演奏普通乐谱' },
+    { level: 2, exp: 100, unlock: '—' },
+    { level: 3, exp: 250, unlock: '解锁河间谷地' },
+    { level: 4, exp: 500, unlock: '—' },
+    { level: 5, exp: 800, unlock: '解锁鞋子（可制作Lv.1）' },
+    { level: 6, exp: 1200, unlock: '解锁峡谷营地' },
+    { level: 7, exp: 1700, unlock: '—' },
+    { level: 8, exp: 2300, unlock: '解锁黑石灯塔' },
+    { level: 9, exp: 3000, unlock: '解锁乐器制作（可制作Lv.1）' },
+    { level: 10, exp: 3800, unlock: '10%概率额外获得1张随机乐谱' },
+    { level: 11, exp: 4700, unlock: '低语湾掉落率 +3%' },
+    { level: 12, exp: 5800, unlock: '河间谷地掉落率 +3%' },
+    { level: 13, exp: 7000, unlock: '峡谷营地掉落率 +3%' },
+    { level: 14, exp: 8500, unlock: '额外乐谱概率 10% → 13%' },
+    { level: 15, exp: 10500, unlock: '黑石灯塔掉落率 +3%' },
+    { level: 16, exp: 13000, unlock: '额外乐谱概率 13% → 16%' },
+    { level: 17, exp: 16000, unlock: '所有地区掉落率 +3%（累计各+6%）' },
+    { level: 18, exp: 20000, unlock: '—' },
+    { level: 19, exp: 25000, unlock: '额外乐谱概率 16% → 20%（封顶）' },
+    { level: 20, exp: 35000, unlock: '所有地区掉落率 +3%（累计各+9%）' }
+];
+
+// 目的地配置
+const BARD_DESTINATIONS = [
+    {
+        id: 'whisper_bay',
+        name: '低语湾',
+        icon: '🌊',
+        reqLevel: 1,
+        area: '狼林边缘',
+        desc: '湾畔海风低语，灵感从海风中凝聚',
+        cost: { gold: 300, scroll: 2 },
+        drops: [
+            { id: 'conch_ink', name: '海螺墨', icon: '🪣', rate: 0.80 },
+            { id: 'river_nail', name: '河铸钉', icon: '🔩', rate: 0.08 },
+            { id: 'echo_stone', name: '回音石', icon: '💎', rate: 0.03 }
+        ],
+        quality: { normal: 90, fine: 10, epic: 0 }
+    },
+    {
+        id: 'river_valley',
+        name: '河间谷地',
+        icon: '🏞️',
+        reqLevel: 3,
+        area: '河间地带',
+        desc: '河流交汇的谷地，水土丰饶物产多样',
+        cost: { gold: 800, scroll: 3 },
+        drops: [
+            { id: 'conch_ink', name: '海螺墨', icon: '🪣', rate: 0.08 },
+            { id: 'river_nail', name: '河铸钉', icon: '🔩', rate: 0.80 },
+            { id: 'echo_stone', name: '回音石', icon: '💎', rate: 0.03 }
+        ],
+        quality: { normal: 76, fine: 22, epic: 2 }
+    },
+    {
+        id: 'gorge_camp',
+        name: '峡谷营地',
+        icon: '⛰️',
+        reqLevel: 6,
+        area: '叹息峡谷',
+        desc: '险峻峡谷中矿工和冒险者的据点',
+        cost: { gold: 1600, scroll: 6 },
+        drops: [
+            { id: 'conch_ink', name: '海螺墨', icon: '🪣', rate: 0.03 },
+            { id: 'river_nail', name: '河铸钉', icon: '🔩', rate: 0.08 },
+            { id: 'echo_stone', name: '回音石', icon: '💎', rate: 0.80 }
+        ],
+        quality: { normal: 62, fine: 29, epic: 9 }
+    },
+    {
+        id: 'blackstone_tower',
+        name: '黑石灯塔',
+        icon: '🗼',
+        reqLevel: 8,
+        area: '龙脊山脉',
+        desc: '远古灯塔矗立海角，黑石蕴含神秘力量',
+        cost: { gold: 2700, scroll: 8 },
+        drops: [
+            { id: 'conch_ink', name: '海螺墨', icon: '🪣', rate: 0.03 },
+            { id: 'river_nail', name: '河铸钉', icon: '🔩', rate: 0.03 },
+            { id: 'echo_stone', name: '回音石', icon: '💎', rate: 0.03 },
+            { id: 'blackstone', name: '黑石', icon: '⬛', rate: 0.80 }
+        ],
+        quality: { normal: 50, fine: 34, epic: 16 }
+    }
+];
+
+// 酒箱配置
+const WINE_BOXES = [
+    { id: 'basic_wine', name: '初级酒箱', icon: '🍺', expBonus: 0 },
+    { id: 'medium_wine', name: '中级酒箱', icon: '🍷', expBonus: 20 },
+    { id: 'premium_wine', name: '高级酒箱', icon: '🥃', expBonus: 40 }
+];
+
+// 乐谱配置
+const SHEETS = {
+    // 三大类别
+    categories: {
+        earth: { id: 'earth', name: '大地之艺', icon: '🌿', target: '伐木 / 挖矿 / 采集' },
+        craft: { id: 'craft', name: '巧手之艺', icon: '🔨', target: '锻造 / 制作 / 裁缝' },
+        sublime: { id: 'sublime', name: '升华之艺', icon: '⚗️', target: '炼金 / 酄造 / 强化' }
+    },
+    // 品质数值
+    qualities: {
+        normal: { name: '普通', duration: 30, effect: { earth: '5%转化', craft: '3%双倍', sublime: '-5%速度' }, exp: 15 },
+        fine: { name: '精良', duration: 90, effect: { earth: '10%转化', craft: '7%双倍', sublime: '-10%速度' }, exp: 15 },
+        epic: { name: '史诗', duration: 180, effect: { earth: '15%转化', craft: '10%双倍', sublime: '-15%速度' }, exp: 15 }
+    }
+};
+
+// 出游基础时长（分钟）
+const BASE_TRAVEL_DURATION = 12 * 60; // 12小时 = 720分钟
+
+// 诗人经验值
+const BARD_EXP = {
+    travel: 50,  // 出游归来获得的基础经验
+    perform: 15  // 演奏获得的经验
+};
+
+// 添加到CONFIG
+CONFIG.bardLevels = BARD_LEVELS;
+CONFIG.bardDestinations = BARD_DESTINATIONS;
+CONFIG.wineBoxes = WINE_BOXES;
+CONFIG.sheets = SHEETS;
+CONFIG.baseTravelDuration = BASE_TRAVEL_DURATION;
+CONFIG.bardExp = BARD_EXP;
+
 module.exports = { CONFIG, ITEM_TYPES, ACTION_TYPES };
