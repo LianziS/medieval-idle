@@ -1198,6 +1198,14 @@ function switchPage(pageId) {
             case 'enhance':
                 renderEnhance();
                 break;
+            case 'bard':
+                // 诗人页面初始化
+                if (!window.bardPageInitialized) {
+                    initBardPage();
+                    window.bardPageInitialized = true;
+                }
+                socket.emit('get_bard_info');
+                break;
             case 'settings':
                 renderSettings();
                 break;
@@ -8857,14 +8865,4 @@ socket.on('bard_sheet_added', (data) => {
     const qualInfo = CONFIG.sheets?.qualities?.[data.quality];
     showToast(`✅ 获得 ${catInfo?.name} ${qualInfo?.name} ×${data.count}`);
     socket.emit('get_bard_info');
-});
-
-// 页面切换时初始化诗人页面
-document.querySelectorAll('.nav-item[data-page="bard"]').forEach(item => {
-    item.addEventListener('click', () => {
-        if (!document.querySelector('.bard-tab') || !document.querySelector('.bard-tab').classList.contains('initialized')) {
-            initBardPage();
-            document.querySelectorAll('.bard-tab').forEach(t => t.classList.add('initialized'));
-        }
-    });
 });
