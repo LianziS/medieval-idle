@@ -2037,29 +2037,7 @@ class GameEngine {
         // 所以这里不需要额外处理，只需要增加次数
         
         return { triggered: true, comboChance: comboChance };
-    }
-            // 制作类行动：连击时消耗额外材料，产出额外产物
-            // 检查是否有足够材料
-            let hasEnoughMaterials = true;
-            if (item.materials) {
-                const materialType = actionType.materialType || 'WOOD';
-                for (const [matId, count] of Object.entries(item.materials)) {
-                    const have = this.getItemCount(materialType, matId);
-                    if (have < count) {
-                        hasEnoughMaterials = false;
-                        break;
-                    }
-                }
-            }
-            
-            if (hasEnoughMaterials) {
-                // 消耗额外材料
-                if (item.materials) {
-                    const materialType = actionType.materialType || 'WOOD';
-                    for (const [matId, count] of Object.entries(item.materials)) {
-                        this.removeItem(materialType, matId, count);
-                    }
-                return { triggered: true, comboChance: comboChance };
+    return { triggered: true, comboChance: comboChance };
     }
     
     /**
