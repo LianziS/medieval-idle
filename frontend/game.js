@@ -8161,15 +8161,16 @@ function initBardPage() {
         const stock = bardState.wineBoxInventory?.[wine.id] || 0;
         const tooltip = document.createElement('div');
         tooltip.className = 'item-tooltip';
+        tooltip.id = 'wine-main-tooltip';
         tooltip.innerHTML = `
             <div class="item-tooltip-name">${wine.icon} ${wine.name}</div>
             <div class="item-tooltip-row"><span>经验增益</span><span class="item-tooltip-value">${wine.expBonus > 0 ? `+${wine.expBonus}%` : '无'}</span></div>
             <div class="item-tooltip-row"><span>库存</span><span class="item-tooltip-value item-count-value">${stock}</span></div>
         `;
         
-        const rect = e.target.getBoundingClientRect();
-        tooltip.style.left = `${rect.left}px`;
-        tooltip.style.top = `${rect.top - 80}px`;
+        const pos = calculateTooltipPosition(e.target);
+        tooltip.style.left = `${pos.left}px`;
+        tooltip.style.top = `${pos.top}px`;
         
         document.body.appendChild(tooltip);
         
@@ -8190,7 +8191,31 @@ function initBardPage() {
             const slotType = slot.dataset.slot;
             showEquipSelectModal(slotType);
         });
+        
+        // 装备槽tooltip
+        slot.addEventListener('mouseenter', (e) => {
+            const slotType = slot.dataset.slot;
+            showEquipSlotTooltip(slot, slotType);
+        });
+        slot.addEventListener('mouseleave', hideEquipSlotTooltip);
     });
+    
+    // 演奏选择槽tooltip
+    const perfSlot = document.getElementById('perf-slot');
+    if (perfSlot) {
+        perfSlot.addEventListener('mouseenter', () => {
+            if (bardState.selectedSheet) {
+                const { category, quality } = bardState.selectedSheet;
+                const catInfo = CONFIG.sheets?.categories?.[category];
+                const qualInfo = CONFIG.sheets?.qualities?.[quality];
+                const stock = bardState.sheetsInventory?.[category]?.[quality] || 0;
+                const tooltipTitle = `${catInfo?.icon || '📜'} ${catInfo?.name || category} ${qualInfo?.name || quality}`;
+                const tooltipContent = `可用于: ${catInfo?.target || '-'} | 效果: ${qualInfo?.effect?.[category] || '-'} | 时长: ${qualInfo?.duration || 30}分钟 | 库存: ${stock}`;
+                showSheetTooltip(perfSlot, tooltipTitle, tooltipContent);
+            }
+        });
+        perfSlot.addEventListener('mouseleave', hideSheetTooltip);
+    }
     
     // 派遣按钮
     document.getElementById('bard-dispatch-btn').addEventListener('click', startBardTravel);
@@ -8447,9 +8472,9 @@ function showWineTooltip(el, title, content) {
         <div class="item-tooltip-desc" style="font-size:0.72rem;">${content}</div>
     `;
     
-    const rect = el.getBoundingClientRect();
-    wineTooltipEl.style.left = `${rect.left}px`;
-    wineTooltipEl.style.top = `${rect.top - 70}px`;
+    const pos = calculateTooltipPosition(el);
+    wineTooltipEl.style.left = `${pos.left}px`;
+    wineTooltipEl.style.top = `${pos.top}px`;
     
     document.body.appendChild(wineTooltipEl);
 }
@@ -8574,9 +8599,9 @@ function showSheetTooltip(el, title, content) {
         <div class="item-tooltip-desc" style="font-size:0.72rem;">${content}</div>
     `;
     
-    const rect = el.getBoundingClientRect();
-    sheetTooltipEl.style.left = `${rect.left}px`;
-    sheetTooltipEl.style.top = `${rect.top - 70}px`;
+    const pos = calculateTooltipPosition(el);
+    sheetTooltipEl.style.left = `${pos.left}px`;
+    sheetTooltipEl.style.top = `${pos.top}px`;
     
     document.body.appendChild(sheetTooltipEl);
 }
@@ -8719,9 +8744,9 @@ function showEquipTooltip(el, title, content) {
         <div class="item-tooltip-desc" style="font-size:0.72rem;">${content}</div>
     `;
     
-    const rect = el.getBoundingClientRect();
-    equipTooltipEl.style.left = `${rect.left}px`;
-    equipTooltipEl.style.top = `${rect.top - 70}px`;
+    const pos = calculateTooltipPosition(el);
+    equipTooltipEl.style.left = `${pos.left}px`;
+    equipTooltipEl.style.top = `${pos.top}px`;
     
     document.body.appendChild(equipTooltipEl);
 }
@@ -8730,6 +8755,52 @@ function hideEquipTooltip() {
     if (equipTooltipEl) {
         equipTooltipEl.remove();
         equipTooltipEl = null;
+    }
+}
+
+// 主界面装备槽位tooltip
+let equipSlotTooltipEl = null;
+function showEquipSlotTooltip(el, slotType) {
+    hideEquipSlotTooltip();
+    
+    const equipped = bardState.bardEquipment?.[slotType];
+    
+    equipSlotTooltipEl = document.createElement('div');
+    equipSlotTooltipEl.className = 'item-tooltip';
+    
+    if (equipped) {
+        // 根据槽位类型获取配置
+        let configList = [];
+        if (slotType === 'pen') configList = CONFIG.pens || [];
+        else if (slotType === 'shoe') configList = CONFIG.boots || [];
+        else if (slotType === 'instrument') configList = CONFIG.instruments || [];
+        
+        const item = configList.find(i => i.id === equipped);
+        if (item) {
+            equipSlotTooltipEl.innerHTML = `
+                <div class="item-tooltip-name">${item.icon} ${item.name}</div>
+                <div class="item-tooltip-row"><span>效果</span><span class="item-tooltip-value">${item.effect || '-'}</span></div>
+            `;
+        }
+    } else {
+        const slotNames = { pen: '笔', shoe: '鞋子', instrument: '乐器' };
+        equipSlotTooltipEl.innerHTML = `
+            <div class="item-tooltip-name">${slotNames[slotType]}</div>
+            <div class="item-tooltip-desc" style="color:#6b7f90;">未装备</div>
+        `;
+    }
+    
+    const pos = calculateTooltipPosition(el);
+    equipSlotTooltipEl.style.left = `${pos.left}px`;
+    equipSlotTooltipEl.style.top = `${pos.top}px`;
+    
+    document.body.appendChild(equipSlotTooltipEl);
+}
+
+function hideEquipSlotTooltip() {
+    if (equipSlotTooltipEl) {
+        equipSlotTooltipEl.remove();
+        equipSlotTooltipEl = null;
     }
 }
 
@@ -8752,6 +8823,39 @@ function setupModalClose(modal, closeBtnSelector = '.bard-modal-close') {
         }
     };
     document.addEventListener('keydown', escHandler);
+}
+
+// 智能tooltip位置计算
+function calculateTooltipPosition(el, tooltipHeight = 70) {
+    const rect = el.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    
+    let left = rect.left;
+    let top = rect.top - tooltipHeight;
+    
+    // 上方空间不足，显示在下方
+    if (top < 10) {
+        top = rect.bottom + 10;
+    }
+    
+    // 下方也不足，显示在右侧
+    if (top + tooltipHeight > viewportHeight - 10) {
+        top = rect.top;
+        left = rect.right + 10;
+    }
+    
+    // 右侧超出边界，显示在左侧
+    if (left + 200 > viewportWidth - 10) {
+        left = rect.left - 210;
+    }
+    
+    // 左侧超出边界，保持在右侧但调整位置
+    if (left < 10) {
+        left = 10;
+    }
+    
+    return { left, top };
 }
 
 // 穿戴诗人装备
