@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>吟游诗人 - Medieval Idle Preview</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    background: #0F1923; color: #A0B2C0; min-height: 100vh; overflow-x: hidden;
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: rgba(27,42,58,0.3); }
+::-webkit-scrollbar-thumb { background: rgba(107,79,60,0.5); border-radius: 3px; }
+
+/* Main Container */
+.game-container {
+    max-width: 1400px; margin: 0 auto;
+    background: #1B2A3A; min-height: 100vh;
+}
+
+/* Skill Header */
+.skill-header { background: rgba(107,79,60,0.12); border-radius: 10px; padding: 17px 15px 12px; margin-bottom: 0; }
+.skill-header .title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.skill-level { font-size: 0.9rem; color: #8B5A2B; font-weight: bold; }
+.skill-exp-info { font-size: 0.75rem; color: #7A8A98; margin: 0; }
+.skill-header .skill-exp-bg { width: 100%; height: 12px; background: rgba(107,79,60,0.25); border-radius: 6px; overflow: hidden; }
+.skill-header .skill-exp-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #8B2C2D, #a33435, #8B2C2D); border-radius: 4px; }
+.skill-divider { height: 2px; background: #6b4f3c; margin: 15px 0; border-radius: 1px; }
+
+/* Bard Status */
+.bard-status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+.bard-status-idle { background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.4); color: #66BB6A; }
+.bard-status-dot { width: 7px; height: 7px; border-radius: 50%; background: #66BB6A; }
+
+/* Character Card */
+.bard-char-card {
+    background: linear-gradient(135deg, rgba(107,79,60,0.2), rgba(27,42,58,0.5));
+    border: 1px solid rgba(107,79,60,0.4); border-radius: 12px; padding: 20px;
+    display: flex; gap: 20px; align-items: flex-start; margin-bottom: 18px;
+}
+.bard-avatar { width: 100px; height: 100px; flex-shrink: 0; background: linear-gradient(180deg, rgba(107,79,60,0.3), rgba(139,44,45,0.15)); border-radius: 12px; border: 2px solid rgba(139,44,45,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.bard-avatar-icon { font-size: 2.8rem; }
+.bard-avatar-label { font-size: 0.7rem; color: #7A8A98; }
+.bard-details { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.bard-name { font-size: 1.1rem; font-weight: bold; color: #A0B2C0; }
+.bard-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.bard-stat-item { background: rgba(107,79,60,0.15); border: 1px solid rgba(107,79,60,0.25); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; }
+.bard-stat-icon { font-size: 1.1rem; }
+.bard-stat-text { display: flex; flex-direction: column; }
+.bard-stat-label { font-size: 0.7rem; color: #6b7f90; }
+.bard-stat-value { font-size: 0.9rem; font-weight: bold; color: #A0B2C0; }
+
+/* Tabs */
+.bard-tabs { display: flex; gap: 0; margin-bottom: 18px; border-bottom: 1px solid rgba(107,79,60,0.3); }
+.bard-tab { background: transparent; border: none; color: #6b7f90; padding: 10px 20px; font-size: 0.9rem; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.3s; display: flex; align-items: center; gap: 6px; }
+.bard-tab:hover { color: #A0B2C0; background: rgba(107,79,60,0.1); }
+.bard-tab.active { color: #8B2C2D; border-bottom-color: #8B2C2D; font-weight: bold; background: rgba(139,44,45,0.08); }
+.bard-tab-content { display: none; }
+.bard-tab-content.active { display: block; }
+
+/* ============ Compact Card Grid ============ */
+.card-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px;
+}
+.card-item {
+    background: rgba(107,79,60,0.15);
+    border: 2px solid rgba(107,79,60,0.25);
+    border-radius: 10px;
+    padding: 14px 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    text-align: center;
+    position: relative;
+}
+.card-item:hover {
+    border-color: #8B2C2D; transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(139,44,45,0.2);
+}
+.card-icon { font-size: 2rem; line-height: 1; }
+.card-name { font-size: 0.78rem; font-weight: bold; color: #A0B2C0; line-height: 1.2; }
+.card-sub { font-size: 0.68rem; color: #6b7f90; }
+
+/* Dest card selected */
+.card-item.dest-card.selected { border-color: #8B2C2D; background: rgba(139,44,45,0.1); box-shadow: 0 0 0 1px #8B2C2D; }
+
+/* Equip quality border */
+.card-item.eq-filled { border-color: rgba(139,44,45,0.4); }
+.card-item.eq-empty { border-style: dashed; opacity: 0.5; }
+
+/* Equip slot tooltip */
+.equip-slot { position: relative; }
+.equip-slot .eq-tooltip {
+    display: none; position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%);
+    background: #1B2A3A; border: 1px solid rgba(107,79,60,0.5); border-radius: 8px;
+    padding: 10px 14px; min-width: 160px; z-index: 100; pointer-events: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+.equip-slot:hover .eq-tooltip { display: block; }
+.eq-tooltip::after {
+    content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    border: 6px solid transparent; border-top-color: rgba(107,79,60,0.5);
+}
+.eq-tooltip-row { display: flex; justify-content: space-between; gap: 16px; padding: 2px 0; font-size: 0.78rem; }
+.eq-tooltip-label { color: #6b7f90; }
+.eq-tooltip-val { color: #A0B2C0; font-weight: bold; }
+
+/* Equip selector modal */
+.eq-select-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.eq-select-item {
+    background: rgba(107,79,60,0.15); border: 2px solid rgba(107,79,60,0.25);
+    border-radius: 10px; padding: 14px 8px; cursor: pointer; transition: all 0.2s;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    text-align: center; position: relative;
+}
+.eq-select-item:hover { border-color: #8B2C2D; background: rgba(139,44,45,0.12); }
+.eq-select-item.equipped { border-color: rgba(139,44,45,0.5); background: rgba(139,44,45,0.15); }
+.eq-select-item .eq-count {
+    position: absolute; bottom: 4px; right: 6px; font-size: 0.7rem; color: #6b7f90; font-weight: bold;
+}
+.eq-select-item .eq-item-name { font-size: 0.75rem; color: #A0B2C0; }
+.eq-select-item .eq-item-icon { font-size: 1.8rem; }
+.eq-unequip-btn {
+    display: block; width: 100%; margin-top: 12px; padding: 8px;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(107,79,60,0.3);
+    border-radius: 8px; color: #6b7f90; font-size: 0.82rem; cursor: pointer; transition: all 0.2s;
+}
+.eq-unequip-btn:hover { background: rgba(139,44,45,0.15); border-color: rgba(139,44,45,0.4); color: #e57373; }
+
+/* Section title */
+.section-title { font-size: 1rem; color: #6b4f3c; font-weight: bold; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
+/* ============ Modal ============ */
+.modal-overlay {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6); z-index: 2000;
+    align-items: center; justify-content: center;
+    animation: fadeIn 0.2s ease;
+}
+.modal-overlay.show { display: flex; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+    background: #1B2A3A; border: 2px solid rgba(107,79,60,0.5); border-radius: 14px;
+    padding: 20px; max-width: 360px; width: 90%; max-height: 70vh; overflow-y: auto;
+    animation: slideUp 0.25s ease;
+    position: relative;
+}
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-close {
+    position: absolute; top: 12px; right: 16px; background: none; border: none;
+    color: #6b7f90; font-size: 1.4rem; cursor: pointer; line-height: 1;
+    transition: color 0.2s;
+}
+.modal-close:hover { color: #A0B2C0; }
+.modal-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.modal-icon { font-size: 2.4rem; }
+.modal-title { font-size: 1.2rem; font-weight: bold; color: #A0B2C0; }
+.modal-subtitle { font-size: 0.8rem; color: #6b7f90; margin-top: 2px; }
+
+/* Modal content styles */
+.modal-section { margin-bottom: 16px; }
+.modal-section-title { font-size: 0.85rem; color: #6b4f3c; font-weight: bold; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(107,79,60,0.2); }
+.modal-desc { font-size: 0.82rem; color: #7A8A98; line-height: 1.5; margin-bottom: 12px; }
+
+/* Quality badge */
+.quality-badge { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: bold; }
+.quality-badge-normal { background: rgba(76,175,80,0.15); color: #66BB6A; border: 1px solid rgba(76,175,80,0.3); }
+.quality-badge-fine { background: rgba(33,150,243,0.15); color: #42A5F5; border: 1px solid rgba(33,150,243,0.3); }
+.quality-badge-epic { background: rgba(156,39,176,0.15); color: #AB47BC; border: 1px solid rgba(156,39,176,0.3); }
+
+/* Growth grid */
+.upgrades-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.upgrade-card { background: rgba(107,79,60,0.12); border: 1px solid rgba(107,79,60,0.25); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 6px; transition: all 0.3s; cursor: pointer; }
+.upgrade-card:hover { border-color: rgba(107,79,60,0.5); transform: translateY(-1px); }
+.upgrade-card.unlocked { border-color: rgba(76,175,80,0.4); background: rgba(76,175,80,0.08); }
+.upgrade-card.next-unlock { border-color: rgba(255,152,0,0.4); box-shadow: 0 0 12px rgba(255,152,0,0.15); }
+.upgrade-level { font-size: 0.75rem; color: #6b7f90; }
+.upgrade-level .lv-val { color: #8B5A2B; font-weight: bold; }
+.upgrade-desc { font-size: 0.88rem; color: #A0B2C0; font-weight: bold; }
+.upgrade-exp { font-size: 0.7rem; color: #6b7f90; }
+.upgrade-status { font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; }
+.upgrade-status-locked { background: rgba(255,255,255,0.05); color: #6b7f90; }
+.upgrade-status-done { background: rgba(76,175,80,0.15); color: #66BB6A; }
+
+/* Dispatch resources */
+.dispatch-resources {
+    display: flex; flex-direction: column; gap: 14px;
+    padding: 16px; margin-top: 12px;
+    background: rgba(107,79,60,0.06);
+    border-radius: 10px; border: 1px solid rgba(107,79,60,0.15);
+}
+.res-row {
+    display: flex; align-items: center; gap: 10px; font-size: 0.85rem;
+}
+.res-label {
+    min-width: 48px; color: #6b7f90; font-weight: 500;
+}
+.res-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 6px;
+    background: rgba(107,79,60,0.12);
+    border: 1px solid rgba(107,79,60,0.25);
+    color: #A0B2C0; font-size: 0.82rem;
+}
+.res-slash { color: #4a5a6a; margin: 0 2px; }
+.res-ok { color: #66BB6A; }
+.res-no { color: #EF5350; }
+.dispatch-wine-select {
+    display: flex; align-items: center; gap: 10px;
+    background: #1B2A3A; border: 1px solid rgba(107,79,60,0.3);
+    border-radius: 8px; padding: 8px 12px;
+}
+.dispatch-wine-select label {
+    color: #6b7f90; font-size: 0.82rem; min-width: 48px;
+}
+.dispatch-btn {
+    margin-top: 6px; width: 100%;
+    padding: 12px; border: none; border-radius: 10px;
+    background: linear-gradient(135deg, #8B2C2D, #6b4f3c);
+    color: #fff; font-size: 0.95rem; font-weight: bold;
+    cursor: pointer; transition: all 0.25s;
+    letter-spacing: 2px;
+}
+.dispatch-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+.dispatch-btn:disabled {
+    background: rgba(107,79,60,0.2); color: #4a5a6a;
+    cursor: not-allowed; filter: none; transform: none; letter-spacing: 0;
+}
+.dispatch-preview {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 8px; padding: 8px 12px;
+    background: rgba(255,167,38,0.08);
+    border-radius: 8px; font-size: 0.78rem; color: #7A8A98;
+}
+.dispatch-preview .dp-label { color: #6b7f90; }
+.dispatch-preview .dp-val { color: #FFA726; font-weight: bold; }
+
+/* Panel */
+.panel { padding: 0; margin-bottom: 18px; }
+.panel-title { font-size: 1.2rem; color: #6b4f3c; display: flex; align-items: center; gap: 8px; }
+
+/* Item tag (interactive in future) */
+.item-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 6px;
+    border: 1px solid rgba(107,79,60,0.35);
+    background: rgba(107,79,60,0.12);
+    font-size: 0.82rem; color: #A0B2C0;
+    cursor: pointer; transition: all 0.2s;
+}
+.item-tag:hover {
+    border-color: #8B2C2D; background: rgba(139,44,45,0.15);
+}
+
+/* Drop list in modal */
+.drop-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.drop-line { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+.drop-count { color: #6b7f90; min-width: 16px; text-align: center; }
+.item-pct { color: #7A8A98; font-size: 0.82rem; }
+
+/* Sheet detail rows */
+.sheet-detail-row { display: flex; gap: 10px; padding: 5px 0; font-size: 0.85rem; }
+.sheet-detail-label { color: #6b7f90; min-width: 72px; flex-shrink: 0; }
+.sheet-detail-val { color: #A0B2C0; }
+
+/* Wine box display - square, icon only with count inside */
+.wine-box {
+    position: relative;
+    width: 48px; height: 48px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid rgba(107,79,60,0.4);
+    border-radius: 8px;
+    background: rgba(107,79,60,0.12);
+    cursor: pointer; transition: all 0.2s;
+}
+.wine-box:hover { border-color: #8B2C2D; background: rgba(139,44,45,0.15); }
+.wb-icon { font-size: 1.6rem; }
+.wb-count {
+    position: absolute;
+    bottom: 2px; right: 4px;
+    font-size: 0.7rem;
+    color: #FFA726;
+    padding: 0 3px;
+    border-radius: 3px;
+}
+
+/* Performance area */
+.perf-area { max-width: 360px; }
+.perf-select-label { color: #6b7f90; font-size: 0.8rem; margin-bottom: 8px; }
+.perf-slot {
+    position: relative;
+    width: 56px; height: 56px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px dashed rgba(107,79,60,0.35);
+    border-radius: 10px;
+    background: rgba(107,79,60,0.08);
+    cursor: pointer; transition: all 0.2s;
+}
+.perf-slot:hover { border-color: #6b7f90; background: rgba(107,79,60,0.15); }
+.perf-slot.active { border-style: solid; border-color: rgba(107,79,60,0.5); background: rgba(107,79,60,0.15); }
+.perf-slot .slot-icon { font-size: 1.8rem; }
+.perf-slot .slot-count {
+    position: absolute; bottom: 2px; right: 4px;
+    font-size: 0.7rem; color: #FFA726;
+    padding: 0 3px; border-radius: 3px;
+}
+.perf-info { margin-top: 14px; min-height: 60px; }
+.perf-progress-area { margin-top: 14px; }
+.perf-progress-bar {
+    width: 100%; height: 10px;
+    background: rgba(107,79,60,0.15);
+    border-radius: 5px; overflow: hidden;
+}
+.perf-progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #4a7a9b, #6ba3c7);
+    border-radius: 5px; transition: width 0.5s;
+}
+.perf-progress-text { font-size: 0.78rem; color: #6b7f90; margin-top: 4px; text-align: right; }
+
+/* Sheet select modal items */
+.sheet-select-grid { display: flex; flex-wrap: wrap; gap: 10px; padding: 8px 0; }
+.sheet-select-item {
+    position: relative;
+    width: 56px; height: 56px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid rgba(107,79,60,0.3);
+    border-radius: 10px;
+    background: rgba(107,79,60,0.08);
+    cursor: pointer; transition: all 0.2s;
+}
+.sheet-select-item:hover { border-color: #6b7f90; }
+.sheet-select-item.active { border-color: #8B2C2D; }
+.sheet-select-item .ssi-icon { font-size: 1.8rem; }
+.sheet-select-item .ssi-count {
+    position: absolute; bottom: 2px; right: 4px;
+    font-size: 0.7rem; color: #FFA726;
+    padding: 0 3px; border-radius: 3px;
+}
+.sheet-tip {
+    display: none; position: fixed; z-index: 1000;
+    background: #1B2A3A; border: 1px solid rgba(107,79,60,0.5); border-radius: 8px;
+    padding: 8px 12px; min-width: 180px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 0.75rem; pointer-events: none;
+    text-align: left; white-space: nowrap;
+}
+.sheet-tip .st-name { font-weight: bold; color: #A0B2C0; margin-bottom: 4px; }
+.sheet-tip .st-row { display: flex; gap: 8px; padding: 2px 0; }
+.sheet-tip .st-label { color: #6b7f90; min-width: 56px; flex-shrink: 0; }
+.sheet-tip .st-val { color: #A0B2C0; }
+
+/* Wine select modal */
+.wine-select-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin: 12px 0;
+}
+.wine-select-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 12px 8px; border-radius: 10px; border: 2px solid rgba(107,79,60,0.3);
+    background: rgba(107,79,60,0.08); cursor: pointer; transition: all 0.2s;
+    position: relative;
+}
+.wine-select-item:hover { border-color: rgba(139,44,45,0.6); background: rgba(139,44,45,0.1); }
+.wine-select-item.active { border-color: #8B2C2D; background: rgba(139,44,45,0.15); }
+.wsi-icon { font-size: 1.6rem; }
+.wsi-count { position: absolute; bottom: 4px; right: 6px; font-size: 0.68rem; color: #FFA726; }
+
+/* Wine tooltip */
+.wine-tip {
+    display: none; position: fixed; z-index: 1000;
+    background: #1B2A3A; border: 1px solid rgba(107,79,60,0.5); border-radius: 8px;
+    padding: 8px 12px; min-width: 140px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 0.75rem; pointer-events: none;
+}
+.wine-tip-name { font-weight: bold; color: #A0B2C0; margin-bottom: 4px; }
+.wine-tip-row { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; }
+.wine-tip-label { color: #6b7f90; }
+.wine-tip-val { color: #FFA726; }
+
+/* Music Notes */
+.music-notes-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: hidden; opacity: 0.4; }
+.music-note { position: absolute; font-size: 1.2rem; opacity: 0; animation: float-note 8s infinite; color: rgba(139,44,45,0.6); }
+@keyframes float-note { 0% { transform: translateY(100vh) rotate(0deg); opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 100% { transform: translateY(-100px) rotate(360deg); opacity: 0; } }
+</style>
+</head>
+<body>
+
+<div class="music-notes-bg">
+    <span class="music-note" style="left:10%;animation-delay:0s;">♪</span>
+    <span class="music-note" style="left:25%;animation-delay:1.5s;">♫</span>
+    <span class="music-note" style="left:40%;animation-delay:3s;">♩</span>
+    <span class="music-note" style="left:55%;animation-delay:0.8s;">♬</span>
+    <span class="music-note" style="left:70%;animation-delay:2.2s;">♪</span>
+    <span class="music-note" style="left:85%;animation-delay:4s;">♫</span>
+    <span class="music-note" style="left:95%;animation-delay:5.5s;">♩</span>
+</div>
+
+<!-- Main Content -->
+<div class="game-container">
+
+    <!-- 诗人信息 -->
+    <section class="panel">
+        <div class="skill-header">
+            <div class="title-row">
+                <h2 class="panel-title">🎵 吟游诗人</h2>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span class="bard-status-badge bard-status-idle"><span class="bard-status-dot"></span>空闲</span>
+                    <span class="skill-level">Lv. 8</span>
+                </div>
+            </div>
+            <div class="skill-exp-bg"><div class="skill-exp-fill" style="width:35%"></div></div>
+            <p class="skill-exp-info" style="margin-top:4px;">2,431 / 3,800 · 出游×42次 · 演奏×7次</p>
+        </div>
+    </section>
+    <div class="skill-divider"></div>
+
+    <!-- 角色卡 -->
+    <section class="panel">
+        <div class="bard-char-card">
+            <div class="bard-avatar"><span class="bard-avatar-icon">🎵</span></div>
+            <div class="bard-details">
+                <span class="bard-name">Lv.8</span>
+                <div class="bard-stats">
+                    <div class="bard-stat-item"><span class="bard-stat-icon">⏱️</span><div class="bard-stat-text"><span class="bard-stat-label">出游时长</span><span class="bard-stat-value">8小时00分</span></div></div>
+                    <div class="bard-stat-item"><span class="bard-stat-icon">✨</span><div class="bard-stat-text"><span class="bard-stat-label">笔加成</span><span class="bard-stat-value">精良+15% / 史诗+10%</span></div></div>
+                    <div class="bard-stat-item"><span class="bard-stat-icon">🗺️</span><div class="bard-stat-text"><span class="bard-stat-label">已解锁</span><span class="bard-stat-value">4 / 4 目的地</span></div></div>
+                    <div class="bard-stat-item"><span class="bard-stat-icon">📜</span><div class="bard-stat-text"><span class="bard-stat-label">乐谱总数</span><span class="bard-stat-value">12 张</span></div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tabs -->
+    <div class="bard-tabs">
+        <button class="bard-tab active" onclick="switchTab('dispatch')">🗺️ 出游派遣</button>
+        <button class="bard-tab" onclick="switchTab('sheets')">🎵 演奏</button>
+        <button class="bard-tab" onclick="switchTab('equip')">🎒 诗人装备</button>
+        <button class="bard-tab" onclick="switchTab('grow')">📈 成长记录</button>
+    </div>
+
+    <!-- ==================== TAB: 出游派遣 ==================== -->
+    <div class="bard-tab-content active" id="tab-dispatch">
+        <section class="panel">
+            <h2 class="section-title">🗺️ 选择目的地</h2>
+            <div class="card-grid">
+
+                <div class="card-item dest-card selected" onclick="showDestModal(0)">
+
+                    <span class="card-icon">🌊</span>
+                    <span class="card-name">低语湾</span>
+                    <span class="card-sub">Lv.1</span>
+                </div>
+
+                <div class="card-item dest-card" onclick="showDestModal(1)">
+
+                    <span class="card-icon">🏞️</span>
+                    <span class="card-name">河间谷地</span>
+                    <span class="card-sub">Lv.3</span>
+                </div>
+
+                <div class="card-item dest-card" onclick="showDestModal(2)">
+
+                    <span class="card-icon">⛰️</span>
+                    <span class="card-name">峡谷营地</span>
+                    <span class="card-sub">Lv.6</span>
+                </div>
+
+                <div class="card-item dest-card" onclick="showDestModal(3)">
+
+                    <span class="card-icon">🗼</span>
+                    <span class="card-name">黑石灯塔</span>
+                    <span class="card-sub">Lv.8</span>
+                </div>
+
+            </div>
+
+            <!-- 消耗品 & 派遣 -->
+            <div class="dispatch-resources">
+                <div class="res-row">
+                    <span class="res-label">💰 金币</span>
+                    <span class="res-tag"><span id="res-gold"></span></span>
+                </div>
+                <div class="res-row">
+                    <span class="res-label">📜 手稿</span>
+                    <span class="res-tag"><span id="res-scroll"></span></span>
+                </div>
+                <div class="dispatch-wine-select">
+                    <label>🍷 酒箱</label>
+                    <div class="wine-box" id="wine-box" onclick="showWineSelectModal()"
+                         onmouseenter="positionTooltip(document.getElementById('wine-box-tip'), this)"
+                         onmouseleave="document.getElementById('wine-box-tip').style.display='none'">
+                        <span class="wb-icon" id="wb-icon">🍺</span>
+                        <span class="wb-count" id="wb-count">×12</span>
+                        <div class="wine-tip" id="wine-box-tip">
+                            <div class="wine-tip-name" id="wine-box-tip-name">初级酒箱</div>
+                            <div class="wine-tip-row"><span class="wine-tip-label">经验增益</span><span class="wine-tip-val" id="wine-box-tip-exp">无</span></div>
+                            <div class="wine-tip-row"><span class="wine-tip-label">库存</span><span class="wine-tip-val" id="wine-box-tip-stock">×12</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="dispatch-preview" id="dispatch-preview"></div>
+                <button class="dispatch-btn" id="dispatch-btn" onclick="startDispatch()">🚀 派遣出游</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- ==================== TAB: 演奏 ==================== -->
+    <div class="bard-tab-content" id="tab-sheets">
+        <section class="panel">
+            <div class="perf-area">
+                <div class="perf-select-label">选择</div>
+                <div class="perf-slot" id="perf-slot" onclick="showSheetSelectModal()"
+                     onmouseenter="if(selectedSheet){positionTooltip(document.getElementById('perf-slot-tip'), this)}"
+                     onmouseleave="document.getElementById('perf-slot-tip').style.display='none'">
+                    <span id="perf-slot-text" style="color:#4a5a6a;font-size:0.82rem;">选择</span>
+                    <div class="sheet-tip" id="perf-slot-tip">
+                        <div class="st-name" id="perf-slot-tip-name"></div>
+                        <div class="st-row"><span class="st-label">可用于</span><span class="st-val" id="perf-slot-tip-target"></span></div>
+                        <div class="st-row"><span class="st-label">效果</span><span class="st-val" id="perf-slot-tip-effect"></span></div>
+                        <div class="st-row"><span class="st-label">演奏时长</span><span class="st-val" id="perf-slot-tip-time"></span></div>
+                        <div class="st-row"><span class="st-label">库存</span><span class="st-val" id="perf-slot-tip-stock"></span></div>
+                    </div>
+                </div>
+                <div class="perf-info" id="perf-info"></div>
+                <div class="perf-progress-area" id="perf-progress-area" style="display:none;">
+                    <div class="perf-progress-bar">
+                        <div class="perf-progress-fill" id="perf-progress-fill"></div>
+                    </div>
+                    <div class="perf-progress-text" id="perf-progress-text">0%</div>
+                </div>
+                <button class="dispatch-btn" id="perf-btn" onclick="startPerform()" style="margin-top:12px;">🎵 开始演奏</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- ==================== TAB: 诗人装备 ==================== -->
+    <div class="bard-tab-content" id="tab-equip">
+        <section class="panel">
+            <h2 class="section-title">🎒 诗人装备</h2>
+            <div class="card-grid" style="grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));" id="equipSlots"></div>
+        </section>
+    </div>
+
+    <!-- ==================== TAB: 成长记录 ==================== -->
+    <div class="bard-tab-content" id="tab-grow">
+        <section class="panel">
+            <h2 class="section-title">📈 诗人成长</h2>
+
+            <div class="bard-char-card" style="margin-bottom:18px;">
+                <div class="bard-details" style="width:100%;">
+                    <div class="bard-stats" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
+                        <div class="bard-stat-item"><span class="bard-stat-icon">🗺️</span><div class="bard-stat-text"><span class="bard-stat-label">出游次数</span><span class="bard-stat-value">42 次</span></div></div>
+                        <div class="bard-stat-item"><span class="bard-stat-icon">🎶</span><div class="bard-stat-text"><span class="bard-stat-label">演奏次数</span><span class="bard-stat-value">7 次</span></div></div>
+                        <div class="bard-stat-item"><span class="bard-stat-icon">📜</span><div class="bard-stat-text"><span class="bard-stat-label">获得乐谱总数</span><span class="bard-stat-value">47 张</span></div></div>
+                        <div class="bard-stat-item"><span class="bard-stat-icon">⭐</span><div class="bard-stat-text"><span class="bard-stat-label">获得史诗乐谱</span><span class="bard-stat-value">3 张</span></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 class="section-title" style="font-size:1rem;">🔓 等级解锁内容（20级）</h2>
+            <div class="upgrades-grid">
+                <div class="upgrade-card unlocked"><span class="upgrade-level">Lv.<span class="lv-val">1</span></span><span class="upgrade-desc">初始诗人 / 解锁低语湾 / 解锁笔</span><span class="upgrade-exp">0 exp</span><span class="upgrade-status upgrade-status-done">✓ 已解锁</span></div>
+                <div class="upgrade-card unlocked"><span class="upgrade-level">Lv.<span class="lv-val">2</span></span><span class="upgrade-desc">—</span><span class="upgrade-exp">100 exp</span><span class="upgrade-status upgrade-status-done">✓ 已解锁</span></div>
+                <div class="upgrade-card unlocked"><span class="upgrade-level">Lv.<span class="lv-val">3</span></span><span class="upgrade-desc">解锁河间谷地</span><span class="upgrade-exp">250 exp</span><span class="upgrade-status upgrade-status-done">✓ 已解锁</span></div>
+                <div class="upgrade-card unlocked"><span class="upgrade-level">Lv.<span class="lv-val">4</span></span><span class="upgrade-desc">—</span><span class="upgrade-exp">500 exp</span><span class="upgrade-status upgrade-status-done">✓ 已解锁</span></div>
+                <div class="upgrade-card unlocked"><span class="upgrade-level">Lv.<span class="lv-val">5</span></span><span class="upgrade-desc">解锁鞋子（可制作Lv.1）</span><span class="upgrade-exp">800 exp</span><span class="upgrade-status upgrade-status-done">✓ 已解锁</span></div>
+                <div class="upgrade-card unlocked"><span class="upgrade-level">Lv.<span class="lv-val">6</span></span><span class="upgrade-desc">解锁峡谷营地</span><span class="upgrade-exp">1,200 exp</span><span class="upgrade-status upgrade-status-done">✓ 已解锁</span></div>
+                <div class="upgrade-card unlocked"><span class="upgrade-level">Lv.<span class="lv-val">7</span></span><span class="upgrade-desc">—</span><span class="upgrade-exp">1,700 exp</span><span class="upgrade-status upgrade-status-done">✓ 已解锁</span></div>
+                <div class="upgrade-card unlocked"><span class="upgrade-level">Lv.<span class="lv-val">8</span></span><span class="upgrade-desc">解锁黑石灯塔</span><span class="upgrade-exp">2,300 exp</span><span class="upgrade-status upgrade-status-done">✓ 已解锁</span></div>
+                <div class="upgrade-card next-unlock"><span class="upgrade-level">Lv.<span class="lv-val">9</span></span><span class="upgrade-desc">低语湾掉落+3% / 解锁演奏</span><span class="upgrade-exp">3,000 exp</span><span class="upgrade-status upgrade-status-locked">🔒 2,431 / 3,000</span></div>
+                <div class="upgrade-card"><span class="upgrade-level">Lv.<span class="lv-val">10</span></span><span class="upgrade-desc">10%概率额外乐谱</span><span class="upgrade-exp">3,800 exp</span><span class="upgrade-status upgrade-status-locked">🔒</span></div>
+                <div class="upgrade-card"><span class="upgrade-level">Lv.<span class="lv-val">11</span></span><span class="upgrade-desc">河间谷地掉落+3%</span><span class="upgrade-exp">4,700 exp</span><span class="upgrade-status upgrade-status-locked">🔒</span></div>
+                <div class="upgrade-card"><span class="upgrade-level">Lv.<span class="lv-val">12</span></span><span class="upgrade-desc">解锁乐器制作</span><span class="upgrade-exp">5,800 exp</span><span class="upgrade-status upgrade-status-locked">🔒</span></div>
+                <div class="upgrade-card"><span class="upgrade-level">Lv.<span class="lv-val">13</span></span><span class="upgrade-desc">峡谷营地掉落+3%</span><span class="upgrade-exp">7,000 exp</span><span class="upgrade-status upgrade-status-locked">🔒</span></div>
+                <div class="upgrade-card"><span class="upgrade-level">Lv.<span class="lv-val">14</span></span><span class="upgrade-desc">额外乐谱 10%→13%</span><span class="upgrade-exp">8,500 exp</span><span class="upgrade-status upgrade-status-locked">🔒</span></div>
+                <div class="upgrade-card"><span class="upgrade-level">Lv.<span class="lv-val">15</span></span><span class="upgrade-desc">黑石灯塔掉落+3%</span><span class="upgrade-exp">10,500 exp</span><span class="upgrade-status upgrade-status-locked">🔒</span></div>
+                <div class="upgrade-card"><span class="upgrade-level">Lv.<span class="lv-val">16</span></span><span class="upgrade-desc">额外乐谱 13%→16%</span><span class="upgrade-exp">13,000 exp</span><span class="upgrade-status upgrade-status-locked">🔒</span></div>
+                <div class="upgrade-card"><span class="upgrade-level">Lv.<span class="lv-val">17</span></span><span class="upgrade-desc">全地区掉落+3%（累计+6%）</span><span class="upgrade-exp">16,000 exp</span><span class="upgrade-status upgrade-status-locked">🔒</span></div>
+                <div class="upgrade-card"><span class="upgrade-level">Lv.<span class="lv-val">18</span></span><span class="upgrade-desc">—</span><span class="upgrade-exp">20,000 exp</span><span class="upgrade-status upgrade-status-locked">🔒</span></div>
+                <div class="upgrade-card"><span class="upgrade-level">Lv.<span class="lv-val">19</span></span><span class="upgrade-desc">额外乐谱 16%→20%（封顶）</span><span class="upgrade-exp">25,000 exp</span><span class="upgrade-status upgrade-status-locked">🔒</span></div>
+                <div class="upgrade-card"><span class="upgrade-level">Lv.<span class="lv-val">20</span></span><span class="upgrade-desc">满级称号 / 掉落+3%（累计+9%）</span><span class="upgrade-exp">35,000 exp</span><span class="upgrade-status upgrade-status-locked">🔒</span></div>
+            </div>
+        </section>
+
+    </div>
+
+</div>
+
+<!-- ==================== Modal ==================== -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal" id="modalContent" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <div id="modalBody"></div>
+    </div>
+</div>
+
+<script>
+// Tab switching
+function switchTab(name) {
+    document.querySelectorAll('.bard-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.bard-tab-content').forEach(t => t.classList.remove('active'));
+    const map = { dispatch: 0, sheets: 1, equip: 2, grow: 3 };
+    document.querySelectorAll('.bard-tab')[map[name]].classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+}
+
+// Modal
+function openModal(html, wide) {
+    const modal = document.getElementById('modalContent');
+    modal.style.maxWidth = wide ? '440px' : '340px';
+    document.getElementById('modalBody').innerHTML = html;
+    document.getElementById('modalOverlay').classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+function closeModal(e) {
+    if (e && e.target !== document.getElementById('modalOverlay')) return;
+    document.getElementById('modalOverlay').classList.remove('show');
+    document.getElementById('modalContent').style.maxWidth = '';
+    document.body.style.overflow = '';
+}
+
+// Destination data
+const destData = [
+    { icon:'🌊', name:'低语湾', lv:'Lv.1', area:'狼林边缘', desc:'湾畔海风低语，灵感从海风中凝聚',
+      drops:[
+        {icon:'🪣',name:'海螺墨',pct:'~80%'},
+        {icon:'🔩',name:'河铸钉',pct:'~10%'},
+        {icon:'💎',name:'回音石',pct:'~3%'}
+      ],
+      quality:{n:75,f:23,e:2},
+      cost:{gold:300, scroll:2}
+    },
+    { icon:'🏞️', name:'河间谷地', lv:'Lv.3', area:'河间地带', desc:'河流交汇的谷地，水土丰饶物产多样',
+      drops:[
+        {icon:'🔩',name:'河铸钉',pct:'~80%'},
+        {icon:'🪣',name:'海螺墨',pct:'~10%'},
+        {icon:'💎',name:'回音石',pct:'~3%'}
+      ],
+      quality:{n:61,f:35,e:4},
+      cost:{gold:800, scroll:3}
+    },
+    { icon:'⛰️', name:'峡谷营地', lv:'Lv.6', area:'叹息峡谷', desc:'险峻峡谷中矿工和冒险者的据点',
+      drops:[
+        {icon:'💎',name:'回音石',pct:'~80%'},
+        {icon:'🔩',name:'河铸钉',pct:'~10%'},
+        {icon:'🪣',name:'海螺墨',pct:'~3%'}
+      ],
+      quality:{n:47,f:42,e:11},
+      cost:{gold:1600, scroll:6}
+    },
+    { icon:'🗼', name:'黑石灯塔', lv:'Lv.8', area:'龙脊山脉', desc:'远古灯塔矗立海角，黑石蕴含神秘力量',
+      drops:[
+        {icon:'⬛',name:'黑石',pct:'~80%'},
+        {icon:'🪣',name:'海螺墨',pct:'~5%'},
+        {icon:'🔩',name:'河铸钉',pct:'~5%'},
+        {icon:'💎',name:'回音石',pct:'~5%'}
+      ],
+      quality:{n:25,f:49,e:26},
+      cost:{gold:2700, scroll:8}
+    }
+];
+
+// Dispatch state
+let selectedDest = 0;
+let selectedWine = 0; // index
+const playerRes = { gold: 1203, scroll: 4 };
+const wineStock = [12, 5, 0]; // 初级/中级/高级
+const wineData = [
+    { icon:'🍺', name:'初级酒箱', exp:0 },
+    { icon:'🍷', name:'中级酒箱', exp:20 },
+    { icon:'🥃', name:'高级酒箱', exp:40 }
+];
+
+function selectDest(idx) {
+    selectedDest = idx;
+    document.querySelectorAll('.dest-card').forEach((el, i) => {
+        el.classList.toggle('selected', i === idx);
+    });
+    updateDispatch();
+}
+
+function updateDispatch() {
+    const d = destData[selectedDest];
+    const g = playerRes.gold, s = playerRes.scroll;
+    const goldOk = g >= d.cost.gold;
+    const scrollOk = s >= d.cost.scroll;
+    const wIdx = selectedWine;
+    const wineOk = wineStock[wIdx] > 0;
+
+    document.getElementById('res-gold').innerHTML =
+        `<span class="${goldOk?'res-ok':'res-no'}">${g}</span><span class="res-slash">/</span>${d.cost.gold}`;
+    document.getElementById('res-scroll').innerHTML =
+        `<span class="${scrollOk?'res-ok':'res-no'}">${s}</span><span class="res-slash">/</span>${d.cost.scroll}`;
+
+    // Wine box display
+    document.getElementById('wb-icon').textContent = wineData[wIdx].icon;
+    document.getElementById('wb-count').textContent = wineStock[wIdx] > 0 ? `×${wineStock[wIdx]}` : '无';
+
+    // Wine box tooltip content
+    document.getElementById('wine-box-tip-name').textContent = wineData[wIdx].name;
+    document.getElementById('wine-box-tip-exp').textContent = wineData[wIdx].exp > 0 ? '+' + wineData[wIdx].exp + '%' : '无';
+    document.getElementById('wine-box-tip-stock').textContent = wineStock[wIdx] > 0 ? `×${wineStock[wIdx]}` : '无';
+
+    // Preview: time + exp
+    const shoeRed = 4 * 60; // 4h in minutes
+    const baseMin = 12 * 60 - shoeRed; // 480min = 8h
+    const expBase = 50;
+    const expBonus = wineData[wIdx].exp / 100;
+    const expFinal = Math.round(expBase * (1 + expBonus));
+    const hrs = Math.floor(baseMin / 60);
+    const mins = baseMin % 60;
+
+    document.getElementById('dispatch-preview').innerHTML =
+        `<span class="dp-label">预计时长</span><span class="dp-val">${hrs}h${mins > 0 ? mins + 'min' : ''}</span>` +
+        `<span style="margin-left:8px;" class="dp-label">经验</span><span class="dp-val">${expFinal} exp</span>` +
+        (expBonus > 0 ? `<span style="margin-left:4px;font-size:0.72rem;color:#FFA726;">(+${wineData[wIdx].exp}%)</span>` : '');
+
+    // Button state
+    const btn = document.getElementById('dispatch-btn');
+    const canGo = goldOk && scrollOk && wineOk;
+    btn.disabled = !canGo;
+    btn.textContent = canGo ? `🚀 出发前往${d.name}` : '⚠️ 材料不足';
+}
+
+function showWineSelectModal() {
+    const items = wineData.map((w, i) => `
+        <div class="wine-select-item ${i === selectedWine ? 'active' : ''}"
+             onclick="selectWine(${i})"
+             onmouseenter="positionTooltip(this.querySelector('.wine-tip'), this)"
+             onmouseleave="this.querySelector('.wine-tip').style.display='none'">
+            <span class="wsi-icon">${w.icon}</span>
+            <span class="wsi-count">×${wineStock[i]}</span>
+            <div class="wine-tip">
+                <div class="wine-tip-name">${w.name}</div>
+                <div class="wine-tip-row"><span class="wine-tip-label">经验增益</span><span class="wine-tip-val">${w.exp > 0 ? '+' + w.exp + '%' : '无'}</span></div>
+                <div class="wine-tip-row"><span class="wine-tip-label">库存</span><span class="wine-tip-val">×${wineStock[i]}</span></div>
+            </div>
+        </div>`).join('');
+
+    openModal(`
+        <div class="modal-header">
+            <span class="modal-icon">🍷</span>
+            <div><div class="modal-title">选择酒箱</div></div>
+        </div>
+        <div class="wine-select-grid">${items}</div>
+    `);
+}
+
+function selectWine(idx) {
+    selectedWine = idx;
+    closeModal();
+    updateDispatch();
+}
+
+function startDispatch() {
+    const d = destData[selectedDest];
+    const wIdx = selectedWine;
+    playerRes.gold -= d.cost.gold;
+    playerRes.scroll -= d.cost.scroll;
+    wineStock[wIdx]--;
+    updateDispatch();
+}
+
+// ========== Performance (演奏) ==========
+let selectedSheet = null; // { cat, quality }
+let performing = false;
+let perfTimer = null;
+
+const sheetStock = {
+    'earth':   { normal: 3, fine: 1, epic: 0 },
+    'craft':   { normal: 2, fine: 1, epic: 1 },
+    'sublime': { normal: 3, fine: 1, epic: 0 }
+};
+
+const sheetMeta = {
+    earth:   { icon:'🌿', name:'大地之艺', target:'伐木 / 挖矿 / 采集' },
+    craft:   { icon:'🔨', name:'巧手之艺', target:'锻造 / 制作 / 裁缝' },
+    sublime: { icon:'⚗️', name:'升华之艺', target:'炼金 / 酿造 / 强化' }
+};
+
+const perfVals = {
+    earth:   { normal:'5% 加工转化',  fine:'10% 加工转化',  epic:'15% 加工转化'  },
+    craft:   { normal:'3% 双倍产出',  fine:'7% 双倍产出',   epic:'10% 双倍产出'  },
+    sublime: { normal:'速度 -5%',     fine:'速度 -10%',      epic:'速度 -15%'      }
+};
+
+const perfDetails = {
+    earth:   '有几率立即将原材料转化成加工品（木板、矿锭、布料、线），1个原料不够时不转化。',
+    craft:   '有几率在每次制作/锻造/裁缝行动中产出双倍成品。',
+    sublime: '缩短炼金/酿造/强化的加工耗时，无其他附加效果。'
+};
+
+const perfTimes = { normal: 30, fine: 90, epic: 180 }; // minutes
+const qNames = { normal:'普通', fine:'精良', epic:'史诗' };
+
+// ========== Global tooltip positioning utility ==========
+function positionTooltip(tipEl, triggerEl) {
+    const r = triggerEl.getBoundingClientRect();
+    // Show first to get dimensions
+    tipEl.style.visibility = 'hidden';
+    tipEl.style.display = 'block';
+    const tw = tipEl.offsetWidth;
+    const th = tipEl.offsetHeight;
+    tipEl.style.display = 'none';
+    tipEl.style.visibility = '';
+
+    const cx = r.left + r.width / 2;
+
+    // Try above
+    if (r.top - th > 8) {
+        let left = cx - tw / 2;
+        left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+        tipEl.style.left = left + 'px';
+        tipEl.style.top = (r.top - th - 8) + 'px';
+        tipEl.style.transform = 'none';
+        tipEl.style.display = 'block';
+    }
+    // Try below
+    else if (window.innerHeight - r.bottom > th + 8) {
+        let left = cx - tw / 2;
+        left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+        tipEl.style.left = left + 'px';
+        tipEl.style.top = (r.bottom + 8) + 'px';
+        tipEl.style.transform = 'none';
+        tipEl.style.display = 'block';
+    }
+    // Try right
+    else {
+        let top = r.top + r.height / 2 - th / 2;
+        top = Math.max(8, Math.min(top, window.innerHeight - th - 8));
+        tipEl.style.left = (r.right + 8) + 'px';
+        tipEl.style.top = top + 'px';
+        tipEl.style.transform = 'none';
+        tipEl.style.display = 'block';
+    }
+}
+
+function showSheetSelectModal() {
+    const items = [];
+    for (const cat of ['earth','craft','sublime']) {
+        for (const q of ['normal','fine','epic']) {
+            const m = sheetMeta[cat];
+            const cnt = sheetStock[cat][q];
+            const isActive = selectedSheet && selectedSheet.cat === cat && selectedSheet.quality === q;
+            items.push(`
+                <div class="sheet-select-item ${isActive ? 'active' : ''}"
+                     onclick="selectSheet('${cat}','${q}')"
+                     onmouseenter="positionTooltip(this.querySelector('.sheet-tip'), this)"
+                     onmouseleave="this.querySelector('.sheet-tip').style.display='none'">
+                    <span class="ssi-icon">${m.icon}</span>
+                    <span class="ssi-count">×${cnt}</span>
+                    <div class="sheet-tip">
+                        <div class="st-name">${m.name} <span class="quality-badge quality-badge-${q==='normal'?'normal':q==='fine'?'fine':'epic'}">${qNames[q]}</span></div>
+                        <div class="st-row"><span class="st-label">可用于</span><span class="st-val">${m.target}</span></div>
+                        <div class="st-row"><span class="st-label">效果</span><span class="st-val" style="color:#FFA726;">${perfVals[cat][q]}</span></div>
+                        <div class="st-row"><span class="st-label">演奏时长</span><span class="st-val">${perfTimes[q]}分钟</span></div>
+                        <div class="st-row"><span class="st-label">库存</span><span class="st-val">×${cnt}</span></div>
+                    </div>
+                </div>`);
+        }
+    }
+
+    openModal(`
+        <div class="modal-header">
+            <span class="modal-icon">🎵</span>
+            <div><div class="modal-title">选择乐谱</div></div>
+        </div>
+        <div class="sheet-select-grid">${items.join('')}</div>
+    `);
+}
+
+function selectSheet(cat, quality) {
+    if (sheetStock[cat][quality] <= 0) return;
+    selectedSheet = { cat, quality };
+    closeModal();
+    updatePerfDisplay();
+}
+
+function updatePerfDisplay() {
+    const slot = document.getElementById('perf-slot');
+    const info = document.getElementById('perf-info');
+    const btn = document.getElementById('perf-btn');
+
+    if (!selectedSheet) {
+        slot.classList.remove('active');
+        slot.innerHTML = '<span id="perf-slot-text" style="color:#4a5a6a;font-size:0.82rem;">选择</span>';
+        info.innerHTML = '';
+        btn.textContent = '🎵 开始演奏';
+        btn.disabled = true;
+        document.getElementById('perf-progress-area').style.display = 'none';
+        return;
+    }
+
+    const { cat, quality } = selectedSheet;
+    const m = sheetMeta[cat];
+
+    slot.classList.add('active');
+    slot.innerHTML = `<span class="slot-icon">${m.icon}</span><span class="slot-count">×${sheetStock[cat][quality]}</span>` +
+        `<div class="sheet-tip" id="perf-slot-tip">
+            <div class="st-name">${m.name} <span class="quality-badge ${quality==='normal'?'quality-badge-normal':quality==='fine'?'quality-badge-fine':'quality-badge-epic'}">${qNames[quality]}</span></div>
+            <div class="st-row"><span class="st-label">可用于</span><span class="st-val">${m.target}</span></div>
+            <div class="st-row"><span class="st-label">效果</span><span class="st-val" style="color:#FFA726;">${perfVals[cat][quality]}</span></div>
+            <div class="st-row"><span class="st-label">演奏时长</span><span class="st-val">${perfTimes[quality]}分钟</span></div>
+            <div class="st-row"><span class="st-label">库存</span><span class="st-val">×${sheetStock[cat][quality]}</span></div>
+        </div>`;
+
+    info.innerHTML = `
+        <div class="sheet-detail-row"><span class="sheet-detail-label">乐谱</span><span class="sheet-detail-val"><span class="quality-badge ${quality==='normal'?'quality-badge-normal':quality==='fine'?'quality-badge-fine':'quality-badge-epic'}">${m.name} ${qNames[quality]}</span></span></div>
+        <div class="sheet-detail-row"><span class="sheet-detail-label">演奏时长</span><span class="sheet-detail-val">${perfTimes[quality]}分钟</span></div>
+        <div class="sheet-detail-row"><span class="sheet-detail-label">可用于</span><span class="sheet-detail-val">${m.target}</span></div>
+        <div class="sheet-detail-row"><span class="sheet-detail-label">效果</span><span class="sheet-detail-val" style="color:#FFA726;font-weight:bold;">${perfVals[cat][quality]}</span></div>
+        <div class="sheet-detail-row"><span class="sheet-detail-label">详情</span><span class="sheet-detail-val">${perfDetails[cat]}</span></div>
+        <div class="sheet-detail-row" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(107,79,60,0.2);"><span class="sheet-detail-label">获得经验</span><span class="sheet-detail-val" style="color:#66BB6A;font-weight:bold;">15 exp</span></div>`;
+
+    btn.disabled = performing;
+    btn.textContent = performing ? '🎵 演奏中...' : '🎵 开始演奏';
+}
+
+function startPerform() {
+    if (!selectedSheet || performing) return;
+    const { cat, quality } = selectedSheet;
+    if (sheetStock[cat][quality] <= 0) return;
+
+    sheetStock[cat][quality]--;
+    performing = true;
+    updatePerfDisplay();
+
+    const totalSec = perfTimes[quality] * 60;
+    let elapsed = 0;
+
+    document.getElementById('perf-progress-area').style.display = 'block';
+
+    perfTimer = setInterval(() => {
+        elapsed += 10;
+        const pct = Math.min(100, Math.round(elapsed / totalSec * 100));
+        document.getElementById('perf-progress-fill').style.width = pct + '%';
+        document.getElementById('perf-progress-text').textContent = pct + '%';
+
+        if (pct >= 100) {
+            clearInterval(perfTimer);
+            performing = false;
+            document.getElementById('perf-progress-text').textContent = '✅ 演奏完成';
+            // Reset to default state
+            selectedSheet = null;
+            document.getElementById('perf-progress-area').style.display = 'none';
+            updatePerfDisplay();
+        }
+    }, 100); // demo: 10x speed
+}
+
+function showDestModal(idx) {
+    const d = destData[idx];
+
+    // Sheet quality rows (current pen Lv.6) - plain, no double border
+    const qRows = `
+        <div class="drop-line">
+            <span class="quality-badge quality-badge-normal">普通</span>
+            <span class="item-pct">${d.quality.n}%</span>
+        </div>
+        <div class="drop-line">
+            <span class="quality-badge quality-badge-fine">精良</span>
+            <span class="item-pct">${d.quality.f}%</span>
+        </div>
+        <div class="drop-line">
+            <span class="quality-badge quality-badge-epic">史诗</span>
+            <span class="item-pct">${d.quality.e}%</span>
+        </div>`;
+
+    // Drop rows with item-tag (no pct inside tag)
+    const dropRows = d.drops.map(x => `
+        <div class="drop-line">
+            <span class="drop-count">1</span>
+            <span class="item-tag" title="点击查看详情">${x.icon} ${x.name}</span>
+            <span class="item-pct" style="margin-left:6px;">${x.pct}</span>
+        </div>`).join('');
+
+    openModal(`
+        <div class="modal-header">
+            <span class="modal-icon">${d.icon}</span>
+            <div><div class="modal-title">${d.name}</div><div class="modal-subtitle">${d.area} · ${d.lv}解锁</div></div>
+        </div>
+        <div class="modal-desc">${d.desc}</div>
+
+        <div class="modal-section">
+            <div class="modal-section-title">🎼 乐谱品质概率（笔 Lv.6）</div>
+            ${qRows}
+        </div>
+
+        <div class="modal-section">
+            <div class="modal-section-title">📦 掉落物</div>
+            <div class="drop-list">${dropRows}</div>
+            <div class="drop-line" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(107,79,60,0.2);">
+                <span style="min-width:16px;"></span>
+                <span style="font-size:0.82rem;color:#7A8A98;">获得经验：<span style="color:#FFA726;font-weight:bold;">50 exp</span></span>
+            </div>
+        </div>
+        <button class="dispatch-btn" style="margin-top:16px;" onclick="selectDest(${idx});closeModal()">确定</button>
+    `);
+}
+
+// ========== Equipment System ==========
+const equipSlots = [
+    { id: 'pen', label: '武器', icon: '🖋️' },
+    { id: 'shoe', label: '鞋子', icon: '👢' },
+    { id: 'instrument', label: '乐器', icon: '🎸' }
+];
+
+const equipInventory = {
+    pen: [
+        { id: 'p1', name: '灵感之笔', icon: '🖋️', lv: 6, count: 1, stats: {label1:'精良加成',val1:'+15%',label2:'史诗加成',val2:'+10%'} },
+        { id: 'p2', name: '灵感之笔', icon: '🖋️', lv: 3, count: 1, stats: {label1:'精良加成',val1:'+6%',label2:'史诗加成',val2:'+4%'} },
+        { id: 'p3', name: '灵感之笔', icon: '🖋️', lv: 1, count: 2, stats: {label1:'精良加成',val1:'基础',label2:'史诗加成',val2:'基础'} }
+    ],
+    shoe: [
+        { id: 's1', name: '旅人之靴', icon: '👢', lv: 8, count: 1, stats: {label1:'出游缩减',val1:'-4小时'} },
+        { id: 's2', name: '旅人之靴', icon: '👢', lv: 5, count: 1, stats: {label1:'出游缩减',val1:'-2.5小时'} }
+    ],
+    instrument: [
+        { id: 'i1', name: '吟游乐器', icon: '🎸', lv: 1, count: 1, stats: {label1:'效果',val1:'解锁精良乐谱'} }
+    ] // empty
+};
+
+// Current equipped items
+const equipped = { pen: 'p1', shoe: 's1', instrument: null };
+
+function renderEquipSlots() {
+    const container = document.getElementById('equipSlots');
+    container.innerHTML = equipSlots.map(slot => {
+        const eqId = equipped[slot.id];
+        const items = equipInventory[slot.id];
+        const equippedItem = items.find(i => i.id === eqId);
+        const hasItems = items.length > 0;
+
+        let inner = '';
+        let cls = 'card-item equip-slot ';
+        if (equippedItem) {
+            cls += 'eq-filled';
+            let tooltipRows = '';
+            if (equippedItem.stats.label1) tooltipRows += `<div class="eq-tooltip-row"><span class="eq-tooltip-label">${equippedItem.stats.label1}</span><span class="eq-tooltip-val">${equippedItem.stats.val1}</span></div>`;
+            if (equippedItem.stats.label2) tooltipRows += `<div class="eq-tooltip-row"><span class="eq-tooltip-label">${equippedItem.stats.label2}</span><span class="eq-tooltip-val">${equippedItem.stats.val2}</span></div>`;
+            inner = `
+                <span class="card-icon">${equippedItem.icon}</span>
+                <span class="card-name">${equippedItem.name}</span>
+                <span class="card-sub" style="color:#FFA726;">Lv.${equippedItem.lv}</span>
+                <div class="eq-tooltip">
+                    <div style="font-size:0.82rem;font-weight:bold;color:#A0B2C0;margin-bottom:6px;">${equippedItem.name} <span style="color:#FFA726;">Lv.${equippedItem.lv}</span></div>
+                    ${tooltipRows}
+                </div>`;
+        } else if (hasItems) {
+            // Has items in bag but not equipped
+            cls += 'eq-empty';
+            inner = `
+                <span class="card-icon">${slot.icon}</span>
+                <span class="card-name" style="color:#6b7f90;">${slot.label}</span>
+                <span class="card-sub">未装备</span>`;
+        } else {
+            cls += 'eq-empty';
+            inner = `
+                <span class="card-icon" style="opacity:0.4;">${slot.icon}</span>
+                <span class="card-name" style="color:#6b7f90;">${slot.label}</span>
+                <span class="card-sub">未获得</span>`;
+        }
+
+        return `<div class="${cls}" onclick="openEquipSelector('${slot.id}')">${inner}</div>`;
+    }).join('');
+}
+
+function openEquipSelector(slotId) {
+    const items = equipInventory[slotId];
+    const slotLabel = equipSlots.find(s => s.id === slotId).label;
+    const eqId = equipped[slotId];
+
+    const gridItems = items.map(item => {
+        const isEq = item.id === eqId;
+        const tooltipHtml = `
+            <div class="eq-detail-tip" style="display:none;position:fixed;background:#1B2A3A;border:1px solid rgba(107,79,60,0.5);border-radius:8px;padding:8px 12px;min-width:150px;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,0.5);font-size:0.75rem;pointer-events:none;">
+                <div style="font-weight:bold;color:#A0B2C0;margin-bottom:4px;">${item.name} Lv.${item.lv}</div>
+                ${item.stats.label1 ? `<div class="eq-tooltip-row"><span class="eq-tooltip-label">${item.stats.label1}</span><span class="eq-tooltip-val"><span style="color:#FFA726;">${item.stats.val1}</span></span></div>` : ''}
+                ${item.stats.label2 ? `<div class="eq-tooltip-row"><span class="eq-tooltip-label">${item.stats.label2}</span><span class="eq-tooltip-val"><span style="color:#FFA726;">${item.stats.val2}</span></span></div>` : ''}
+            </div>`;
+        return `
+        <div class="eq-select-item ${isEq ? 'equipped' : ''}"
+             onclick="equipItem('${slotId}','${item.id}')"
+             onmouseenter="positionTooltip(this.querySelector('.eq-detail-tip'), this)"
+             onmouseleave="this.querySelector('.eq-detail-tip').style.display='none'">
+            <span class="eq-item-icon">${item.icon}</span>
+            <span class="eq-item-name">${item.name}</span>
+            <span class="eq-item-name" style="color:#FFA726;font-size:0.68rem;">Lv.${item.lv}</span>
+            <span class="eq-count">${isEq ? '已装备' : '×' + item.count}</span>
+            ${tooltipHtml}
+        </div>`;
+    }).join('');
+
+    const unequipBtn = eqId ? `<button class="eq-unequip-btn" onclick="unequipItem('${slotId}')">卸下当前装备</button>` : '';
+
+    openModal(`
+        <div class="modal-header">
+            <span class="modal-icon">${equipSlots.find(s => s.id === slotId).icon}</span>
+            <div><div class="modal-title">选择${slotLabel}</div></div>
+        </div>
+        <div class="eq-select-grid">${gridItems || '<div style="grid-column:1/-1;text-align:center;color:#6b7f90;padding:20px;">背包中无此类型装备</div>'}</div>
+        ${unequipBtn}
+    `, true);
+}
+
+function equipItem(slotId, itemId) {
+    equipped[slotId] = itemId;
+    renderEquipSlots();
+    closeModal();
+}
+
+function unequipItem(slotId) {
+    equipped[slotId] = null;
+    renderEquipSlots();
+    closeModal();
+}
+
+// Init equip slots on load
+renderEquipSlots();
+updateDispatch();
+
+// ESC to close
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+
+</body>
+</html>
