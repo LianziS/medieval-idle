@@ -69,6 +69,12 @@ class GameEngine {
             // 靴子装备库存（吟游诗人）
             bootsInventory: [],
             
+            // 乐器装备库存（吟游诗人）
+            instrumentsInventory: [],
+            
+            // 回音石库存
+            echoStoneInventory: 0,
+            
             // 海螺墨库存
             conchInkInventory: 0,
             
@@ -1773,6 +1779,167 @@ class GameEngine {
         }
         
         return { success: true, rewards, exp: boot.exp };
+    }
+    
+    /**
+     * 开始制作乐器行动
+     */
+    startCraftInstrumentAction(instrumentId, count = 1) {
+        const instrument = CONFIG.instruments?.find(i => i.id === instrumentId);
+        if (!instrument) {
+            return { success: false, reason: '乐器不存在' };
+        }
+        
+        // 检查等级要求
+        const craftingLevel = this.state.craftingLevel || 1;
+        if (craftingLevel < instrument.reqCraftingLevel) {
+            return { success: false, reason: `需要制作 Lv.${instrument.reqCraftingLevel}` };
+        }
+        
+        // 检查材料是否足够
+        const planksInv = this.state.planksInventory || {};
+        const ingotsInv = this.state.ingotsInventory || {};
+        const echoStoneInv = this.state.echoStoneInventory || 0;
+        
+        for (const [matId, matCount] of Object.entries(instrument.materials)) {
+            let have = 0;
+            if (matId === 'echo_stone') {
+                have = echoStoneInv;
+            } else if (matId.includes('_plank')) {
+                have = planksInv[matId] || 0;
+            } else if (matId.includes('_ingot') || matId.includes('_crystal') || matId.includes('_steel')) {
+                have = ingotsInv[matId] || 0;
+            }
+            
+            if (have < matCount) {
+                const matNames = {
+                    pine_plank: '青杉木板', iron_birch_plank: '铁桦木板', wind_tree_plank: '风啸木板',
+                    flame_tree_plank: '焰心木板', frost_maple_plank: '霜叶木板', thunder_tree_plank: '雷鸣木板',
+                    ancient_oak_plank: '古橡木板', world_tree_plank: '世界木板',
+                    cyan_ingot: '青闪铁锭', red_copper_ingot: '赤铜锭', feather_ingot: '羽铁锭',
+                    white_silver_ingot: '白银锭', hell_steel_ingot: '狱炎钢', thunder_steel_ingot: '雷鸣钢',
+                    brilliant_crystal: '璀璨水晶', star_crystal: '星辉水晶',
+                    echo_stone: '回音石'
+                };
+                return { success: false, reason: `${matNames[matId] || matId}不足: 需要 ${matCount}` };
+            }
+        }
+        
+        // 消耗材料
+        for (const [matId, matCount] of Object.entries(instrument.materials)) {
+            if (matId === 'echo_stone') {
+                this.state.echoStoneInventory -= matCount;
+            } else if (matId.includes('_plank')) {
+                planksInv[matId] = (planksInv[matId] || 0) - matCount;
+                if (planksInv[matId] <= 0) delete planksInv[matId];
+            } else {
+                ingotsInv[matId] = (ingotsInv[matId] || 0) - matCount;
+                if (ingotsInv[matId] <= 0) delete ingotsInv[matId];
+            }
+        }
+        
+        // 创建行动
+        const action = {
+            type: 'CRAFT_INSTRUMENT',
+            id: instrumentId,
+            name: instrument.name,
+            icon: instrument.icon,
+            duration: instrument.duration,
+            exp: instrument.exp,
+            tokenRate: instrument.tokenRate,
+            count: count,
+            startTime: Date.now()
+        };
+        
+        this.state.activeAction = action;
+        this.state.actionStartTime = Date.now();
+        this.state.actionDuration = instrument.duration;
+        this.state.actionRemaining = instrument.duration;
+        this.state.actionCount = count;
+        
+        return { success: true, action };
+    }
+    
+    /**
+     * 完成一次制作乐器
+     */
+    completeCraftInstrumentOnce() {
+        const action = this.state.activeAction;
+        if (!action || action.type !== 'CRAFT_INSTRUMENT') {
+            return null;
+        }
+        
+        const instrument = CONFIG.instruments?.find(i => i.id === action.id);
+        if (!instrument) return null;
+        
+        // 添加乐器到背包
+        if (!this.state.instrumentsInventory) {
+            this.state.instrumentsInventory = [];
+        }
+        this.state.instrumentsInventory.push(instrument.id);
+        
+        // 添加经验
+        this.addSkillExp('craftingLevel', instrument.exp);
+        
+        // 检查是否有制作代币掉落
+        const rewards = [];
+        rewards.push({ type: 'INSTRUMENT', id: instrument.id, name: instrument.name, icon: instrument.icon, count: 1 });
+        
+        if (Math.random() < instrument.tokenRate) {
+            if (!this.state.tokensInventory) {
+                this.state.tokensInventory = {};
+            }
+            this.state.tokensInventory.crafting_token = (this.state.tokensInventory.crafting_token || 0) + 1;
+            rewards.push({ type: 'TOKEN', id: 'crafting_token', name: '制作代币', icon: '🪙', count: 1 });
+        }
+        
+        // 减少次数
+        this.state.actionCount--;
+        
+        // 检查是否继续
+        if (this.state.actionCount > 0 || this.state.actionCount >= 99999) {
+            const planksInv = this.state.planksInventory || {};
+            const ingotsInv = this.state.ingotsInventory || {};
+            const echoStoneInv = this.state.echoStoneInventory || 0;
+            
+            let hasMaterials = true;
+            for (const [matId, matCount] of Object.entries(instrument.materials)) {
+                let have = 0;
+                if (matId === 'echo_stone') {
+                    have = echoStoneInv;
+                } else if (matId.includes('_plank')) {
+                    have = planksInv[matId] || 0;
+                } else {
+                    have = ingotsInv[matId] || 0;
+                }
+                if (have < matCount) hasMaterials = false;
+            }
+            
+            if (hasMaterials && this.state.actionCount >= 99999) {
+                // 无限模式，继续消耗材料
+                for (const [matId, matCount] of Object.entries(instrument.materials)) {
+                    if (matId === 'echo_stone') {
+                        this.state.echoStoneInventory -= matCount;
+                    } else if (matId.includes('_plank')) {
+                        planksInv[matId] = (planksInv[matId] || 0) - matCount;
+                        if (planksInv[matId] <= 0) delete planksInv[matId];
+                    } else {
+                        ingotsInv[matId] = (ingotsInv[matId] || 0) - matCount;
+                        if (ingotsInv[matId] <= 0) delete ingotsInv[matId];
+                    }
+                }
+                this.state.actionStartTime = Date.now();
+                this.state.actionRemaining = instrument.duration;
+            } else {
+                this.state.activeAction = null;
+                this.state.actionCount = 0;
+            }
+        } else {
+            this.state.activeAction = null;
+            this.state.actionCount = 0;
+        }
+        
+        return { success: true, rewards, exp: instrument.exp };
     }
     
     /**

@@ -8,7 +8,7 @@
     <meta name="format-detection" content="telephone=no">
     <title>中世纪雇佣兵 - 放置游戏</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="style.css?v=202604211218">
+    <link rel="stylesheet" href="style.css?v=202604211354">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#1B2A3A;color:#A0B2C0;min-height:100vh;padding:0;font-size:14px;overflow-x:hidden}
@@ -339,6 +339,14 @@
                     <!-- 河铸钉 -->
                     <h3 class="storage-section-title">河铸钉</h3>
                     <div class="storage-items-grid" id="storage-river-nail-items"></div>
+                    
+                    <!-- 回音石 -->
+                    <h3 class="storage-section-title">回音石</h3>
+                    <div class="storage-items-grid" id="storage-echo-stone-items"></div>
+                    
+                    <!-- 乐器装备（吟游诗人） -->
+                    <h3 class="storage-section-title">乐器装备</h3>
+                    <div class="storage-items-grid" id="storage-instruments-items"></div>
                 </div>
                 
                 <!-- 装备栏内容 -->
@@ -481,7 +489,7 @@
                     <button class="gathering-tab active" data-tab="planks">木板</button>
                     <button class="gathering-tab" data-tab="feathers">净羽</button>
                     <button class="gathering-tab" data-tab="manuscripts">手稿</button>
-                    <button class="gathering-tab" data-tab="other">其他</button>
+                    <button class="gathering-tab" data-tab="equipment">装备</button>
                 </div>
                 <!-- 木板列表 -->
                 <div class="gathering-items-list active" id="crafting-planks-list"></div>
@@ -489,6 +497,8 @@
                 <div class="gathering-items-list" id="crafting-feathers-list"></div>
                 <!-- 手稿列表 -->
                 <div class="gathering-items-list" id="crafting-manuscripts-list"></div>
+                <!-- 装备列表（乐器） -->
+                <div class="gathering-items-list" id="crafting-equipment-list"></div>
             </section>
         </main>
 
@@ -1150,7 +1160,7 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="game.js?v=202604211218"></script>
+    <script src="game.js?v=202604211354"></script>
     <script>
         // 登录验证
         (function() {

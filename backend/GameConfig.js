@@ -635,6 +635,80 @@ const CONFIG = {
         }
     ],
     
+    // 乐器装备配置（吟游诗人专用）
+    instruments: [
+        { 
+            id: 'recorder', 
+            name: '竖笛', 
+            icon: '🎵', 
+            reqCraftingLevel: 10,
+            reqBardLevel: 12,
+            materials: { pine_plank: 18, iron_birch_plank: 18, cyan_ingot: 18, red_copper_ingot: 18, echo_stone: 6 },
+            duration: 6000,
+            exp: 40,
+            tokenRate: 0.04,
+            value: 18 * 16 + 18 * 32 + 18 * 16 + 18 * 32 + 6 * 800, // 6528
+            effect: '解锁演奏精良乐谱',
+            durationDisplay: '10s'
+        },
+        { 
+            id: 'lyre', 
+            name: '莱尔琴', 
+            icon: '🎶', 
+            reqCraftingLevel: 20,
+            reqBardLevel: 14,
+            materials: { iron_birch_plank: 27, wind_tree_plank: 27, red_copper_ingot: 27, feather_ingot: 27, echo_stone: 9 },
+            duration: 10500,
+            exp: 90,
+            tokenRate: 0.076,
+            value: 27 * 32 + 27 * 64 + 27 * 32 + 27 * 64 + 9 * 800, // 12480
+            effect: '解锁演奏史诗乐谱',
+            durationDisplay: '16s'
+        },
+        { 
+            id: 'vielle', 
+            name: '维埃尔琴', 
+            icon: '🎻', 
+            reqCraftingLevel: 50,
+            reqBardLevel: 16,
+            materials: { flame_tree_plank: 36, frost_maple_plank: 36, white_silver_ingot: 36, hell_steel_ingot: 36, echo_stone: 12 },
+            duration: 27000,
+            exp: 486,
+            tokenRate: 0.267,
+            value: 36 * 96 + 36 * 112 + 36 * 96 + 36 * 112 + 12 * 800, // 24576
+            effect: '+5%乐谱buff时长',
+            durationDisplay: '45s'
+        },
+        { 
+            id: 'harp', 
+            name: '竖琴', 
+            icon: '🎺', 
+            reqCraftingLevel: 65,
+            reqBardLevel: 18,
+            materials: { frost_maple_plank: 54, thunder_tree_plank: 54, hell_steel_ingot: 54, thunder_steel_ingot: 54, echo_stone: 18 },
+            duration: 45000,
+            exp: 936,
+            tokenRate: 0.467,
+            value: 54 * 112 + 54 * 154 + 54 * 112 + 54 * 154 + 18 * 800, // 43128
+            effect: '+10%乐谱buff时长',
+            durationDisplay: '1m18s'
+        },
+        { 
+            id: 'lute', 
+            name: '鲁特琴', 
+            icon: '🎸', 
+            reqCraftingLevel: 80,
+            reqBardLevel: 20,
+            materials: { thunder_tree_plank: 81, ancient_oak_plank: 81, thunder_steel_ingot: 81, brilliant_crystal: 81, echo_stone: 27 },
+            duration: 78000,
+            exp: 1782,
+            tokenRate: 0.70,
+            value: 81 * 154 + 81 * 240 + 81 * 154 + 81 * 240 + 27 * 800, // 85428
+            effect: '+15%乐谱buff时长',
+            durationDisplay: '2m15s'
+        }
+    ],
+    
     // 矿石与矿锭的映射
     oreIngotMapping: {
         'cyan_ore': 'cyan_ingot',
@@ -781,7 +855,8 @@ const CONFIG = {
         { id: 'forging_token', name: '锻造代币', icon: '🪙' },
         { id: 'tailoring_token', name: '缝制代币', icon: '🪙' },
         { id: 'alchemy_token', name: '炼金代币', icon: '🪙' },
-        { id: 'brewing_token', name: '酿造代币', icon: '🪙' }
+        { id: 'brewing_token', name: '酿造代币', icon: '🪙' },
+        { id: 'echo_stone', name: '回音石', icon: '🔮', value: 800 }
     ],
     
     // 代币获取概率配置

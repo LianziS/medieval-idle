@@ -1112,6 +1112,49 @@ io.on('connection', (socket) => {
         socket.emit('game_state_update', gameEngine.getFullState());
     });
     
+    // 开始制作乐器
+    socket.on('craft_instrument', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        console.log('🎵 craft_instrument 收到:', JSON.stringify({ instrumentId: data.instrumentId, count: data.count }));
+        
+        const result = gameEngine.startCraftInstrumentAction(data.instrumentId, data.count || 1);
+        
+        console.log('🎵 startCraftInstrumentAction 结果:', JSON.stringify({ 
+            success: result.success, 
+            action: result.action ? { type: result.action.type, id: result.action.id, duration: result.action.duration } : null 
+        }));
+        
+        socket.emit('action_result', result);
+        if (result.success) {
+            socket.emit('game_state_update', gameEngine.getFullState());
+        }
+    });
+    
+    // 立即制作乐器（清空当前行动和队列）
+    socket.on('craft_instrument_immediately', (data) => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        // 清空当前行动和队列
+        gameEngine.state.activeAction = null;
+        gameEngine.state.actionQueue = [];
+        
+        const result = gameEngine.startCraftInstrumentAction(data.instrumentId, data.count || 1);
+        socket.emit('action_result', result);
+        socket.emit('game_state_update', gameEngine.getFullState());
+    });
+    
+    // 完成一次制作乐器
+    socket.on('craft_instrument_complete', () => {
+        if (!gameEngine) return socket.emit('error', { message: '未认证' });
+        
+        const result = gameEngine.completeCraftInstrumentOnce();
+        if (result) {
+            socket.emit('forge_result', result);
+            socket.emit('game_state_update', gameEngine.getFullState());
+        }
+    });
+    
     // 获取游戏状态
     socket.on('get_state', () => {
         if (!gameEngine) return socket.emit('error', { message: '未认证' });
@@ -1460,6 +1503,9 @@ setInterval(() => {
                 } else if (action.type === 'TAILOR_BOOT') {
                     result = gameEngine.completeTailorBootOnce();
                     socket.emit('tailor_result', result);
+                } else if (action.type === 'CRAFT_INSTRUMENT') {
+                    result = gameEngine.completeCraftInstrumentOnce();
+                    socket.emit('forge_result', result);
                 } else {
                     result = gameEngine.completeActionOnce();
                     socket.emit('action_complete_result', result);

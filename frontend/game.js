@@ -442,6 +442,18 @@ function setupSocket() {
         }
     });
 
+    // 制作结果（乐器） - 复用forge_result事件
+    socket.on('forge_result', (result) => {
+        // 已经在上面处理了笔和工具的锻造结果
+        // 这里额外检查乐器制作结果
+        if (result.success && result.rewards) {
+            const instrumentReward = result.rewards.find(r => r.type === 'INSTRUMENT');
+            if (instrumentReward) {
+                showToast(`✅ 制作成功: ${instrumentReward.name}`);
+            }
+        }
+    });
+
     // 商人系统事件
     socket.on('merchant_data', (data) => {
         const oldModal = document.querySelector('.merchant-modal.active');
@@ -1628,6 +1640,12 @@ function getActionConfig(actionType, actionId) {
         return boot || null;
     }
 
+    // 特殊处理乐器制作行动
+    if (actionType === 'CRAFT_INSTRUMENT') {
+        const instrument = CONFIG.instruments?.find(i => i.id === actionId);
+        return instrument || null;
+    }
+
     // 特殊处理强化行动
     if (actionType === 'ENHANCE') {
         // 从 action 对象获取工具信息
@@ -2619,10 +2637,38 @@ function renderCrafting() {
                 const planksL = document.getElementById('crafting-planks-list');
                 const feathersL = document.getElementById('crafting-feathers-list');
                 const manuscriptsL = document.getElementById('crafting-manuscripts-list');
+                const equipmentL = document.getElementById('crafting-equipment-list');
 
                 if (planksL) planksL.classList.toggle('active', tabId === 'planks');
                 if (feathersL) feathersL.classList.toggle('active', tabId === 'feathers');
                 if (manuscriptsL) manuscriptsL.classList.toggle('active', tabId === 'manuscripts');
+                if (equipmentL) equipmentL.classList.toggle('active', tabId === 'equipment');
+            });
+        });
+    }
+
+    // 渲染装备列表（乐器）
+    const equipmentList = document.getElementById('crafting-equipment-list');
+    if (equipmentList && CONFIG.instruments) {
+        equipmentList.innerHTML = CONFIG.instruments.map(instrument => {
+            const unlocked = level >= instrument.reqCraftingLevel;
+            const isActive = gameState.activeAction?.type === 'CRAFT_INSTRUMENT' && gameState.activeAction?.id === instrument.id;
+
+            return `
+                <div class="action-card-square ${unlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
+                     data-action="CRAFT_INSTRUMENT" data-id="${instrument.id}">
+                    <div class="card-name">${instrument.name}</div>
+                    <div class="card-icon">${instrument.icon}</div>
+                </div>
+            `;
+        }).join('');
+
+        equipmentList.classList.add('cards-grid');
+
+        equipmentList.querySelectorAll('.action-card-square').forEach(card => {
+            card.addEventListener('click', () => {
+                const instrumentId = card.dataset.id;
+                openInstrumentModal(instrumentId);
             });
         });
     }
@@ -3054,6 +3100,273 @@ function openBootsTailorModal(bootId) {
                 socket.emit('tailor_boot_immediately', { bootId: boot.id, count: getCount() });
             } else {
                 socket.emit('tailor_boot', { bootId: boot.id, count: getCount(), addToQueue: false });
+            }
+            closeModal();
+        });
+    }
+
+    // 绑定悬浮/点击事件
+    modal.querySelectorAll('.item-hover-card').forEach(item => {
+        item.addEventListener('mouseenter', (e) => showActionItemTooltip(item, e, modal));
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showActionItemTooltip(item, e, modal);
+        });
+    });
+}
+
+/**
+ * 打开乐器制作弹窗
+ */
+function openInstrumentModal(instrumentId) {
+    const instrument = CONFIG.instruments?.find(i => i.id === instrumentId);
+    if (!instrument) return;
+
+    // 检查队列状态
+    const currentQueue = gameState?.actionQueue || [];
+    const maxQueueSize = 2;
+    const currentAction = gameState?.activeAction;
+    const queueAvailable = currentQueue.length < maxQueueSize;
+    const queuePosition = currentQueue.length + 1;
+
+    // 获取库存数量
+    const planksInv = gameState.planksInventory || {};
+    const ingotsInv = gameState.ingotsInventory || {};
+    const echoStoneInv = gameState.echoStoneInventory || 0;
+
+    // 获取制作等级
+    const craftingLevel = gameState.craftingLevel || 1;
+    const levelEnough = craftingLevel >= instrument.reqCraftingLevel;
+
+    // 检查材料是否足够
+    let maxCraftCount = Infinity;
+    const materialNames = {
+        pine_plank: '青杉木板',
+        iron_birch_plank: '铁桦木板',
+        wind_tree_plank: '风啸木板',
+        flame_tree_plank: '焰心木板',
+        frost_maple_plank: '霜叶木板',
+        thunder_tree_plank: '雷鸣木板',
+        ancient_oak_plank: '古橡木板',
+        world_tree_plank: '世界木板',
+        cyan_ingot: '青闪铁锭',
+        red_copper_ingot: '赤铜锭',
+        feather_ingot: '羽铁锭',
+        white_silver_ingot: '白银锭',
+        hell_steel_ingot: '狱炎钢',
+        thunder_steel_ingot: '雷鸣钢',
+        brilliant_crystal: '璀璨水晶',
+        star_crystal: '星辉水晶',
+        echo_stone: '回音石'
+    };
+
+    // 生成材料行HTML
+    let materialsRowsHtml = '';
+    let firstMaterial = true;
+    for (const [matId, count] of Object.entries(instrument.materials)) {
+        let have = 0;
+        let matIcon = '📦';
+        let itemType = 'PLANK';
+        
+        if (matId === 'echo_stone') {
+            have = echoStoneInv;
+            matIcon = '🔮';
+            itemType = 'ECHO_STONE';
+        } else if (matId.includes('_plank')) {
+            have = planksInv[matId] || 0;
+            matIcon = '🪵';
+        } else {
+            have = ingotsInv[matId] || 0;
+            itemType = 'INGOT';
+            matIcon = matId.includes('crystal') ? '💎' : '🔩';
+        }
+        
+        const enough = have >= count;
+        const maxByThis = Math.floor(have / count);
+        if (maxByThis < maxCraftCount) maxCraftCount = maxByThis;
+        
+        const matName = materialNames[matId] || matId;
+
+        const labelHtml = firstMaterial ? 
+            `<div class="popup-info-label"><span class="lbl-icon">📦</span>材料</div>` :
+            `<div class="popup-info-label"></div>`;
+        firstMaterial = false;
+
+        materialsRowsHtml += `
+            <div class="popup-info-row">
+                ${labelHtml}
+                <div class="popup-info-val">
+                    <span class="popup-mat-count ${enough ? '' : 'insufficient'}">[${have}/${count}]</span>
+                    <span class="popup-badge material ${enough ? '' : 'insufficient'} item-hover-card" data-item-id="${matId}" data-item-type="${itemType}" data-item-name="${matName}" data-item-icon="${matIcon}">${matIcon} ${matName}</span>
+                </div>
+            </div>`;
+    }
+
+    // 计算代币概率
+    const tokenChance = Math.round(instrument.tokenRate * 100 * 100) / 100;
+    const tokenChanceDisplay = tokenChance % 1 === 0 ? tokenChance : tokenChance.toString().replace(/\.?0+$/, '');
+    
+    // 连击概率
+    const comboChance = Math.max(0, craftingLevel - instrument.reqCraftingLevel);
+    const comboChanceDisplay = comboChance % 1 === 0 ? comboChance : comboChance.toString().replace(/\.?0+$/, '');
+
+    // 创建模态框
+    const modal = document.createElement('div');
+    modal.className = 'action-detail-overlay';
+    modal.innerHTML = `
+        <div class="action-detail-popup">
+            <button class="popup-close-btn">✕</button>
+            
+            <div class="popup-header-row">
+                <div class="popup-icon-large">${instrument.icon}</div>
+                <div class="popup-name-large">${instrument.name}</div>
+            </div>
+            
+            <div class="popup-divider"></div>
+            
+            <div class="popup-info-rows">
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">🔓</span>制作等级</div>
+                    <div class="popup-info-val">
+                        <span class="popup-badge level ${levelEnough ? '' : 'insufficient'}">Lv.${instrument.reqCraftingLevel} 🪵</span>
+                        ${!levelEnough ? `<span class="level-warning">（当前 Lv.${craftingLevel}）</span>` : ''}
+                    </div>
+                </div>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">🎭</span>装备等级</div>
+                    <div class="popup-info-val">
+                        <span class="popup-badge level">Lv.${instrument.reqBardLevel} 吟游诗人</span>
+                    </div>
+                </div>
+                ${materialsRowsHtml}
+                
+                <div class="popup-divider"></div>
+                
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">📦</span>产出</div>
+                    <div class="popup-info-val">
+                        <span class="popup-exp-val">${instrument.exp} exp</span>
+                        <br><span class="popup-drop-prefix">1</span> <span class="popup-badge drop item-hover-card" data-item-id="${instrument.id}" data-item-type="INSTRUMENT" data-item-name="${instrument.name}" data-item-icon="${instrument.icon}">${instrument.icon} ${instrument.name}</span>
+                    </div>
+                </div>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">🪙</span>代币</div>
+                    <div class="popup-info-val">
+                        <span class="popup-token-prefix">1</span> 
+                        <span class="popup-badge token item-hover-card" data-item-id="crafting_token" data-item-type="TOKEN" data-item-name="制作代币" data-item-icon="🪙">🪵 制作代币</span>
+                        <span class="popup-token-prob">~${tokenChanceDisplay}%</span>
+                    </div>
+                </div>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">⚡</span>连击</div>
+                    <div class="popup-info-val">
+                        <span class="popup-combo-chance">${comboChanceDisplay}%</span>
+                        <span class="popup-combo-desc">（等级差 × 1%）</span>
+                    </div>
+                </div>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">⏱️</span>持续时间</div>
+                    <div class="popup-info-val">
+                        <span class="popup-highlight">${formatTime(instrument.duration)}</span>
+                    </div>
+                </div>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">✨</span>装备效果</div>
+                    <div class="popup-info-val">
+                        <span class="popup-effect-text">${instrument.effect}</span>
+                    </div>
+                </div>
+                <div class="popup-info-row">
+                    <div class="popup-info-label"><span class="lbl-icon">⏳</span>效果时长</div>
+                    <div class="popup-info-val">
+                        <span class="popup-highlight">${instrument.durationDisplay}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="popup-divider"></div>
+            
+            <div class="popup-count-section">
+                <div class="popup-count-label">🎵 制作</div>
+                <div class="popup-count-row">
+                    <input class="popup-count-input" type="text" value="∞" placeholder="次数" onclick="this.select();">
+                    <div class="popup-count-btns">
+                        <button class="popup-count-btn" data-count="1">1</button>
+                        <button class="popup-count-btn" data-count="5">5</button>
+                        <button class="popup-count-btn" data-count="10">10</button>
+                        <button class="popup-count-btn inf selected" data-count="infinity">∞</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="popup-actions-row">
+                <button class="popup-btn cancel" id="action-cancel">取消</button>
+                ${queueAvailable ?
+                    `<button class="popup-btn queue" id="action-queue">加入队列 #${queuePosition}</button>` :
+                    `<button class="popup-btn queue disabled" id="action-queue" disabled>队列已满</button>`}
+                ${levelEnough && maxCraftCount > 0 ?
+                    `<button class="popup-btn start" id="action-start">立即开始</button>` :
+                    `<button class="popup-btn start disabled" id="action-start" disabled>${!levelEnough ? '等级不足' : '材料不足'}</button>`}
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const closeModal = () => modal.remove();
+
+    modal.querySelector('.popup-close-btn').addEventListener('click', closeModal);
+    modal.querySelector('#action-cancel').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+
+    // 次数选择按钮
+    modal.querySelectorAll('.popup-count-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            modal.querySelectorAll('.popup-count-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            const countVal = btn.dataset.count;
+            const input = modal.querySelector('.popup-count-input');
+            input.value = countVal === 'infinity' ? '∞' : countVal;
+        });
+    });
+
+    // 输入框事件
+    const countInput = modal.querySelector('.popup-count-input');
+    countInput.addEventListener('input', () => {
+        let val = countInput.value;
+        if (val !== '∞' && val !== '') {
+            val = val.replace(/[^0-9]/g, '');
+            countInput.value = val;
+        }
+        modal.querySelectorAll('.popup-count-btn').forEach(b => b.classList.remove('selected'));
+        if (val === '∞') modal.querySelector('.popup-count-btn[data-count="infinity"]').classList.add('selected');
+    });
+
+    const getCount = () => {
+        const val = countInput.value;
+        if (val === '∞' || val === '-1' || val === '') return -1;
+        return parseInt(val) || 1;
+    };
+
+    // 加入队列
+    const queueBtn = modal.querySelector('#action-queue');
+    if (queueBtn && !queueBtn.disabled) {
+        queueBtn.addEventListener('click', () => {
+            socket.emit('craft_instrument', { instrumentId: instrument.id, count: getCount(), addToQueue: true });
+            closeModal();
+        });
+    }
+
+    // 开始制作
+    const startBtn = modal.querySelector('#action-start');
+    if (startBtn && !startBtn.disabled) {
+        startBtn.addEventListener('click', () => {
+            if (currentAction) {
+                socket.emit('craft_instrument_immediately', { instrumentId: instrument.id, count: getCount() });
+            } else {
+                socket.emit('craft_instrument', { instrumentId: instrument.id, count: getCount(), addToQueue: false });
             }
             closeModal();
         });
@@ -4725,6 +5038,39 @@ function renderInventories() {
             riverNailElement.innerHTML = '';
         }
     }
+
+    // 回音石（单独显示数量）
+    const echoStoneElement = document.getElementById('storage-echo-stone-items');
+    if (echoStoneElement) {
+        const echoStoneCount = gameState.echoStoneInventory || 0;
+        if (echoStoneCount > 0) {
+            echoStoneElement.innerHTML = `
+                <div class="inventory-item"
+                     data-id="echo_stone"
+                     data-name="回音石"
+                     data-count="${echoStoneCount}"
+                     data-price="800"
+                     data-desc="用于制作乐器装备的珍贵材料"
+                     data-icon="🔮">
+                    <span class="item-icon">🔮</span>
+                    <span class="item-name">回音石</span>
+                    <span class="item-count">${echoStoneCount}</span>
+                </div>
+            `;
+        } else {
+            echoStoneElement.innerHTML = '';
+        }
+    }
+
+    // 乐器装备（吟游诗人）
+    if (CONFIG.instruments) {
+        const instrumentsInventory = gameState.instrumentsInventory || [];
+        const instrumentCounts = {};
+        instrumentsInventory.forEach(instrumentId => {
+            instrumentCounts[instrumentId] = (instrumentCounts[instrumentId] || 0) + 1;
+        });
+        renderInventoryGrid('storage-instruments-items', instrumentCounts, CONFIG.instruments);
+    }
 }
 
 /**
@@ -4887,7 +5233,16 @@ const ITEM_VALUES = {
     // 河铸钉和海螺墨
     other_materials: {
         river_nail: 500,
-        conch_ink: 300
+        conch_ink: 300,
+        echo_stone: 800
+    },
+    // 乐器装备（吟游诗人）
+    instruments: {
+        recorder: 18 * 16 + 18 * 32 + 18 * 16 + 18 * 32 + 6 * 800, // 6528
+        lyre: 27 * 32 + 27 * 64 + 27 * 32 + 27 * 64 + 9 * 800, // 12480
+        vielle: 36 * 96 + 36 * 112 + 36 * 96 + 36 * 112 + 12 * 800, // 24576
+        harp: 54 * 112 + 54 * 154 + 54 * 112 + 54 * 154 + 18 * 800, // 43128
+        lute: 81 * 154 + 81 * 240 + 81 * 154 + 81 * 240 + 27 * 800 // 85428
     }
 };
 
@@ -5246,6 +5601,11 @@ function showActionItemTooltip(item, event, modal) {
         ownedCount = bootsInv.filter(b => (typeof b === 'string' ? b : b.id) === itemId).length;
     } else if (itemType === 'RIVER_NAIL') {
         ownedCount = gameState?.riverNailInventory || 0;
+    } else if (itemType === 'ECHO_STONE') {
+        ownedCount = gameState?.echoStoneInventory || 0;
+    } else if (itemType === 'INSTRUMENT') {
+        const instrumentsInv = gameState?.instrumentsInventory || [];
+        ownedCount = instrumentsInv.filter(i => (typeof i === 'string' ? i : i.id) === itemId).length;
     } else if (itemType === 'THREAD') {
         ownedCount = gameState?.threadsInventory?.[itemId] || 0;
     } else if (itemType === 'FABRIC') {
