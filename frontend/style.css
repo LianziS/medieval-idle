@@ -2998,24 +2998,28 @@ body::after {
 /* 制作页面标签切换 - 默认隐藏所有，通过active显示 */
 #crafting-planks-list,
 #crafting-feathers-list,
-#crafting-manuscripts-list {
+#crafting-manuscripts-list,
+#crafting-equipment-list {
     display: none !important;
 }
 
 #crafting-planks-list.active,
 #crafting-feathers-list.active,
-#crafting-manuscripts-list.active {
+#crafting-manuscripts-list.active,
+#crafting-equipment-list.active {
     display: flex !important;
 }
 
 /* 锻造页面标签切换 - 默认隐藏所有，通过active显示 */
 #forging-ingots-list,
-#forging-tools-list {
+#forging-tools-list,
+#forging-equipment-list {
     display: none !important;
 }
 
 #forging-ingots-list.active,
-#forging-tools-list.active {
+#forging-tools-list.active,
+#forging-equipment-list.active {
     display: flex !important;
 }
 
@@ -4754,7 +4758,9 @@ body::after {
 
 /* 制作列表显示控制 */
 #crafting-planks-list,
+#crafting-feathers-list,
 #crafting-manuscripts-list,
+#crafting-equipment-list,
 #tailoring-fabrics-list,
 #tailoring-threads-list,
 #tailoring-equipment-list,
@@ -4763,7 +4769,9 @@ body::after {
 }
 
 #crafting-planks-list.active,
+#crafting-feathers-list.active,
 #crafting-manuscripts-list.active,
+#crafting-equipment-list.active,
 #tailoring-fabrics-list.active,
 #tailoring-threads-list.active,
 #tailoring-equipment-list.active,
