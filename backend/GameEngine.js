@@ -1550,6 +1550,50 @@ class GameEngine {
             rewards.push({ type: 'TOKEN', id: 'forging_token', name: '锻造代币', icon: '🪙', count: 1 });
         }
         
+        // 连击系统：锻造等级超过需求等级时可能触发连击
+        const forgingLevel = this.state.forgingLevel || 1;
+        const levelDiff = Math.max(0, forgingLevel - pen.reqForgeLevel);
+        const comboChance = Math.min(levelDiff, 100) / 100;
+        
+        if (Math.random() < comboChance) {
+            // 连击触发！检查是否有足够材料再做一个
+            const feathersInv = this.state.cleanedFeathersInventory || {};
+            const inkInv = this.state.conchInkInventory || 0;
+            
+            let hasMaterials = true;
+            for (const [matId, matCount] of Object.entries(pen.materials)) {
+                if (matId === 'conch_ink') {
+                    if (inkInv < matCount) hasMaterials = false;
+                } else {
+                    if ((feathersInv[matId] || 0) < matCount) hasMaterials = false;
+                }
+            }
+            
+            if (hasMaterials) {
+                // 消耗额外材料
+                for (const [matId, matCount] of Object.entries(pen.materials)) {
+                    if (matId === 'conch_ink') {
+                        this.state.conchInkInventory -= matCount;
+                    } else {
+                        feathersInv[matId] = (feathersInv[matId] || 0) - matCount;
+                        if (feathersInv[matId] <= 0) delete feathersInv[matId];
+                    }
+                }
+                
+                // 添加额外笔
+                this.state.pensInventory.push(pen.id);
+                this.addSkillExp('forgingLevel', pen.exp);
+                
+                rewards.push({ type: 'PEN', id: pen.id, name: pen.name, icon: pen.icon, count: 1, isCombo: true });
+                
+                // 连击时也有概率获得代币
+                if (Math.random() < pen.tokenRate) {
+                    this.state.tokensInventory.forging_token = (this.state.tokensInventory.forging_token || 0) + 1;
+                    rewards.push({ type: 'TOKEN', id: 'forging_token', name: '锻造代币', icon: '🪙', count: 1, isCombo: true });
+                }
+            }
+        }
+        
         // 减少次数
         this.state.actionCount--;
         
@@ -1732,6 +1776,58 @@ class GameEngine {
             rewards.push({ type: 'TOKEN', id: 'tailoring_token', name: '缝制代币', icon: '🪙', count: 1 });
         }
         
+        // 连击系统：缝制等级超过需求等级时可能触发连击
+        const tailoringLevel = this.state.tailoringLevel || 1;
+        const levelDiff = Math.max(0, tailoringLevel - boot.reqTailorLevel);
+        const comboChance = Math.min(levelDiff, 100) / 100;
+        
+        if (Math.random() < comboChance) {
+            // 连击触发！检查是否有足够材料再做一个
+            const fabricsInv = this.state.fabricsInventory || {};
+            const threadsInv = this.state.threadsInventory || {};
+            const nailInv = this.state.riverNailInventory || 0;
+            
+            let hasMaterials = true;
+            for (const [matId, matCount] of Object.entries(boot.materials)) {
+                let have = 0;
+                if (matId === 'river_nail') {
+                    have = nailInv;
+                } else if (matId.includes('thread') || matId === 'wind_thread' || matId === 'dream_thread') {
+                    have = threadsInv[matId] || 0;
+                } else {
+                    have = fabricsInv[matId] || 0;
+                }
+                if (have < matCount) hasMaterials = false;
+            }
+            
+            if (hasMaterials) {
+                // 消耗额外材料
+                for (const [matId, matCount] of Object.entries(boot.materials)) {
+                    if (matId === 'river_nail') {
+                        this.state.riverNailInventory -= matCount;
+                    } else if (matId.includes('thread') || matId === 'wind_thread' || matId === 'dream_thread') {
+                        threadsInv[matId] = (threadsInv[matId] || 0) - matCount;
+                        if (threadsInv[matId] <= 0) delete threadsInv[matId];
+                    } else {
+                        fabricsInv[matId] = (fabricsInv[matId] || 0) - matCount;
+                        if (fabricsInv[matId] <= 0) delete fabricsInv[matId];
+                    }
+                }
+                
+                // 添加额外靴子
+                this.state.bootsInventory.push(boot.id);
+                this.addSkillExp('tailoringLevel', boot.exp);
+                
+                rewards.push({ type: 'BOOT', id: boot.id, name: boot.name, icon: boot.icon, count: 1, isCombo: true });
+                
+                // 连击时也有概率获得代币
+                if (Math.random() < boot.tokenRate) {
+                    this.state.tokensInventory.tailoring_token = (this.state.tokensInventory.tailoring_token || 0) + 1;
+                    rewards.push({ type: 'TOKEN', id: 'tailoring_token', name: '缝制代币', icon: '🪙', count: 1, isCombo: true });
+                }
+            }
+        }
+        
         // 减少次数
         this.state.actionCount--;
         
@@ -1891,6 +1987,58 @@ class GameEngine {
             }
             this.state.tokensInventory.crafting_token = (this.state.tokensInventory.crafting_token || 0) + 1;
             rewards.push({ type: 'TOKEN', id: 'crafting_token', name: '制作代币', icon: '🪙', count: 1 });
+        }
+        
+        // 连击系统：制作等级超过需求等级时可能触发连击
+        const craftingLevel = this.state.craftingLevel || 1;
+        const levelDiff = Math.max(0, craftingLevel - instrument.reqCraftingLevel);
+        const comboChance = Math.min(levelDiff, 100) / 100;
+        
+        if (Math.random() < comboChance) {
+            // 连击触发！检查是否有足够材料再做一个
+            const planksInv = this.state.planksInventory || {};
+            const ingotsInv = this.state.ingotsInventory || {};
+            const echoStoneInv = this.state.echoStoneInventory || 0;
+            
+            let hasMaterials = true;
+            for (const [matId, matCount] of Object.entries(instrument.materials)) {
+                let have = 0;
+                if (matId === 'echo_stone') {
+                    have = echoStoneInv;
+                } else if (matId.includes('_plank')) {
+                    have = planksInv[matId] || 0;
+                } else {
+                    have = ingotsInv[matId] || 0;
+                }
+                if (have < matCount) hasMaterials = false;
+            }
+            
+            if (hasMaterials) {
+                // 消耗额外材料
+                for (const [matId, matCount] of Object.entries(instrument.materials)) {
+                    if (matId === 'echo_stone') {
+                        this.state.echoStoneInventory -= matCount;
+                    } else if (matId.includes('_plank')) {
+                        planksInv[matId] = (planksInv[matId] || 0) - matCount;
+                        if (planksInv[matId] <= 0) delete planksInv[matId];
+                    } else {
+                        ingotsInv[matId] = (ingotsInv[matId] || 0) - matCount;
+                        if (ingotsInv[matId] <= 0) delete ingotsInv[matId];
+                    }
+                }
+                
+                // 添加额外乐器
+                this.state.instrumentsInventory.push(instrument.id);
+                this.addSkillExp('craftingLevel', instrument.exp);
+                
+                rewards.push({ type: 'INSTRUMENT', id: instrument.id, name: instrument.name, icon: instrument.icon, count: 1, isCombo: true });
+                
+                // 连击时也有概率获得代币
+                if (Math.random() < instrument.tokenRate) {
+                    this.state.tokensInventory.crafting_token = (this.state.tokensInventory.crafting_token || 0) + 1;
+                    rewards.push({ type: 'TOKEN', id: 'crafting_token', name: '制作代币', icon: '🪙', count: 1, isCombo: true });
+                }
+            }
         }
         
         // 减少次数
