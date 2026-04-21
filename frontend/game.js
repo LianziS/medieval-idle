@@ -6296,10 +6296,10 @@ function showRewards(rewards) {
     const itemRewards = rewards.filter(r => r.type !== 'exp' && r.type !== 'COMBO');
 
     if (elements.actionRewards && itemRewards.length > 0) {
-        // 显示获取的物品，连击产物前面加⚡
+        // 显示获取的物品，连击产物前面加⚡图标
         const itemsHtml = itemRewards.map(r => {
-            const comboPrefix = r.isCombo ? '⚡+ ' : '';
-            return `<span class="action-reward-item">${comboPrefix}${r.icon} ${r.name} ×${r.count}</span>`;
+            const comboIcon = r.isCombo ? '⚡' : '';
+            return `<span class="action-reward-item">${comboIcon} ${r.icon} ${r.name} ×${r.count}</span>`;
         }).join('');
 
         elements.actionRewards.innerHTML = itemsHtml;
