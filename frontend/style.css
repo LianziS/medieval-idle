@@ -325,7 +325,8 @@ body::after {
     flex-direction: column;
     box-shadow: none;
     transition: width 0.3s ease;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     border: none;
 }
 

@@ -8338,11 +8338,7 @@ function showDestDetailModal(destId) {
     `;
     
     document.body.appendChild(modal);
-    
-    modal.querySelector('.bard-modal-close').addEventListener('click', () => modal.remove());
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.remove();
-    });
+    setupModalClose(modal);
 }
 
 // 选择目的地并关闭弹框
@@ -8385,7 +8381,14 @@ function updateDispatchResources() {
     const mins = travelDuration % 60;
     
     document.getElementById('bard-preview-time').textContent = `${hours}h${mins > 0 ? mins + 'min' : ''}`;
-    document.getElementById('bard-preview-exp').textContent = `${finalExp} exp`;
+    
+    // 显示经验，如果有酒箱加成则显示标签
+    const expEl = document.getElementById('bard-preview-exp');
+    if (expBonus > 0) {
+        expEl.innerHTML = `${finalExp} exp <span style="color:#66BB6A;font-size:0.75rem;">(+${expBonus}%)</span>`;
+    } else {
+        expEl.textContent = `${finalExp} exp`;
+    }
     
     // 检查是否可以派遣
     const wineStock = bardState.wineBoxInventory?.[bardState.selectedWine] || 0;
@@ -8429,11 +8432,7 @@ function showWineSelectModal() {
     `;
     
     document.body.appendChild(modal);
-    
-    modal.querySelector('.bard-modal-close').addEventListener('click', () => modal.remove());
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.remove();
-    });
+    setupModalClose(modal);
 }
 
 // 酒箱tooltip
@@ -8560,11 +8559,7 @@ function showSheetSelectModal() {
     `;
     
     document.body.appendChild(modal);
-    
-    modal.querySelector('.bard-modal-close').addEventListener('click', () => modal.remove());
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.remove();
-    });
+    setupModalClose(modal);
 }
 
 // 乐谱tooltip
@@ -8709,11 +8704,7 @@ function showEquipSelectModal(slotType) {
     `;
     
     document.body.appendChild(modal);
-    
-    modal.querySelector('.bard-modal-close').addEventListener('click', () => modal.remove());
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.remove();
-    });
+    setupModalClose(modal);
 }
 
 // 装备tooltip
@@ -8740,6 +8731,27 @@ function hideEquipTooltip() {
         equipTooltipEl.remove();
         equipTooltipEl = null;
     }
+}
+
+// 通用弹框关闭处理
+function setupModalClose(modal, closeBtnSelector = '.bard-modal-close') {
+    const closeBtn = modal.querySelector(closeBtnSelector);
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => modal.remove());
+    }
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+    
+    // ESC键关闭
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
 }
 
 // 穿戴诗人装备
