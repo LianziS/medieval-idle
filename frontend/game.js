@@ -869,6 +869,136 @@ function setupSocket() {
     socket.on('error', (data) => {
         showToast(`❌ ${data.message}`);
     });
+
+    // ============ 吟游诗人系统 Socket事件监听 ============
+    
+    // Socket事件监听：诗人信息
+    socket.on('bard_info', (data) => {
+        bardState = {
+            ...bardState,
+            level: data.levelInfo?.level || 1,
+            exp: data.levelInfo?.exp || 0,
+            status: data.status || 'idle',
+            sheetsInventory: data.sheetsInventory || bardState.sheetsInventory,
+            wineBoxInventory: data.wineBoxInventory || bardState.wineBoxInventory,
+            bardEquipment: data.bardEquipment || { pen: null, shoe: null, instrument: null },
+            travelProgress: data.travelProgress,
+            performProgress: data.performProgress,
+            penBonus: data.penBonus || { fine: 0, epic: 0 },
+            travelDuration: data.travelDuration || 720,
+            travelCount: data.bardTravelCount || 0,
+            performCount: data.bardPerformCount || 0,
+            sheetsTotal: data.bardSheetsTotal || 0,
+            epicSheets: data.bardEpicSheets || 0
+        };
+        
+        updateBardPage();
+    });
+
+    // Socket事件监听：出游开始
+    socket.on('bard_travel_started', (data) => {
+        showToast(`🚀 开始出游：${data.destination?.name}`);
+        bardState.status = 'traveling';
+        updateBardPage();
+    });
+
+    // Socket事件监听：出游完成
+    socket.on('bard_travel_completed', (data) => {
+        showToast(`✅ 出游归来！获得 ${data.exp} exp`);
+        
+        // 显示奖励
+        if (data.rewards && data.rewards.length > 0) {
+            const rewardsText = data.rewards.map(r => `${r.icon} ${r.name}`).join(' ');
+            showToast(`获得：${rewardsText}`);
+        }
+        
+        bardState.status = 'idle';
+        bardState.travelCount = data.travelCount;
+        
+        // 更新统计
+        socket.emit('get_bard_info');
+    });
+
+    // Socket事件监听：演奏开始
+    socket.on('bard_perform_started', (data) => {
+        showToast(`🎵 开始演奏`);
+        bardState.status = 'performing';
+        updateBardPage();
+    });
+
+    // Socket事件监听：演奏完成
+    socket.on('bard_perform_completed', (data) => {
+        showToast(`✅ 演奏完成！获得 ${data.exp} exp`);
+        bardState.status = 'idle';
+        bardState.performCount = data.performCount;
+        
+        // 清除乐谱选择
+        bardState.selectedSheet = null;
+        
+        socket.emit('get_bard_info');
+    });
+
+    // Socket事件监听：出游进度
+    socket.on('bard_travel_progress', (data) => {
+        bardState.travelProgress = data;
+        
+        // 更新状态徽章显示剩余时间
+        const remainingMs = data.remaining;
+        const hours = Math.floor(remainingMs / (1000 * 60 * 60));
+        const mins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+        
+        const statusBadge = document.getElementById('bard-status-badge');
+        if (statusBadge) {
+            statusBadge.innerHTML = `<span class="bard-status-dot"></span>出游中 ${hours}h${mins}m`;
+        }
+    });
+
+    // Socket事件监听：演奏进度
+    socket.on('bard_perform_progress', (data) => {
+        bardState.performProgress = data;
+        
+        // 显示进度条
+        const progressArea = document.getElementById('perf-progress-area');
+        const progressFill = document.getElementById('perf-progress-fill');
+        const progressText = document.getElementById('perf-progress-text');
+        
+        if (progressArea && progressFill && progressText) {
+            progressArea.style.display = 'block';
+            progressFill.style.width = `${data.progress}%`;
+            progressText.textContent = `${Math.round(data.progress)}%`;
+        }
+    });
+
+    // Socket事件监听：装备穿戴成功
+    socket.on('bard_equip_success', (data) => {
+        showToast(`✅ 已穿戴装备`);
+        socket.emit('get_bard_info');
+    });
+
+    // Socket事件监听：装备卸下成功
+    socket.on('bard_unequip_success', (data) => {
+        showToast(`已卸下装备`);
+        socket.emit('get_bard_info');
+    });
+
+    // Socket事件监听：诗人错误
+    socket.on('bard_error', (data) => {
+        showToast(`❌ ${data.reason}`);
+    });
+
+    // Socket事件监听：酒箱添加
+    socket.on('bard_wine_added', (data) => {
+        showToast(`✅ 获得 ${CONFIG.wineBoxes?.find(w => w.id === data.wineId)?.name || '酒箱'} ×${data.count}`);
+        socket.emit('get_bard_info');
+    });
+
+    // Socket事件监听：乐谱添加
+    socket.on('bard_sheet_added', (data) => {
+        const catInfo = CONFIG.sheets?.categories?.[data.category];
+        const qualInfo = CONFIG.sheets?.qualities?.[data.quality];
+        showToast(`✅ 获得 ${catInfo?.name} ${qualInfo?.name} ×${data.count}`);
+        socket.emit('get_bard_info');
+    });
 }
 
 /**
@@ -8721,122 +8851,6 @@ function updateBardUpgradesStatus() {
     });
 }
 
-// Socket事件监听：诗人信息
-socket.on('bard_info', (data) => {
-    bardState = {
-        ...bardState,
-        level: data.levelInfo?.level || 1,
-        exp: data.levelInfo?.exp || 0,
-        status: data.status || 'idle',
-        sheetsInventory: data.sheetsInventory || bardState.sheetsInventory,
-        wineBoxInventory: data.wineBoxInventory || bardState.wineBoxInventory,
-        bardEquipment: data.bardEquipment || { pen: null, shoe: null, instrument: null },
-        travelProgress: data.travelProgress,
-        performProgress: data.performProgress,
-        penBonus: data.penBonus || { fine: 0, epic: 0 },
-        travelDuration: data.travelDuration || 720,
-        travelCount: data.bardTravelCount || 0,
-        performCount: data.bardPerformCount || 0,
-        sheetsTotal: data.bardSheetsTotal || 0,
-        epicSheets: data.bardEpicSheets || 0
-    };
-    
-    updateBardPage();
-});
-
-// Socket事件监听：出游开始
-socket.on('bard_travel_started', (data) => {
-    showToast(`🚀 开始出游：${data.destination?.name}`);
-    bardState.status = 'traveling';
-    updateBardPage();
-});
-
-// Socket事件监听：出游完成
-socket.on('bard_travel_completed', (data) => {
-    showToast(`✅ 出游归来！获得 ${data.exp} exp`);
-    
-    // 显示奖励
-    if (data.rewards && data.rewards.length > 0) {
-        const rewardsText = data.rewards.map(r => `${r.icon} ${r.name}`).join(' ');
-        showToast(`获得：${rewardsText}`);
-    }
-    
-    bardState.status = 'idle';
-    bardState.travelCount = data.travelCount;
-    
-    // 更新统计
-    socket.emit('get_bard_info');
-});
-
-// Socket事件监听：演奏开始
-socket.on('bard_perform_started', (data) => {
-    showToast(`🎵 开始演奏`);
-    bardState.status = 'performing';
-    updateBardPage();
-});
-
-// Socket事件监听：演奏完成
-socket.on('bard_perform_completed', (data) => {
-    showToast(`✅ 演奏完成！获得 ${data.exp} exp`);
-    bardState.status = 'idle';
-    bardState.performCount = data.performCount;
-    
-    // 清除乐谱选择
-    bardState.selectedSheet = null;
-    
-    socket.emit('get_bard_info');
-});
-
-// Socket事件监听：出游进度
-socket.on('bard_travel_progress', (data) => {
-    bardState.travelProgress = data;
-    
-    // 更新状态徽章显示剩余时间
-    const remainingMs = data.remaining;
-    const hours = Math.floor(remainingMs / (1000 * 60 * 60));
-    const mins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
-    
-    const statusBadge = document.getElementById('bard-status-badge');
-    statusBadge.innerHTML = `<span class="bard-status-dot"></span>出游中 ${hours}h${mins}m`;
-});
-
-// Socket事件监听：演奏进度
-socket.on('bard_perform_progress', (data) => {
-    bardState.performProgress = data;
-    
-    // 显示进度条
-    const progressArea = document.getElementById('perf-progress-area');
-    const progressFill = document.getElementById('perf-progress-fill');
-    const progressText = document.getElementById('perf-progress-text');
-    
-    progressArea.style.display = 'block';
-    progressFill.style.width = `${data.progress}%`;
-    progressText.textContent = `${Math.round(data.progress)}%`;
-});
-
-// Socket事件监听：装备穿戴成功
-socket.on('bard_equip_success', (data) => {
-    showToast(`✅ 已穿戴装备`);
-    socket.emit('get_bard_info');
-});
-
-// Socket事件监听：装备卸下成功
-socket.on('bard_unequip_success', (data) => {
-    showToast(`已卸下装备`);
-    socket.emit('get_bard_info');
-});
-
-// Socket事件监听：诗人错误
-socket.on('bard_error', (data) => {
-    showToast(`❌ ${data.reason}`);
-});
-
-// Socket事件监听：酒箱添加
-socket.on('bard_wine_added', (data) => {
-    showToast(`✅ 获得 ${CONFIG.wineBoxes?.find(w => w.id === data.wineId)?.name || '酒箱'} ×${data.count}`);
-    socket.emit('get_bard_info');
-});
-
 // Socket事件监听：乐谱添加
 socket.on('bard_sheet_added', (data) => {
     const catInfo = CONFIG.sheets?.categories?.[data.category];
@@ -8848,7 +8862,7 @@ socket.on('bard_sheet_added', (data) => {
 // 页面切换时初始化诗人页面
 document.querySelectorAll('.nav-item[data-page="bard"]').forEach(item => {
     item.addEventListener('click', () => {
-        if (!document.querySelector('.bard-tab').classList.contains('initialized')) {
+        if (!document.querySelector('.bard-tab') || !document.querySelector('.bard-tab').classList.contains('initialized')) {
             initBardPage();
             document.querySelectorAll('.bard-tab').forEach(t => t.classList.add('initialized'));
         }
