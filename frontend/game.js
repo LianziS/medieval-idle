@@ -3226,16 +3226,10 @@ function openInstrumentModal(instrumentId) {
             
             <div class="popup-info-rows">
                 <div class="popup-info-row">
-                    <div class="popup-info-label"><span class="lbl-icon">🔓</span>制作等级</div>
+                    <div class="popup-info-label"><span class="lbl-icon">🔓</span>需要</div>
                     <div class="popup-info-val">
                         <span class="popup-badge level ${levelEnough ? '' : 'insufficient'}">Lv.${instrument.reqCraftingLevel} 🪵</span>
                         ${!levelEnough ? `<span class="level-warning">（当前 Lv.${craftingLevel}）</span>` : ''}
-                    </div>
-                </div>
-                <div class="popup-info-row">
-                    <div class="popup-info-label"><span class="lbl-icon">🎭</span>装备等级</div>
-                    <div class="popup-info-val">
-                        <span class="popup-badge level">Lv.${instrument.reqBardLevel} 吟游诗人</span>
                     </div>
                 </div>
                 ${materialsRowsHtml}
@@ -3268,18 +3262,6 @@ function openInstrumentModal(instrumentId) {
                     <div class="popup-info-label"><span class="lbl-icon">⏱️</span>持续时间</div>
                     <div class="popup-info-val">
                         <span class="popup-highlight">${formatTime(instrument.duration)}</span>
-                    </div>
-                </div>
-                <div class="popup-info-row">
-                    <div class="popup-info-label"><span class="lbl-icon">✨</span>装备效果</div>
-                    <div class="popup-info-val">
-                        <span class="popup-effect-text">${instrument.effect}</span>
-                    </div>
-                </div>
-                <div class="popup-info-row">
-                    <div class="popup-info-label"><span class="lbl-icon">⏳</span>效果时长</div>
-                    <div class="popup-info-val">
-                        <span class="popup-highlight">${instrument.durationDisplay}</span>
                     </div>
                 </div>
             </div>
