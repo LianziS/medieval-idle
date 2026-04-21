@@ -81,6 +81,38 @@ class GameEngine {
             // 河铸钉库存
             riverNailInventory: 0,
             
+            // 黑石库存
+            blackstoneInventory: 0,
+            
+            // 酒箱库存
+            wineBoxInventory: { basic_wine: 0, medium_wine: 0, premium_wine: 0 },
+            
+            // 乐谱库存
+            sheetsInventory: {
+                earth: { normal: 0, fine: 0, epic: 0 },
+                craft: { normal: 0, fine: 0, epic: 0 },
+                sublime: { normal: 0, fine: 0, epic: 0 }
+            },
+            
+            // 吟游诗人系统
+            bardLevel: 1,
+            bardExp: 0,
+            bardStatus: 'idle', // idle / traveling / performing
+            bardTravelCount: 0,
+            bardPerformCount: 0,
+            bardSheetsTotal: 0,
+            bardEpicSheets: 0,
+            bardSelectedDest: null,
+            bardSelectedWine: 'basic_wine',
+            bardTravelStartTime: 0,
+            bardTravelEndTime: 0,
+            bardPerformStartTime: 0,
+            bardPerformEndTime: 0,
+            bardSelectedSheet: null,
+            
+            // 诗人装备（当前穿戴）
+            bardEquipment: { pen: null, shoe: null, instrument: null },
+            
             // 建筑
             buildings: {},
             
@@ -2125,6 +2157,575 @@ class GameEngine {
         }
         
         return { success: true, rewards, exp: instrument.exp };
+    }
+    
+    // ============ 吟游诗人系统方法 ============
+    
+    /**
+     * 获取诗人等级信息
+     */
+    getBardLevelInfo() {
+        const levels = CONFIG.bardLevels || [];
+        const currentLevel = this.state.bardLevel || 1;
+        const currentExp = this.state.bardExp || 0;
+        
+        const currentLevelData = levels.find(l => l.level === currentLevel) || levels[0];
+        const nextLevelData = levels.find(l => l.level === currentLevel + 1);
+        
+        return {
+            level: currentLevel,
+            exp: currentExp,
+            nextExp: nextLevelData ? nextLevelData.exp : 35000,
+            progress: nextLevelData ? (currentExp / nextLevelData.exp) * 100 : 100,
+            travelCount: this.state.bardTravelCount || 0,
+            performCount: this.state.bardPerformCount || 0
+        };
+    }
+    
+    /**
+     * 获取诗人状态
+     */
+    getBardStatus() {
+        return this.state.bardStatus || 'idle';
+    }
+    
+    /**
+     * 获取诗人解锁的目的地列表
+     */
+    getUnlockedDestinations() {
+        const currentLevel = this.state.bardLevel || 1;
+        const destinations = CONFIG.bardDestinations || [];
+        return destinations.filter(d => currentLevel >= d.reqLevel);
+    }
+    
+    /**
+     * 计算出游时长（考虑鞋子缩减）
+     */
+    calculateTravelDuration() {
+        const baseDuration = CONFIG.baseTravelDuration || 720; // 12小时
+        const equippedShoe = this.state.bardEquipment?.shoe;
+        let reduction = 0;
+        
+        if (equippedShoe) {
+            // 鞋子等级映射（每级缩减30分钟）
+            const shoeLevels = {
+                'traveler_boots': 1,      // -30min (11h30min)
+                'lyre_boots': 2,          // -1h (11h)
+                'witness_boots': 3,       // -1h30min (10h30min)
+                'explorer_boots': 4,      // -2h (10h)
+                'pathfinder_boots': 5,    // -2h30min (9h30min)
+                'wanderer_boots': 6,      // -3h (9h)
+                'journeyer_boots': 7,     // -3h30min (8h30min)
+                'legendary_boots': 8      // -4h (8h)
+            };
+            
+            const shoeLevel = shoeLevels[equippedShoe] || 0;
+            reduction = shoeLevel * 30; // 每级缩减30分钟
+        }
+        
+        const finalDuration = baseDuration - reduction;
+        return Math.max(finalDuration, 480); // 最少8小时
+    }
+    
+    /**
+     * 计算笔加成（乐谱品质概率）
+     */
+    calculatePenBonus() {
+        const equippedPen = this.state.bardEquipment?.pen;
+        if (!equippedPen) {
+            return { fine: 0, epic: 0 };
+        }
+        
+        // 笔等级映射（每级精良+3%，史诗+2%）
+        const penLevels = {
+            'traveler_pen': 1,      // 无加成
+            'lyre_pen': 2,          // 精良+3%，史诗+2%
+            'witness_pen': 3,       // 精良+6%，史诗+4%
+            'awaken_pen': 4,        // 精良+9%，史诗+6%
+            'rainbow_pen': 5,       // 精良+12%，史诗+8%
+            'soul_pen': 6,          // 精良+15%，史诗+10%
+            'echo_pen': 7,          // 精良+18%，史诗+12%
+            'legendary_pen': 8      // 精良+21%，史诗+14%
+        };
+        
+        const penLevel = penLevels[equippedPen] || 0;
+        
+        if (penLevel <= 1) {
+            return { fine: 0, epic: 0 };
+        }
+        
+        // 每级精良+3%，史诗+2%
+        const fineBonus = (penLevel - 1) * 3;
+        const epicBonus = (penLevel - 1) * 2;
+        
+        return { fine: fineBonus, epic: epicBonus };
+    }
+    
+    /**
+     * 开始诗人出游
+     */
+    startBardTravel(destId, wineId) {
+        // 检查当前状态
+        if (this.state.bardStatus !== 'idle') {
+            return { success: false, reason: '诗人正在行动中' };
+        }
+        
+        // 检查目的地是否解锁
+        const dest = CONFIG.bardDestinations?.find(d => d.id === destId);
+        if (!dest) {
+            return { success: false, reason: '目的地不存在' };
+        }
+        
+        const currentLevel = this.state.bardLevel || 1;
+        if (currentLevel < dest.reqLevel) {
+            return { success: false, reason: `需要诗人 Lv.${dest.reqLevel}` };
+        }
+        
+        // 检查金币
+        const goldCost = dest.cost.gold;
+        if (this.state.gold < goldCost) {
+            return { success: false, reason: `金币不足: 需要 ${goldCost}` };
+        }
+        
+        // 检查手稿
+        const scrollCost = dest.cost.scroll;
+        const scrollCount = Object.values(this.state.manuscriptsInventory || {}).reduce((a, b) => a + b, 0);
+        if (scrollCount < scrollCost) {
+            return { success: false, reason: `手稿不足: 需要 ${scrollCost}` };
+        }
+        
+        // 检查酒箱
+        const wineStock = this.state.wineBoxInventory?.[wineId] || 0;
+        if (wineStock < 1) {
+            return { success: false, reason: '酒箱不足' };
+        }
+        
+        // 消耗资源
+        this.state.gold -= goldCost;
+        // 消耗手稿（从库存中减去）
+        let scrollsToRemove = scrollCost;
+        const manuscriptsInv = this.state.manuscriptsInventory || {};
+        for (const [matId, count] of Object.entries(manuscriptsInv)) {
+            if (scrollsToRemove <= 0) break;
+            const toRemove = Math.min(count, scrollsToRemove);
+            manuscriptsInv[matId] = count - toRemove;
+            if (manuscriptsInv[matId] <= 0) delete manuscriptsInv[matId];
+            scrollsToRemove -= toRemove;
+        }
+        this.state.wineBoxInventory[wineId] = wineStock - 1;
+        
+        // 计算时长和经验
+        const durationMinutes = this.calculateTravelDuration();
+        const durationMs = durationMinutes * 60 * 1000;
+        
+        const wine = CONFIG.wineBoxes?.find(w => w.id === wineId);
+        const expBonus = wine?.expBonus || 0;
+        const baseExp = CONFIG.bardExp?.travel || 50;
+        const finalExp = Math.round(baseExp * (1 + expBonus / 100));
+        
+        // 设置出游状态
+        this.state.bardStatus = 'traveling';
+        this.state.bardSelectedDest = destId;
+        this.state.bardSelectedWine = wineId;
+        this.state.bardTravelStartTime = Date.now();
+        this.state.bardTravelEndTime = Date.now() + durationMs;
+        
+        return {
+            success: true,
+            destination: dest,
+            duration: durationMinutes,
+            exp: finalExp,
+            endTime: this.state.bardTravelEndTime
+        };
+    }
+    
+    /**
+     * 完成诗人出游
+     */
+    completeBardTravel() {
+        if (this.state.bardStatus !== 'traveling') {
+            return { success: false, reason: '诗人不在出游中' };
+        }
+        
+        const dest = CONFIG.bardDestinations?.find(d => d.id === this.state.bardSelectedDest);
+        if (!dest) {
+            this.state.bardStatus = 'idle';
+            return { success: false, reason: '目的地数据错误' };
+        }
+        
+        // 计算经验（包含酒箱加成）
+        const wine = CONFIG.wineBoxes?.find(w => w.id === this.state.bardSelectedWine);
+        const expBonus = wine?.expBonus || 0;
+        const baseExp = CONFIG.bardExp?.travel || 50;
+        const finalExp = Math.round(baseExp * (1 + expBonus / 100));
+        
+        // 添加诗人经验
+        this.addBardExp(finalExp);
+        this.state.bardTravelCount = (this.state.bardTravelCount || 0) + 1;
+        
+        // 计算品质概率（包含笔加成）
+        const penBonus = this.calculatePenBonus();
+        const qualityRates = {
+            normal: Math.max(0, dest.quality.normal - penBonus.fine - penBonus.epic),
+            fine: dest.quality.fine + penBonus.fine,
+            epic: dest.quality.epic + penBonus.epic
+        };
+        
+        // 生成乐谱
+        const rewards = this.generateTravelRewards(dest, qualityRates);
+        
+        // 检查额外乐谱概率（Lv.10+）
+        const bardLevel = this.state.bardLevel || 1;
+        let extraSheetChance = 0;
+        if (bardLevel >= 10) extraSheetChance = 10;
+        if (bardLevel >= 14) extraSheetChance = 13;
+        if (bardLevel >= 16) extraSheetChance = 16;
+        if (bardLevel >= 19) extraSheetChance = 20;
+        
+        if (Math.random() < extraSheetChance / 100) {
+            // 额外获得一张随机乐谱
+            const extraSheet = this.generateRandomSheet(qualityRates);
+            if (extraSheet) {
+                rewards.push(extraSheet);
+            }
+        }
+        
+        // 重置状态
+        this.state.bardStatus = 'idle';
+        this.state.bardSelectedDest = null;
+        this.state.bardSelectedWine = null;
+        
+        return {
+            success: true,
+            exp: finalExp,
+            rewards: rewards,
+            travelCount: this.state.bardTravelCount
+        };
+    }
+    
+    /**
+     * 生成出游奖励
+     */
+    generateTravelRewards(dest, qualityRates) {
+        const rewards = [];
+        
+        // 掉落物
+        const drops = dest.drops || [];
+        for (const drop of drops) {
+            if (Math.random() < drop.rate) {
+                // 添加掉落物到库存
+                this.addBardDrop(drop.id);
+                rewards.push({
+                    type: 'DROP',
+                    id: drop.id,
+                    name: drop.name,
+                    icon: drop.icon,
+                    count: 1
+                });
+                break; // 每次出游只获得一个掉落物
+            }
+        }
+        
+        // 生成乐谱
+        const sheet = this.generateSheet(qualityRates);
+        if (sheet) {
+            rewards.push(sheet);
+        }
+        
+        return rewards;
+    }
+    
+    /**
+     * 生成乐谱
+     */
+    generateSheet(qualityRates) {
+        // 随机选择品质
+        const rand = Math.random() * 100;
+        let quality = 'normal';
+        if (rand >= qualityRates.normal && rand < qualityRates.normal + qualityRates.fine) {
+            quality = 'fine';
+        } else if (rand >= qualityRates.normal + qualityRates.fine) {
+            quality = 'epic';
+        }
+        
+        // 随机选择类别
+        const categories = Object.keys(CONFIG.sheets?.categories || {});
+        if (categories.length === 0) return null;
+        
+        const category = categories[Math.floor(Math.random() * categories.length)];
+        
+        // 添加乐谱到库存
+        if (!this.state.sheetsInventory) {
+            this.state.sheetsInventory = {
+                earth: { normal: 0, fine: 0, epic: 0 },
+                craft: { normal: 0, fine: 0, epic: 0 },
+                sublime: { normal: 0, fine: 0, epic: 0 }
+            };
+        }
+        if (!this.state.sheetsInventory[category]) {
+            this.state.sheetsInventory[category] = { normal: 0, fine: 0, epic: 0 };
+        }
+        this.state.sheetsInventory[category][quality]++;
+        
+        // 更新统计
+        this.state.bardSheetsTotal = (this.state.bardSheetsTotal || 0) + 1;
+        if (quality === 'epic') {
+            this.state.bardEpicSheets = (this.state.bardEpicSheets || 0) + 1;
+        }
+        
+        const catInfo = CONFIG.sheets?.categories?.[category];
+        const qualityInfo = CONFIG.sheets?.qualities?.[quality];
+        
+        return {
+            type: 'SHEET',
+            category: category,
+            quality: quality,
+            name: `${catInfo?.name || category} ${qualityInfo?.name || quality}`,
+            icon: catInfo?.icon || '📜',
+            count: 1
+        };
+    }
+    
+    /**
+     * 生成随机乐谱（额外乐谱）
+     */
+    generateRandomSheet(qualityRates) {
+        return this.generateSheet(qualityRates);
+    }
+    
+    /**
+     * 添加诗人掉落物到库存
+     */
+    addBardDrop(dropId) {
+        switch (dropId) {
+            case 'conch_ink':
+                this.state.conchInkInventory = (this.state.conchInkInventory || 0) + 1;
+                break;
+            case 'river_nail':
+                this.state.riverNailInventory = (this.state.riverNailInventory || 0) + 1;
+                break;
+            case 'echo_stone':
+                this.state.echoStoneInventory = (this.state.echoStoneInventory || 0) + 1;
+                break;
+            case 'blackstone':
+                this.state.blackstoneInventory = (this.state.blackstoneInventory || 0) + 1;
+                break;
+        }
+    }
+    
+    /**
+     * 添加诗人经验
+     */
+    addBardExp(amount) {
+        this.state.bardExp = (this.state.bardExp || 0) + amount;
+        
+        const levels = CONFIG.bardLevels || [];
+        let leveledUp = false;
+        let newLevel = this.state.bardLevel || 1;
+        
+        // 检查升级
+        for (let i = newLevel; i < 20; i++) {
+            const nextLevel = levels.find(l => l.level === i + 1);
+            if (nextLevel && this.state.bardExp >= nextLevel.exp) {
+                newLevel = i + 1;
+                leveledUp = true;
+            } else {
+                break;
+            }
+        }
+        
+        if (leveledUp) {
+            this.state.bardLevel = newLevel;
+        }
+        
+        return { leveledUp, newLevel };
+    }
+    
+    /**
+     * 开始诗人演奏
+     */
+    startBardPerform(category, quality) {
+        // 检查当前状态
+        if (this.state.bardStatus !== 'idle') {
+            return { success: false, reason: '诗人正在行动中' };
+        }
+        
+        // 检查乐谱库存
+        const sheetCount = this.state.sheetsInventory?.[category]?.[quality] || 0;
+        if (sheetCount < 1) {
+            return { success: false, reason: '乐谱不足' };
+        }
+        
+        // 检查乐器要求（精良和史诗需要乐器）
+        if (quality !== 'normal') {
+            const equippedInstrument = this.state.bardEquipment?.instrument;
+            if (!equippedInstrument) {
+                return { success: false, reason: '需要装备乐器才能演奏高品质乐谱' };
+            }
+            
+            // 根据乐器id判断可演奏的品质
+            // recorder(竖笛,Lv.1)解锁精良, lyre(莱尔琴,Lv.2)及以上解锁史诗
+            const instrumentLevels = {
+                'recorder': 1,  // 解锁精良
+                'lyre': 2,      // 解锁史诗
+                'vielle': 3,
+                'harp': 4,
+                'lute': 5
+            };
+            
+            const instrumentLevel = instrumentLevels[equippedInstrument] || 0;
+            if (quality === 'fine' && instrumentLevel < 1) {
+                return { success: false, reason: '乐器等级不足以演奏精良乐谱' };
+            }
+            if (quality === 'epic' && instrumentLevel < 2) {
+                return { success: false, reason: '乐器等级不足以演奏史诗乐谱' };
+            }
+        }
+        
+        // 消耗乐谱
+        this.state.sheetsInventory[category][quality]--;
+        
+        // 获取演奏时长
+        const qualityInfo = CONFIG.sheets?.qualities?.[quality];
+        const durationMinutes = qualityInfo?.duration || 30;
+        const durationMs = durationMinutes * 60 * 1000;
+        
+        // 设置演奏状态
+        this.state.bardStatus = 'performing';
+        this.state.bardSelectedSheet = { category, quality };
+        this.state.bardPerformStartTime = Date.now();
+        this.state.bardPerformEndTime = Date.now() + durationMs;
+        
+        return {
+            success: true,
+            sheet: { category, quality },
+            duration: durationMinutes,
+            endTime: this.state.bardPerformEndTime
+        };
+    }
+    
+    /**
+     * 完成诗人演奏
+     */
+    completeBardPerform() {
+        if (this.state.bardStatus !== 'performing') {
+            return { success: false, reason: '诗人不在演奏中' };
+        }
+        
+        const sheet = this.state.bardSelectedSheet;
+        if (!sheet) {
+            this.state.bardStatus = 'idle';
+            return { success: false, reason: '乐谱数据错误' };
+        }
+        
+        // 添加经验
+        const exp = CONFIG.bardExp?.perform || 15;
+        this.addBardExp(exp);
+        this.state.bardPerformCount = (this.state.bardPerformCount || 0) + 1;
+        
+        // 重置状态
+        this.state.bardStatus = 'idle';
+        this.state.bardSelectedSheet = null;
+        
+        return {
+            success: true,
+            exp: exp,
+            sheet: sheet,
+            performCount: this.state.bardPerformCount
+        };
+    }
+    
+    /**
+     * 获取诗人出游进度
+     */
+    getBardTravelProgress() {
+        if (this.state.bardStatus !== 'traveling') {
+            return null;
+        }
+        
+        const now = Date.now();
+        const startTime = this.state.bardTravelStartTime;
+        const endTime = this.state.bardTravelEndTime;
+        const total = endTime - startTime;
+        const elapsed = now - startTime;
+        const remaining = Math.max(0, endTime - now);
+        const progress = Math.min(100, (elapsed / total) * 100);
+        
+        return {
+            startTime,
+            endTime,
+            remaining,
+            progress,
+            destination: this.state.bardSelectedDest,
+            wine: this.state.bardSelectedWine
+        };
+    }
+    
+    /**
+     * 获取诗人演奏进度
+     */
+    getBardPerformProgress() {
+        if (this.state.bardStatus !== 'performing') {
+            return null;
+        }
+        
+        const now = Date.now();
+        const startTime = this.state.bardPerformStartTime;
+        const endTime = this.state.bardPerformEndTime;
+        const total = endTime - startTime;
+        const elapsed = now - startTime;
+        const remaining = Math.max(0, endTime - now);
+        const progress = Math.min(100, (elapsed / total) * 100);
+        
+        return {
+            startTime,
+            endTime,
+            remaining,
+            progress,
+            sheet: this.state.bardSelectedSheet
+        };
+    }
+    
+    /**
+     * 穿戴诗人装备
+     */
+    equipBardItem(slot, itemId) {
+        // 检查库存
+        let inventory = [];
+        if (slot === 'pen') {
+            inventory = this.state.pensInventory || [];
+        } else if (slot === 'shoe') {
+            inventory = this.state.bootsInventory || [];
+        } else if (slot === 'instrument') {
+            inventory = this.state.instrumentsInventory || [];
+        }
+        
+        const hasItem = inventory.some(i => (typeof i === 'string' ? i : i.id) === itemId);
+        if (!hasItem) {
+            return { success: false, reason: '背包中无此装备' };
+        }
+        
+        // 穿戴装备
+        if (!this.state.bardEquipment) {
+            this.state.bardEquipment = { pen: null, shoe: null, instrument: null };
+        }
+        this.state.bardEquipment[slot] = itemId;
+        
+        return { success: true, slot, itemId };
+    }
+    
+    /**
+     * 卸下诗人装备
+     */
+    unequipBardItem(slot) {
+        if (!this.state.bardEquipment) {
+            this.state.bardEquipment = { pen: null, shoe: null, instrument: null };
+        }
+        
+        const oldItem = this.state.bardEquipment[slot];
+        this.state.bardEquipment[slot] = null;
+        
+        return { success: true, slot, oldItem };
     }
     
     /**
