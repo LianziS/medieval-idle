@@ -6292,8 +6292,15 @@ function showToast(message) {
  * 显示奖励
  */
 function showRewards(rewards) {
-    // 过滤掉经验，只显示物品
-    const itemRewards = rewards.filter(r => r.type !== 'exp');
+    // 检查是否触发连击
+    const comboReward = rewards.find(r => r.type === 'COMBO');
+    if (comboReward && comboReward.triggered) {
+        const comboChance = Math.round(comboReward.comboChance * 100);
+        showToast(`⚡ 连击触发！行动次数 +1 (${comboChance}%概率)`);
+    }
+
+    // 过滤掉经验和连击信息，只显示物品
+    const itemRewards = rewards.filter(r => r.type !== 'exp' && r.type !== 'COMBO');
 
     if (elements.actionRewards && itemRewards.length > 0) {
         // 显示获取的物品
