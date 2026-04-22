@@ -8896,12 +8896,13 @@ function calculateTooltipPosition(el) {
 
 // 计算 tooltip 最终位置（在 tooltip 创建并添加到 DOM 后调用）
 function positionTooltip(tooltip, elInfo) {
-    // 先隐藏获取尺寸，禁用 animation
-    tooltip.style.visibility = 'hidden';
+    // 设置固定定位但不可见，保持在视口内以便获取尺寸
     tooltip.style.position = 'fixed';
-    tooltip.style.left = '-9999px';
+    tooltip.style.visibility = 'hidden';
+    tooltip.style.left = '0px';
     tooltip.style.top = '0px';
     tooltip.style.animation = 'none';
+    tooltip.style.zIndex = '2000';
     
     // 强制重绘获取正确尺寸
     tooltip.offsetHeight;
@@ -8914,13 +8915,13 @@ function positionTooltip(tooltip, elInfo) {
     let left = elInfo.elLeft + (elInfo.elWidth / 2) - (tooltipWidth / 2);
     let top = elInfo.elTop - tooltipHeight - 8;
     
-    // 只在完全超出视口顶部时才显示在下方
-    if (top < -tooltipHeight / 2) {
+    // 上方空间不足，显示在下方
+    if (top < 10) {
         top = elInfo.elBottom + 8;
     }
     
-    // 下方完全超出视口底部，显示在右侧
-    if (top + tooltipHeight > elInfo.viewportHeight + tooltipHeight / 2) {
+    // 下方也不足，显示在右侧
+    if (top + tooltipHeight > elInfo.viewportHeight - 10) {
         top = elInfo.elTop;
         left = elInfo.elRight + 10;
     }
