@@ -8222,7 +8222,6 @@ function initBardPage() {
 function updateBardPage() {
     // 更新等级和经验
     document.getElementById('bard-level').textContent = `Lv. ${bardState.level}`;
-    document.getElementById('bard-avatar-name').textContent = '吟游诗人';
     
     const nextExp = CONFIG.bardLevels?.find(l => l.level === bardState.level + 1)?.exp || 35000;
     const expPercent = bardState.level >= 20 ? 100 : (bardState.exp / nextExp) * 100;
@@ -8256,11 +8255,6 @@ function updateBardPage() {
     document.getElementById('bard-stat-perform').textContent = `${bardState.performCount} 次`;
     document.getElementById('bard-stat-sheets').textContent = `${bardState.sheetsTotal} 张`;
     document.getElementById('bard-stat-epic').textContent = `${bardState.epicSheets} 张`;
-    document.getElementById('bard-sheet-count').textContent = `${bardState.sheetsTotal} 张`;
-    
-    // 更新解锁目的地
-    const unlockedCount = CONFIG.bardDestinations?.filter(d => bardState.level >= d.reqLevel).length || 0;
-    document.getElementById('bard-dest-unlocked').textContent = `${unlockedCount} / 4 目的地`;
     
     // 更新目的地卡片状态
     document.querySelectorAll('.dest-card').forEach(card => {
@@ -9031,14 +9025,6 @@ function updateBardEquipSlots() {
             `;
         }
     });
-    
-    // 更新笔加成显示
-    const penBonus = bardState.penBonus || { fine: 0, epic: 0 };
-    if (penBonus.fine > 0 || penBonus.epic > 0) {
-        document.getElementById('bard-pen-bonus').textContent = `精良+${penBonus.fine}% / 史诗+${penBonus.epic}%`;
-    } else {
-        document.getElementById('bard-pen-bonus').textContent = '无';
-    }
 }
 
 // 渲染成长记录等级卡片
