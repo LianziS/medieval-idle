@@ -408,6 +408,22 @@ class GameEngine {
             
             // 调试日志
             console.log(`📊 材料检查: ${matId}, 类型=${matType}, 需要=${count}, 拥有=${owned}, 可执行=${possible}次`);
+            
+            if (possible <= 0) {
+                // 详细检查库存
+                const invDebug = {
+                    woodcuttingInventory: this.state.woodcuttingInventory?.[matId],
+                    miningInventory: this.state.miningInventory?.[matId],
+                    gatheringInventory: this.state.gatheringInventory?.[matId],
+                    planksInventory: this.state.planksInventory?.[matId],
+                    ingotsInventory: this.state.ingotsInventory?.[matId],
+                    fabricsInventory: this.state.fabricsInventory?.[matId],
+                    threadsInventory: this.state.threadsInventory?.[matId],
+                    cleanedFeathersInventory: this.state.cleanedFeathersInventory?.[matId],
+                    manuscriptsInventory: this.state.manuscriptsInventory?.[matId]
+                };
+                console.log(`📊 库存详情:`, JSON.stringify(invDebug));
+            }
         }
         
         console.log(`📊 最大可执行次数: ${maxCount}`);
