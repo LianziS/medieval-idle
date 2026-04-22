@@ -5870,12 +5870,33 @@ function showActionModal(config) {
                 ${config.materials ? (() => {
                     let matHtml = '';
                     let firstMat = true;
+                    // 定义木材类型
+                    const woodTypes = ['pine', 'iron_birch', 'wind_tree', 'flame_tree', 'frost_maple', 'thunder_tree', 'ancient_oak', 'world_tree'];
+                    // 定义矿石类型
+                    const oreTypes = ['cyan_ore', 'red_iron', 'feather_ore', 'hell_ore', 'white_ore', 'thunder_ore', 'brilliant', 'star_ore'];
+                    // 定义采集物类型
+                    const gatheringTypes = ['sweet_berry', 'wild_mint', 'honey', 'blood_rose', 'jute', 'flax', 'wool', 'silk', 'wind_silk_raw', 'shadow_thread', 'dragon_fiber', 'celestial_lotus'];
+                    // 定义布料类型
+                    const fabricTypes = ['jute_cloth', 'linen_cloth', 'wool_cloth', 'silk_cloth', 'wind_silk', 'shadow_cloth', 'dragon_silk', 'celestial_cloth'];
+                    
                     for (const [matId, amount] of Object.entries(config.materials)) {
                         const matName = getResourceName(matId);
                         const matConfig = getItemConfig(matId);
                         const matIcon = matConfig?.icon || '📦';
                         const have = getResourceCount(matId);
                         const enough = have >= amount;
+                        
+                        // 确定 item-type
+                        let itemType = 'WOOD';
+                        if (woodTypes.includes(matId)) itemType = 'WOOD';
+                        else if (oreTypes.includes(matId)) itemType = 'ORE';
+                        else if (gatheringTypes.includes(matId)) itemType = 'GATHERING';
+                        else if (fabricTypes.includes(matId) || matId.endsWith('_cloth')) itemType = 'FABRIC';
+                        else if (matId.endsWith('_plank')) itemType = 'PLANK';
+                        else if (matId.endsWith('_ingot')) itemType = 'INGOT';
+                        else if (matId.includes('cleaned_feather')) itemType = 'CLEANED_FEATHER';
+                        else if (matId.endsWith('_thread')) itemType = 'THREAD';
+                        
                         const labelHtml = firstMat ? 
                             `<div class="popup-info-label"><span class="lbl-icon">📦</span>材料</div>` :
                             `<div class="popup-info-label"></div>`;
@@ -5885,7 +5906,7 @@ function showActionModal(config) {
                             ${labelHtml}
                             <div class="popup-info-val">
                                 <span class="popup-mat-count ${enough ? '' : 'insufficient'}">[${have}/${amount}]</span>
-                                <span class="popup-badge material ${enough ? '' : 'insufficient'} item-hover-card" data-item-id="${matId}" data-item-type="WOOD" data-item-name="${matName}" data-item-icon="${matIcon}">${matIcon} ${matName}</span>
+                                <span class="popup-badge material ${enough ? '' : 'insufficient'} item-hover-card" data-item-id="${matId}" data-item-type="${itemType}" data-item-name="${matName}" data-item-icon="${matIcon}">${matIcon} ${matName}</span>
                             </div>
                         </div>`;
                     }
@@ -5894,12 +5915,33 @@ function showActionModal(config) {
                 ` : config.materials ? (() => {
                     let matHtml = '';
                     let firstMat = true;
+                    // 定义木材类型
+                    const woodTypes = ['pine', 'iron_birch', 'wind_tree', 'flame_tree', 'frost_maple', 'thunder_tree', 'ancient_oak', 'world_tree'];
+                    // 定义矿石类型
+                    const oreTypes = ['cyan_ore', 'red_iron', 'feather_ore', 'hell_ore', 'white_ore', 'thunder_ore', 'brilliant', 'star_ore'];
+                    // 定义采集物类型
+                    const gatheringTypes = ['sweet_berry', 'wild_mint', 'honey', 'blood_rose', 'jute', 'flax', 'wool', 'silk', 'wind_silk_raw', 'shadow_thread', 'dragon_fiber', 'celestial_lotus'];
+                    // 定义布料类型
+                    const fabricTypes = ['jute_cloth', 'linen_cloth', 'wool_cloth', 'silk_cloth', 'wind_silk', 'shadow_cloth', 'dragon_silk', 'celestial_cloth'];
+                    
                     for (const [matId, amount] of Object.entries(config.materials)) {
                         const matName = getResourceName(matId);
                         const matConfig = getItemConfig(matId);
                         const matIcon = matConfig?.icon || '📦';
                         const have = getResourceCount(matId);
                         const enough = have >= amount;
+                        
+                        // 确定 item-type
+                        let itemType = 'WOOD';
+                        if (woodTypes.includes(matId)) itemType = 'WOOD';
+                        else if (oreTypes.includes(matId)) itemType = 'ORE';
+                        else if (gatheringTypes.includes(matId)) itemType = 'GATHERING';
+                        else if (fabricTypes.includes(matId) || matId.endsWith('_cloth')) itemType = 'FABRIC';
+                        else if (matId.endsWith('_plank')) itemType = 'PLANK';
+                        else if (matId.endsWith('_ingot')) itemType = 'INGOT';
+                        else if (matId.includes('cleaned_feather')) itemType = 'CLEANED_FEATHER';
+                        else if (matId.endsWith('_thread')) itemType = 'THREAD';
+                        
                         const labelHtml = firstMat ? 
                             `<div class="popup-info-label"><span class="lbl-icon">📦</span>材料</div>` :
                             `<div class="popup-info-label"></div>`;
@@ -5909,7 +5951,7 @@ function showActionModal(config) {
                             ${labelHtml}
                             <div class="popup-info-val">
                                 <span class="popup-mat-count ${enough ? '' : 'insufficient'}">[${have}/${amount}]</span>
-                                <span class="popup-badge material ${enough ? '' : 'insufficient'} item-hover-card" data-item-id="${matId}" data-item-type="WOOD" data-item-name="${matName}" data-item-icon="${matIcon}">${matIcon} ${matName}</span>
+                                <span class="popup-badge material ${enough ? '' : 'insufficient'} item-hover-card" data-item-id="${matId}" data-item-type="${itemType}" data-item-name="${matName}" data-item-icon="${matIcon}">${matIcon} ${matName}</span>
                             </div>
                         </div>`;
                     }
