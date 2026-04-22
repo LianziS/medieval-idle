@@ -8438,30 +8438,37 @@ function showBardItemTooltip(item, event, modal) {
     const itemPrice = item.dataset.itemPrice;
     const itemDuration = item.dataset.itemDuration;
     
-    // 获取库存数量
+    // 获取库存数量和效果信息
     let ownedCount = 0;
     let price = 0;
+    let duration = 0;
+    let effect = '';
     
     // 乐谱类型
     if (itemType === 'SHEET_NORMAL') {
-        // 普通乐谱库存（所有类别的普通乐谱）
         const categories = ['earth', 'craft', 'sublime'];
         categories.forEach(cat => {
             ownedCount += bardState?.sheetsInventory?.[cat]?.['normal'] || 0;
         });
         price = parseInt(itemPrice) || 100;
+        duration = parseInt(itemDuration) || 30;
+        effect = CONFIG.sheets?.qualities?.normal?.effect || {};
     } else if (itemType === 'SHEET_FINE') {
         const categories = ['earth', 'craft', 'sublime'];
         categories.forEach(cat => {
             ownedCount += bardState?.sheetsInventory?.[cat]?.['fine'] || 0;
         });
         price = parseInt(itemPrice) || 200;
+        duration = parseInt(itemDuration) || 90;
+        effect = CONFIG.sheets?.qualities?.fine?.effect || {};
     } else if (itemType === 'SHEET_EPIC') {
         const categories = ['earth', 'craft', 'sublime'];
         categories.forEach(cat => {
             ownedCount += bardState?.sheetsInventory?.[cat]?.['epic'] || 0;
         });
         price = parseInt(itemPrice) || 300;
+        duration = parseInt(itemDuration) || 180;
+        effect = CONFIG.sheets?.qualities?.epic?.effect || {};
     }
     
     // 产出物类型
@@ -8479,15 +8486,37 @@ function showBardItemTooltip(item, event, modal) {
         price = getItemSellPrice('blackstone');
     }
     
+    // 构建tooltip内容
+    let tooltipHtml = `<div class="item-tooltip-name">${itemIcon} ${itemName}</div>`;
+    
+    // 乐谱类型显示更详细的信息
+    if (itemType.startsWith('SHEET_')) {
+        // 可用于（只显示图标）
+        tooltipHtml += `<div class="item-tooltip-row"><span>可用于</span><span class="item-tooltip-icons">🪓 ⛏️ 🌿 🔨 🪵 🧵 ⚗️ 🍺 ✨</span></div>`;
+        
+        // 效果（根据类别显示）
+        if (effect.earth) tooltipHtml += `<div class="item-tooltip-row"><span>大地效果</span><span class="item-tooltip-value">${effect.earth}</span></div>`;
+        if (effect.craft) tooltipHtml += `<div class="item-tooltip-row"><span>巧手效果</span><span class="item-tooltip-value">${effect.craft}</span></div>`;
+        if (effect.sublime) tooltipHtml += `<div class="item-tooltip-row"><span>升华效果</span><span class="item-tooltip-value">${effect.sublime}</span></div>`;
+        
+        // 时长
+        tooltipHtml += `<div class="item-tooltip-row"><span>时长</span><span class="item-tooltip-value">${duration}分钟</span></div>`;
+        
+        // 库存
+        tooltipHtml += `<div class="item-tooltip-row"><span>库存</span><span class="item-count-value">${ownedCount}</span></div>`;
+        
+        // 价值
+        tooltipHtml += `<div class="item-tooltip-row"><span>价值</span><span class="item-price-value">${price}金币</span></div>`;
+    } else {
+        // 其他物品显示基本信息
+        tooltipHtml += `<div class="item-tooltip-row"><span>库存</span><span class="item-count-value">${ownedCount}</span></div>`;
+        tooltipHtml += `<div class="item-tooltip-row"><span>价值</span><span class="item-price-value">${price}金币</span></div>`;
+    }
+    
     const tooltip = document.createElement('div');
     tooltip.className = 'item-tooltip';
     tooltip.style.position = 'fixed';
-    tooltip.innerHTML = `
-        <div class="item-tooltip-name">${itemIcon} ${itemName}</div>
-        <div class="item-tooltip-row"><span>数量</span><span class="item-count-value">${ownedCount}</span></div>
-        <div class="item-tooltip-row"><span>单价</span><span class="item-price-value">${price}</span></div>
-        ${itemDuration ? `<div class="item-tooltip-row"><span>演奏时长</span><span>${itemDuration}分钟</span></div>` : ''}
-    `;
+    tooltip.innerHTML = tooltipHtml;
     
     document.body.appendChild(tooltip);
     

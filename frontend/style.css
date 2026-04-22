@@ -3785,6 +3785,12 @@ body::after {
     border-top: 1px solid rgba(107, 79, 60, 0.3);
 }
 
+.item-tooltip-icons {
+    display: inline-flex;
+    gap: 4px;
+    font-size: 0.85rem;
+}
+
 .item-equip-btn {
     width: 100%;
     margin-top: 8px;
