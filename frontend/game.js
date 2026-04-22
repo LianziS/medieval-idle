@@ -4037,6 +4037,10 @@ function openPenForgeModal(penId) {
     // 获取锻造等级
     const forgingLevel = gameState.forgingLevel || 1;
     const levelEnough = forgingLevel >= pen.reqForgeLevel;
+    
+    // 获取诗人等级
+    const bardLevel = bardState.level || 1;
+    const bardLevelEnough = bardLevel >= (pen.reqBardLevel || 1);
 
     // 检查材料是否足够，计算最大可锻造次数
     let maxForgeCount = Infinity;
@@ -4112,7 +4116,9 @@ function openPenForgeModal(penId) {
                     <div class="popup-info-label"><span class="lbl-icon">🔓</span>需要</div>
                     <div class="popup-info-val">
                         <span class="popup-badge level ${levelEnough ? '' : 'insufficient'}">Lv.${pen.reqForgeLevel} 🔨</span>
-                        ${!levelEnough ? `<span class="level-warning">（当前 Lv.${forgingLevel}）</span>` : ''}
+                        ${pen.reqBardLevel ? `<span class="popup-badge level ${bardLevelEnough ? '' : 'insufficient'}">Lv.${pen.reqBardLevel} 🎭</span>` : ''}
+                        ${!levelEnough ? `<span class="level-warning">（锻造 Lv.${forgingLevel}）</span>` : ''}
+                        ${pen.reqBardLevel && !bardLevelEnough ? `<span class="level-warning">（诗人 Lv.${bardLevel}）</span>` : ''}
                     </div>
                 </div>
                 ${materialsRowsHtml}

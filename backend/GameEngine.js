@@ -1488,10 +1488,16 @@ class GameEngine {
             return { success: false, reason: '笔不存在' };
         }
         
-        // 检查等级要求
+        // 检查锻造等级要求
         const forgingLevel = this.state.forgingLevel || 1;
         if (forgingLevel < pen.reqForgeLevel) {
             return { success: false, reason: `需要锻造 Lv.${pen.reqForgeLevel}` };
+        }
+        
+        // 检查诗人等级要求
+        const bardLevel = this.state.bardLevel || 1;
+        if (bardLevel < (pen.reqBardLevel || 1)) {
+            return { success: false, reason: `需要诗人 Lv.${pen.reqBardLevel || 1}` };
         }
         
         // 检查材料是否足够
@@ -1720,10 +1726,16 @@ class GameEngine {
             return { success: false, reason: '靴子不存在' };
         }
         
-        // 检查等级要求
+        // 检查缝制等级要求
         const tailoringLevel = this.state.tailoringLevel || 1;
         if (tailoringLevel < boot.reqTailorLevel) {
             return { success: false, reason: `需要缝制 Lv.${boot.reqTailorLevel}` };
+        }
+        
+        // 检查诗人等级要求
+        const bardLevel = this.state.bardLevel || 1;
+        if (bardLevel < (boot.reqBardLevel || 1)) {
+            return { success: false, reason: `需要诗人 Lv.${boot.reqBardLevel || 1}` };
         }
         
         // 检查材料是否足够
@@ -1943,10 +1955,16 @@ class GameEngine {
             return { success: false, reason: '乐器不存在' };
         }
         
-        // 检查等级要求
+        // 检查制作等级要求
         const craftingLevel = this.state.craftingLevel || 1;
         if (craftingLevel < instrument.reqCraftingLevel) {
             return { success: false, reason: `需要制作 Lv.${instrument.reqCraftingLevel}` };
+        }
+        
+        // 检查诗人等级要求
+        const bardLevel = this.state.bardLevel || 1;
+        if (bardLevel < (instrument.reqBardLevel || 1)) {
+            return { success: false, reason: `需要诗人 Lv.${instrument.reqBardLevel || 1}` };
         }
         
         // 检查材料是否足够
