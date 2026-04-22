@@ -6996,6 +6996,28 @@ body::after {
     font-size: 0.7rem;
     color: #FFA726;
 }
+.wb-warning {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    font-size: 0.65rem;
+    color: #FF6B6B;
+    background: rgba(255,107,107,0.15);
+    border-radius: 50%;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: warningPulse 1.5s ease-in-out infinite;
+}
+.wb-warning.hidden {
+    display: none;
+}
+@keyframes warningPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+}
 .dispatch-preview {
     display: flex;
     align-items: center;

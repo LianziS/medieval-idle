@@ -8421,6 +8421,17 @@ function updateDispatchResources() {
 
 // 显示酒箱选择弹框
 function showWineSelectModal() {
+    // 只显示库存>0的酒箱
+    const availableWines = CONFIG.wineBoxes?.filter(wine => {
+        const stock = bardState.wineBoxInventory?.[wine.id] || 0;
+        return stock > 0;
+    }) || [];
+    
+    if (availableWines.length === 0) {
+        showToast('没有可用的酒箱');
+        return;
+    }
+    
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.id = 'wine-modal';
@@ -8433,7 +8444,7 @@ function showWineSelectModal() {
                 <div class="bard-modal-title">选择酒箱</div>
             </div>
             <div class="wine-select-grid">
-                ${CONFIG.wineBoxes?.map(wine => {
+                ${availableWines.map(wine => {
                     const stock = bardState.wineBoxInventory?.[wine.id] || 0;
                     const tooltipTitle = `${wine.icon} ${wine.name}`;
                     const tooltipContent = `经验增益: ${wine.expBonus > 0 ? `+${wine.expBonus}%` : '无'} | 库存: ${stock}`;
@@ -8490,6 +8501,12 @@ function updateWineBoxDisplay() {
     document.getElementById('wb-icon').textContent = wine.icon;
     const stock = bardState.wineBoxInventory?.[wine.id] || 0;
     document.getElementById('wb-count').textContent = stock > 0 ? `×${stock}` : '无';
+    
+    // 隐藏感叹号（当有库存时）
+    const warningEl = document.getElementById('wb-warning');
+    if (warningEl) {
+        warningEl.classList.toggle('hidden', stock > 0);
+    }
 }
 
 // 开始诗人出游
@@ -8525,19 +8542,28 @@ function startBardPerform() {
 
 // 显示乐谱选择弹框
 function showSheetSelectModal() {
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.id = 'sheet-modal';
-    
     const categories = ['earth', 'craft', 'sublime'];
     const qualities = ['normal', 'fine', 'epic'];
     
-    // 效果详情
-    const effectDetails = {
-        earth: '采集时有概率将原材料转化为加工品（2:1转化比）',
-        craft: '每次行动有概率获得双倍产出',
-        sublime: '缩短炼金/酿造/强化行动时长'
-    };
+    // 收集所有库存>0的乐谱
+    const availableSheets = [];
+    categories.forEach(cat => {
+        qualities.forEach(qual => {
+            const stock = bardState.sheetsInventory?.[cat]?.[qual] || 0;
+            if (stock > 0) {
+                availableSheets.push({ category: cat, quality: qual, stock });
+            }
+        });
+    });
+    
+    if (availableSheets.length === 0) {
+        showToast('没有可用的乐谱');
+        return;
+    }
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'sheet-modal';
     
     modal.innerHTML = `
         <div class="modal-content bard-modal">
@@ -8547,26 +8573,22 @@ function showSheetSelectModal() {
                 <div class="bard-modal-title">选择乐谱</div>
             </div>
             <div class="sheet-select-grid">
-                ${categories.map(cat => 
-                    qualities.map(qual => {
-                        const catInfo = CONFIG.sheets?.categories?.[cat];
-                        const qualInfo = CONFIG.sheets?.qualities?.[qual];
-                        const stock = bardState.sheetsInventory?.[cat]?.[qual] || 0;
-                        const isSelected = bardState.selectedSheet?.category === cat && bardState.selectedSheet?.quality === qual;
-                        // 完整乐谱名称：普通的/精良的/史诗的 + 大地之艺/巧手之艺/升华之艺 + 乐谱
-                        const sheetName = `${qualInfo?.name || qual}的${catInfo?.name || cat}乐谱`;
-                        const tooltipContent = `可用于: ${catInfo?.target || '-'} | 效果: ${qualInfo?.effect?.[cat] || '-'} | 时长: ${qualInfo?.duration || 30}分钟 | 库存: ${stock}`;
-                        return `
-                            <div class="sheet-select-item ${isSelected ? 'active' : ''} ${stock === 0 ? 'locked' : ''}"
-                                 onclick="selectSheetAndClose('${cat}', '${qual}')"
-                                 onmouseenter="showSheetTooltip(this, '${sheetName}', '${tooltipContent}')"
-                                 onmouseleave="hideSheetTooltip()">
-                                <span class="ssi-icon">${catInfo?.icon || '📜'}</span>
-                                <span class="ssi-count">×${stock}</span>
-                            </div>
-                        `;
-                    }).join('')
-                ).join('')}
+                ${availableSheets.map(({ category, quality, stock }) => {
+                    const catInfo = CONFIG.sheets?.categories?.[category];
+                    const qualInfo = CONFIG.sheets?.qualities?.[quality];
+                    const isSelected = bardState.selectedSheet?.category === category && bardState.selectedSheet?.quality === quality;
+                    const sheetName = `${qualInfo?.name || quality}的${catInfo?.name || category}乐谱`;
+                    const tooltipContent = `可用于: ${catInfo?.target || '-'} | 效果: ${qualInfo?.effect?.[category] || '-'} | 时长: ${qualInfo?.duration || 30}分钟 | 库存: ${stock}`;
+                    return `
+                        <div class="sheet-select-item ${isSelected ? 'active' : ''}"
+                             onclick="selectSheetAndClose('${category}', '${quality}')"
+                             onmouseenter="showSheetTooltip(this, '${sheetName}', '${tooltipContent}')"
+                             onmouseleave="hideSheetTooltip()">
+                            <span class="ssi-icon">${catInfo?.icon || '📜'}</span>
+                            <span class="ssi-count">×${stock}</span>
+                        </div>
+                    `;
+                }).join('')}
             </div>
         </div>
     `;
@@ -8651,10 +8673,6 @@ function updatePerformArea() {
 
 // 显示装备选择弹框
 function showEquipSelectModal(slotType) {
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.id = 'equip-modal';
-    
     // 获取对应类型的库存
     let inventory = [];
     let configList = [];
@@ -8677,7 +8695,23 @@ function showEquipSelectModal(slotType) {
         counts[itemId] = (counts[itemId] || 0) + 1;
     });
     
+    // 只显示库存>0或已装备的装备
+    const availableItems = configList.filter(item => {
+        const isEquipped = bardState.bardEquipment?.[slotType] === item.id;
+        const count = counts[item.id] || 0;
+        return count > 0 || isEquipped;
+    });
+    
+    if (availableItems.length === 0) {
+        showToast(`没有可用的${slotType === 'pen' ? '笔' : slotType === 'shoe' ? '鞋子' : '乐器'}`);
+        return;
+    }
+    
     const slotNames = { pen: '笔', shoe: '鞋子', instrument: '乐器' };
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'equip-modal';
     
     modal.innerHTML = `
         <div class="modal-content bard-modal bard-modal-wide">
@@ -8687,13 +8721,13 @@ function showEquipSelectModal(slotType) {
                 <div class="bard-modal-title">选择${slotNames[slotType]}</div>
             </div>
             <div class="eq-select-grid">
-                ${configList.map(item => {
+                ${availableItems.map(item => {
                     const isEquipped = bardState.bardEquipment?.[slotType] === item.id;
                     const count = counts[item.id] || 0;
                     const tooltipTitle = `${item.icon} ${item.name}`;
                     const tooltipContent = `效果: ${item.effect || '-'} | 库存: ${isEquipped ? '已装备' : count}`;
                     return `
-                        <div class="eq-select-item ${isEquipped ? 'equipped' : ''} ${count === 0 && !isEquipped ? 'locked' : ''}"
+                        <div class="eq-select-item ${isEquipped ? 'equipped' : ''}"
                              onclick="equipBardItem('${slotType}', '${item.id}')"
                              onmouseenter="showEquipTooltip(this, '${tooltipTitle}', '${tooltipContent}')"
                              onmouseleave="hideEquipTooltip()">
