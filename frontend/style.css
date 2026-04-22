@@ -6903,6 +6903,18 @@ body::after {
     gap: 6px;
     text-align: center;
 }
+.bard-dest-grid .dest-card .card-icon {
+    font-size: 1.8rem;
+}
+.bard-dest-grid .dest-card .card-name {
+    color: #E8C57F;
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+.bard-dest-grid .dest-card .card-req {
+    color: #6b7f90;
+    font-size: 0.72rem;
+}
 .bard-dest-grid .dest-card:hover {
     border-color: #8B2C2D;
     transform: translateY(-2px);
@@ -6912,11 +6924,11 @@ body::after {
     background: rgba(139,44,45,0.1);
 }
 .bard-dest-grid .dest-card.locked {
-    opacity: 0.5;
-    cursor: not-allowed;
+    opacity: 0.6;
 }
 .bard-dest-grid .dest-card.locked:hover {
-    transform: none;
+    transform: translateY(-2px);
+    border-color: rgba(139,44,45,0.4);
 }
 
 /* 消耗品区 */
@@ -7397,6 +7409,15 @@ body::after {
     align-items: center;
     gap: 8px;
     font-size: 0.85rem;
+}
+.drop-line-hover {
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+.drop-line-hover:hover {
+    background: rgba(107,79,60,0.15);
 }
 .drop-count {
     color: #6b7f90;

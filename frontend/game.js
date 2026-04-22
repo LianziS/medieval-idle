@@ -8143,10 +8143,6 @@ function initBardPage() {
     document.querySelectorAll('.dest-card').forEach(card => {
         card.addEventListener('click', () => {
             const destId = card.dataset.dest;
-            if (card.classList.contains('locked')) {
-                showToast(`需要诗人 Lv.${card.dataset.level} 解锁`);
-                return;
-            }
             showDestDetailModal(destId);
         });
     });
@@ -8309,6 +8305,12 @@ function showDestDetailModal(destId) {
         epic: dest.quality.epic + penBonus.epic
     };
     
+    // 乐谱价格配置
+    const sheetPrices = { normal: 100, fine: 200, epic: 300 };
+    
+    // 检查是否解锁
+    const isUnlocked = bardState.level >= dest.reqLevel;
+    
     modal.innerHTML = `
         <div class="modal-content bard-modal">
             <button class="modal-close bard-modal-close">✕</button>
@@ -8316,22 +8318,22 @@ function showDestDetailModal(destId) {
                 <span class="bard-modal-icon">${dest.icon}</span>
                 <div>
                     <div class="bard-modal-title">${dest.name}</div>
-                    <div class="bard-modal-subtitle">${dest.area} · Lv.${dest.reqLevel}解锁</div>
+                    <div class="bard-modal-subtitle">需要 Lv.${dest.reqLevel} 🎭</div>
                 </div>
             </div>
             <div class="modal-desc" style="font-size:0.82rem;color:#7A8A98;line-height:1.5;margin-bottom:12px;">${dest.desc}</div>
             
             <div class="modal-section">
                 <div style="font-size:0.85rem;color:#6b4f3c;font-weight:bold;margin-bottom:8px;">🎼 乐谱品质概率</div>
-                <div class="drop-line">
+                <div class="drop-line drop-line-hover" data-tooltip="普通的乐谱 | 价值: ${sheetPrices.normal}金币 | 演奏时长: 30分钟">
                     <span class="quality-badge quality-badge-normal">普通的乐谱</span>
                     <span class="item-pct">~${qualityRates.normal}%</span>
                 </div>
-                <div class="drop-line">
+                <div class="drop-line drop-line-hover" data-tooltip="精良的乐谱 | 价值: ${sheetPrices.fine}金币 | 演奏时长: 90分钟">
                     <span class="quality-badge quality-badge-fine">精良的乐谱</span>
                     <span class="item-pct">~${qualityRates.fine}%</span>
                 </div>
-                <div class="drop-line">
+                <div class="drop-line drop-line-hover" data-tooltip="史诗的乐谱 | 价值: ${sheetPrices.epic}金币 | 演奏时长: 180分钟">
                     <span class="quality-badge quality-badge-epic">史诗的乐谱</span>
                     <span class="item-pct">~${qualityRates.epic}%</span>
                 </div>
@@ -8340,25 +8342,49 @@ function showDestDetailModal(destId) {
             <div class="modal-section" style="margin-top:12px;">
                 <div style="font-size:0.85rem;color:#6b4f3c;font-weight:bold;margin-bottom:8px;">📦 掉落物</div>
                 <div class="drop-list">
-                    ${dest.drops.map(d => `
-                        <div class="drop-line">
-                            <span class="drop-count">1</span>
-                            <span class="res-tag">${d.icon} ${d.name}</span>
-                            <span class="item-pct">~${Math.round(d.rate * 100)}%</span>
-                        </div>
-                    `).join('')}
+                    ${dest.drops.map(d => {
+                        // 获取掉落物库存
+                        let stock = 0;
+                        if (d.id === 'conch_ink') stock = gameState?.conchInkInventory || 0;
+                        else if (d.id === 'river_nail') stock = gameState?.riverNailInventory || 0;
+                        else if (d.id === 'echo_stone') stock = gameState?.echoStoneInventory || 0;
+                        else if (d.id === 'blackstone') stock = gameState?.blackstoneInventory || 0;
+                        return `
+                            <div class="drop-line drop-line-hover" data-tooltip="${d.icon} ${d.name} | 库存: ${stock}">
+                                <span class="drop-count">1</span>
+                                <span class="res-tag">${d.icon} ${d.name}</span>
+                                <span class="item-pct">~${Math.round(d.rate * 100)}%</span>
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
                 <div style="font-size:0.82rem;color:#7A8A98;margin-top:8px;">
                     获得经验：<span style="color:#FFA726;font-weight:bold;">50 exp</span>
                 </div>
             </div>
             
-            <button class="dispatch-btn" style="margin-top:16px;" onclick="selectDestAndClose('${destId}')">确定</button>
+            ${isUnlocked ? 
+                `<button class="dispatch-btn" style="margin-top:16px;" onclick="selectDestAndClose('${destId}')">确定</button>` :
+                `<div style="margin-top:16px;color:#6b7f90;font-size:0.85rem;text-align:center;">需要诗人 Lv.${dest.reqLevel} 解锁后才能派遣</div>`
+            }
         </div>
     `;
     
     document.body.appendChild(modal);
     setupModalClose(modal);
+    
+    // 添加悬浮效果
+    modal.querySelectorAll('.drop-line-hover').forEach(line => {
+        line.addEventListener('mouseenter', (e) => {
+            const tooltipText = e.currentTarget.dataset.tooltip;
+            const parts = tooltipText.split('|');
+            const html = parts.map(p => `<div>${p.trim()}</div>`).join('');
+            createTooltip(html, e.currentTarget);
+        });
+        line.addEventListener('mouseleave', () => {
+            document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+        });
+    });
 }
 
 // 选择目的地并关闭弹框

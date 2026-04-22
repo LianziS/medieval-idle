@@ -1236,10 +1236,9 @@ const BARD_LEVELS = [
 const BARD_DESTINATIONS = [
     {
         id: 'whisper_bay',
-        name: '低语湾',
+        name: '低语谷',
         icon: '🌊',
         reqLevel: 1,
-        area: '狼林边缘',
         desc: '湾畔海风低语，灵感从海风中凝聚',
         cost: { gold: 300, scroll: 2 },
         drops: [
@@ -1251,11 +1250,10 @@ const BARD_DESTINATIONS = [
     },
     {
         id: 'river_valley',
-        name: '河间谷地',
+        name: '河间谷底',
         icon: '🏞️',
         reqLevel: 3,
-        area: '河间地带',
-        desc: '河流交汇的谷地，水土丰饶物产多样',
+        desc: '河流交汇的谷底，水土丰饶物产多样',
         cost: { gold: 800, scroll: 3 },
         drops: [
             { id: 'conch_ink', name: '海螺墨', icon: '🪣', rate: 0.08 },
@@ -1269,7 +1267,6 @@ const BARD_DESTINATIONS = [
         name: '峡谷营地',
         icon: '⛰️',
         reqLevel: 6,
-        area: '叹息峡谷',
         desc: '险峻峡谷中矿工和冒险者的据点',
         cost: { gold: 1600, scroll: 6 },
         drops: [
@@ -1284,7 +1281,6 @@ const BARD_DESTINATIONS = [
         name: '黑石灯塔',
         icon: '🗼',
         reqLevel: 8,
-        area: '龙脊山脉',
         desc: '远古灯塔矗立海角，黑石蕴含神秘力量',
         cost: { gold: 2700, scroll: 8 },
         drops: [
@@ -1314,9 +1310,9 @@ const SHEETS = {
     },
     // 品质数值
     qualities: {
-        normal: { name: '普通', fullName: '普通的乐谱', duration: 30, effect: { earth: '5%转化', craft: '3%双倍', sublime: '-5%速度' }, exp: 15 },
-        fine: { name: '精良', fullName: '精良的乐谱', duration: 90, effect: { earth: '10%转化', craft: '7%双倍', sublime: '-10%速度' }, exp: 15 },
-        epic: { name: '史诗', fullName: '史诗的乐谱', duration: 180, effect: { earth: '15%转化', craft: '10%双倍', sublime: '-15%速度' }, exp: 15 }
+        normal: { name: '普通', fullName: '普通的乐谱', duration: 30, effect: { earth: '5%转化', craft: '3%双倍', sublime: '-5%速度' }, exp: 15, price: 100 },
+        fine: { name: '精良', fullName: '精良的乐谱', duration: 90, effect: { earth: '10%转化', craft: '7%双倍', sublime: '-10%速度' }, exp: 15, price: 200 },
+        epic: { name: '史诗', fullName: '史诗的乐谱', duration: 180, effect: { earth: '15%转化', craft: '10%双倍', sublime: '-15%速度' }, exp: 15, price: 300 }
     },
     // 获取完整乐谱名称的辅助函数
     getSheetName: function(category, quality) {
