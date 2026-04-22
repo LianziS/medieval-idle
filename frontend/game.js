@@ -996,7 +996,8 @@ function setupSocket() {
     socket.on('bard_sheet_added', (data) => {
         const catInfo = CONFIG.sheets?.categories?.[data.category];
         const qualInfo = CONFIG.sheets?.qualities?.[data.quality];
-        showToast(`✅ 获得 ${catInfo?.name} ${qualInfo?.name} ×${data.count}`);
+        const sheetName = `${qualInfo?.name || data.quality}的${catInfo?.name || data.category}乐谱`;
+        showToast(`✅ 获得 ${sheetName} ×${data.count}`);
         socket.emit('get_bard_info');
     });
 }
@@ -8202,9 +8203,10 @@ function initBardPage() {
                 const catInfo = CONFIG.sheets?.categories?.[category];
                 const qualInfo = CONFIG.sheets?.qualities?.[quality];
                 const stock = bardState.sheetsInventory?.[category]?.[quality] || 0;
-                const tooltipTitle = `${catInfo?.icon || '📜'} ${catInfo?.name || category} ${qualInfo?.name || quality}`;
+                // 完整乐谱名称
+                const sheetName = `${qualInfo?.name || quality}的${catInfo?.name || category}乐谱`;
                 const tooltipContent = `可用于: ${catInfo?.target || '-'} | 效果: ${qualInfo?.effect?.[category] || '-'} | 时长: ${qualInfo?.duration || 30}分钟 | 库存: ${stock}`;
-                showSheetTooltip(perfSlot, tooltipTitle, tooltipContent);
+                showSheetTooltip(perfSlot, sheetName, tooltipContent);
             }
         });
         perfSlot.addEventListener('mouseleave', hideSheetTooltip);
@@ -8322,16 +8324,16 @@ function showDestDetailModal(destId) {
             <div class="modal-section">
                 <div style="font-size:0.85rem;color:#6b4f3c;font-weight:bold;margin-bottom:8px;">🎼 乐谱品质概率</div>
                 <div class="drop-line">
-                    <span class="quality-badge quality-badge-normal">普通</span>
-                    <span class="item-pct">${qualityRates.normal}%</span>
+                    <span class="quality-badge quality-badge-normal">普通的乐谱</span>
+                    <span class="item-pct">~${qualityRates.normal}%</span>
                 </div>
                 <div class="drop-line">
-                    <span class="quality-badge quality-badge-fine">精良</span>
-                    <span class="item-pct">${qualityRates.fine}%</span>
+                    <span class="quality-badge quality-badge-fine">精良的乐谱</span>
+                    <span class="item-pct">~${qualityRates.fine}%</span>
                 </div>
                 <div class="drop-line">
-                    <span class="quality-badge quality-badge-epic">史诗</span>
-                    <span class="item-pct">${qualityRates.epic}%</span>
+                    <span class="quality-badge quality-badge-epic">史诗的乐谱</span>
+                    <span class="item-pct">~${qualityRates.epic}%</span>
                 </div>
             </div>
             
@@ -8342,7 +8344,7 @@ function showDestDetailModal(destId) {
                         <div class="drop-line">
                             <span class="drop-count">1</span>
                             <span class="res-tag">${d.icon} ${d.name}</span>
-                            <span class="item-pct">${Math.round(d.rate * 100)}%</span>
+                            <span class="item-pct">~${Math.round(d.rate * 100)}%</span>
                         </div>
                     `).join('')}
                 </div>
@@ -8551,12 +8553,13 @@ function showSheetSelectModal() {
                         const qualInfo = CONFIG.sheets?.qualities?.[qual];
                         const stock = bardState.sheetsInventory?.[cat]?.[qual] || 0;
                         const isSelected = bardState.selectedSheet?.category === cat && bardState.selectedSheet?.quality === qual;
-                        const tooltipTitle = `${catInfo?.name || cat} ${qualInfo?.name || qual}`;
+                        // 完整乐谱名称：普通的/精良的/史诗的 + 大地之艺/巧手之艺/升华之艺 + 乐谱
+                        const sheetName = `${qualInfo?.name || qual}的${catInfo?.name || cat}乐谱`;
                         const tooltipContent = `可用于: ${catInfo?.target || '-'} | 效果: ${qualInfo?.effect?.[cat] || '-'} | 时长: ${qualInfo?.duration || 30}分钟 | 库存: ${stock}`;
                         return `
                             <div class="sheet-select-item ${isSelected ? 'active' : ''} ${stock === 0 ? 'locked' : ''}"
                                  onclick="selectSheetAndClose('${cat}', '${qual}')"
-                                 onmouseenter="showSheetTooltip(this, '${tooltipTitle}', '${tooltipContent}')"
+                                 onmouseenter="showSheetTooltip(this, '${sheetName}', '${tooltipContent}')"
                                  onmouseleave="hideSheetTooltip()">
                                 <span class="ssi-icon">${catInfo?.icon || '📜'}</span>
                                 <span class="ssi-count">×${stock}</span>
@@ -8634,7 +8637,7 @@ function updatePerformArea() {
     };
     
     info.innerHTML = `
-        <div class="sheet-detail-row"><span class="sheet-detail-label">乐谱</span><span class="sheet-detail-val"><span class="quality-badge quality-badge-${quality}">${catInfo?.name || category} ${qualInfo?.name || quality}</span></span></div>
+        <div class="sheet-detail-row"><span class="sheet-detail-label">乐谱</span><span class="sheet-detail-val"><span class="quality-badge quality-badge-${quality}">${qualInfo?.name || quality}的${catInfo?.name || category}乐谱</span></span></div>
         <div class="sheet-detail-row"><span class="sheet-detail-label">演奏时长</span><span class="sheet-detail-val">${qualInfo?.duration || 30}分钟</span></div>
         <div class="sheet-detail-row"><span class="sheet-detail-label">可用于</span><span class="sheet-detail-val">${catInfo?.target || '-'}</span></div>
         <div class="sheet-detail-row"><span class="sheet-detail-label">效果</span><span class="sheet-detail-val" style="color:#FFA726;font-weight:bold;">${qualInfo?.effect?.[category] || '-'}</span></div>

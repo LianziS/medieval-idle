@@ -1314,9 +1314,15 @@ const SHEETS = {
     },
     // 品质数值
     qualities: {
-        normal: { name: '普通', duration: 30, effect: { earth: '5%转化', craft: '3%双倍', sublime: '-5%速度' }, exp: 15 },
-        fine: { name: '精良', duration: 90, effect: { earth: '10%转化', craft: '7%双倍', sublime: '-10%速度' }, exp: 15 },
-        epic: { name: '史诗', duration: 180, effect: { earth: '15%转化', craft: '10%双倍', sublime: '-15%速度' }, exp: 15 }
+        normal: { name: '普通', fullName: '普通的乐谱', duration: 30, effect: { earth: '5%转化', craft: '3%双倍', sublime: '-5%速度' }, exp: 15 },
+        fine: { name: '精良', fullName: '精良的乐谱', duration: 90, effect: { earth: '10%转化', craft: '7%双倍', sublime: '-10%速度' }, exp: 15 },
+        epic: { name: '史诗', fullName: '史诗的乐谱', duration: 180, effect: { earth: '15%转化', craft: '10%双倍', sublime: '-15%速度' }, exp: 15 }
+    },
+    // 获取完整乐谱名称的辅助函数
+    getSheetName: function(category, quality) {
+        const catInfo = this.categories[category];
+        const qualInfo = this.qualities[quality];
+        return `${qualInfo.name}的${catInfo.name}乐谱`;
     }
 };
 
