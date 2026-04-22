@@ -8301,6 +8301,7 @@ function showDestDetailModal(destId) {
     
     // 乐谱价格配置
     const sheetPrices = { normal: 100, fine: 200, epic: 300 };
+    const sheetDurations = { normal: 30, fine: 90, epic: 180 };
     
     // 检查是否解锁
     const isUnlocked = bardState.level >= dest.reqLevel;
@@ -8319,16 +8320,16 @@ function showDestDetailModal(destId) {
             
             <div class="modal-section">
                 <div style="font-size:0.85rem;color:#6b4f3c;font-weight:bold;margin-bottom:8px;">🎼 乐谱品质概率</div>
-                <div class="drop-line drop-line-hover" data-tooltip="普通的乐谱 | 价值: ${sheetPrices.normal}金币 | 演奏时长: 30分钟">
-                    <span class="quality-badge quality-badge-normal">普通的乐谱</span>
+                <div class="drop-line">
+                    <span class="popup-badge drop item-hover-card" data-item-id="sheet_normal_${dest.id}" data-item-type="SHEET_NORMAL" data-item-name="普通的乐谱" data-item-icon="📜" data-item-price="${sheetPrices.normal}" data-item-duration="${sheetDurations.normal}">📜 普通的乐谱</span>
                     <span class="item-pct">~${qualityRates.normal}%</span>
                 </div>
-                <div class="drop-line drop-line-hover" data-tooltip="精良的乐谱 | 价值: ${sheetPrices.fine}金币 | 演奏时长: 90分钟">
-                    <span class="quality-badge quality-badge-fine">精良的乐谱</span>
+                <div class="drop-line">
+                    <span class="popup-badge drop item-hover-card" data-item-id="sheet_fine_${dest.id}" data-item-type="SHEET_FINE" data-item-name="精良的乐谱" data-item-icon="📜" data-item-price="${sheetPrices.fine}" data-item-duration="${sheetDurations.fine}">📜 精良的乐谱</span>
                     <span class="item-pct">~${qualityRates.fine}%</span>
                 </div>
-                <div class="drop-line drop-line-hover" data-tooltip="史诗的乐谱 | 价值: ${sheetPrices.epic}金币 | 演奏时长: 180分钟">
-                    <span class="quality-badge quality-badge-epic">史诗的乐谱</span>
+                <div class="drop-line">
+                    <span class="popup-badge drop item-hover-card" data-item-id="sheet_epic_${dest.id}" data-item-type="SHEET_EPIC" data-item-name="史诗的乐谱" data-item-icon="📜" data-item-price="${sheetPrices.epic}" data-item-duration="${sheetDurations.epic}">📜 史诗的乐谱</span>
                     <span class="item-pct">~${qualityRates.epic}%</span>
                 </div>
             </div>
@@ -8340,7 +8341,7 @@ function showDestDetailModal(destId) {
                 <div class="popup-info-val">
                     <span class="popup-exp-val">50 exp</span>
                     ${dest.drops.map(d => `
-                        <br><span class="popup-drop-prefix">1</span> <span class="popup-badge drop item-hover-card" data-item-id="${d.id}" data-item-name="${d.name}" data-item-icon="${d.icon}">${d.icon} ${d.name}</span> <span class="popup-token-prob">~${Math.round(d.rate * 100)}%</span>
+                        <br><span class="popup-drop-prefix">1</span> <span class="popup-badge drop item-hover-card" data-item-id="${d.id}" data-item-type="${d.id.toUpperCase()}" data-item-name="${d.name}" data-item-icon="${d.icon}">${d.icon} ${d.name}</span> <span class="popup-token-prob">~${Math.round(d.rate * 100)}%</span>
                     `).join('')}
                 </div>
             </div>
@@ -8357,73 +8358,101 @@ function showDestDetailModal(destId) {
     document.body.appendChild(modal);
     setupModalClose(modal);
     
-    // 绑定物品悬浮/点击事件
+    // 绑定物品悬浮/点击事件（使用 showActionItemTooltip）
     modal.querySelectorAll('.item-hover-card').forEach(item => {
-        console.log('绑定产出物悬浮事件', item.dataset.itemId);
-        item.addEventListener('mouseenter', (e) => {
-            console.log('产出物mouseenter触发');
-            const itemId = item.dataset.itemId;
-            const itemName = item.dataset.itemName;
-            const itemIcon = item.dataset.itemIcon;
-            
-            // 获取库存
-            let stock = 0;
-            if (itemId === 'conch_ink') stock = gameState?.conchInkInventory || 0;
-            else if (itemId === 'river_nail') stock = gameState?.riverNailInventory || 0;
-            else if (itemId === 'echo_stone') stock = gameState?.echoStoneInventory || 0;
-            else if (itemId === 'blackstone') stock = gameState?.blackstoneInventory || 0;
-            
-            const html = `<div class="item-tooltip-name">${itemIcon} ${itemName}</div><div class="item-tooltip-row"><span>库存</span><span>${stock}</span></div>`;
-            createTooltip(html, e.currentTarget);
-        });
+        item.addEventListener('mouseenter', (e) => showBardItemTooltip(item, e, modal));
         item.addEventListener('click', (e) => {
-            console.log('产出物click触发');
             e.stopPropagation();
-            const itemId = item.dataset.itemId;
-            const itemName = item.dataset.itemName;
-            const itemIcon = item.dataset.itemIcon;
-            
-            // 获取库存
-            let stock = 0;
-            if (itemId === 'conch_ink') stock = gameState?.conchInkInventory || 0;
-            else if (itemId === 'river_nail') stock = gameState?.riverNailInventory || 0;
-            else if (itemId === 'echo_stone') stock = gameState?.echoStoneInventory || 0;
-            else if (itemId === 'blackstone') stock = gameState?.blackstoneInventory || 0;
-            
-            const html = `<div class="item-tooltip-name">${itemIcon} ${itemName}</div><div class="item-tooltip-row"><span>库存</span><span>${stock}</span></div>`;
-            createTooltip(html, e.currentTarget);
-        });
-        item.addEventListener('mouseleave', () => {
-            console.log('产出物mouseleave触发');
-            document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+            showBardItemTooltip(item, e, modal);
         });
     });
+}
+
+// 诗人弹窗物品tooltip（类似 showActionItemTooltip）
+function showBardItemTooltip(item, event, modal) {
+    document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
     
-    // 乐谱悬浮/点击效果
-    modal.querySelectorAll('.drop-line-hover').forEach(line => {
-        console.log('绑定乐谱悬浮事件', line.dataset.tooltip);
-        line.addEventListener('mouseenter', (e) => {
-            console.log('乐谱mouseenter触发');
-            const tooltipText = e.currentTarget.dataset.tooltip;
-            if (!tooltipText) return;
-            const parts = tooltipText.split('|');
-            const html = parts.map(p => `<div>${p.trim()}</div>`).join('');
-            createTooltip(html, e.currentTarget);
+    const itemId = item.dataset.itemId;
+    const itemType = item.dataset.itemType;
+    const itemName = item.dataset.itemName;
+    const itemIcon = item.dataset.itemIcon;
+    const itemPrice = item.dataset.itemPrice;
+    const itemDuration = item.dataset.itemDuration;
+    
+    // 获取库存数量
+    let ownedCount = 0;
+    let price = 0;
+    
+    // 乐谱类型
+    if (itemType === 'SHEET_NORMAL') {
+        // 普通乐谱库存（所有类别的普通乐谱）
+        const categories = ['earth', 'craft', 'sublime'];
+        categories.forEach(cat => {
+            ownedCount += bardState?.sheetsInventory?.[cat]?.['normal'] || 0;
         });
-        line.addEventListener('click', (e) => {
-            console.log('乐谱click触发');
-            e.stopPropagation();
-            const tooltipText = e.currentTarget.dataset.tooltip;
-            if (!tooltipText) return;
-            const parts = tooltipText.split('|');
-            const html = parts.map(p => `<div>${p.trim()}</div>`).join('');
-            createTooltip(html, e.currentTarget);
+        price = parseInt(itemPrice) || 100;
+    } else if (itemType === 'SHEET_FINE') {
+        const categories = ['earth', 'craft', 'sublime'];
+        categories.forEach(cat => {
+            ownedCount += bardState?.sheetsInventory?.[cat]?.['fine'] || 0;
         });
-        line.addEventListener('mouseleave', () => {
-            console.log('乐谱mouseleave触发');
-            document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+        price = parseInt(itemPrice) || 200;
+    } else if (itemType === 'SHEET_EPIC') {
+        const categories = ['earth', 'craft', 'sublime'];
+        categories.forEach(cat => {
+            ownedCount += bardState?.sheetsInventory?.[cat]?.['epic'] || 0;
         });
-    });
+        price = parseInt(itemPrice) || 300;
+    }
+    
+    // 产出物类型
+    if (itemId === 'conch_ink' || itemType === 'CONCH_INK') {
+        ownedCount = gameState?.conchInkInventory || 0;
+        price = getItemSellPrice('conch_ink');
+    } else if (itemId === 'river_nail' || itemType === 'RIVER_NAIL') {
+        ownedCount = gameState?.riverNailInventory || 0;
+        price = getItemSellPrice('river_nail');
+    } else if (itemId === 'echo_stone' || itemType === 'ECHO_STONE') {
+        ownedCount = gameState?.echoStoneInventory || 0;
+        price = getItemSellPrice('echo_stone');
+    } else if (itemId === 'blackstone' || itemType === 'BLACKSTONE') {
+        ownedCount = gameState?.blackstoneInventory || 0;
+        price = getItemSellPrice('blackstone');
+    }
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'item-tooltip';
+    tooltip.style.position = 'fixed';
+    tooltip.innerHTML = `
+        <div class="item-tooltip-name">${itemIcon} ${itemName}</div>
+        <div class="item-tooltip-row"><span>数量</span><span class="item-count-value">${ownedCount}</span></div>
+        <div class="item-tooltip-row"><span>单价</span><span class="item-price-value">${price}</span></div>
+        ${itemDuration ? `<div class="item-tooltip-row"><span>演奏时长</span><span>${itemDuration}分钟</span></div>` : ''}
+    `;
+    
+    document.body.appendChild(tooltip);
+    
+    // 定位
+    const itemRect = item.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    
+    let left = itemRect.left + (itemRect.width / 2) - (tooltipRect.width / 2);
+    let top = itemRect.top - tooltipRect.height - 8;
+    
+    left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
+    if (top < 10) top = itemRect.bottom + 8;
+    
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+    
+    // 鼠标离开时关闭
+    const closeTooltip = (e) => {
+        if (!item.contains(e.relatedTarget) && !tooltip.contains(e.relatedTarget)) {
+            tooltip.remove();
+            item.removeEventListener('mouseleave', closeTooltip);
+        }
+    };
+    item.addEventListener('mouseleave', closeTooltip);
 }
 
 // 选择目的地并关闭弹框
