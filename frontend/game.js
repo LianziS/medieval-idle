@@ -5117,7 +5117,7 @@ function renderInventories() {
         const inkCount = gameState.conchInkInventory || 0;
         if (inkCount > 0) {
             conchInkElement.innerHTML = `
-                <div class="inventory-item"
+                <div class="inventory-item inventory-hover-card"
                      data-id="conch_ink"
                      data-name="海螺墨"
                      data-count="${inkCount}"
@@ -5129,6 +5129,11 @@ function renderInventories() {
                     <span class="item-count">${inkCount}</span>
                 </div>
             `;
+            
+            // 绑定悬浮事件
+            conchInkElement.querySelectorAll('.inventory-hover-card').forEach(item => {
+                bindInventoryItemTooltip(item);
+            });
         } else {
             conchInkElement.innerHTML = '';
         }
@@ -5150,7 +5155,7 @@ function renderInventories() {
         const nailCount = gameState.riverNailInventory || 0;
         if (nailCount > 0) {
             riverNailElement.innerHTML = `
-                <div class="inventory-item"
+                <div class="inventory-item inventory-hover-card"
                      data-id="river_nail"
                      data-name="河铸钉"
                      data-count="${nailCount}"
@@ -5162,6 +5167,11 @@ function renderInventories() {
                     <span class="item-count">${nailCount}</span>
                 </div>
             `;
+            
+            // 绑定悬浮事件
+            riverNailElement.querySelectorAll('.inventory-hover-card').forEach(item => {
+                bindInventoryItemTooltip(item);
+            });
         } else {
             riverNailElement.innerHTML = '';
         }
@@ -5173,20 +5183,53 @@ function renderInventories() {
         const echoStoneCount = gameState.echoStoneInventory || 0;
         if (echoStoneCount > 0) {
             echoStoneElement.innerHTML = `
-                <div class="inventory-item"
+                <div class="inventory-item inventory-hover-card"
                      data-id="echo_stone"
                      data-name="回音石"
                      data-count="${echoStoneCount}"
                      data-price="800"
                      data-desc="用于制作乐器装备的珍贵材料"
-                     data-icon="🔮">
-                    <span class="item-icon">🔮</span>
+                     data-icon="💎">
+                    <span class="item-icon">💎</span>
                     <span class="item-name">回音石</span>
                     <span class="item-count">${echoStoneCount}</span>
                 </div>
             `;
+            
+            // 绑定悬浮事件
+            echoStoneElement.querySelectorAll('.inventory-hover-card').forEach(item => {
+                bindInventoryItemTooltip(item);
+            });
         } else {
             echoStoneElement.innerHTML = '';
+        }
+    }
+    
+    // 黑石（单独显示数量）
+    const blackstoneElement = document.getElementById('storage-blackstone-items');
+    if (blackstoneElement) {
+        const blackstoneCount = gameState.blackstoneInventory || 0;
+        if (blackstoneCount > 0) {
+            blackstoneElement.innerHTML = `
+                <div class="inventory-item inventory-hover-card"
+                     data-id="blackstone"
+                     data-name="黑石"
+                     data-count="${blackstoneCount}"
+                     data-price="1200"
+                     data-desc="用于强化高级装备的神秘材料"
+                     data-icon="⬛">
+                    <span class="item-icon">⬛</span>
+                    <span class="item-name">黑石</span>
+                    <span class="item-count">${blackstoneCount}</span>
+                </div>
+            `;
+            
+            // 绑定悬浮事件
+            blackstoneElement.querySelectorAll('.inventory-hover-card').forEach(item => {
+                bindInventoryItemTooltip(item);
+            });
+        } else {
+            blackstoneElement.innerHTML = '';
         }
     }
 
@@ -5239,41 +5282,85 @@ function renderInventories() {
         
         // 绑定悬浮事件
         sheetsElement.querySelectorAll('.inventory-item').forEach(item => {
-            item.addEventListener('mouseenter', (e) => {
-                const name = item.dataset.name;
-                const desc = item.dataset.desc;
-                const price = item.dataset.price;
-                const count = item.dataset.count;
-                const icon = item.dataset.icon;
-                
-                const tooltipHtml = `
-                    <div class="item-tooltip-name">${icon} ${name}</div>
-                    <div class="item-tooltip-row"><span>库存</span><span class="item-count-value">${count}</span></div>
-                    <div class="item-tooltip-row"><span>价值</span><span class="item-price-value">${price}</span></div>
-                    <div class="item-tooltip-desc">${desc}</div>
-                `;
-                
-                document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
-                const tooltip = document.createElement('div');
-                tooltip.className = 'item-tooltip';
-                tooltip.style.position = 'fixed';
-                tooltip.innerHTML = tooltipHtml;
-                document.body.appendChild(tooltip);
-                
-                const rect = item.getBoundingClientRect();
-                const tooltipRect = tooltip.getBoundingClientRect();
-                let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-                let top = rect.top - tooltipRect.height - 8;
-                left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
-                if (top < 10) top = rect.bottom + 8;
-                tooltip.style.left = `${left}px`;
-                tooltip.style.top = `${top}px`;
-            });
-            item.addEventListener('mouseleave', () => {
-                document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
-            });
+            bindInventoryItemTooltip(item);
         });
     }
+}
+
+/**
+ * 绑定物品悬浮tooltip（通用函数）
+ */
+function bindInventoryItemTooltip(item) {
+    item.addEventListener('mouseenter', (e) => {
+        const name = item.dataset.name;
+        const desc = item.dataset.desc;
+        const price = item.dataset.price;
+        const count = item.dataset.count;
+        const icon = item.dataset.icon;
+        
+        const tooltipHtml = `
+            <div class="item-tooltip-name">${icon} ${name}</div>
+            <div class="item-tooltip-row"><span>库存</span><span class="item-count-value">${count}</span></div>
+            <div class="item-tooltip-row"><span>价值</span><span class="item-price-value">${price}</span></div>
+            ${desc ? `<div class="item-tooltip-desc">${desc}</div>` : ''}
+        `;
+        
+        document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+        const tooltip = document.createElement('div');
+        tooltip.className = 'item-tooltip';
+        tooltip.style.position = 'fixed';
+        tooltip.innerHTML = tooltipHtml;
+        tooltip.style.zIndex = '20000';
+        document.body.appendChild(tooltip);
+        
+        const rect = item.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+        let top = rect.top - tooltipRect.height - 8;
+        left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
+        if (top < 10) top = rect.bottom + 8;
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
+    });
+    item.addEventListener('mouseleave', () => {
+        document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+    });
+    item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // 点击时也显示tooltip
+        const name = item.dataset.name;
+        const desc = item.dataset.desc;
+        const price = item.dataset.price;
+        const count = item.dataset.count;
+        const icon = item.dataset.icon;
+        
+        const tooltipHtml = `
+            <div class="item-tooltip-name">${icon} ${name}</div>
+            <div class="item-tooltip-row"><span>库存</span><span class="item-count-value">${count}</span></div>
+            <div class="item-tooltip-row"><span>价值</span><span class="item-price-value">${price}</span></div>
+            ${desc ? `<div class="item-tooltip-desc">${desc}</div>` : ''}
+        `;
+        
+        document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+        const tooltip = document.createElement('div');
+        tooltip.className = 'item-tooltip';
+        tooltip.style.position = 'fixed';
+        tooltip.innerHTML = tooltipHtml;
+        tooltip.style.zIndex = '20000';
+        document.body.appendChild(tooltip);
+        
+        const rect = item.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+        let top = rect.top - tooltipRect.height - 8;
+        left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
+        if (top < 10) top = rect.bottom + 8;
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
+        
+        // 3秒后自动关闭
+        setTimeout(() => tooltip.remove(), 3000);
+    });
 }
 
 /**
