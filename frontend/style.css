@@ -3879,6 +3879,20 @@ body::after {
     z-index: 10010;
 }
 
+/* Bard 页面弹窗 overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10010;
+}
+
 .action-modal {
     background: linear-gradient(180deg, #2d3f52 0%, #1B2A3A 100%);
     border: 2px solid #8B2C2D;
