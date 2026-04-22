@@ -1494,12 +1494,6 @@ class GameEngine {
             return { success: false, reason: `需要锻造 Lv.${pen.reqForgeLevel}` };
         }
         
-        // 检查诗人等级要求
-        const bardLevel = this.state.bardLevel || 1;
-        if (bardLevel < (pen.reqBardLevel || 1)) {
-            return { success: false, reason: `需要诗人 Lv.${pen.reqBardLevel || 1}` };
-        }
-        
         // 检查材料是否足够
         const feathersInv = this.state.cleanedFeathersInventory || {};
         const inkInv = this.state.conchInkInventory || 0;
@@ -1732,12 +1726,6 @@ class GameEngine {
             return { success: false, reason: `需要缝制 Lv.${boot.reqTailorLevel}` };
         }
         
-        // 检查诗人等级要求
-        const bardLevel = this.state.bardLevel || 1;
-        if (bardLevel < (boot.reqBardLevel || 1)) {
-            return { success: false, reason: `需要诗人 Lv.${boot.reqBardLevel || 1}` };
-        }
-        
         // 检查材料是否足够
         const fabricsInv = this.state.fabricsInventory || {};
         const threadsInv = this.state.threadsInventory || {};
@@ -1959,12 +1947,6 @@ class GameEngine {
         const craftingLevel = this.state.craftingLevel || 1;
         if (craftingLevel < instrument.reqCraftingLevel) {
             return { success: false, reason: `需要制作 Lv.${instrument.reqCraftingLevel}` };
-        }
-        
-        // 检查诗人等级要求
-        const bardLevel = this.state.bardLevel || 1;
-        if (bardLevel < (instrument.reqBardLevel || 1)) {
-            return { success: false, reason: `需要诗人 Lv.${instrument.reqBardLevel || 1}` };
         }
         
         // 检查材料是否足够
@@ -2710,17 +2692,30 @@ class GameEngine {
     equipBardItem(slot, itemId) {
         // 检查库存
         let inventory = [];
+        let configList = [];
         if (slot === 'pen') {
             inventory = this.state.pensInventory || [];
+            configList = CONFIG.pens || [];
         } else if (slot === 'shoe') {
             inventory = this.state.bootsInventory || [];
+            configList = CONFIG.boots || [];
         } else if (slot === 'instrument') {
             inventory = this.state.instrumentsInventory || [];
+            configList = CONFIG.instruments || [];
         }
         
         const hasItem = inventory.some(i => (typeof i === 'string' ? i : i.id) === itemId);
         if (!hasItem) {
             return { success: false, reason: '背包中无此装备' };
+        }
+        
+        // 检查诗人等级要求
+        const item = configList.find(i => i.id === itemId);
+        if (item && item.reqBardLevel) {
+            const bardLevel = this.state.bardLevel || 1;
+            if (bardLevel < item.reqBardLevel) {
+                return { success: false, reason: `需要诗人 Lv.${item.reqBardLevel}` };
+            }
         }
         
         // 穿戴装备
