@@ -8222,7 +8222,7 @@ function initBardPage() {
 function updateBardPage() {
     // 更新等级和经验
     document.getElementById('bard-level').textContent = `Lv. ${bardState.level}`;
-    document.getElementById('bard-avatar-level').textContent = `Lv.${bardState.level}`;
+    document.getElementById('bard-avatar-name').textContent = '吟游诗人';
     
     const nextExp = CONFIG.bardLevels?.find(l => l.level === bardState.level + 1)?.exp || 35000;
     const expPercent = bardState.level >= 20 ? 100 : (bardState.exp / nextExp) * 100;
@@ -8339,33 +8339,23 @@ function showDestDetailModal(destId) {
                 </div>
             </div>
             
-            <div class="modal-section" style="margin-top:12px;">
-                <div style="font-size:0.85rem;color:#6b4f3c;font-weight:bold;margin-bottom:8px;">📦 掉落物</div>
-                <div class="drop-list">
-                    ${dest.drops.map(d => {
-                        // 获取掉落物库存
-                        let stock = 0;
-                        if (d.id === 'conch_ink') stock = gameState?.conchInkInventory || 0;
-                        else if (d.id === 'river_nail') stock = gameState?.riverNailInventory || 0;
-                        else if (d.id === 'echo_stone') stock = gameState?.echoStoneInventory || 0;
-                        else if (d.id === 'blackstone') stock = gameState?.blackstoneInventory || 0;
-                        return `
-                            <div class="drop-line drop-line-hover" data-tooltip="${d.icon} ${d.name} | 库存: ${stock}">
-                                <span class="drop-count">1</span>
-                                <span class="res-tag">${d.icon} ${d.name}</span>
-                                <span class="item-pct">~${Math.round(d.rate * 100)}%</span>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-                <div style="font-size:0.82rem;color:#7A8A98;margin-top:8px;">
-                    获得经验：<span style="color:#FFA726;font-weight:bold;">50 exp</span>
+            <div class="popup-divider" style="margin:12px 0;"></div>
+            
+            <div class="popup-info-row">
+                <div class="popup-info-label"><span class="lbl-icon">📦</span>产出</div>
+                <div class="popup-info-val">
+                    <span class="popup-exp-val">50 exp</span>
+                    ${dest.drops.map(d => `
+                        <br><span class="popup-drop-prefix">1</span> <span class="popup-badge drop item-hover-card" data-item-id="${d.id}" data-item-name="${d.name}" data-item-icon="${d.icon}">${d.icon} ${d.name}</span> <span class="popup-token-prob">~${Math.round(d.rate * 100)}%</span>
+                    `).join('')}
                 </div>
             </div>
             
+            <div class="popup-divider" style="margin:12px 0;"></div>
+            
             ${isUnlocked ? 
-                `<button class="dispatch-btn" style="margin-top:16px;" onclick="selectDestAndClose('${destId}')">确定</button>` :
-                `<div style="margin-top:16px;color:#6b7f90;font-size:0.85rem;text-align:center;">需要诗人 Lv.${dest.reqLevel} 解锁后才能派遣</div>`
+                `<button class="dispatch-btn" style="margin-top:8px;width:100%;" onclick="selectDestAndClose('${destId}')">确定</button>` :
+                `<div style="margin-top:12px;color:#6b7f90;font-size:0.85rem;text-align:center;">需要诗人 Lv.${dest.reqLevel} 解锁后才能派遣</div>`
             }
         </div>
     `;
@@ -8373,10 +8363,33 @@ function showDestDetailModal(destId) {
     document.body.appendChild(modal);
     setupModalClose(modal);
     
-    // 添加悬浮效果
+    // 绑定物品悬浮/点击事件
+    modal.querySelectorAll('.item-hover-card').forEach(item => {
+        item.addEventListener('mouseenter', (e) => {
+            const itemId = item.dataset.itemId;
+            const itemName = item.dataset.itemName;
+            const itemIcon = item.dataset.itemIcon;
+            
+            // 获取库存
+            let stock = 0;
+            if (itemId === 'conch_ink') stock = gameState?.conchInkInventory || 0;
+            else if (itemId === 'river_nail') stock = gameState?.riverNailInventory || 0;
+            else if (itemId === 'echo_stone') stock = gameState?.echoStoneInventory || 0;
+            else if (itemId === 'blackstone') stock = gameState?.blackstoneInventory || 0;
+            
+            const html = `<div class="item-tooltip-name">${itemIcon} ${itemName}</div><div class="item-tooltip-row"><span>库存</span><span>${stock}</span></div>`;
+            createTooltip(html, e.currentTarget);
+        });
+        item.addEventListener('mouseleave', () => {
+            document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+        });
+    });
+    
+    // 乐谱悬浮效果
     modal.querySelectorAll('.drop-line-hover').forEach(line => {
         line.addEventListener('mouseenter', (e) => {
             const tooltipText = e.currentTarget.dataset.tooltip;
+            if (!tooltipText) return;
             const parts = tooltipText.split('|');
             const html = parts.map(p => `<div>${p.trim()}</div>`).join('');
             createTooltip(html, e.currentTarget);
