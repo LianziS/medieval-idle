@@ -8988,11 +8988,3 @@ function updateBardUpgradesStatus() {
         }
     });
 }
-
-// Socket事件监听：乐谱添加
-socket.on('bard_sheet_added', (data) => {
-    const catInfo = CONFIG.sheets?.categories?.[data.category];
-    const qualInfo = CONFIG.sheets?.qualities?.[data.quality];
-    showToast(`✅ 获得 ${catInfo?.name} ${qualInfo?.name} ×${data.count}`);
-    socket.emit('get_bard_info');
-});
