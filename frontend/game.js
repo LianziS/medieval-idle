@@ -8397,7 +8397,9 @@ function showDestDetailModal(destId) {
     
     // 乐谱悬浮/点击效果
     modal.querySelectorAll('.drop-line-hover').forEach(line => {
+        console.log('绑定乐谱悬浮事件', line.dataset.tooltip);
         line.addEventListener('mouseenter', (e) => {
+            console.log('乐谱mouseenter触发');
             const tooltipText = e.currentTarget.dataset.tooltip;
             if (!tooltipText) return;
             const parts = tooltipText.split('|');
@@ -8405,6 +8407,7 @@ function showDestDetailModal(destId) {
             createTooltip(html, e.currentTarget);
         });
         line.addEventListener('click', (e) => {
+            console.log('乐谱click触发');
             e.stopPropagation();
             const tooltipText = e.currentTarget.dataset.tooltip;
             if (!tooltipText) return;
@@ -8413,6 +8416,7 @@ function showDestDetailModal(destId) {
             createTooltip(html, e.currentTarget);
         });
         line.addEventListener('mouseleave', () => {
+            console.log('乐谱mouseleave触发');
             document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
         });
     });
