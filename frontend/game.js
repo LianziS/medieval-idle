@@ -8825,28 +8825,25 @@ function positionTooltip(tooltip, elInfo) {
     let left = elInfo.elLeft + (elInfo.elWidth / 2) - (tooltipWidth / 2);
     let top = elInfo.elTop - tooltipHeight - 8;
     
-    // 上方空间不足，显示在下方
-    if (top < 10) {
+    // 只在完全超出视口顶部时才显示在下方
+    if (top < -tooltipHeight / 2) {
         top = elInfo.elBottom + 8;
     }
     
-    // 下方也不足，显示在右侧
-    if (top + tooltipHeight > elInfo.viewportHeight - 10) {
+    // 下方完全超出视口底部，显示在右侧
+    if (top + tooltipHeight > elInfo.viewportHeight + tooltipHeight / 2) {
         top = elInfo.elTop;
         left = elInfo.elRight + 10;
     }
     
-    // 右侧超出边界
+    // 水平边界检查
     if (left + tooltipWidth > elInfo.viewportWidth - 10) {
-        // 尝试显示在左侧
         left = elInfo.elLeft - tooltipWidth - 10;
-        // 左侧也不够，则贴右边界
         if (left < 10) {
             left = elInfo.viewportWidth - tooltipWidth - 10;
         }
     }
     
-    // 左侧超出边界
     if (left < 10) {
         left = 10;
     }
