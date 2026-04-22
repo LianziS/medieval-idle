@@ -8374,14 +8374,38 @@ function showDestDetailModal(destId) {
             const html = `<div class="item-tooltip-name">${itemIcon} ${itemName}</div><div class="item-tooltip-row"><span>库存</span><span>${stock}</span></div>`;
             createTooltip(html, e.currentTarget);
         });
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const itemId = item.dataset.itemId;
+            const itemName = item.dataset.itemName;
+            const itemIcon = item.dataset.itemIcon;
+            
+            // 获取库存
+            let stock = 0;
+            if (itemId === 'conch_ink') stock = gameState?.conchInkInventory || 0;
+            else if (itemId === 'river_nail') stock = gameState?.riverNailInventory || 0;
+            else if (itemId === 'echo_stone') stock = gameState?.echoStoneInventory || 0;
+            else if (itemId === 'blackstone') stock = gameState?.blackstoneInventory || 0;
+            
+            const html = `<div class="item-tooltip-name">${itemIcon} ${itemName}</div><div class="item-tooltip-row"><span>库存</span><span>${stock}</span></div>`;
+            createTooltip(html, e.currentTarget);
+        });
         item.addEventListener('mouseleave', () => {
             document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
         });
     });
     
-    // 乐谱悬浮效果
+    // 乐谱悬浮/点击效果
     modal.querySelectorAll('.drop-line-hover').forEach(line => {
         line.addEventListener('mouseenter', (e) => {
+            const tooltipText = e.currentTarget.dataset.tooltip;
+            if (!tooltipText) return;
+            const parts = tooltipText.split('|');
+            const html = parts.map(p => `<div>${p.trim()}</div>`).join('');
+            createTooltip(html, e.currentTarget);
+        });
+        line.addEventListener('click', (e) => {
+            e.stopPropagation();
             const tooltipText = e.currentTarget.dataset.tooltip;
             if (!tooltipText) return;
             const parts = tooltipText.split('|');
@@ -8951,11 +8975,26 @@ function createTooltip(html, el) {
     
     const tooltip = document.createElement('div');
     tooltip.className = 'item-tooltip';
+    tooltip.style.position = 'fixed';
     tooltip.innerHTML = html;
     
     document.body.appendChild(tooltip);
-    const elInfo = calculateTooltipPosition(el);
-    positionTooltip(tooltip, elInfo);
+    
+    // 获取尺寸后定位（和 showActionItemTooltip 一样的方式）
+    const elRect = el.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    
+    // 水平居中于元素
+    let left = elRect.left + (elRect.width / 2) - (tooltipRect.width / 2);
+    // 垂直在元素上方
+    let top = elRect.top - tooltipRect.height - 8;
+    
+    // 边界检查
+    left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
+    if (top < 10) top = elRect.bottom + 8;
+    
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
     
     return tooltip;
 }
