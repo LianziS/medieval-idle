@@ -8380,15 +8380,15 @@ function showDestDetailModal(destId) {
             <div class="modal-section">
                 <div style="font-size:0.85rem;color:#6b4f3c;font-weight:bold;margin-bottom:8px;">🎼 乐谱品质概率</div>
                 <div class="drop-line">
-                    <span class="popup-badge drop item-hover-card" data-item-id="sheet_normal_${dest.id}" data-item-type="SHEET_NORMAL" data-item-name="普通的乐谱" data-item-icon="📜" data-item-price="${sheetPrices.normal}" data-item-duration="${sheetDurations.normal}">📜 普通的乐谱</span>
+                    <span class="popup-badge drop item-hover-card" data-item-id="sheet_normal_${dest.id}" data-item-type="SHEET_NORMAL" data-item-category="earth" data-item-name="普通的乐谱" data-item-icon="📜" data-item-price="${sheetPrices.normal}" data-item-duration="${sheetDurations.normal}">📜 普通的乐谱</span>
                     <span class="item-pct">~${qualityRates.normal}%</span>
                 </div>
                 <div class="drop-line">
-                    <span class="popup-badge drop item-hover-card" data-item-id="sheet_fine_${dest.id}" data-item-type="SHEET_FINE" data-item-name="精良的乐谱" data-item-icon="📜" data-item-price="${sheetPrices.fine}" data-item-duration="${sheetDurations.fine}">📜 精良的乐谱</span>
+                    <span class="popup-badge drop item-hover-card" data-item-id="sheet_fine_${dest.id}" data-item-type="SHEET_FINE" data-item-category="earth" data-item-name="精良的乐谱" data-item-icon="📜" data-item-price="${sheetPrices.fine}" data-item-duration="${sheetDurations.fine}">📜 精良的乐谱</span>
                     <span class="item-pct">~${qualityRates.fine}%</span>
                 </div>
                 <div class="drop-line">
-                    <span class="popup-badge drop item-hover-card" data-item-id="sheet_epic_${dest.id}" data-item-type="SHEET_EPIC" data-item-name="史诗的乐谱" data-item-icon="📜" data-item-price="${sheetPrices.epic}" data-item-duration="${sheetDurations.epic}">📜 史诗的乐谱</span>
+                    <span class="popup-badge drop item-hover-card" data-item-id="sheet_epic_${dest.id}" data-item-type="SHEET_EPIC" data-item-category="earth" data-item-name="史诗的乐谱" data-item-icon="📜" data-item-price="${sheetPrices.epic}" data-item-duration="${sheetDurations.epic}">📜 史诗的乐谱</span>
                     <span class="item-pct">~${qualityRates.epic}%</span>
                 </div>
             </div>
@@ -8433,6 +8433,7 @@ function showBardItemTooltip(item, event, modal) {
     
     const itemId = item.dataset.itemId;
     const itemType = item.dataset.itemType;
+    const itemCategory = item.dataset.itemCategory || 'earth'; // 乐谱类别
     const itemName = item.dataset.itemName;
     const itemIcon = item.dataset.itemIcon;
     const itemPrice = item.dataset.itemPrice;
@@ -8489,15 +8490,22 @@ function showBardItemTooltip(item, event, modal) {
     // 构建tooltip内容
     let tooltipHtml = `<div class="item-tooltip-name">${itemIcon} ${itemName}</div>`;
     
-    // 乐谱类型显示更详细的信息
+    // 乐谱tooltip - 需要显示类别信息
     if (itemType.startsWith('SHEET_')) {
-        // 可用于（只显示图标）
-        tooltipHtml += `<div class="item-tooltip-row"><span>可用于</span><span class="item-tooltip-icons">🪓 ⛏️ 🌿 🔨 🪵 🧵 ⚗️ 🍺 ✨</span></div>`;
+        // 根据不同类别显示对应的图标
+        const categoryIcons = {
+            earth: ['🪓', '⛏️', '🌿'],      // 大地之艺：伐木、挖矿、采集
+            craft: ['🔨', '🪵', '🧵'],       // 巧手之艺：锻造、制作、裁缝  
+            sublime: ['⚗️', '🍺', '✨']      // 升华之艺：炼金、酿造、强化
+        };
+        const icons = categoryIcons[itemCategory] || categoryIcons.earth;
         
-        // 效果（根据类别显示）
-        if (effect.earth) tooltipHtml += `<div class="item-tooltip-row"><span>大地效果</span><span class="item-tooltip-value">${effect.earth}</span></div>`;
-        if (effect.craft) tooltipHtml += `<div class="item-tooltip-row"><span>巧手效果</span><span class="item-tooltip-value">${effect.craft}</span></div>`;
-        if (effect.sublime) tooltipHtml += `<div class="item-tooltip-row"><span>升华效果</span><span class="item-tooltip-value">${effect.sublime}</span></div>`;
+        // 可用于（只显示图标，不显示文字）
+        tooltipHtml += `<div class="item-tooltip-row"><span>可用于</span><span class="item-tooltip-icons-only">${icons.join(' ')}</span></div>`;
+        
+        // 效果（根据类别显示对应的）
+        const effectValue = effect[itemCategory];
+        if (effectValue) tooltipHtml += `<div class="item-tooltip-row"><span>效果</span><span class="item-tooltip-value">${effectValue}</span></div>`;
         
         // 时长
         tooltipHtml += `<div class="item-tooltip-row"><span>时长</span><span class="item-tooltip-value">${duration}分钟</span></div>`;
@@ -8506,7 +8514,7 @@ function showBardItemTooltip(item, event, modal) {
         tooltipHtml += `<div class="item-tooltip-row"><span>库存</span><span class="item-count-value">${ownedCount}</span></div>`;
         
         // 价值
-        tooltipHtml += `<div class="item-tooltip-row"><span>价值</span><span class="item-price-value">${price}金币</span></div>`;
+        tooltipHtml += `<div class="item-tooltip-row"><span>价值</span><span class="item-price-value">${price}</span></div>`;
     } else {
         // 其他物品显示基本信息
         tooltipHtml += `<div class="item-tooltip-row"><span>库存</span><span class="item-count-value">${ownedCount}</span></div>`;
@@ -8834,6 +8842,7 @@ function updatePerformArea() {
     const slot = document.getElementById('perf-slot');
     const info = document.getElementById('perf-info');
     const btn = document.getElementById('perf-btn');
+    const sheetNameEl = document.getElementById('perf-sheet-name');
     
     if (!bardState.selectedSheet) {
         slot.classList.remove('active');
@@ -8841,6 +8850,7 @@ function updatePerformArea() {
         info.innerHTML = '';
         btn.disabled = true;
         btn.textContent = '🎵 开始演奏';
+        if (sheetNameEl) sheetNameEl.textContent = '';
         return;
     }
     
@@ -8848,6 +8858,9 @@ function updatePerformArea() {
     const catInfo = CONFIG.sheets?.categories?.[category];
     const qualInfo = CONFIG.sheets?.qualities?.[quality];
     const stock = bardState.sheetsInventory?.[category]?.[quality] || 0;
+    
+    // 乐谱完整名称
+    const sheetFullName = `${qualInfo?.name || quality}的${catInfo?.name || category}乐谱`;
     
     slot.classList.add('active');
     slot.innerHTML = `<span class="slot-icon">${catInfo?.icon || '📜'}</span><span class="slot-count">×${stock}</span>`;
@@ -8860,7 +8873,7 @@ function updatePerformArea() {
     };
     
     info.innerHTML = `
-        <div class="sheet-detail-row"><span class="sheet-detail-label">乐谱</span><span class="sheet-detail-val"><span class="quality-badge quality-badge-${quality}">${qualInfo?.name || quality}的${catInfo?.name || category}乐谱</span></span></div>
+        <div class="sheet-detail-row"><span class="sheet-detail-label">乐谱</span><span class="sheet-detail-val"><span class="quality-badge quality-badge-${quality}">${sheetFullName}</span></span></div>
         <div class="sheet-detail-row"><span class="sheet-detail-label">演奏时长</span><span class="sheet-detail-val">${qualInfo?.duration || 30}分钟</span></div>
         <div class="sheet-detail-row"><span class="sheet-detail-label">可用于</span><span class="sheet-detail-val">${catInfo?.target || '-'}</span></div>
         <div class="sheet-detail-row"><span class="sheet-detail-label">效果</span><span class="sheet-detail-val" style="color:#FFA726;font-weight:bold;">${qualInfo?.effect?.[category] || '-'}</span></div>
@@ -8870,6 +8883,16 @@ function updatePerformArea() {
     
     btn.disabled = bardState.status !== 'idle' || stock === 0;
     btn.textContent = bardState.status === 'performing' ? '🎵 演奏中...' : '🎵 开始演奏';
+    
+    // 更新乐谱名称显示
+    if (sheetNameEl) {
+        if (bardState.status === 'performing') {
+            sheetNameEl.textContent = `正在演奏：${sheetFullName}`;
+            sheetNameEl.style.display = 'block';
+        } else {
+            sheetNameEl.style.display = 'none';
+        }
+    }
 }
 
 // 显示装备选择弹框

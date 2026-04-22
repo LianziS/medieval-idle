@@ -3791,6 +3791,12 @@ body::after {
     font-size: 0.85rem;
 }
 
+.item-tooltip-icons-only {
+    display: inline-flex;
+    gap: 6px;
+    font-size: 1rem;
+}
+
 .item-equip-btn {
     width: 100%;
     margin-top: 8px;
@@ -7137,6 +7143,16 @@ body::after {
     color: #6b7f90;
     margin-top: 4px;
     text-align: right;
+}
+
+.perf-sheet-name {
+    font-size: 0.85rem;
+    color: #E8C57F;
+    margin-top: 8px;
+    text-align: center;
+    padding: 4px 8px;
+    background: rgba(232, 197, 127, 0.1);
+    border-radius: 4px;
 }
 
 /* 装备网格 */
