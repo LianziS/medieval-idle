@@ -1116,10 +1116,7 @@ function showClearQueueConfirm() {
     `;
 
     document.body.appendChild(modal);
-
-    modal.querySelector('#clear-cancel').addEventListener('click', () => {
-        modal.remove();
-    });
+    setupActionModalClose(modal, '#clear-cancel');
 
     modal.querySelector('#clear-confirm').addEventListener('click', () => {
         socket.emit('queue_clear');
@@ -1388,14 +1385,11 @@ function showUnequipConfirm(slotId, toolName) {
     `;
 
     document.body.appendChild(modal);
+    setupActionModalClose(modal, '#unequip-cancel');
 
-    modal.querySelector('#unequip-cancel').addEventListener('click', () => modal.remove());
     modal.querySelector('#unequip-confirm').addEventListener('click', () => {
         socket.emit('unequip_tool', { slotType: slotId });
         modal.remove();
-    });
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.remove();
     });
 }
 
@@ -1474,9 +1468,7 @@ function openEquipModal(slotType) {
     `;
 
     document.body.appendChild(modal);
-
-    modal.querySelector('.action-modal-close').addEventListener('click', () => modal.remove());
-    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+    setupActionModalClose(modal);
 
     modal.querySelectorAll('.equip-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -2042,20 +2034,11 @@ function showReplaceActionConfirm(index, action, queueItem) {
     `;
 
     document.body.appendChild(modal);
-
-    modal.querySelector('#replace-cancel').addEventListener('click', () => {
-        modal.remove();
-    });
+    setupActionModalClose(modal, '#replace-cancel');
 
     modal.querySelector('#replace-confirm').addEventListener('click', () => {
         socket.emit('queue_replace_current', { index });
         modal.remove();
-    });
-
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.remove();
-        }
     });
 }
 
@@ -2190,16 +2173,11 @@ function openUpgradeModal(buildingId) {
     `;
 
     document.body.appendChild(modal);
+    setupActionModalClose(modal, '#upgrade-cancel');
 
-    // 绑定事件
-    modal.querySelector('.action-modal-close').addEventListener('click', () => modal.remove());
-    modal.querySelector('#upgrade-cancel').addEventListener('click', () => modal.remove());
     modal.querySelector('#upgrade-confirm').addEventListener('click', () => {
         socket.emit('upgrade_building', { buildingId });
         modal.remove();
-    });
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.remove();
     });
 }
 
@@ -3191,7 +3169,16 @@ function openBootsTailorModal(bootId) {
     document.body.appendChild(modal);
 
     // 关闭函数
-    const closeModal = () => modal.remove();
+    const closeModal = () => {
+        modal.remove();
+        document.removeEventListener('keydown', escHandler);
+    };
+    
+    // ESC键关闭
+    const escHandler = (e) => {
+        if (e.key === 'Escape') closeModal();
+    };
+    document.addEventListener('keydown', escHandler);
 
     // 绑定关闭事件
     modal.querySelector('.popup-close-btn').addEventListener('click', closeModal);
@@ -3441,7 +3428,15 @@ function openInstrumentModal(instrumentId) {
 
     document.body.appendChild(modal);
 
-    const closeModal = () => modal.remove();
+    const closeModal = () => {
+        modal.remove();
+        document.removeEventListener('keydown', escHandler);
+    };
+    
+    const escHandler = (e) => {
+        if (e.key === 'Escape') closeModal();
+    };
+    document.addEventListener('keydown', escHandler);
 
     modal.querySelector('.popup-close-btn').addEventListener('click', closeModal);
     modal.querySelector('#action-cancel').addEventListener('click', closeModal);
@@ -3905,7 +3900,16 @@ function openToolForgeModal(toolType, toolIndex) {
     document.body.appendChild(modal);
 
     // 关闭函数
-    const closeModal = () => modal.remove();
+    const closeModal = () => {
+        modal.remove();
+        document.removeEventListener('keydown', escHandler);
+    };
+    
+    // ESC键关闭
+    const escHandler = (e) => {
+        if (e.key === 'Escape') closeModal();
+    };
+    document.addEventListener('keydown', escHandler);
 
     // 绑定关闭事件
     modal.querySelector('.popup-close-btn').addEventListener('click', closeModal);
@@ -4190,7 +4194,14 @@ function openPenForgeModal(penId) {
     // 关闭函数
     const closeModal = () => {
         modal.remove();
+        document.removeEventListener('keydown', escHandler);
     };
+
+    // ESC键关闭
+    const escHandler = (e) => {
+        if (e.key === 'Escape') closeModal();
+    };
+    document.addEventListener('keydown', escHandler);
 
     // 绑定关闭事件
     modal.querySelector('.popup-close-btn').addEventListener('click', closeModal);
@@ -4491,7 +4502,16 @@ function renderMerchantPanel(merchantId, merchantData, activeTab = 'trade', save
     const closeModal = () => {
         modal.classList.remove('active');
         setTimeout(() => modal.remove(), 400);
+        document.removeEventListener('keydown', escHandler);
     };
+
+    // ESC键关闭
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    };
+    document.addEventListener('keydown', escHandler);
 
     // 绑定事件
     modal.querySelector('.merchant-close-btn').addEventListener('click', closeModal);
@@ -6484,7 +6504,22 @@ function openGMPanel() {
 
     panel.querySelector('.gm-close').addEventListener('click', () => {
         panel.remove();
+        document.removeEventListener('keydown', gmEscHandler);
     });
+
+    // 点击外部关闭
+    panel.addEventListener('click', (e) => {
+        // GM面板本身不是overlay，所以不需要点击外部关闭
+    });
+
+    // ESC键关闭
+    const gmEscHandler = (e) => {
+        if (e.key === 'Escape') {
+            panel.remove();
+            document.removeEventListener('keydown', gmEscHandler);
+        }
+    };
+    document.addEventListener('keydown', gmEscHandler);
 
     document.body.appendChild(panel);
 }
@@ -9295,17 +9330,56 @@ function hideEquipSlotTooltip() {
 }
 
 // 通用弹框关闭处理
-function setupModalClose(modal, closeBtnSelector = '.bard-modal-close') {
+function setupModalClose(modal, closeBtnSelector = '.bard-modal-close', cancelBtnId = null) {
     const closeBtn = modal.querySelector(closeBtnSelector);
     if (closeBtn) {
         closeBtn.addEventListener('click', () => modal.remove());
+    }
+    
+    // 取消按钮
+    if (cancelBtnId) {
+        const cancelBtn = modal.querySelector(cancelBtnId);
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => modal.remove());
+        }
+    }
+    
+    // 点击外部关闭
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+    
+    // ESC键关闭
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+    
+    // 返回清理函数
+    return () => {
+        document.removeEventListener('keydown', escHandler);
+    };
+}
+
+// 为 action-modal-overlay 添加统一的关闭逻辑
+function setupActionModalClose(modal, cancelBtnId = '#action-cancel') {
+    const closeBtn = modal.querySelector('.action-modal-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => modal.remove());
+    }
+    
+    const cancelBtn = modal.querySelector(cancelBtnId);
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => modal.remove());
     }
     
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.remove();
     });
     
-    // ESC键关闭
     const escHandler = (e) => {
         if (e.key === 'Escape') {
             modal.remove();
