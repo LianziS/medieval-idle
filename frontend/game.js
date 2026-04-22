@@ -8429,6 +8429,7 @@ function showDestDetailModal(destId) {
 
 // 诗人弹窗物品tooltip（类似 showActionItemTooltip）
 function showBardItemTooltip(item, event, modal) {
+    console.log('🎵 showBardItemTooltip 被调用', item.dataset.itemType, item.dataset.itemName);
     document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
     
     const itemId = item.dataset.itemId;
@@ -8439,11 +8440,13 @@ function showBardItemTooltip(item, event, modal) {
     const itemPrice = item.dataset.itemPrice;
     const itemDuration = item.dataset.itemDuration;
     
+    console.log('🎵 itemCategory:', itemCategory, 'itemType:', itemType);
+    
     // 获取库存数量和效果信息
     let ownedCount = 0;
     let price = 0;
     let duration = 0;
-    let effect = '';
+    let effect = {};
     
     // 乐谱类型
     if (itemType === 'SHEET_NORMAL') {
@@ -8472,6 +8475,8 @@ function showBardItemTooltip(item, event, modal) {
         effect = CONFIG.sheets?.qualities?.epic?.effect || {};
     }
     
+    console.log('🎵 effect:', effect, 'ownedCount:', ownedCount, 'price:', price, 'duration:', duration);
+    
     // 产出物类型
     if (itemId === 'conch_ink' || itemType === 'CONCH_INK') {
         ownedCount = gameState?.conchInkInventory || 0;
@@ -8492,6 +8497,7 @@ function showBardItemTooltip(item, event, modal) {
     
     // 乐谱tooltip - 需要显示类别信息
     if (itemType.startsWith('SHEET_')) {
+        console.log('🎵 是乐谱类型，构建新格式tooltip');
         // 根据不同类别显示对应的图标
         const categoryIcons = {
             earth: ['🪓', '⛏️', '🌿'],      // 大地之艺：伐木、挖矿、采集
@@ -8520,6 +8526,8 @@ function showBardItemTooltip(item, event, modal) {
         tooltipHtml += `<div class="item-tooltip-row"><span>库存</span><span class="item-count-value">${ownedCount}</span></div>`;
         tooltipHtml += `<div class="item-tooltip-row"><span>价值</span><span class="item-price-value">${price}金币</span></div>`;
     }
+    
+    console.log('🎵 tooltipHtml:', tooltipHtml);
     
     const tooltip = document.createElement('div');
     tooltip.className = 'item-tooltip';
