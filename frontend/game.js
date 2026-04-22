@@ -8159,18 +8159,13 @@ function initBardPage() {
         if (!wine) return;
         
         const stock = bardState.wineBoxInventory?.[wine.id] || 0;
-        const tooltip = document.createElement('div');
-        tooltip.className = 'item-tooltip';
-        tooltip.id = 'wine-main-tooltip';
-        tooltip.innerHTML = `
+        const html = `
             <div class="item-tooltip-name">${wine.icon} ${wine.name}</div>
             <div class="item-tooltip-row"><span>经验增益</span><span class="item-tooltip-value">${wine.expBonus > 0 ? `+${wine.expBonus}%` : '无'}</span></div>
             <div class="item-tooltip-row"><span>库存</span><span class="item-tooltip-value item-count-value">${stock}</span></div>
         `;
         
-        document.body.appendChild(tooltip);
-        const elInfo = calculateTooltipPosition(e.target);
-        positionTooltip(tooltip, elInfo);
+        const tooltip = createTooltip(html, e.target);
         
         e.target.addEventListener('mouseleave', () => {
             tooltip.remove();
@@ -8462,17 +8457,11 @@ function showWineSelectModal() {
 let wineTooltipEl = null;
 function showWineTooltip(el, title, content) {
     hideWineTooltip();
-    
-    wineTooltipEl = document.createElement('div');
-    wineTooltipEl.className = 'item-tooltip';
-    wineTooltipEl.innerHTML = `
+    const html = `
         <div class="item-tooltip-name">${title}</div>
         <div class="item-tooltip-desc" style="font-size:0.72rem;">${content}</div>
     `;
-    
-    document.body.appendChild(wineTooltipEl);
-    const elInfo = calculateTooltipPosition(el);
-    positionTooltip(wineTooltipEl, elInfo);
+    wineTooltipEl = createTooltip(html, el);
 }
 
 function hideWineTooltip() {
@@ -8587,17 +8576,11 @@ function showSheetSelectModal() {
 let sheetTooltipEl = null;
 function showSheetTooltip(el, title, content) {
     hideSheetTooltip();
-    
-    sheetTooltipEl = document.createElement('div');
-    sheetTooltipEl.className = 'item-tooltip';
-    sheetTooltipEl.innerHTML = `
+    const html = `
         <div class="item-tooltip-name">${title}</div>
         <div class="item-tooltip-desc" style="font-size:0.72rem;">${content}</div>
     `;
-    
-    document.body.appendChild(sheetTooltipEl);
-    const elInfo = calculateTooltipPosition(el);
-    positionTooltip(sheetTooltipEl, elInfo);
+    sheetTooltipEl = createTooltip(html, el);
 }
 
 function hideSheetTooltip() {
@@ -8730,17 +8713,11 @@ function showEquipSelectModal(slotType) {
 let equipTooltipEl = null;
 function showEquipTooltip(el, title, content) {
     hideEquipTooltip();
-    
-    equipTooltipEl = document.createElement('div');
-    equipTooltipEl.className = 'item-tooltip';
-    equipTooltipEl.innerHTML = `
+    const html = `
         <div class="item-tooltip-name">${title}</div>
         <div class="item-tooltip-desc" style="font-size:0.72rem;">${content}</div>
     `;
-    
-    document.body.appendChild(equipTooltipEl);
-    const elInfo = calculateTooltipPosition(el);
-    positionTooltip(equipTooltipEl, elInfo);
+    equipTooltipEl = createTooltip(html, el);
 }
 
 function hideEquipTooltip() {
@@ -8756,9 +8733,7 @@ function showEquipSlotTooltip(el, slotType) {
     hideEquipSlotTooltip();
     
     const equipped = bardState.bardEquipment?.[slotType];
-    
-    equipSlotTooltipEl = document.createElement('div');
-    equipSlotTooltipEl.className = 'item-tooltip';
+    let html = '';
     
     if (equipped) {
         // 根据槽位类型获取配置
@@ -8769,22 +8744,20 @@ function showEquipSlotTooltip(el, slotType) {
         
         const item = configList.find(i => i.id === equipped);
         if (item) {
-            equipSlotTooltipEl.innerHTML = `
+            html = `
                 <div class="item-tooltip-name">${item.icon} ${item.name}</div>
                 <div class="item-tooltip-row"><span>效果</span><span class="item-tooltip-value">${item.effect || '-'}</span></div>
             `;
         }
     } else {
         const slotNames = { pen: '笔', shoe: '鞋子', instrument: '乐器' };
-        equipSlotTooltipEl.innerHTML = `
+        html = `
             <div class="item-tooltip-name">${slotNames[slotType]}</div>
             <div class="item-tooltip-desc" style="color:#6b7f90;">未装备</div>
         `;
     }
     
-    document.body.appendChild(equipSlotTooltipEl);
-    const elInfo = calculateTooltipPosition(el);
-    positionTooltip(equipSlotTooltipEl, elInfo);
+    equipSlotTooltipEl = createTooltip(html, el);
 }
 
 function hideEquipSlotTooltip() {
@@ -8834,6 +8807,13 @@ function calculateTooltipPosition(el) {
 
 // 计算 tooltip 最终位置（在 tooltip 创建并添加到 DOM 后调用）
 function positionTooltip(tooltip, elInfo) {
+    // 先隐藏获取尺寸
+    tooltip.style.visibility = 'hidden';
+    tooltip.style.position = 'fixed';
+    tooltip.style.left = '0px';
+    tooltip.style.top = '0px';
+    
+    // 此时可以获取正确尺寸
     const tooltipRect = tooltip.getBoundingClientRect();
     const tooltipWidth = tooltipRect.width;
     const tooltipHeight = tooltipRect.height;
@@ -8870,6 +8850,23 @@ function positionTooltip(tooltip, elInfo) {
     
     tooltip.style.left = `${left}px`;
     tooltip.style.top = `${top}px`;
+    tooltip.style.visibility = 'visible';
+}
+
+// 创建 tooltip 的通用函数（先移除已有 tooltip）
+function createTooltip(html, el) {
+    // 移除已有 tooltip
+    document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'item-tooltip';
+    tooltip.innerHTML = html;
+    
+    document.body.appendChild(tooltip);
+    const elInfo = calculateTooltipPosition(el);
+    positionTooltip(tooltip, elInfo);
+    
+    return tooltip;
 }
 
 // 穿戴诗人装备
