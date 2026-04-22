@@ -8258,13 +8258,58 @@ function initBardPage() {
                 const catInfo = CONFIG.sheets?.categories?.[category];
                 const qualInfo = CONFIG.sheets?.qualities?.[quality];
                 const stock = bardState.sheetsInventory?.[category]?.[quality] || 0;
+                
                 // 完整乐谱名称
                 const sheetName = `${qualInfo?.name || quality}的${catInfo?.name || category}乐谱`;
-                const tooltipContent = `可用于: ${catInfo?.target || '-'} | 效果: ${qualInfo?.effect?.[category] || '-'} | 时长: ${qualInfo?.duration || 30}分钟 | 库存: ${stock}`;
-                showSheetTooltip(perfSlot, sheetName, tooltipContent);
+                const sheetIcon = catInfo?.icon || '📜';
+                const duration = qualInfo?.duration || 30;
+                const price = qualInfo?.price || (quality === 'normal' ? 100 : quality === 'fine' ? 200 : 300);
+                const effect = qualInfo?.effect?.[category] || '-';
+                
+                // 根据类别显示对应的图标
+                const categoryIcons = {
+                    earth: ['🪓', '⛏️', '🌿'],
+                    craft: ['🔨', '🪵', '🧵'],
+                    sublime: ['⚗️', '🍺', '✨']
+                };
+                const icons = categoryIcons[category] || categoryIcons.earth;
+                
+                const tooltipHtml = `
+                    <div class="item-tooltip-name">${sheetIcon} ${sheetName}</div>
+                    <div class="item-tooltip-row"><span>可用于</span><span class="item-tooltip-icons-only">${icons.join(' ')}</span></div>
+                    <div class="item-tooltip-row"><span>效果</span><span class="item-tooltip-value">${effect}</span></div>
+                    <div class="item-tooltip-row"><span>时长</span><span class="item-tooltip-value">${duration}分钟</span></div>
+                    <div class="item-tooltip-row"><span>库存</span><span class="item-count-value">${stock}</span></div>
+                    <div class="item-tooltip-row"><span>价值</span><span class="item-price-value">${price}</span></div>
+                `;
+                
+                // 移除已有tooltip
+                document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+                
+                const tooltip = document.createElement('div');
+                tooltip.className = 'item-tooltip';
+                tooltip.style.position = 'fixed';
+                tooltip.innerHTML = tooltipHtml;
+                
+                document.body.appendChild(tooltip);
+                
+                // 定位
+                const perfRect = perfSlot.getBoundingClientRect();
+                const tooltipRect = tooltip.getBoundingClientRect();
+                
+                let left = perfRect.left + (perfRect.width / 2) - (tooltipRect.width / 2);
+                let top = perfRect.top - tooltipRect.height - 8;
+                
+                left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
+                if (top < 10) top = perfRect.bottom + 8;
+                
+                tooltip.style.left = `${left}px`;
+                tooltip.style.top = `${top}px`;
             }
         });
-        perfSlot.addEventListener('mouseleave', hideSheetTooltip);
+        perfSlot.addEventListener('mouseleave', () => {
+            document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+        });
     }
     
     // 派遣按钮
