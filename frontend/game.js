@@ -8359,7 +8359,9 @@ function showDestDetailModal(destId) {
     
     // 绑定物品悬浮/点击事件
     modal.querySelectorAll('.item-hover-card').forEach(item => {
+        console.log('绑定产出物悬浮事件', item.dataset.itemId);
         item.addEventListener('mouseenter', (e) => {
+            console.log('产出物mouseenter触发');
             const itemId = item.dataset.itemId;
             const itemName = item.dataset.itemName;
             const itemIcon = item.dataset.itemIcon;
@@ -8375,6 +8377,7 @@ function showDestDetailModal(destId) {
             createTooltip(html, e.currentTarget);
         });
         item.addEventListener('click', (e) => {
+            console.log('产出物click触发');
             e.stopPropagation();
             const itemId = item.dataset.itemId;
             const itemName = item.dataset.itemName;
@@ -8391,6 +8394,7 @@ function showDestDetailModal(destId) {
             createTooltip(html, e.currentTarget);
         });
         item.addEventListener('mouseleave', () => {
+            console.log('产出物mouseleave触发');
             document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
         });
     });

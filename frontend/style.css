@@ -3695,7 +3695,7 @@ body::after {
     border-radius: 8px;
     padding: 8px 12px;
     min-width: 140px;
-    z-index: 2000;
+    z-index: 20000;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     animation: tooltipFadeIn 0.15s ease;
 }
