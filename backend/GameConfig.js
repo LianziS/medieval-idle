@@ -936,8 +936,8 @@ const ACTION_TYPES = {
         expKey: 'craftingExp',
         inventoryKey: 'manuscriptsInventory',
         resultType: 'MANUSCRIPT',
-        materialType: 'WOOD',
-        needsMaterials: true
+        needsMaterials: true,
+        smartMaterialType: true  // 使用智能材料类型判断
     },
     CRAFTING_FEATHER: {
         id: 'crafting_feather',

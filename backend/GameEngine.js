@@ -289,7 +289,9 @@ class GameEngine {
         // 检查材料
         if (actionType.needsMaterials && item.materials) {
             for (const [matId, count] of Object.entries(item.materials)) {
-                const owned = this.getItemCount(actionType.materialType || 'WOOD', matId);
+                // 智能判断材料类型
+                const matType = actionType.smartMaterialType ? this.getMaterialType(matId) : (actionType.materialType || 'WOOD');
+                const owned = this.getItemCount(matType, matId);
                 if (owned < count) {
                     return { canDo: false, reason: `材料不足: 需要 ${matId} ${count}, 拥有 ${owned}` };
                 }
@@ -2802,8 +2804,9 @@ class GameEngine {
             // 制作类行动：连击时消耗额外材料，产出额外产物
             let hasEnoughMaterials = true;
             if (item.materials) {
-                const materialType = actionType.materialType || 'WOOD';
                 for (const [matId, count] of Object.entries(item.materials)) {
+                    // 智能判断材料类型
+                    const materialType = actionType.smartMaterialType ? this.getMaterialType(matId) : (actionType.materialType || 'WOOD');
                     const have = this.getItemCount(materialType, matId);
                     if (have < count) {
                         hasEnoughMaterials = false;
@@ -2815,8 +2818,9 @@ class GameEngine {
             if (hasEnoughMaterials) {
                 // 消耗额外材料
                 if (item.materials) {
-                    const materialType = actionType.materialType || 'WOOD';
                     for (const [matId, count] of Object.entries(item.materials)) {
+                        // 智能判断材料类型
+                        const materialType = actionType.smartMaterialType ? this.getMaterialType(matId) : (actionType.materialType || 'WOOD');
                         this.removeItem(materialType, matId, count);
                     }
                 }
