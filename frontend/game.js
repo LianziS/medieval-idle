@@ -8168,11 +8168,9 @@ function initBardPage() {
             <div class="item-tooltip-row"><span>库存</span><span class="item-tooltip-value item-count-value">${stock}</span></div>
         `;
         
-        const pos = calculateTooltipPosition(e.target);
-        tooltip.style.left = `${pos.left}px`;
-        tooltip.style.top = `${pos.top}px`;
-        
         document.body.appendChild(tooltip);
+        const elInfo = calculateTooltipPosition(e.target);
+        positionTooltip(tooltip, elInfo);
         
         e.target.addEventListener('mouseleave', () => {
             tooltip.remove();
@@ -8472,11 +8470,9 @@ function showWineTooltip(el, title, content) {
         <div class="item-tooltip-desc" style="font-size:0.72rem;">${content}</div>
     `;
     
-    const pos = calculateTooltipPosition(el);
-    wineTooltipEl.style.left = `${pos.left}px`;
-    wineTooltipEl.style.top = `${pos.top}px`;
-    
     document.body.appendChild(wineTooltipEl);
+    const elInfo = calculateTooltipPosition(el);
+    positionTooltip(wineTooltipEl, elInfo);
 }
 
 function hideWineTooltip() {
@@ -8599,11 +8595,9 @@ function showSheetTooltip(el, title, content) {
         <div class="item-tooltip-desc" style="font-size:0.72rem;">${content}</div>
     `;
     
-    const pos = calculateTooltipPosition(el);
-    sheetTooltipEl.style.left = `${pos.left}px`;
-    sheetTooltipEl.style.top = `${pos.top}px`;
-    
     document.body.appendChild(sheetTooltipEl);
+    const elInfo = calculateTooltipPosition(el);
+    positionTooltip(sheetTooltipEl, elInfo);
 }
 
 function hideSheetTooltip() {
@@ -8744,11 +8738,9 @@ function showEquipTooltip(el, title, content) {
         <div class="item-tooltip-desc" style="font-size:0.72rem;">${content}</div>
     `;
     
-    const pos = calculateTooltipPosition(el);
-    equipTooltipEl.style.left = `${pos.left}px`;
-    equipTooltipEl.style.top = `${pos.top}px`;
-    
     document.body.appendChild(equipTooltipEl);
+    const elInfo = calculateTooltipPosition(el);
+    positionTooltip(equipTooltipEl, elInfo);
 }
 
 function hideEquipTooltip() {
@@ -8790,11 +8782,9 @@ function showEquipSlotTooltip(el, slotType) {
         `;
     }
     
-    const pos = calculateTooltipPosition(el);
-    equipSlotTooltipEl.style.left = `${pos.left}px`;
-    equipSlotTooltipEl.style.top = `${pos.top}px`;
-    
     document.body.appendChild(equipSlotTooltipEl);
+    const elInfo = calculateTooltipPosition(el);
+    positionTooltip(equipSlotTooltipEl, elInfo);
 }
 
 function hideEquipSlotTooltip() {
@@ -8826,36 +8816,60 @@ function setupModalClose(modal, closeBtnSelector = '.bard-modal-close') {
 }
 
 // 智能tooltip位置计算
-function calculateTooltipPosition(el, tooltipHeight = 70) {
+function calculateTooltipPosition(el) {
+    // 这个函数只返回元素的位置信息，tooltip 创建后需要再计算精确位置
     const rect = el.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const viewportWidth = window.innerWidth;
+    return { 
+        elRect: rect,
+        elLeft: rect.left,
+        elTop: rect.top,
+        elRight: rect.right,
+        elBottom: rect.bottom,
+        elWidth: rect.width,
+        elHeight: rect.height,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight
+    };
+}
+
+// 计算 tooltip 最终位置（在 tooltip 创建并添加到 DOM 后调用）
+function positionTooltip(tooltip, elInfo) {
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const tooltipWidth = tooltipRect.width;
+    const tooltipHeight = tooltipRect.height;
     
-    let left = rect.left;
-    let top = rect.top - tooltipHeight;
+    // 默认显示在元素上方，水平居中
+    let left = elInfo.elLeft + (elInfo.elWidth / 2) - (tooltipWidth / 2);
+    let top = elInfo.elTop - tooltipHeight - 8;
     
     // 上方空间不足，显示在下方
     if (top < 10) {
-        top = rect.bottom + 10;
+        top = elInfo.elBottom + 8;
     }
     
     // 下方也不足，显示在右侧
-    if (top + tooltipHeight > viewportHeight - 10) {
-        top = rect.top;
-        left = rect.right + 10;
+    if (top + tooltipHeight > elInfo.viewportHeight - 10) {
+        top = elInfo.elTop;
+        left = elInfo.elRight + 10;
     }
     
-    // 右侧超出边界，显示在左侧
-    if (left + 200 > viewportWidth - 10) {
-        left = rect.left - 210;
+    // 右侧超出边界
+    if (left + tooltipWidth > elInfo.viewportWidth - 10) {
+        // 尝试显示在左侧
+        left = elInfo.elLeft - tooltipWidth - 10;
+        // 左侧也不够，则贴右边界
+        if (left < 10) {
+            left = elInfo.viewportWidth - tooltipWidth - 10;
+        }
     }
     
-    // 左侧超出边界，保持在右侧但调整位置
+    // 左侧超出边界
     if (left < 10) {
         left = 10;
     }
     
-    return { left, top };
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
 }
 
 // 穿戴诗人装备
