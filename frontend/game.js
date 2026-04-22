@@ -935,6 +935,13 @@ function setupSocket() {
         // 清除乐谱选择
         bardState.selectedSheet = null;
         
+        // 立即更新演奏区域界面
+        updatePerformArea();
+        
+        // 隐藏进度条
+        const progressArea = document.getElementById('perf-progress-area');
+        if (progressArea) progressArea.style.display = 'none';
+        
         socket.emit('get_bard_info');
     });
 
@@ -5191,6 +5198,81 @@ function renderInventories() {
             instrumentCounts[instrumentId] = (instrumentCounts[instrumentId] || 0) + 1;
         });
         renderInventoryGrid('storage-instruments-items', instrumentCounts, CONFIG.instruments);
+    }
+    
+    // 乐谱（吟游诗人）
+    const sheetsElement = document.getElementById('storage-sheets-items');
+    if (sheetsElement && bardState.sheetsInventory) {
+        const categories = ['earth', 'craft', 'sublime'];
+        const qualities = ['normal', 'fine', 'epic'];
+        
+        let sheetsHtml = '';
+        categories.forEach(cat => {
+            qualities.forEach(qual => {
+                const count = bardState.sheetsInventory?.[cat]?.[qual] || 0;
+                if (count > 0) {
+                    const catInfo = CONFIG.sheets?.categories?.[cat];
+                    const qualInfo = CONFIG.sheets?.qualities?.[qual];
+                    const sheetName = `${qualInfo?.name || qual}的${catInfo?.name || cat}乐谱`;
+                    const sheetIcon = catInfo?.icon || '📜';
+                    const price = qualInfo?.price || (qual === 'normal' ? 100 : qual === 'fine' ? 200 : 300);
+                    const effect = qualInfo?.effect?.[cat] || '-';
+                    const duration = qualInfo?.duration || 30;
+                    
+                    sheetsHtml += `
+                        <div class="inventory-item"
+                             data-id="sheet_${cat}_${qual}"
+                             data-name="${sheetName}"
+                             data-count="${count}"
+                             data-price="${price}"
+                             data-desc="效果: ${effect} | 时长: ${duration}分钟 | 可用于: ${catInfo?.target || '-'}"
+                             data-icon="${sheetIcon}">
+                            <span class="item-icon">${sheetIcon}</span>
+                            <span class="item-count">${count}</span>
+                        </div>
+                    `;
+                }
+            });
+        });
+        
+        sheetsElement.innerHTML = sheetsHtml || '<span class="empty-text">无乐谱</span>';
+        
+        // 绑定悬浮事件
+        sheetsElement.querySelectorAll('.inventory-item').forEach(item => {
+            item.addEventListener('mouseenter', (e) => {
+                const name = item.dataset.name;
+                const desc = item.dataset.desc;
+                const price = item.dataset.price;
+                const count = item.dataset.count;
+                const icon = item.dataset.icon;
+                
+                const tooltipHtml = `
+                    <div class="item-tooltip-name">${icon} ${name}</div>
+                    <div class="item-tooltip-row"><span>库存</span><span class="item-count-value">${count}</span></div>
+                    <div class="item-tooltip-row"><span>价值</span><span class="item-price-value">${price}</span></div>
+                    <div class="item-tooltip-desc">${desc}</div>
+                `;
+                
+                document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+                const tooltip = document.createElement('div');
+                tooltip.className = 'item-tooltip';
+                tooltip.style.position = 'fixed';
+                tooltip.innerHTML = tooltipHtml;
+                document.body.appendChild(tooltip);
+                
+                const rect = item.getBoundingClientRect();
+                const tooltipRect = tooltip.getBoundingClientRect();
+                let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+                let top = rect.top - tooltipRect.height - 8;
+                left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
+                if (top < 10) top = rect.bottom + 8;
+                tooltip.style.left = `${left}px`;
+                tooltip.style.top = `${top}px`;
+            });
+            item.addEventListener('mouseleave', () => {
+                document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+            });
+        });
     }
 }
 
