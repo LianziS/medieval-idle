@@ -8495,15 +8495,34 @@ function selectWineAndClose(wineId) {
 
 // 更新酒箱显示
 function updateWineBoxDisplay() {
-    const wine = CONFIG.wineBoxes?.find(w => w.id === bardState.selectedWine);
-    if (!wine) return;
+    const wineBox = document.getElementById('wine-box');
+    const wbIcon = document.getElementById('wb-icon');
+    const wbCount = document.getElementById('wb-count');
+    const wbText = document.getElementById('wb-text');
+    const warningEl = document.getElementById('wb-warning');
     
-    document.getElementById('wb-icon').textContent = wine.icon;
-    const stock = bardState.wineBoxInventory?.[wine.id] || 0;
-    document.getElementById('wb-count').textContent = stock > 0 ? `×${stock}` : '无';
+    const wine = CONFIG.wineBoxes?.find(w => w.id === bardState.selectedWine);
+    const stock = wine ? (bardState.wineBoxInventory?.[wine.id] || 0) : 0;
+    
+    // 判断是否有选择且有库存
+    const hasWine = wine && stock > 0;
+    
+    wineBox.classList.toggle('active', hasWine);
+    
+    if (hasWine) {
+        wbIcon.textContent = wine.icon;
+        wbIcon.classList.remove('hidden');
+        wbCount.textContent = `×${stock}`;
+        wbCount.classList.remove('hidden');
+        wbText.style.display = 'none';
+    } else {
+        wbIcon.classList.add('hidden');
+        wbCount.classList.add('hidden');
+        wbText.style.display = 'inline';
+        wbText.textContent = '选择';
+    }
     
     // 隐藏感叹号（当有库存时）
-    const warningEl = document.getElementById('wb-warning');
     if (warningEl) {
         warningEl.classList.toggle('hidden', stock > 0);
     }

@@ -6970,6 +6970,11 @@ body::after {
     font-size: 0.82rem;
     min-width: 48px;
 }
+.wine-select-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 .wine-box {
     position: relative;
     width: 48px;
@@ -6977,17 +6982,24 @@ body::after {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid rgba(107,79,60,0.4);
+    border: 2px dashed rgba(107,79,60,0.35);
     border-radius: 8px;
-    background: rgba(107,79,60,0.12);
+    background: rgba(107,79,60,0.08);
     cursor: pointer;
     transition: all 0.2s;
 }
 .wine-box:hover {
-    border-color: #8B2C2D;
+    border-color: #6b7f90;
+}
+.wine-box.active {
+    border-style: solid;
+    border-color: rgba(107,79,60,0.5);
 }
 .wb-icon {
     font-size: 1.6rem;
+}
+.wb-icon.hidden, .wb-count.hidden {
+    display: none;
 }
 .wb-count {
     position: absolute;
@@ -6996,19 +7008,13 @@ body::after {
     font-size: 0.7rem;
     color: #FFA726;
 }
+.wb-text {
+    color: #4a5a6a;
+    font-size: 0.82rem;
+}
 .wb-warning {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     color: #FF6B6B;
-    background: rgba(255,107,107,0.15);
-    border-radius: 50%;
-    width: 14px;
-    height: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     animation: warningPulse 1.5s ease-in-out infinite;
 }
 .wb-warning.hidden {
