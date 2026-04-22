@@ -2212,11 +2212,11 @@ class GameEngine {
                 'traveler_boots': 1,      // -30min (11h30min)
                 'lyre_boots': 2,          // -1h (11h)
                 'witness_boots': 3,       // -1h30min (10h30min)
-                'explorer_boots': 4,      // -2h (10h)
-                'pathfinder_boots': 5,    // -2h30min (9h30min)
-                'wanderer_boots': 6,      // -3h (9h)
-                'journeyer_boots': 7,     // -3h30min (8h30min)
-                'legendary_boots': 8      // -4h (8h)
+                'awaken_boots': 4,        // -2h (10h)
+                'blaze_boots': 5,         // -2h30min (9h30min)
+                'lionheart_boots': 6,     // -3h (9h)
+                'echo_boots': 7,          // -3h30min (8h30min)
+                'epic_boots': 8           // -4h (8h)
             };
             
             const shoeLevel = shoeLevels[equippedShoe] || 0;
@@ -2242,10 +2242,10 @@ class GameEngine {
             'lyre_pen': 2,          // 精良+3%，史诗+2%
             'witness_pen': 3,       // 精良+6%，史诗+4%
             'awaken_pen': 4,        // 精良+9%，史诗+6%
-            'rainbow_pen': 5,       // 精良+12%，史诗+8%
-            'soul_pen': 6,          // 精良+15%，史诗+10%
+            'blaze_pen': 5,         // 精良+12%，史诗+8%
+            'lionheart_pen': 6,     // 精良+15%，史诗+10%
             'echo_pen': 7,          // 精良+18%，史诗+12%
-            'legendary_pen': 8      // 精良+21%，史诗+14%
+            'epic_pen': 8           // 精良+21%，史诗+14%
         };
         
         const penLevel = penLevels[equippedPen] || 0;
@@ -2568,9 +2568,9 @@ class GameEngine {
             const instrumentLevels = {
                 'recorder': 1,  // 解锁精良
                 'lyre': 2,      // 解锁史诗
-                'vielle': 3,
-                'harp': 4,
-                'lute': 5
+                'vielle': 3,    // Buff时长+5%
+                'harp': 4,      // Buff时长+10%
+                'lute': 5       // Buff时长+15%
             };
             
             const instrumentLevel = instrumentLevels[equippedInstrument] || 0;

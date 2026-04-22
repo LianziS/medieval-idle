@@ -1583,6 +1583,68 @@ io.on('connection', (socket) => {
             case 'add_exp':
                 gameEngine.addSkillExp(data.skill + 'Level', data.amount || 100);
                 break;
+            case 'add_sheets':
+                // 添加指定品质的所有类别乐谱
+                const categories = ['earth', 'craft', 'sublime'];
+                if (!gameEngine.state.sheetsInventory) {
+                    gameEngine.state.sheetsInventory = {
+                        earth: { normal: 0, fine: 0, epic: 0 },
+                        craft: { normal: 0, fine: 0, epic: 0 },
+                        sublime: { normal: 0, fine: 0, epic: 0 }
+                    };
+                }
+                categories.forEach(cat => {
+                    gameEngine.state.sheetsInventory[cat][data.quality] += data.count || 1;
+                });
+                gameEngine.state.bardSheetsTotal = (gameEngine.state.bardSheetsTotal || 0) + (data.count || 1) * 3;
+                if (data.quality === 'epic') {
+                    gameEngine.state.bardEpicSheets = (gameEngine.state.bardEpicSheets || 0) + (data.count || 1) * 3;
+                }
+                break;
+            case 'add_all_sheets':
+                // 添加所有品质的所有类别乐谱
+                const allCategories = ['earth', 'craft', 'sublime'];
+                const allQualities = ['normal', 'fine', 'epic'];
+                if (!gameEngine.state.sheetsInventory) {
+                    gameEngine.state.sheetsInventory = {
+                        earth: { normal: 0, fine: 0, epic: 0 },
+                        craft: { normal: 0, fine: 0, epic: 0 },
+                        sublime: { normal: 0, fine: 0, epic: 0 }
+                    };
+                }
+                allCategories.forEach(cat => {
+                    allQualities.forEach(qual => {
+                        gameEngine.state.sheetsInventory[cat][qual] += data.count || 1;
+                    });
+                });
+                gameEngine.state.bardSheetsTotal = (gameEngine.state.bardSheetsTotal || 0) + (data.count || 1) * 9;
+                gameEngine.state.bardEpicSheets = (gameEngine.state.bardEpicSheets || 0) + (data.count || 1) * 3;
+                break;
+            case 'add_wine':
+                if (!gameEngine.state.wineBoxInventory) {
+                    gameEngine.state.wineBoxInventory = { basic_wine: 0, medium_wine: 0, premium_wine: 0 };
+                }
+                gameEngine.state.wineBoxInventory[data.wineId] = (gameEngine.state.wineBoxInventory[data.wineId] || 0) + (data.count || 1);
+                break;
+            case 'add_bard_drop':
+                switch (data.dropId) {
+                    case 'conch_ink':
+                        gameEngine.state.conchInkInventory = (gameEngine.state.conchInkInventory || 0) + (data.count || 1);
+                        break;
+                    case 'river_nail':
+                        gameEngine.state.riverNailInventory = (gameEngine.state.riverNailInventory || 0) + (data.count || 1);
+                        break;
+                    case 'echo_stone':
+                        gameEngine.state.echoStoneInventory = (gameEngine.state.echoStoneInventory || 0) + (data.count || 1);
+                        break;
+                    case 'blackstone':
+                        gameEngine.state.blackstoneInventory = (gameEngine.state.blackstoneInventory || 0) + (data.count || 1);
+                        break;
+                }
+                break;
+            case 'set_bard_level':
+                gameEngine.state.bardLevel = data.level || 1;
+                break;
         }
         
         socket.emit('gm_result', { success: true, command: data.command });

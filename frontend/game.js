@@ -6211,6 +6211,23 @@ function openGMPanel() {
         { label: '加青闪锭 100', command: 'add_item', args: { itemType: 'INGOT', itemId: 'cyan_ingot', count: 100 } },
         { label: '加青闪斧', command: 'add_tool', args: { toolType: 'axes', toolId: 'cyan_axe' } },
         { label: '加青闪镐', command: 'add_tool', args: { toolType: 'pickaxes', toolId: 'cyan_pickaxe' } },
+        // 乐谱相关
+        { label: '加普通乐谱各10', command: 'add_sheets', args: { quality: 'normal', count: 10 } },
+        { label: '加精良乐谱各10', command: 'add_sheets', args: { quality: 'fine', count: 10 } },
+        { label: '加史诗乐谱各10', command: 'add_sheets', args: { quality: 'epic', count: 10 } },
+        { label: '加全部乐谱各50', command: 'add_all_sheets', args: { count: 50 } },
+        // 酒箱相关
+        { label: '加初级酒箱 10', command: 'add_wine', args: { wineId: 'basic_wine', count: 10 } },
+        { label: '加中级酒箱 10', command: 'add_wine', args: { wineId: 'medium_wine', count: 10 } },
+        { label: '加高级酒箱 10', command: 'add_wine', args: { wineId: 'premium_wine', count: 10 } },
+        // 诗人掉落物
+        { label: '加海螺墨 100', command: 'add_bard_drop', args: { dropId: 'conch_ink', count: 100 } },
+        { label: '加河铸钉 100', command: 'add_bard_drop', args: { dropId: 'river_nail', count: 100 } },
+        { label: '加回音石 100', command: 'add_bard_drop', args: { dropId: 'echo_stone', count: 100 } },
+        { label: '加黑石 100', command: 'add_bard_drop', args: { dropId: 'blackstone', count: 100 } },
+        // 诗人等级
+        { label: '诗人等级 10', command: 'set_bard_level', args: { level: 10 } },
+        { label: '诗人等级 20', command: 'set_bard_level', args: { level: 20 } },
         { label: '加全部技能等级', command: 'multi', args: {
             actions: [
                 { command: 'set_level', args: { skill: 'woodcutting', level: 50 } },
