@@ -8794,13 +8794,14 @@ function showSheetSelectModal() {
                     const catInfo = CONFIG.sheets?.categories?.[category];
                     const qualInfo = CONFIG.sheets?.qualities?.[quality];
                     const isSelected = bardState.selectedSheet?.category === category && bardState.selectedSheet?.quality === quality;
+                    // 完整乐谱名称
                     const sheetName = `${qualInfo?.name || quality}的${catInfo?.name || category}乐谱`;
-                    const tooltipContent = `可用于: ${catInfo?.target || '-'} | 效果: ${qualInfo?.effect?.[category] || '-'} | 时长: ${qualInfo?.duration || 30}分钟 | 库存: ${stock}`;
                     return `
-                        <div class="sheet-select-item ${isSelected ? 'active' : ''}"
-                             onclick="selectSheetAndClose('${category}', '${quality}')"
-                             onmouseenter="showSheetTooltip(this, '${sheetName}', '${tooltipContent}')"
-                             onmouseleave="hideSheetTooltip()">
+                        <div class="sheet-select-item ${isSelected ? 'active' : ''} sheet-hover-card"
+                             data-category="${category}"
+                             data-quality="${quality}"
+                             data-stock="${stock}"
+                             onclick="selectSheetAndClose('${category}', '${quality}')">
                             <span class="ssi-icon">${catInfo?.icon || '📜'}</span>
                             <span class="ssi-count">×${stock}</span>
                         </div>
@@ -8812,24 +8813,75 @@ function showSheetSelectModal() {
     
     document.body.appendChild(modal);
     setupModalClose(modal);
+    
+    // 绑定乐谱悬浮事件
+    modal.querySelectorAll('.sheet-hover-card').forEach(item => {
+        item.addEventListener('mouseenter', (e) => showSheetSelectTooltip(item));
+        item.addEventListener('click', (e) => {
+            // 点击时也显示tooltip，但不阻止选择
+        });
+    });
 }
 
-// 乐谱tooltip
-let sheetTooltipEl = null;
-function showSheetTooltip(el, title, content) {
-    hideSheetTooltip();
-    const html = `
-        <div class="item-tooltip-name">${title}</div>
-        <div class="item-tooltip-desc" style="font-size:0.72rem;">${content}</div>
+// 乐谱选择弹窗的tooltip（新格式）
+function showSheetSelectTooltip(item) {
+    document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+    
+    const category = item.dataset.category;
+    const quality = item.dataset.quality;
+    const stock = parseInt(item.dataset.stock) || 0;
+    
+    const catInfo = CONFIG.sheets?.categories?.[category];
+    const qualInfo = CONFIG.sheets?.qualities?.[quality];
+    
+    // 完整乐谱名称
+    const sheetName = `${qualInfo?.name || quality}的${catInfo?.name || category}乐谱`;
+    const sheetIcon = catInfo?.icon || '📜';
+    const duration = qualInfo?.duration || 30;
+    const price = qualInfo?.price || (quality === 'normal' ? 100 : quality === 'fine' ? 200 : 300);
+    const effect = qualInfo?.effect?.[category] || '-';
+    
+    // 根据类别显示对应的图标
+    const categoryIcons = {
+        earth: ['🪓', '⛏️', '🌿'],
+        craft: ['🔨', '🪵', '🧵'],
+        sublime: ['⚗️', '🍺', '✨']
+    };
+    const icons = categoryIcons[category] || categoryIcons.earth;
+    
+    const tooltipHtml = `
+        <div class="item-tooltip-name">${sheetIcon} ${sheetName}</div>
+        <div class="item-tooltip-row"><span>可用于</span><span class="item-tooltip-icons-only">${icons.join(' ')}</span></div>
+        <div class="item-tooltip-row"><span>效果</span><span class="item-tooltip-value">${effect}</span></div>
+        <div class="item-tooltip-row"><span>时长</span><span class="item-tooltip-value">${duration}分钟</span></div>
+        <div class="item-tooltip-row"><span>库存</span><span class="item-count-value">${stock}</span></div>
+        <div class="item-tooltip-row"><span>价值</span><span class="item-price-value">${price}</span></div>
     `;
-    sheetTooltipEl = createTooltip(html, el);
-}
-
-function hideSheetTooltip() {
-    if (sheetTooltipEl) {
-        sheetTooltipEl.remove();
-        sheetTooltipEl = null;
-    }
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'item-tooltip';
+    tooltip.style.position = 'fixed';
+    tooltip.innerHTML = tooltipHtml;
+    
+    document.body.appendChild(tooltip);
+    
+    // 定位
+    const itemRect = item.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    
+    let left = itemRect.left + (itemRect.width / 2) - (tooltipRect.width / 2);
+    let top = itemRect.top - tooltipRect.height - 8;
+    
+    left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
+    if (top < 10) top = itemRect.bottom + 8;
+    
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+    
+    // 鼠标离开时关闭
+    item.addEventListener('mouseleave', () => {
+        tooltip.remove();
+    }, { once: true });
 }
 
 // 选择乐谱并关闭
