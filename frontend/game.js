@@ -8807,13 +8807,16 @@ function calculateTooltipPosition(el) {
 
 // 计算 tooltip 最终位置（在 tooltip 创建并添加到 DOM 后调用）
 function positionTooltip(tooltip, elInfo) {
-    // 先隐藏获取尺寸
+    // 先隐藏获取尺寸，禁用 animation
     tooltip.style.visibility = 'hidden';
     tooltip.style.position = 'fixed';
-    tooltip.style.left = '0px';
+    tooltip.style.left = '-9999px';
     tooltip.style.top = '0px';
+    tooltip.style.animation = 'none';
     
-    // 此时可以获取正确尺寸
+    // 强制重绘获取正确尺寸
+    tooltip.offsetHeight;
+    
     const tooltipRect = tooltip.getBoundingClientRect();
     const tooltipWidth = tooltipRect.width;
     const tooltipHeight = tooltipRect.height;
@@ -8850,6 +8853,7 @@ function positionTooltip(tooltip, elInfo) {
     
     tooltip.style.left = `${left}px`;
     tooltip.style.top = `${top}px`;
+    tooltip.style.animation = '';
     tooltip.style.visibility = 'visible';
 }
 
