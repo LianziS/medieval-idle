@@ -6462,12 +6462,6 @@ body::after {
     margin-top: 2px;
 }
 
-.enhance-tool-item-tier {
-    font-size: 10px;
-    color: #6B7A8A;
-    margin-top: 2px;
-}
-
 /* 工具数量角标 */
 .tool-count-badge {
     position: absolute;

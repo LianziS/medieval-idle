@@ -7224,10 +7224,6 @@ function showOutputTooltip(event) {
     tooltip.innerHTML = `
         <div class="enhance-output-tooltip-title">${toolIcon} ${toolName} ${targetLevel > 0 ? '+' + targetLevel : ''}</div>
         <div class="enhance-output-tooltip-row">
-            <span class="label">品质等级</span>
-            <span class="value">${tier}阶</span>
-        </div>
-        <div class="enhance-output-tooltip-row">
             <span class="label">速度加成</span>
             <span class="value">+${formatPercent(bonusPercent)}%</span>
         </div>
@@ -8094,7 +8090,6 @@ function openEnhanceToolModal() {
                 <div class="enhance-tool-item-icon">${tool.icon}${tool.count > 1 ? `<span class="tool-count-badge">${tool.count}</span>` : ''}</div>
                 <div class="enhance-tool-item-name">${tool.name}</div>
                 <div class="enhance-tool-item-level">+${tool.enhanceLevel}</div>
-                <div class="enhance-tool-item-tier">${getToolTier(tool.toolId)}阶</div>
             </div>
         `).join('')
         : '<div style="color: #6B7A8A; text-align: center; padding: 40px; grid-column: 1 / -1;">没有可强化的装备</div>';
