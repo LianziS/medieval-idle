@@ -5389,12 +5389,12 @@ function renderInventories() {
 
     // 统计背包中的工具数量（装备时已从背包移除，所以这些都是未装备的）
     // 注意：工具可能是字符串（旧格式）或对象（新格式，包含 id 和 enhanceLevel）
-    // 同ID同等级的工具堆叠显示
+    // 同ID同等级的工具堆叠显示，但需要保存原始索引
     const unequippedCounts = {};
     toolTypes.forEach(toolType => {
         const tools = CONFIG.tools?.[toolType] || [];
         const inventory = gameState.toolsInventory?.[toolType] || [];
-        inventory.forEach((tool) => {
+        inventory.forEach((tool, index) => {
             // 兼容旧格式（字符串）和新格式（对象）
             const toolId = typeof tool === 'string' ? tool : tool.id;
             const enhanceLevel = typeof tool === 'object' && tool ? (tool.enhanceLevel || 0) : 0;
@@ -5412,14 +5412,17 @@ function renderInventories() {
                     icon: toolConfig?.icon || '❓',
                     isEquipped: false,
                     enhanceLevel,
-                    displayName: enhanceLevel > 0 ? `${displayName} +${enhanceLevel}` : displayName
+                    displayName: enhanceLevel > 0 ? `${displayName} +${enhanceLevel}` : displayName,
+                    indices: [], // 保存所有工具的原始索引
+                    toolType // 保存工具类型
                 };
             }
             unequippedCounts[stackKey].count++;
+            unequippedCounts[stackKey].indices.push(index);
         });
     });
 
-    // 添加未装备工具（同ID同等级堆叠）
+    // 添加未装备工具（同ID同等级堆叠，保存第一个工具的索引）
     Object.values(unequippedCounts).forEach(data => {
         allToolItems.push(data);
     });
@@ -5432,6 +5435,9 @@ function renderInventories() {
             const price = getItemSellPrice(tool.id); // 使用 ITEM_VALUES 获取价格
             const displayName = tool.displayName || tool.name;
             const enhanceLevel = tool.enhanceLevel || 0;
+            // 使用堆叠后的第一个索引作为装备索引
+            const firstIndex = tool.indices ? tool.indices[0] : 0;
+            const toolType = tool.toolType || '';
             return `
                 <div class="inventory-item ${tool.isEquipped ? 'equipped' : ''}"
                      data-id="${tool.id}"
@@ -5440,7 +5446,9 @@ function renderInventories() {
                      data-price="${price}"
                      data-desc="${desc}"
                      data-icon="${tool.icon}"
-                     data-enhance="${enhanceLevel}">
+                     data-enhance="${enhanceLevel}"
+                     data-index="${firstIndex}"
+                     data-tool-type="${toolType}">
                     ${enhanceLevel > 0 ? `<span class="item-enhance-badge">+${enhanceLevel}</span>` : ''}
                     <span class="item-icon">${tool.icon}</span>
                     <span class="item-name">${displayName}</span>
@@ -6129,19 +6137,27 @@ function showItemTooltip(item, event) {
         equipBtn.addEventListener('click', () => {
             // 确定装备槽位
             let slotType = null;
-            if (id.includes('axe')) slotType = 'axe';
-            else if (id.includes('pickaxe')) slotType = 'pickaxe';
-            else if (id.includes('chisel')) slotType = 'chisel';
-            else if (id.includes('needle')) slotType = 'needle';
-            else if (id.includes('scythe')) slotType = 'scythe';
-            else if (id.includes('hammer')) slotType = 'hammer';
-            else if (id.includes('tongs')) slotType = 'tongs';
-            else if (id.includes('rod')) slotType = 'rod';
+            // 优先使用 data-tool-type 属性
+            const toolTypeFromData = item.dataset.toolType;
+            if (toolTypeFromData) {
+                slotType = toolTypeFromData;
+            } else {
+                // 兼容旧逻辑，从 id 推断
+                if (id.includes('axe')) slotType = 'axe';
+                else if (id.includes('pickaxe')) slotType = 'pickaxe';
+                else if (id.includes('chisel')) slotType = 'chisel';
+                else if (id.includes('needle')) slotType = 'needle';
+                else if (id.includes('scythe')) slotType = 'scythe';
+                else if (id.includes('hammer')) slotType = 'hammer';
+                else if (id.includes('tongs')) slotType = 'tongs';
+                else if (id.includes('rod')) slotType = 'rod';
+            }
 
             if (slotType) {
                 // 直接装备，如果有已有装备则替换
                 // 从 item 中获取 toolIndex（堆叠时的索引）
                 const toolIndex = parseInt(item.dataset.index) || 0;
+                console.log('装备工具:', { slotType, toolId: id, toolIndex, toolTypeFromData });
                 socket.emit('equip_tool', { slotType, toolId: id, toolIndex });
                 tooltip.remove();
             }

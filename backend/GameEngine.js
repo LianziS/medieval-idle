@@ -1017,6 +1017,8 @@ class GameEngine {
         const toolsKey = this.getToolsKey(slotType);
         const inventory = this.state.toolsInventory[toolsKey] || [];
         
+        console.log('equipTool 调用:', { slotType, toolId, toolIndex, inventoryLength: inventory.length });
+        
         // 如果提供了 toolIndex，使用索引查找
         let toolData = null;
         let idx = -1;
@@ -1024,6 +1026,7 @@ class GameEngine {
         if (toolIndex !== undefined && toolIndex >= 0 && toolIndex < inventory.length) {
             idx = toolIndex;
             toolData = inventory[idx];
+            console.log('使用 toolIndex 查找:', { idx, toolData });
         } else {
             // 兼容旧的 toolId 参数
             idx = inventory.findIndex(t => {
@@ -1031,14 +1034,18 @@ class GameEngine {
                 return id === toolId;
             });
             if (idx === -1) {
+                console.log('找不到工具:', { toolId, inventory });
                 return { success: false, reason: '没有该工具' };
             }
             toolData = inventory[idx];
+            console.log('使用 toolId 查找:', { idx, toolData });
         }
         
         // 获取工具ID和强化等级
         const actualToolId = typeof toolData === 'string' ? toolData : toolData.id;
         const enhanceLevel = typeof toolData === 'object' && toolData ? (toolData.enhanceLevel || 0) : 0;
+        
+        console.log('工具信息:', { actualToolId, enhanceLevel });
         
         // 检查装备等级需求
         const tool = CONFIG.tools[toolsKey]?.find(t => t.id === actualToolId);
@@ -1055,6 +1062,7 @@ class GameEngine {
         if (currentEquipped) {
             // 将原装备放回背包
             inventory.push(currentEquipped);
+            console.log('卸下原装备:', currentEquipped);
         }
         
         // 装备新工具（保存完整数据，包括强化等级）
@@ -1064,8 +1072,12 @@ class GameEngine {
             this.state.equipment[slotType] = actualToolId;
         }
         
+        console.log('装备新工具:', this.state.equipment[slotType]);
+        
         // 从背包移除
         inventory.splice(idx, 1);
+        
+        console.log('背包剩余:', inventory);
         
         return { success: true, equipped: actualToolId, slot: slotType, enhanceLevel };
     }
