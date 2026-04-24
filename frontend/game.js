@@ -7306,8 +7306,35 @@ function renderEnhance() {
     // 初始化二级菜单
     initEnhanceTabs();
 
-    // 如果没有选中工具，清空显示
+    // 检查是否有正在进行的强化行动
+    const activeAction = gameState?.activeAction;
+    const isEnhancing = activeAction?.type === 'ENHANCE';
+    
+    // 如果没有正在进行的强化行动，重置状态为初始状态
+    if (!isEnhancing) {
+        // 重置 enhanceState 为初始状态（如果之前有选中的工具）
+        if (enhanceState.selectedTool) {
+            // 保留选中状态，让用户可以继续强化同一工具
+        } else {
+            // 没有选中工具，显示初始状态
+            resetEnhanceState();
+        }
+    }
+
+    // 如果没有选中工具，显示初始状态
     if (!enhanceState.selectedTool) {
+        // 显示初始提示
+        const toolIconEl = document.getElementById('enhance-tool-icon');
+        const toolNameEl = document.getElementById('enhance-tool-name');
+        const toolLevelEl = document.getElementById('enhance-tool-level');
+        
+        if (toolIconEl) toolIconEl.textContent = '?';
+        if (toolNameEl) toolNameEl.textContent = '点击选择装备';
+        if (toolLevelEl) {
+            toolLevelEl.textContent = '';
+            toolLevelEl.style.display = 'none';
+        }
+
         // 清空费用列表
         const feesListEl = document.getElementById('enhance-fees-list');
         if (feesListEl) {
@@ -7334,11 +7361,18 @@ function renderEnhance() {
         const outputBadgeEl = document.getElementById('enhance-output-badge');
         if (outputIconEl) outputIconEl.textContent = '-';
         if (outputBadgeEl) outputBadgeEl.style.display = 'none';
-    }
 
-    // 自动选择装备逻辑（如果还没有选中）
-    if (!enhanceState.selectedTool) {
-        autoSelectEnhanceTool();
+        // 禁用开始和队列按钮
+        const startBtn = document.getElementById('enhance-start-btn');
+        const queueBtn = document.getElementById('enhance-queue-btn');
+        if (startBtn) startBtn.disabled = true;
+        if (queueBtn) queueBtn.disabled = true;
+        
+        // 清空保护垫
+        const protectionSlot = document.getElementById('enhance-protection-slot');
+        if (protectionSlot) {
+            protectionSlot.innerHTML = '<span class="slot-placeholder">+</span>';
+        }
     }
 
     // 点击选择装备
@@ -8030,40 +8064,7 @@ function openEnhanceToolModal() {
 
     const displayTools = Object.values(stackedTools);
 
-    // 如果只有一个工具组，自动选中
-    if (displayTools.length === 1) {
-        const tool = displayTools[0];
-        enhanceState.toolType = tool.toolType;
-        enhanceState.toolIndex = tool.indices[0];
-        enhanceState.selectedTool = true;
-        enhanceState.protection = null;
-        updateEnhanceToolDisplay();
-        updateEnhancePreview();
-        return;
-    }
-
-    // 检查是否已装备了工具，如果有则优先选中已装备的
-    const equippedTool = gameState.equipment;
-    if (equippedTool && displayTools.length > 0) {
-        // 遍历所有装备槽，找到已装备的工具
-        const equipSlots = ['axe', 'pickaxe', 'chisel', 'needle', 'scythe', 'hammer', 'tongs', 'rod'];
-        for (const slot of equipSlots) {
-            const equippedId = equippedTool[slot];
-            if (equippedId) {
-                // 找到已装备工具对应的堆叠组
-                const foundTool = displayTools.find(t => t.toolId === equippedId && t.toolType === slot);
-                if (foundTool) {
-                    enhanceState.toolType = foundTool.toolType;
-                    enhanceState.toolIndex = foundTool.indices[0];
-                    enhanceState.selectedTool = true;
-                    enhanceState.protection = null;
-                    updateEnhanceToolDisplay();
-                    updateEnhancePreview();
-                    return;
-                }
-            }
-        }
-    }
+    // 始终显示弹窗让用户选择（不再自动选择后直接return）
 
     // 创建弹窗（即使没有工具也显示）
     const modal = document.createElement('div');
