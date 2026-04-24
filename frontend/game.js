@@ -782,9 +782,15 @@ function setupSocket() {
 
             // 添加点击事件显示物品详情卡片
             feesListEl.querySelectorAll('.fee-item.clickable').forEach(item => {
+                // 点击显示详细popover
                 item.onclick = (e) => {
                     e.stopPropagation();
                     showMaterialPopover(item);
+                };
+                // 悬浮显示简单tooltip
+                item.onmouseenter = (e) => showMaterialTooltip(item, e);
+                item.onmouseleave = () => {
+                    document.querySelectorAll('.material-tooltip').forEach(t => t.remove());
                 };
             });
         }
@@ -8188,7 +8194,8 @@ function updateEnhancePreview() {
  * 显示素材详情弹出卡片
  */
 function showMaterialPopover(triggerElement) {
-    // 移除已有的弹出卡片
+    // 移除已有的弹出卡片和tooltip
+    document.querySelectorAll('.material-tooltip').forEach(t => t.remove());
     const existingPopover = document.getElementById('material-popover');
     if (existingPopover) {
         existingPopover.remove();
@@ -8213,11 +8220,23 @@ function showMaterialPopover(triggerElement) {
     };
 
     const materialIcons = {
-        'ingot': '🔨', 'ore': '⛏️', 'plank': '🪵'
+        'ingot': '🔩', 'ore': '💎', 'plank': '🪵'
+    };
+
+    const materialIconsById = {
+        'cyan_ingot': '🔩', 'red_copper_ingot': '🥉', 'feather_ingot': '🪶',
+        'white_silver_ingot': '🪙', 'hell_steel_ingot': '🔥', 'thunder_steel_ingot': '⚡',
+        'brilliant_crystal': '💎', 'star_crystal': '✨',
+        'cyan_ore': '💎', 'red_iron': '🔴', 'feather_ore': '🪶',
+        'white_ore': '⚪', 'hell_ore': '🔥', 'thunder_ore': '⚡',
+        'brilliant': '✨', 'star_ore': '⭐',
+        'pine_plank': '🪵', 'iron_birch_plank': '🪵', 'wind_tree_plank': '🪵',
+        'flame_tree_plank': '🔥', 'frost_maple_plank': '❄️', 'thunder_tree_plank': '⚡',
+        'ancient_oak_plank': '🪵', 'world_tree_plank': '🌍', 'manuscript': '📜'
     };
 
     const name = materialNames[materialId] || materialId;
-    const icon = materialIcons[materialType] || '📦';
+    const icon = materialIconsById[materialId] || materialIcons[materialType] || '📦';
 
     // 创建弹出卡片
     const popover = document.createElement('div');
@@ -8249,6 +8268,69 @@ function showMaterialPopover(triggerElement) {
     setTimeout(() => {
         document.addEventListener('click', closeMaterialPopoverOnOutsideClick, { once: true });
     }, 10);
+}
+
+/**
+ * 显示材料悬浮tooltip（简单版）
+ */
+function showMaterialTooltip(triggerElement, event) {
+    document.querySelectorAll('.material-tooltip').forEach(t => t.remove());
+
+    const materialId = triggerElement.dataset.material;
+    const count = parseInt(triggerElement.dataset.count) || 0;
+
+    // 获取素材信息
+    const materialNames = {
+        'cyan_ingot': '青闪锭', 'red_copper_ingot': '赤铜锭', 'feather_ingot': '羽铁锭',
+        'white_silver_ingot': '白银锭', 'hell_steel_ingot': '狱炎钢锭', 'thunder_steel_ingot': '雷鸣钢锭',
+        'brilliant_crystal': '璀璨晶', 'star_crystal': '星辉晶',
+        'cyan_ore': '青闪矿', 'red_iron': '赤铁矿', 'feather_ore': '羽石矿',
+        'white_ore': '白鸠矿', 'hell_ore': '狱炎矿', 'thunder_ore': '雷鸣矿',
+        'brilliant': '璀璨矿', 'star_ore': '星辉矿',
+        'pine_plank': '青杉木板', 'iron_birch_plank': '铁桦木板', 'wind_tree_plank': '风啸木板',
+        'flame_tree_plank': '焰心木板', 'frost_maple_plank': '霜叶枫木板', 'thunder_tree_plank': '雷鸣木板',
+        'ancient_oak_plank': '古橡木板', 'world_tree_plank': '世界树木板', 'manuscript': '手稿'
+    };
+
+    const materialIconsById = {
+        'cyan_ingot': '🔩', 'red_copper_ingot': '🥉', 'feather_ingot': '🪶',
+        'white_silver_ingot': '🪙', 'hell_steel_ingot': '🔥', 'thunder_steel_ingot': '⚡',
+        'brilliant_crystal': '💎', 'star_crystal': '✨',
+        'cyan_ore': '💎', 'red_iron': '🔴', 'feather_ore': '🪶',
+        'white_ore': '⚪', 'hell_ore': '🔥', 'thunder_ore': '⚡',
+        'brilliant': '✨', 'star_ore': '⭐',
+        'pine_plank': '🪵', 'iron_birch_plank': '🪵', 'wind_tree_plank': '🪵',
+        'flame_tree_plank': '🔥', 'frost_maple_plank': '❄️', 'thunder_tree_plank': '⚡',
+        'ancient_oak_plank': '🪵', 'world_tree_plank': '🌍', 'manuscript': '📜'
+    };
+
+    const name = materialNames[materialId] || materialId;
+    const icon = materialIconsById[materialId] || '📦';
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'item-tooltip material-tooltip';
+    tooltip.innerHTML = `
+        <div class="item-tooltip-name">${icon} ${name}</div>
+        <div class="item-tooltip-row"><span>拥有</span><span class="item-tooltip-value">${count}</span></div>
+    `;
+
+    document.body.appendChild(tooltip);
+
+    // 定位
+    const rect = triggerElement.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+
+    let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+    let top = rect.top - tooltipRect.height - 4;
+
+    if (top < 10) top = rect.bottom + 4;
+    if (left < 5) left = 5;
+    if (left + tooltipRect.width > window.innerWidth - 5) {
+        left = window.innerWidth - tooltipRect.width - 5;
+    }
+
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
 }
 
 function closeMaterialPopoverOnOutsideClick(e) {
