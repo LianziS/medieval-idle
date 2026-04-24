@@ -734,22 +734,34 @@ function setupSocket() {
                 'ancient_oak_plank': '古橡木板', 'world_tree_plank': '世界树木板', 'manuscript': '手稿'
             };
 
+            // 材料图标映射
+            const materialIcons = {
+                'cyan_ingot': '🔩', 'red_copper_ingot': '🥉', 'feather_ingot': '🪶',
+                'white_silver_ingot': '🪙', 'hell_steel_ingot': '🔥', 'thunder_steel_ingot': '⚡',
+                'brilliant_crystal': '💎', 'star_crystal': '✨',
+                'cyan_ore': '💎', 'red_iron': '🔴', 'feather_ore': '🪶',
+                'white_ore': '⚪', 'hell_ore': '🔥', 'thunder_ore': '⚡',
+                'brilliant': '✨', 'star_ore': '⭐',
+                'pine_plank': '🪵', 'iron_birch_plank': '🪵', 'wind_tree_plank': '🪵',
+                'flame_tree_plank': '🔥', 'frost_maple_plank': '❄️', 'thunder_tree_plank': '⚡',
+                'ancient_oak_plank': '🪵', 'world_tree_plank': '🌍', 'manuscript': '📜'
+            };
+
             let html = `
-                <div class="fee-item" data-material="gold" data-count="${goldHave}">
-                    <span class="fee-icon">🪙</span>
-                    <span class="fee-name">金币</span>
-                    <span class="fee-count ${goldHave < m.gold ? 'insufficient' : ''}">${goldHave} / ${m.gold}</span>
+                <div class="fee-item">
+                    <span class="fee-badge"><span class="fee-icon">🪙</span>金币</span>
+                    <span class="fee-count ${goldHave < m.gold ? 'insufficient' : ''}">${goldHave}/${m.gold}</span>
                 </div>
             `;
 
             if (m.ingot) {
                 const have = gameState.ingotsInventory?.[m.ingot] || 0;
                 const name = materialNames[m.ingot] || m.ingot;
+                const icon = materialIcons[m.ingot] || '🔩';
                 html += `
                     <div class="fee-item clickable" data-material="${m.ingot}" data-count="${have}" data-type="ingot">
-                        <span class="fee-icon">🔩</span>
-                        <span class="fee-name">${name}</span>
-                        <span class="fee-count ${have < m.ingotCount ? 'insufficient' : ''}">${have} / ${m.ingotCount}</span>
+                        <span class="fee-badge">${icon}${name}</span>
+                        <span class="fee-count ${have < m.ingotCount ? 'insufficient' : ''}">${have}/${m.ingotCount}</span>
                     </div>
                 `;
             }
@@ -757,11 +769,11 @@ function setupSocket() {
             if (m.ore) {
                 const have = gameState.miningInventory?.[m.ore] || 0;
                 const name = materialNames[m.ore] || m.ore;
+                const icon = materialIcons[m.ore] || '💎';
                 html += `
                     <div class="fee-item clickable" data-material="${m.ore}" data-count="${have}" data-type="ore">
-                        <span class="fee-icon">💎</span>
-                        <span class="fee-name">${name}</span>
-                        <span class="fee-count ${have < m.oreCount ? 'insufficient' : ''}">${have} / ${m.oreCount}</span>
+                        <span class="fee-badge">${icon}${name}</span>
+                        <span class="fee-count ${have < m.oreCount ? 'insufficient' : ''}">${have}/${m.oreCount}</span>
                     </div>
                 `;
             }
@@ -769,11 +781,11 @@ function setupSocket() {
             if (m.plank) {
                 const have = gameState.planksInventory?.[m.plank] || 0;
                 const name = materialNames[m.plank] || m.plank;
+                const icon = materialIcons[m.plank] || '🪵';
                 html += `
                     <div class="fee-item clickable" data-material="${m.plank}" data-count="${have}" data-type="plank">
-                        <span class="fee-icon">🪵</span>
-                        <span class="fee-name">${name}</span>
-                        <span class="fee-count ${have < m.plankCount ? 'insufficient' : ''}">${have} / ${m.plankCount}</span>
+                        <span class="fee-badge">${icon}${name}</span>
+                        <span class="fee-count ${have < m.plankCount ? 'insufficient' : ''}">${have}/${m.plankCount}</span>
                     </div>
                 `;
             }

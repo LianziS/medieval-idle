@@ -5908,28 +5908,42 @@ body::after {
 .fee-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     font-size: 13px;
-    padding: 5px 8px;
-    background: rgba(27, 42, 58, 0.4);
-    border-radius: 5px;
-    border: 1px solid rgba(107, 79, 60, 0.3);
+    padding: 4px 6px;
+    background: transparent;
 }
 
 .fee-item.clickable {
     cursor: pointer;
-    transition: all 0.2s;
 }
 
-.fee-item.clickable:hover {
-    background: rgba(107, 79, 60, 0.25);
-    border-color: rgba(139, 44, 45, 0.5);
+/* 材料徽章 - 类似popup-badge.material */
+.fee-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: rgba(160, 140, 120, 0.1);
+    border: 1px solid rgba(160, 140, 120, 0.3);
+    border-radius: 5px;
+    padding: 2px 6px;
+    color: #c0a080;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.fee-item.clickable .fee-badge {
+    transition: all 0.15s ease;
+}
+
+.fee-item.clickable:hover .fee-badge {
+    filter: brightness(1.2);
+    box-shadow: 0 0 6px rgba(232, 197, 127, 0.25);
+    border-color: rgba(160, 140, 120, 0.5);
 }
 
 .fee-icon {
-    width: 20px;
-    text-align: center;
-    font-size: 15px;
+    font-size: 13px;
     flex-shrink: 0;
 }
 
@@ -5943,6 +5957,7 @@ body::after {
     margin-left: auto;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
+    font-size: 12px;
 }
 
 .fee-count.insufficient {
