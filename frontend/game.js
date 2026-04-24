@@ -44,6 +44,19 @@ function getToolsKey(slotType) {
     return map[slotType] || `${slotType}s`;
 }
 
+/**
+ * 格式化百分比：整数不显示小数，最多显示两位小数
+ * @param {number} value - 百分比数值（如15.30表示15.30%）
+ * @returns {string} 格式化后的字符串（如"15"、"15.3"、"15.63"）
+ */
+function formatPercent(value) {
+    const str = value.toFixed(2);
+    // 去掉末尾无意义的小数
+    if (str.endsWith('.00')) return str.slice(0, -3); // 15.00 -> 15
+    if (str.endsWith('0')) return str.slice(0, -1);   // 15.30 -> 15.3
+    return str;                                       // 15.63 -> 15.63
+}
+
 // ============ 初始化 ============
 
 document.addEventListener('DOMContentLoaded', init);
@@ -1387,7 +1400,7 @@ function renderEquipmentSlots() {
                     // 精确到小数点后两位
                     const bonusPercent = Math.round(totalBonus * 10000) / 100;
                     
-                    cardEl.onmouseenter = () => showEquippedInfoTooltip(slot.id, tool, enhanceLevel, displayName, bonusPercent.toFixed(2));
+                    cardEl.onmouseenter = () => showEquippedInfoTooltip(slot.id, tool, enhanceLevel, displayName, formatPercent(bonusPercent));
                     cardEl.onmouseleave = () => {
                         document.querySelectorAll('.equipped-info-tooltip').forEach(t => t.remove());
                     };
@@ -1530,7 +1543,7 @@ function showEquipGridTooltip(slotType, cardEl) {
                          data-tool-index="${item.indices[0]}"
                          data-enhance="${item.enhanceLevel}"
                          data-name="${displayName}"
-                         data-bonus="${bonusPercent.toFixed(2)}"
+                         data-bonus="${formatPercent(bonusPercent)}"
                          data-icon="${tool.icon}"
                          data-slot="${slotType}">
                         <span class="equip-grid-icon">${tool.icon}</span>
@@ -1777,7 +1790,7 @@ function openEquipModal(slotType) {
                                 <span class="equip-icon">${tool.icon}</span>
                                 <div class="equip-info">
                                     <div class="equip-name">${displayName}${item.count > 1 ? ` ×${item.count}` : ''}</div>
-                                    <div class="equip-bonus">+${bonusPercent.toFixed(2)}% 速度</div>
+                                    <div class="equip-bonus">+${formatPercent(bonusPercent)}% 速度</div>
                                 </div>
                                 <button class="equip-btn">装备</button>
                             </div>
@@ -6018,7 +6031,7 @@ function showItemTooltip(item, event) {
 
                 // 只显示最终百分比，精确到小数点后两位
                 const bonusPercent = Math.round(totalBonus * 10000) / 100;
-                toolEffect = `速度 +${bonusPercent.toFixed(2)}%`;
+                toolEffect = `速度 +${formatPercent(bonusPercent)}%`;
                 break;
             }
         }
@@ -7198,12 +7211,12 @@ function showOutputTooltip(event) {
         </div>
         <div class="enhance-output-tooltip-row">
             <span class="label">速度加成</span>
-            <span class="value">+${bonusPercent.toFixed(2)}%</span>
+            <span class="value">+${formatPercent(bonusPercent)}%</span>
         </div>
         ${targetLevel > 0 ? `
         <div class="enhance-output-tooltip-row">
             <span class="label">强化加成</span>
-            <span class="value">+${enhancePercent.toFixed(2)}%</span>
+            <span class="value">+${formatPercent(enhancePercent)}%</span>
         </div>
         ` : ''}
         ${toolConfig.reqEquipLevel ? `
