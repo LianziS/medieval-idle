@@ -7534,3 +7534,99 @@ body::after {
     100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
 }
 
+
+/* 装备选择格子tooltip */
+.equip-grid-tooltip {
+    max-width: 320px;
+    padding: 12px;
+}
+.equip-grid-title {
+    font-size: 0.85rem;
+    color: #6b7f90;
+    margin-bottom: 10px;
+    text-align: center;
+}
+.equip-grid-icons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+.equip-grid-item {
+    width: 48px;
+    height: 48px;
+    background: rgba(107,79,60,0.2);
+    border: 2px solid rgba(107,79,60,0.4);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+}
+.equip-grid-item:hover {
+    background: rgba(107,79,60,0.35);
+    border-color: rgba(139,44,45,0.6);
+    transform: scale(1.08);
+}
+.equip-grid-icon {
+    font-size: 1.8rem;
+}
+.equip-grid-count {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 0.65rem;
+    color: #A0B2C0;
+    background: rgba(27,42,58,0.8);
+    padding: 1px 3px;
+    border-radius: 3px;
+}
+.equip-grid-enhance {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.6rem;
+    color: #FFA726;
+    font-weight: bold;
+}
+.equip-item-detail-tooltip {
+    padding: 8px 12px;
+    min-width: 100px;
+}
+.item-tooltip-hint {
+    font-size: 0.72rem;
+    color: #66BB6A;
+    margin-top: 6px;
+    text-align: center;
+}
+
+/* 当前已装备工具标记 */
+.equip-grid-item.current-equipped {
+    border-color: rgba(66,165,245,0.7);
+    background: rgba(66,165,245,0.15);
+}
+.equip-grid-badge {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    font-size: 0.7rem;
+    color: #42A5F5;
+    background: rgba(27,42,58,0.9);
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* 卸下按钮 */
+.equip-grid-item.unequip-item {
+    border-color: rgba(239,83,80,0.5);
+    background: rgba(239,83,80,0.1);
+}
+.equip-grid-item.unequip-item:hover {
+    border-color: rgba(239,83,80,0.8);
+    background: rgba(239,83,80,0.2);
+}

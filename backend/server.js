@@ -978,7 +978,7 @@ io.on('connection', (socket) => {
     socket.on('equip_tool', (data) => {
         if (!gameEngine) return socket.emit('error', { message: '未认证' });
         
-        const result = gameEngine.equipTool(data.slotType, data.toolId);
+        const result = gameEngine.equipTool(data.slotType, data.toolId, data.toolIndex);
         socket.emit('equip_result', result);
         socket.emit('game_state_update', gameEngine.getFullState());
     });

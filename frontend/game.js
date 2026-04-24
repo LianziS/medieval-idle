@@ -411,12 +411,28 @@ function setupSocket() {
         if (result.success) {
             // 检查是笔锻造还是工具锻造
             if (result.tool) {
-                showToast(`✅ 锻造成功: ${result.tool.name}`);
+                let message = `✅ 锻造成功: ${result.tool.name}`;
+                if (result.comboReward?.triggered) {
+                    message += ' ⚡连击!';
+                }
+                if (result.tokenReward) {
+                    message += ` ${result.tokenReward.icon}`;
+                }
+                showToast(message);
             } else if (result.rewards) {
                 // 笔锻造结果
                 const penReward = result.rewards.find(r => r.type === 'PEN');
                 if (penReward) {
-                    showToast(`✅ 锻造成功: ${penReward.name}`);
+                    let message = `✅ 锻造成功: ${penReward.name}`;
+                    const comboReward = result.rewards.find(r => r.type === 'COMBO');
+                    if (comboReward?.triggered) {
+                        message += ' ⚡连击!';
+                    }
+                    const tokenReward = result.rewards.find(r => r.type === 'TOKEN');
+                    if (tokenReward) {
+                        message += ` ${tokenReward.icon}`;
+                    }
+                    showToast(message);
                 }
             } else {
                 showToast(`✅ 锻造成功`);
@@ -432,7 +448,16 @@ function setupSocket() {
             if (result.rewards) {
                 const bootReward = result.rewards.find(r => r.type === 'BOOT');
                 if (bootReward) {
-                    showToast(`✅ 缝制成功: ${bootReward.name}`);
+                    let message = `✅ 缝制成功: ${bootReward.name}`;
+                    const comboReward = result.rewards.find(r => r.type === 'COMBO');
+                    if (comboReward?.triggered) {
+                        message += ' ⚡连击!';
+                    }
+                    const tokenReward = result.rewards.find(r => r.type === 'TOKEN');
+                    if (tokenReward) {
+                        message += ` ${tokenReward.icon}`;
+                    }
+                    showToast(message);
                 }
             } else {
                 showToast(`✅ 缝制成功`);
@@ -449,7 +474,16 @@ function setupSocket() {
         if (result.success && result.rewards) {
             const instrumentReward = result.rewards.find(r => r.type === 'INSTRUMENT');
             if (instrumentReward) {
-                showToast(`✅ 制作成功: ${instrumentReward.name}`);
+                let message = `✅ 制作成功: ${instrumentReward.name}`;
+                const comboReward = result.rewards.find(r => r.type === 'COMBO');
+                if (comboReward?.triggered) {
+                    message += ' ⚡连击!';
+                }
+                const tokenReward = result.rewards.find(r => r.type === 'TOKEN');
+                if (tokenReward) {
+                    message += ` ${tokenReward.icon}`;
+                }
+                showToast(message);
             }
         }
     });
@@ -1315,6 +1349,8 @@ function renderEquipmentSlots() {
         // 清除旧事件
         if (cardEl) {
             cardEl.onclick = null;
+            cardEl.onmouseenter = null;
+            cardEl.onmouseleave = null;
             cardEl.style.cursor = 'pointer';
         }
 
@@ -1340,10 +1376,24 @@ function renderEquipmentSlots() {
                 nameEl.textContent = enhanceLevel > 0 ? `${tool.name} +${enhanceLevel}` : tool.name;
                 cardEl?.classList.add('equipped');
 
-                // 点击卸下装备 - 使用弹出式卡片
+                // 悬浮显示当前装备信息
                 if (cardEl) {
                     const displayName = enhanceLevel > 0 ? `${tool.name} +${enhanceLevel}` : tool.name;
-                    cardEl.onclick = () => showUnequipConfirm(slot.id, displayName);
+                    const baseBonus = tool.speedBonus || 0;
+                    let totalBonus = baseBonus;
+                    if (enhanceLevel > 0 && CONFIG.enhanceConfig?.bonusTable) {
+                        totalBonus = baseBonus * (1 + CONFIG.enhanceConfig.bonusTable[enhanceLevel] || 0);
+                    }
+                    // 精确到小数点后两位
+                    const bonusPercent = Math.round(totalBonus * 10000) / 100;
+                    
+                    cardEl.onmouseenter = () => showEquippedInfoTooltip(slot.id, tool, enhanceLevel, displayName, bonusPercent.toFixed(2));
+                    cardEl.onmouseleave = () => {
+                        document.querySelectorAll('.equipped-info-tooltip').forEach(t => t.remove());
+                    };
+                    
+                    // 点击显示更换工具格子
+                    cardEl.onclick = () => showEquipGridTooltip(slot.id, cardEl);
                 }
             } else {
                 slotEl.innerHTML = slot.icon;
@@ -1355,12 +1405,282 @@ function renderEquipmentSlots() {
             nameEl.textContent = '空';
             cardEl?.classList.remove('equipped');
 
-            // 点击选择装备
+            // 点击显示工具选择格子（只有图标）
             if (cardEl) {
-                cardEl.onclick = () => openEquipModal(slot.id);
+                cardEl.onclick = () => showEquipGridTooltip(slot.id, cardEl);
             }
         }
     });
+}
+
+/**
+ * 显示已装备工具信息tooltip（悬浮触发）
+ */
+function showEquippedInfoTooltip(slotType, tool, enhanceLevel, displayName, totalBonus) {
+    document.querySelectorAll('.equipped-info-tooltip').forEach(t => t.remove());
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'item-tooltip equipped-info-tooltip';
+    tooltip.innerHTML = `
+        <div class="item-tooltip-name">${tool.icon} ${displayName}</div>
+        <div class="item-tooltip-row"><span>速度</span><span class="item-tooltip-value">+${totalBonus}%</span></div>
+        ${enhanceLevel > 0 ? `<div class="item-tooltip-row"><span>强化</span><span class="enhance-level">+${enhanceLevel}</span></div>` : ''}
+        <div class="item-tooltip-hint">点击更换工具</div>
+    `;
+    
+    document.body.appendChild(tooltip);
+    
+    // 定位
+    const cardEl = document.getElementById(`equipment-slot-${slotType}`)?.closest('.equipment-slot');
+    if (!cardEl) return;
+    
+    const rect = cardEl.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    
+    let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+    let top = rect.top - tooltipRect.height - 4;
+    
+    if (top < 10) top = rect.bottom + 4;
+    if (left < 5) left = 5;
+    if (left + tooltipRect.width > window.innerWidth - 5) {
+        left = window.innerWidth - tooltipRect.width - 5;
+    }
+    
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+}
+
+/**
+ * 显示装备选择格子tooltip（只有图标）
+ */
+function showEquipGridTooltip(slotType, cardEl) {
+    document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+    document.querySelectorAll('.equipped-info-tooltip').forEach(t => t.remove());
+
+    const toolType = getToolsKey(slotType);
+    const tools = CONFIG.tools?.[toolType] || [];
+    const inventory = gameState?.toolsInventory?.[toolType] || [];
+
+    // 获取当前装备的工具信息
+    const equippedData = gameState.equipment?.[slotType];
+    let equippedId = null;
+    let equippedEnhanceLevel = 0;
+    if (equippedData) {
+        if (typeof equippedData === 'string') {
+            equippedId = equippedData;
+        } else if (typeof equippedData === 'object') {
+            equippedId = equippedData.id;
+            equippedEnhanceLevel = equippedData.enhanceLevel || 0;
+        }
+    }
+
+    if (inventory.length === 0 && !equippedId) {
+        showToast('背包中没有可装备的工具');
+        return;
+    }
+
+    // 堆叠相同ID和等级的工具
+    const stackedItems = [];
+    const stackMap = {};
+
+    inventory.forEach((tool, index) => {
+        const toolId = typeof tool === 'string' ? tool : tool.id;
+        const enhanceLevel = typeof tool === 'object' && tool ? (tool.enhanceLevel || 0) : 0;
+        const stackKey = `${toolId}_${enhanceLevel}`;
+
+        if (!stackMap[stackKey]) {
+            stackMap[stackKey] = {
+                toolId,
+                enhanceLevel,
+                indices: [index],
+                count: 1
+            };
+        } else {
+            stackMap[stackKey].indices.push(index);
+            stackMap[stackKey].count++;
+        }
+    });
+
+    Object.values(stackMap).forEach(item => stackedItems.push(item));
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'item-tooltip equip-grid-tooltip';
+    tooltip.innerHTML = `
+        <div class="equip-grid-title">${equippedId ? '更换工具' : '选择工具'}</div>
+        <div class="equip-grid-icons">
+            ${stackedItems.map(item => {
+                const tool = tools.find(t => t.id === item.toolId);
+                if (!tool) return '';
+                
+                const baseBonus = tool.speedBonus || 0;
+                const enhanceBonus = item.enhanceLevel > 0 && CONFIG.enhanceConfig?.bonusTable
+                    ? CONFIG.enhanceConfig.bonusTable[item.enhanceLevel] || 0
+                    : 0;
+                const totalBonus = baseBonus * (1 + enhanceBonus);
+                const displayName = item.enhanceLevel > 0 ? `${tool.name} +${item.enhanceLevel}` : tool.name;
+                // 精确到小数点后两位
+                const bonusPercent = Math.round(totalBonus * 10000) / 100;
+                
+                // 检查是否是当前装备的工具
+                const isCurrentEquipped = (item.toolId === equippedId && item.enhanceLevel === equippedEnhanceLevel);
+                
+                return `
+                    <div class="equip-grid-item ${isCurrentEquipped ? 'current-equipped' : ''}" 
+                         data-tool-id="${item.toolId}" 
+                         data-tool-index="${item.indices[0]}"
+                         data-enhance="${item.enhanceLevel}"
+                         data-name="${displayName}"
+                         data-bonus="${bonusPercent.toFixed(2)}"
+                         data-icon="${tool.icon}"
+                         data-slot="${slotType}">
+                        <span class="equip-grid-icon">${tool.icon}</span>
+                        ${item.count > 1 ? `<span class="equip-grid-count">${item.count}</span>` : ''}
+                        ${item.enhanceLevel > 0 ? `<span class="equip-grid-enhance">+${item.enhanceLevel}</span>` : ''}
+                        ${isCurrentEquipped ? '<span class="equip-grid-badge">✓</span>' : ''}
+                    </div>
+                `;
+            }).join('')}
+            ${equippedId ? `
+                <div class="equip-grid-item unequip-item" data-slot="${slotType}">
+                    <span class="equip-grid-icon">❌</span>
+                </div>
+            ` : ''}
+        </div>
+    `;
+
+    document.body.appendChild(tooltip);
+
+    // 定位：贴近装备槽
+    const rect = cardEl.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+
+    let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+    let top = rect.top - tooltipRect.height - 4;
+
+    if (top < 10) top = rect.bottom + 4;
+    if (left < 5) left = 5;
+    if (left + tooltipRect.width > window.innerWidth - 5) {
+        left = window.innerWidth - tooltipRect.width - 5;
+    }
+
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+
+    // 点击格子项装备
+    tooltip.querySelectorAll('.equip-grid-item:not(.unequip-item)').forEach(gridItem => {
+        gridItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const toolId = gridItem.dataset.toolId;
+            const toolIndex = parseInt(gridItem.dataset.toolIndex);
+            
+            // 关闭所有tooltip
+            document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+            document.querySelectorAll('.equip-item-detail-tooltip').forEach(t => t.remove());
+            document.querySelectorAll('.equipped-info-tooltip').forEach(t => t.remove());
+            tooltip.remove();
+            
+            socket.emit('equip_tool', { slotType, toolId, toolIndex });
+        });
+
+        // 悬浮显示工具详细信息
+        gridItem.addEventListener('mouseenter', (e) => {
+            showEquipItemDetail(gridItem, e);
+        });
+        gridItem.addEventListener('mouseleave', () => {
+            document.querySelectorAll('.equip-item-detail-tooltip').forEach(t => t.remove());
+        });
+    });
+
+    // 点击卸下按钮
+    const unequipItem = tooltip.querySelector('.unequip-item');
+    if (unequipItem) {
+        unequipItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // 移除所有tooltip
+            document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+            document.querySelectorAll('.equip-item-detail-tooltip').forEach(t => t.remove());
+            document.querySelectorAll('.equipped-info-tooltip').forEach(t => t.remove());
+            socket.emit('unequip_tool', { slotType });
+        });
+        unequipItem.addEventListener('mouseenter', () => {
+            document.querySelectorAll('.equip-item-detail-tooltip').forEach(t => t.remove());
+            const detailTooltip = document.createElement('div');
+            detailTooltip.className = 'item-tooltip equip-item-detail-tooltip';
+            detailTooltip.innerHTML = `
+                <div class="item-tooltip-name" style="color:#EF5350;">卸下装备</div>
+                <div class="item-tooltip-hint">点击卸下</div>
+            `;
+            document.body.appendChild(detailTooltip);
+            
+            const rect = unequipItem.getBoundingClientRect();
+            const detailRect = detailTooltip.getBoundingClientRect();
+            let left = rect.right + 8;
+            let top = rect.top + rect.height / 2 - detailRect.height / 2;
+            if (left + detailRect.width > window.innerWidth - 5) left = rect.left - detailRect.width - 8;
+            if (top < 5) top = 5;
+            detailTooltip.style.left = `${left}px`;
+            detailTooltip.style.top = `${top}px`;
+            
+            unequipItem.addEventListener('mouseleave', () => {
+                detailTooltip.remove();
+            }, { once: true });
+        });
+    }
+
+    // 点击其他地方关闭
+    const closeTooltip = (e) => {
+        if (!tooltip.contains(e.target) && !cardEl.contains(e.target)) {
+            tooltip.remove();
+            document.removeEventListener('click', closeTooltip);
+        }
+    };
+    setTimeout(() => {
+        document.addEventListener('click', closeTooltip);
+    }, 10);
+}
+
+/**
+ * 显示单个工具的详细信息tooltip
+ */
+function showEquipItemDetail(gridItem, event) {
+    document.querySelectorAll('.equip-item-detail-tooltip').forEach(t => t.remove());
+
+    const name = gridItem.dataset.name;
+    const icon = gridItem.dataset.icon;
+    const bonus = gridItem.dataset.bonus;
+    const enhance = gridItem.dataset.enhance || '0';
+
+    const detailTooltip = document.createElement('div');
+    detailTooltip.className = 'item-tooltip equip-item-detail-tooltip';
+    detailTooltip.innerHTML = `
+        <div class="item-tooltip-name">${icon} ${name}</div>
+        <div class="item-tooltip-row"><span>速度</span><span class="item-tooltip-value">+${bonus}%</span></div>
+        ${parseInt(enhance) > 0 ? `<div class="item-tooltip-row"><span>强化</span><span class="enhance-level">+${enhance}</span></div>` : ''}
+        <div class="item-tooltip-hint">点击装备</div>
+    `;
+
+    document.body.appendChild(detailTooltip);
+
+    // 定位：显示在格子项右侧或左侧
+    const rect = gridItem.getBoundingClientRect();
+    const detailRect = detailTooltip.getBoundingClientRect();
+
+    let left = rect.right + 8;
+    let top = rect.top + rect.height / 2 - detailRect.height / 2;
+
+    // 如果右侧空间不足，显示在左侧
+    if (left + detailRect.width > window.innerWidth - 5) {
+        left = rect.left - detailRect.width - 8;
+    }
+
+    // 确保不超出屏幕上下边界
+    if (top < 5) top = 5;
+    if (top + detailRect.height > window.innerHeight - 5) {
+        top = window.innerHeight - detailRect.height - 5;
+    }
+
+    detailTooltip.style.left = `${left}px`;
+    detailTooltip.style.top = `${top}px`;
 }
 
 /**
@@ -1450,13 +1770,14 @@ function openEquipModal(slotType) {
                             : 0;
                         const totalBonus = baseBonus * (1 + enhanceBonus);
                         const displayName = item.enhanceLevel > 0 ? `${tool.name} +${item.enhanceLevel}` : tool.name;
+                        const bonusPercent = Math.round(totalBonus * 10000) / 100;
 
                         return `
                             <div class="equip-item" data-tool-id="${item.toolId}" data-tool-index="${item.indices[0]}" data-enhance="${item.enhanceLevel}">
                                 <span class="equip-icon">${tool.icon}</span>
                                 <div class="equip-info">
                                     <div class="equip-name">${displayName}${item.count > 1 ? ` ×${item.count}` : ''}</div>
-                                    <div class="equip-bonus">+${Math.round(totalBonus * 100)}% 速度</div>
+                                    <div class="equip-bonus">+${bonusPercent.toFixed(2)}% 速度</div>
                                 </div>
                                 <button class="equip-btn">装备</button>
                             </div>
@@ -5005,12 +5326,31 @@ function renderInventories() {
     if (gameState.equipment) {
         toolTypes.forEach(toolType => {
             const slotId = toolTypeToSlot[toolType];
-            const equippedId = gameState.equipment[slotId];
-            if (equippedId) {
+            const equippedData = gameState.equipment[slotId];
+            if (equippedData) {
+                // 兼容旧格式（字符串）和新格式（对象）
+                let equippedId, enhanceLevel;
+                if (typeof equippedData === 'string') {
+                    equippedId = equippedData;
+                    enhanceLevel = 0;
+                } else if (typeof equippedData === 'object') {
+                    equippedId = equippedData.id;
+                    enhanceLevel = equippedData.enhanceLevel || 0;
+                }
+                
                 const tools = CONFIG.tools?.[toolType] || [];
                 const tool = tools.find(t => t.id === equippedId);
                 if (tool) {
-                    allToolItems.push({ id: equippedId, name: tool.name, icon: tool.icon, isEquipped: true, count: 1 });
+                    const displayName = enhanceLevel > 0 ? `${tool.name} +${enhanceLevel}` : tool.name;
+                    allToolItems.push({ 
+                        id: equippedId, 
+                        name: tool.name, 
+                        icon: tool.icon, 
+                        isEquipped: true, 
+                        count: 1,
+                        enhanceLevel,
+                        displayName
+                    });
                 }
             }
         });
@@ -5079,9 +5419,10 @@ function renderInventories() {
         }).join('');
         toolsElement.innerHTML = items;
 
-        // 绑定点击事件
+        // 绑定点击和悬浮事件
         toolsElement.querySelectorAll('.inventory-item').forEach(item => {
             item.addEventListener('click', (e) => showItemTooltip(item, e));
+            item.addEventListener('mouseenter', (e) => showItemTooltip(item, e));
         });
     } else if (toolsElement) {
         toolsElement.innerHTML = '';
@@ -5675,10 +6016,9 @@ function showItemTooltip(item, event) {
                     totalBonus = baseBonus * (1 + enhanceBonus);
                 }
 
-                toolEffect = `速度 +${Math.round(totalBonus * 100)}%`;
-                if (enhanceLevel > 0) {
-                    toolEffect += ` (基础${Math.round(baseBonus * 100)}% + 强化${Math.round((totalBonus - baseBonus) * 100)}%)`;
-                }
+                // 只显示最终百分比，精确到小数点后两位
+                const bonusPercent = Math.round(totalBonus * 10000) / 100;
+                toolEffect = `速度 +${bonusPercent.toFixed(2)}%`;
                 break;
             }
         }
@@ -5691,8 +6031,8 @@ function showItemTooltip(item, event) {
     tooltip.className = 'item-tooltip';
     tooltip.innerHTML = `
         <div class="item-tooltip-name">${icon} ${displayName}</div>
-        ${enhanceLevel > 0 ? `<div class="item-tooltip-row item-tooltip-enhance"><span>强化等级</span><span class="enhance-level">+${enhanceLevel}</span></div>` : ''}
         ${toolEffect ? `<div class="item-tooltip-row item-tooltip-effect"><span>效果</span><span class="tool-effect">${toolEffect}</span></div>` : ''}
+        ${enhanceLevel > 0 ? `<div class="item-tooltip-row item-tooltip-enhance"><span>强化</span><span class="enhance-level">+${enhanceLevel}</span></div>` : ''}
         <div class="item-tooltip-row"><span>数量</span><span class="item-count-value">${count}</span></div>
         <div class="item-tooltip-row"><span>单价</span><span class="item-price-value">${price > 0 ? price : '不可出售'}</span></div>
         <div class="item-tooltip-desc">${desc}</div>
@@ -5702,26 +6042,26 @@ function showItemTooltip(item, event) {
 
     document.body.appendChild(tooltip);
 
-    // 计算位置：显示在物品卡片上方
+    // 计算位置：显示在物品卡片上方，贴近物品
     const rect = item.getBoundingClientRect();
     const tooltipRect = tooltip.getBoundingClientRect();
 
     let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
-    let top = rect.top - tooltipRect.height - 8;
+    let top = rect.top - tooltipRect.height - 4; // 减少间距，更贴近
 
     // 如果上方空间不足，显示在下方
     if (top < 10) {
-        top = rect.bottom + 8;
+        top = rect.bottom + 4; // 减少间距
     }
 
     // 如果左侧超出屏幕
-    if (left < 10) {
-        left = 10;
+    if (left < 5) {
+        left = 5;
     }
 
     // 如果右侧超出屏幕
-    if (left + tooltipRect.width > window.innerWidth - 10) {
-        left = window.innerWidth - tooltipRect.width - 10;
+    if (left + tooltipRect.width > window.innerWidth - 5) {
+        left = window.innerWidth - tooltipRect.width - 5;
     }
 
     tooltip.style.left = left + 'px';
@@ -5768,10 +6108,11 @@ function showItemTooltip(item, event) {
             else if (id.includes('rod')) slotType = 'rod';
 
             if (slotType) {
-                // 关闭提示卡片，打开装备选择弹窗
-                // openEquipModal 已经正确处理工具索引和堆叠
+                // 直接装备，如果有已有装备则替换
+                // 从 item 中获取 toolIndex（堆叠时的索引）
+                const toolIndex = parseInt(item.dataset.index) || 0;
+                socket.emit('equip_tool', { slotType, toolId: id, toolIndex });
                 tooltip.remove();
-                openEquipModal(slotType);
             }
         });
     }
@@ -5782,8 +6123,12 @@ function showItemTooltip(item, event) {
         unequipBtn.addEventListener('click', () => {
             const slotType = unequipBtn.dataset.slot;
             if (slotType) {
+                // 移除所有tooltip
+                document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
+                document.querySelectorAll('.equipped-info-tooltip').forEach(t => t.remove());
+                document.querySelectorAll('.equip-item-detail-tooltip').forEach(t => t.remove());
+                document.querySelectorAll('.equip-grid-tooltip').forEach(t => t.remove());
                 socket.emit('unequip_tool', { slotType });
-                tooltip.remove();
             }
         });
     }
@@ -6834,6 +7179,10 @@ function showOutputTooltip(event) {
         const enhanceBonus = CONFIG.enhanceConfig.bonusTable[targetLevel] || 0;
         totalBonus = baseBonus * (1 + enhanceBonus);
     }
+    
+    const bonusPercent = Math.round(totalBonus * 10000) / 100;
+    const basePercent = Math.round(baseBonus * 10000) / 100;
+    const enhancePercent = Math.round((totalBonus - baseBonus) * 10000) / 100;
 
     // 移除已有的 tooltip
     document.querySelectorAll('.enhance-output-tooltip').forEach(t => t.remove());
@@ -6849,12 +7198,12 @@ function showOutputTooltip(event) {
         </div>
         <div class="enhance-output-tooltip-row">
             <span class="label">速度加成</span>
-            <span class="value">+${Math.round(totalBonus * 100)}%</span>
+            <span class="value">+${bonusPercent.toFixed(2)}%</span>
         </div>
         ${targetLevel > 0 ? `
         <div class="enhance-output-tooltip-row">
             <span class="label">强化加成</span>
-            <span class="value">+${Math.round((totalBonus - baseBonus) * 100)}%</span>
+            <span class="value">+${enhancePercent.toFixed(2)}%</span>
         </div>
         ` : ''}
         ${toolConfig.reqEquipLevel ? `
@@ -8692,7 +9041,6 @@ function showBardItemTooltip(item, event, modal) {
     let ownedCount = 0;
     let price = 0;
     let duration = 0;
-    let effect = {};
     
     // 乐谱类型
     if (itemType === 'SHEET_NORMAL') {
@@ -8702,7 +9050,6 @@ function showBardItemTooltip(item, event, modal) {
         });
         price = parseInt(itemPrice) || 100;
         duration = parseInt(itemDuration) || 30;
-        effect = CONFIG.sheets?.qualities?.normal?.effect || {};
     } else if (itemType === 'SHEET_FINE') {
         const categories = ['earth', 'craft', 'sublime'];
         categories.forEach(cat => {
@@ -8710,7 +9057,6 @@ function showBardItemTooltip(item, event, modal) {
         });
         price = parseInt(itemPrice) || 200;
         duration = parseInt(itemDuration) || 90;
-        effect = CONFIG.sheets?.qualities?.fine?.effect || {};
     } else if (itemType === 'SHEET_EPIC') {
         const categories = ['earth', 'craft', 'sublime'];
         categories.forEach(cat => {
@@ -8718,7 +9064,6 @@ function showBardItemTooltip(item, event, modal) {
         });
         price = parseInt(itemPrice) || 300;
         duration = parseInt(itemDuration) || 180;
-        effect = CONFIG.sheets?.qualities?.epic?.effect || {};
     }
     
     // 产出物类型
@@ -8739,23 +9084,8 @@ function showBardItemTooltip(item, event, modal) {
     // 构建tooltip内容
     let tooltipHtml = `<div class="item-tooltip-name">${itemIcon} ${itemName}</div>`;
     
-    // 乐谱tooltip - 需要显示类别信息
+    // 乐谱tooltip - 只显示时长，不显示效果
     if (itemType.startsWith('SHEET_')) {
-        // 根据不同类别显示对应的图标
-        const categoryIcons = {
-            earth: ['🪓', '⛏️', '🌿'],      // 大地之艺：伐木、挖矿、采集
-            craft: ['🔨', '🪵', '🧵'],       // 巧手之艺：锻造、制作、裁缝  
-            sublime: ['⚗️', '🍺', '✨']      // 升华之艺：炼金、酿造、强化
-        };
-        const icons = categoryIcons[itemCategory] || categoryIcons.earth;
-        
-        // 可用于（只显示图标，不显示文字）
-        tooltipHtml += `<div class="item-tooltip-row"><span>可用于</span><span class="item-tooltip-icons-only">${icons.join(' ')}</span></div>`;
-        
-        // 效果（根据类别显示对应的）
-        const effectValue = effect[itemCategory];
-        if (effectValue) tooltipHtml += `<div class="item-tooltip-row"><span>效果</span><span class="item-tooltip-value">${effectValue}</span></div>`;
-        
         // 时长
         tooltipHtml += `<div class="item-tooltip-row"><span>时长</span><span class="item-tooltip-value">${duration}分钟</span></div>`;
         
@@ -9064,7 +9394,7 @@ function showSheetSelectModal() {
     });
 }
 
-// 乐谱选择弹窗的tooltip（新格式）
+// 乐谱选择弹窗的tooltip（演奏选择用，需要显示完整信息）
 function showSheetSelectTooltip(item) {
     document.querySelectorAll('.item-tooltip').forEach(t => t.remove());
     

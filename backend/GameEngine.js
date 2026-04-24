@@ -1276,12 +1276,84 @@ class GameEngine {
         const levelIndex = Math.min(Math.floor((forgingLevel - 1) / 10), tokenDropRates.tool.length - 1);
         const dropRate = tokenDropRates.tool[levelIndex];
         
+        let tokenReward = null;
         if (Math.random() < dropRate) {
             if (!this.state.tokensInventory) {
                 this.state.tokensInventory = {};
             }
             this.state.tokensInventory['forging_token'] = (this.state.tokensInventory['forging_token'] || 0) + 1;
-            // 代币奖励将在返回结果中体现
+            tokenReward = { type: 'TOKEN', id: 'forging_token', name: '锻造代币', icon: '🪙', count: 1 };
+        }
+        
+        // 连击系统：锻造等级超过需求等级时可能触发连击
+        const reqLevel = tool.reqLevel || tool.reqForgeLevel || 1;
+        const levelDiff = Math.max(0, forgingLevel - reqLevel);
+        let comboChance = Math.min(levelDiff, 100) / 100;
+        
+        // 检查巧手之艺乐谱效果：增加额外连击概率（锻造工具属于锻造类）
+        const sheet = this.state.bardSelectedSheet;
+        const now = Date.now();
+        if (sheet && sheet.category === 'craft' && now < this.state.bardPerformEndTime) {
+            const qualityRates = { normal: 0.03, fine: 0.07, epic: 0.10 };
+            comboChance += qualityRates[sheet.quality] || 0;
+        }
+        
+        // 只有剩余次数 > 1 才能触发连击
+        let comboReward = null;
+        if (action.remaining > 1 && Math.random() < comboChance) {
+            // 连击触发！检查是否有足够材料再做一个
+            let hasMaterials = true;
+            if (materials.ore && (mining[oreId] || 0) < materials.ore) hasMaterials = false;
+            if (materials.plank && (planks[plankId] || 0) < materials.plank) hasMaterials = false;
+            if (materials.ingot && (ingots[ingotId] || 0) < materials.ingot) hasMaterials = false;
+            if (materials.prevTool) {
+                const prevTools = this.state.toolsInventory[toolsKey] || [];
+                const hasPrevTool = prevTools.some(t => {
+                    const id = typeof t === 'string' ? t : t.id;
+                    return id === materials.prevTool;
+                });
+                if (!hasPrevTool) hasMaterials = false;
+            }
+            
+            if (hasMaterials) {
+                // 消耗额外材料
+                if (materials.ore) {
+                    mining[oreId] = (mining[oreId] || 0) - materials.ore;
+                    if (mining[oreId] <= 0) delete mining[oreId];
+                }
+                if (materials.plank) {
+                    planks[plankId] = (planks[plankId] || 0) - materials.plank;
+                    if (planks[plankId] <= 0) delete planks[plankId];
+                }
+                if (materials.ingot) {
+                    ingots[ingotId] = (ingots[ingotId] || 0) - materials.ingot;
+                    if (ingots[ingotId] <= 0) delete ingots[ingotId];
+                }
+                if (materials.prevTool) {
+                    const prevTools = this.state.toolsInventory[toolsKey] || [];
+                    const idx = prevTools.findIndex(t => {
+                        const id = typeof t === 'string' ? t : t.id;
+                        return id === materials.prevTool;
+                    });
+                    if (idx !== -1) prevTools.splice(idx, 1);
+                }
+                
+                // 添加额外工具
+                this.state.toolsInventory[toolsKey].push(tool.id);
+                this.addSkillExp('forgingLevel', exp);
+                
+                comboReward = { type: 'COMBO', triggered: true, comboChance: comboChance };
+                
+                // 连击时进行第二次代币概率判定
+                if (Math.random() < dropRate) {
+                    this.state.tokensInventory['forging_token'] = (this.state.tokensInventory['forging_token'] || 0) + 1;
+                    tokenReward = { ...tokenReward, count: 2, isCombo: true };
+                }
+                
+                // 额外减少一次行动次数
+                action.remaining--;
+                this.state.actionRemaining = action.remaining;
+            }
         }
         
         // 更新剩余次数
@@ -1339,7 +1411,9 @@ class GameEngine {
             success: true, 
             tool: tool, 
             exp: exp,
-            remaining: action.remaining 
+            remaining: action.remaining,
+            tokenReward: tokenReward,
+            comboReward: comboReward
         };
     }
     
@@ -1605,7 +1679,15 @@ class GameEngine {
         // 单次行动不能触发连击
         const forgingLevel = this.state.forgingLevel || 1;
         const levelDiff = Math.max(0, forgingLevel - pen.reqForgeLevel);
-        const comboChance = Math.min(levelDiff, 100) / 100;
+        let comboChance = Math.min(levelDiff, 100) / 100;
+        
+        // 检查巧手之艺乐谱效果：增加额外连击概率（锻造笔属于锻造类）
+        const sheet = this.state.bardSelectedSheet;
+        const now = Date.now();
+        if (sheet && sheet.category === 'craft' && now < this.state.bardPerformEndTime) {
+            const qualityRates = { normal: 0.03, fine: 0.07, epic: 0.10 };
+            comboChance += qualityRates[sheet.quality] || 0;
+        }
         
         // 只有剩余次数 > 1 或无限模式才能触发连击
         const remaining = this.state.actionCount >= 99999 ? Infinity : this.state.actionCount;
@@ -1843,7 +1925,15 @@ class GameEngine {
         // 单次行动不能触发连击
         const tailoringLevel = this.state.tailoringLevel || 1;
         const levelDiff = Math.max(0, tailoringLevel - boot.reqTailorLevel);
-        const comboChance = Math.min(levelDiff, 100) / 100;
+        let comboChance = Math.min(levelDiff, 100) / 100;
+        
+        // 检查巧手之艺乐谱效果：增加额外连击概率（缝制靴子属于缝制类）
+        const sheet = this.state.bardSelectedSheet;
+        const now = Date.now();
+        if (sheet && sheet.category === 'craft' && now < this.state.bardPerformEndTime) {
+            const qualityRates = { normal: 0.03, fine: 0.07, epic: 0.10 };
+            comboChance += qualityRates[sheet.quality] || 0;
+        }
         
         // 只有剩余次数 > 1 或无限模式才能触发连击
         const remaining = this.state.actionCount >= 99999 ? Infinity : this.state.actionCount;
@@ -2068,7 +2158,15 @@ class GameEngine {
         // 单次行动不能触发连击
         const craftingLevel = this.state.craftingLevel || 1;
         const levelDiff = Math.max(0, craftingLevel - instrument.reqCraftingLevel);
-        const comboChance = Math.min(levelDiff, 100) / 100;
+        let comboChance = Math.min(levelDiff, 100) / 100;
+        
+        // 检查巧手之艺乐谱效果：增加额外连击概率（制作乐器属于制作类）
+        const sheet = this.state.bardSelectedSheet;
+        const now = Date.now();
+        if (sheet && sheet.category === 'craft' && now < this.state.bardPerformEndTime) {
+            const qualityRates = { normal: 0.03, fine: 0.07, epic: 0.10 };
+            comboChance += qualityRates[sheet.quality] || 0;
+        }
         
         // 只有剩余次数 > 1 或无限模式才能触发连击
         const remaining = this.state.actionCount >= 99999 ? Infinity : this.state.actionCount;
@@ -2787,7 +2885,25 @@ class GameEngine {
         
         // 计算连击概率（每超过需求等级1级获得1%，最大100%）
         const levelDiff = Math.max(0, playerLevel - reqLevel);
-        const comboChance = Math.min(levelDiff, 100) / 100;
+        let comboChance = Math.min(levelDiff, 100) / 100;
+        
+        // 检查巧手之艺乐谱效果：增加额外连击概率（仅对锻造/制作/裁缝行动生效）
+        const sheet = this.state.bardSelectedSheet;
+        const now = Date.now();
+        if (sheet && sheet.category === 'craft' && now < this.state.bardPerformEndTime) {
+            // 巧手之艺适用的行动类型
+            const craftActionTypes = ['crafting', 'crafting_manuscript', 'crafting_feather', 'forging', 'tailoring', 'tailoring_thread'];
+            if (craftActionTypes.includes(actionType.id)) {
+                // 正在演奏巧手之艺乐谱，根据品质增加连击概率
+                const qualityRates = {
+                    normal: 0.03,  // 3%
+                    fine: 0.07,    // 7%
+                    epic: 0.10     // 10%
+                };
+                const extraChance = qualityRates[sheet.quality] || 0;
+                comboChance += extraChance;
+            }
+        }
         
         // 判断是否触发连击
         const triggered = Math.random() < comboChance;
