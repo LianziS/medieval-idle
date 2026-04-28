@@ -1,0 +1,62 @@
+name: Daily Game Status Reminder
+
+on:
+  schedule:
+    # 每天北京时间 10:00 (UTC 02:00)
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # 手动触发
+
+jobs:
+  daily-reminder:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: |
+          if [ -f backend/package.json ]; then
+            cd backend && npm install
+          fi
+      
+      - name: Check game status
+        id: game-status
+        run: |
+          # TODO: 添加实际的游戏状态检查逻辑
+          # 示例：检查数据库、API 等
+          echo "status=ok" >> $GITHUB_OUTPUT
+          echo "players=0" >> $GITHUB_OUTPUT
+          echo "new_users=0" >> $GITHUB_OUTPUT
+      
+      - name: Send Feishu notification
+        if: env.FEISHU_WEBHOOK_URL != ''
+        env:
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+        run: |
+          curl -X POST "${FEISHU_WEBHOOK_URL}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "msg_type": "text",
+              "content": {
+                "text": "🎮 MedievalIdleGame 每日状态\n\n状态: 正常运行\n在线玩家: ${{ steps.game-status.outputs.players }}\n今日新增: ${{ steps.game-status.outputs.new_users }}\n\n查看详情: https://github.com/LianziS/medieval-idle/actions"
+              }
+            }'
+      
+      - name: Create issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🔴 每日状态检查失败 - ' + new Date().toLocaleDateString('zh-CN'),
+              body: '每日游戏状态检查任务执行失败，请检查日志。\n\n[查看运行日志](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})',
+              labels: ['automated', 'alert']
+            })
